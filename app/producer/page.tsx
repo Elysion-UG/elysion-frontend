@@ -1,5 +1,7 @@
-import ProducerPage from "@/src/components/ProducerPage"
+"use client"
+
+import App from "@/src/App"
 
 export default function ProducerPageRoute() {
-  return <ProducerPage />
+  return <App />
 }
