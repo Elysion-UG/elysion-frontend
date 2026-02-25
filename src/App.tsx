@@ -1,4 +1,5 @@
-import "./styles/globals.css"
+"use client"
+
 import { AuthProvider } from "./context/AuthContext"
 import { Toaster } from "sonner"
 import SustainableShop from "./components/SustainableShop"
@@ -18,7 +19,7 @@ import AdminUserDetail from "./components/AdminUserDetail"
 import AuthGuard from "./components/AuthGuard"
 
 function App() {
-  const currentPage = window.location.pathname
+  const currentPage = typeof window !== "undefined" ? window.location.pathname : "/"
 
   const renderPage = () => {
     switch (currentPage) {
