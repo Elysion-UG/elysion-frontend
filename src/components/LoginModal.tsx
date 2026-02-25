@@ -1,275 +1,416 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
-import { X, Eye, EyeOff, Mail, Lock, User } from "lucide-react"
+import { X, Eye, EyeOff, Mail, Lock, User, Building2, Loader2, CheckCircle2, XCircle, AlertTriangle } from "lucide-react"
+import { useAuth } from "@/src/context/AuthContext"
+import type { UserRole } from "@/src/types"
+import { validatePassword, isValidEmail } from "@/src/lib/validation"
+import { toast } from "sonner"
 
 interface LoginModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
+type ModalView = "login" | "register" | "forgot"
+
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  const [isLogin, setIsLogin] = useState(true)
+  const { login, register, isLoading } = useAuth()
+  const [view, setView] = useState<ModalView>("login")
   const [showPassword, setShowPassword] = useState(false)
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    confirmPassword: "",
-    name: "",
-  })
+  const [error, setError] = useState("")
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    })
-  }
+  // Login fields
+  const [loginEmail, setLoginEmail] = useState("")
+  const [loginPassword, setLoginPassword] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (isLogin) {
-      console.log("Login attempt:", { email: formData.email, password: formData.password })
-      // Here you would handle login logic
-      alert("Login functionality would be implemented here")
-    } else {
-      if (formData.password !== formData.confirmPassword) {
-        alert("Passwords don't match!")
-        return
-      }
-      console.log("Signup attempt:", formData)
-      // Here you would handle signup logic
-      alert("Signup functionality would be implemented here")
-    }
-    onClose()
-  }
+  // Register fields
+  const [regEmail, setRegEmail] = useState("")
+  const [regPassword, setRegPassword] = useState("")
+  const [regConfirmPassword, setRegConfirmPassword] = useState("")
+  const [regFirstName, setRegFirstName] = useState("")
+  const [regLastName, setRegLastName] = useState("")
+  const [regRole, setRegRole] = useState<UserRole>("BUYER")
+  const [regCompanyName, setRegCompanyName] = useState("")
+  const [regVatId, setRegVatId] = useState("")
+  const [regIban, setRegIban] = useState("")
 
-  const resetForm = () => {
-    setFormData({
-      email: "",
-      password: "",
-      confirmPassword: "",
-      name: "",
-    })
+  // Forgot password
+  const [forgotEmail, setForgotEmail] = useState("")
+  const [forgotSubmitted, setForgotSubmitted] = useState(false)
+
+  const resetAll = () => {
+    setError("")
+    setLoginEmail("")
+    setLoginPassword("")
+    setRegEmail("")
+    setRegPassword("")
+    setRegConfirmPassword("")
+    setRegFirstName("")
+    setRegLastName("")
+    setRegRole("BUYER")
+    setRegCompanyName("")
+    setRegVatId("")
+    setRegIban("")
+    setForgotEmail("")
+    setForgotSubmitted(false)
     setShowPassword(false)
   }
 
-  const toggleMode = () => {
-    setIsLogin(!isLogin)
-    resetForm()
+  const switchView = (v: ModalView) => {
+    resetAll()
+    setView(v)
   }
+
+  // ── Login Handler ──────────────────────────────────────────────────
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    try {
+      await login({ email: loginEmail, password: loginPassword })
+      toast.success("Erfolgreich angemeldet!")
+      resetAll()
+      onClose()
+    } catch {
+      setError("Ungültige Anmeldedaten. Bitte versuchen Sie es erneut.")
+    }
+  }
+
+  // ── Register Handler ───────────────────────────────────────────────
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+
+    if (!isValidEmail(regEmail)) {
+      setError("Bitte geben Sie eine gültige E-Mail-Adresse ein.")
+      return
+    }
+
+    const { valid } = validatePassword(regPassword)
+    if (!valid) {
+      setError("Das Passwort erfüllt nicht alle Anforderungen.")
+      return
+    }
+
+    if (regPassword !== regConfirmPassword) {
+      setError("Die Passwörter stimmen nicht überein.")
+      return
+    }
+
+    if (regRole === "SELLER" && (!regCompanyName || !regVatId || !regIban)) {
+      setError("Bitte füllen Sie alle Verkäufer-Felder aus.")
+      return
+    }
+
+    try {
+      const dto =
+        regRole === "SELLER"
+          ? {
+              email: regEmail,
+              password: regPassword,
+              firstName: regFirstName,
+              lastName: regLastName,
+              role: "SELLER" as const,
+              companyName: regCompanyName,
+              vatId: regVatId,
+              iban: regIban,
+            }
+          : {
+              email: regEmail,
+              password: regPassword,
+              firstName: regFirstName,
+              lastName: regLastName,
+              role: "BUYER" as const,
+            }
+
+      await register(dto)
+      toast.success("Registrierung erfolgreich! Bitte überprüfen Sie Ihre E-Mails zur Verifizierung.")
+      resetAll()
+      onClose()
+    } catch {
+      setError("Registrierung fehlgeschlagen. Bitte versuchen Sie es erneut.")
+    }
+  }
+
+  // ── Forgot Password Handler ────────────────────────────────────────
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    // Simulate API call
+    await new Promise((r) => setTimeout(r, 600))
+    setForgotSubmitted(true)
+  }
+
+  const pwValidation = validatePassword(regPassword)
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md relative">
-        {/* Close Button */}
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md relative max-h-[90vh] overflow-y-auto">
+        {/* Close */}
         <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-          aria-label="Close modal"
+          onClick={() => { resetAll(); onClose() }}
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+          aria-label="Schliessen"
         >
-          <X className="w-6 h-6" />
+          <X className="w-5 h-5" />
         </button>
 
-        {/* Header */}
-        <div className="p-6 pb-4">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
-              <User className="w-4 h-4 text-white" />
+        {/* ── LOGIN VIEW ──────────────────────────────────────────── */}
+        {view === "login" && (
+          <div className="p-6">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800">Willkommen zurück</h2>
             </div>
-            <h2 className="text-2xl font-bold text-green-800">{isLogin ? "Welcome Back" : "Join EcoShop"}</h2>
-          </div>
-          <p className="text-green-600">
-            {isLogin
-              ? "Sign in to your account to continue shopping sustainably"
-              : "Create an account to start your sustainable shopping journey"}
-          </p>
-        </div>
+            <p className="text-slate-600 mb-6">Melden Sie sich an, um fortzufahren.</p>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="px-6 pb-6">
-          <div className="space-y-4">
-            {/* Name field for signup */}
-            {!isLogin && (
-              <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required={!isLogin}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                    placeholder="Enter your full name"
-                  />
-                </div>
+            {error && (
+              <div className="mb-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>{error}</span>
               </div>
             )}
 
-            {/* Email field */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                  placeholder="Enter your email"
-                />
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div>
+                <label htmlFor="login-email" className="block text-sm font-medium text-slate-700 mb-1">E-Mail</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <input
+                    id="login-email"
+                    type="email"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-800"
+                    placeholder="ihre@email.de"
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Password field */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              <div>
+                <label htmlFor="login-pw" className="block text-sm font-medium text-slate-700 mb-1">Passwort</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <input
+                    id="login-pw"
+                    type={showPassword ? "text" : "password"}
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    required
+                    className="w-full pl-10 pr-10 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-800"
+                    placeholder="Passwort"
+                  />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <button type="button" onClick={() => switchView("forgot")} className="text-sm text-teal-600 hover:text-teal-800">
+                  Passwort vergessen?
                 </button>
               </div>
-            </div>
 
-            {/* Confirm Password field for signup */}
-            {!isLogin && (
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    required={!isLogin}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-                    placeholder="Confirm your password"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Forgot Password Link (only for login) */}
-          {isLogin && (
-            <div className="text-right mt-2">
               <button
-                type="button"
-                className="text-sm text-green-600 hover:text-green-800 transition-colors"
-                onClick={() => alert("Forgot password functionality would be implemented here")}
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-teal-600 text-white py-2.5 rounded-lg font-medium hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
-                Forgot your password?
+                {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Anmeldung...</> : "Anmelden"}
               </button>
-            </div>
-          )}
+            </form>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className="w-full mt-6 bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
-          >
-            {isLogin ? "Sign In" : "Create Account"}
-          </button>
-
-          {/* Toggle between login and signup */}
-          <div className="text-center mt-4">
-            <p className="text-gray-600">
-              {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
-              <button
-                type="button"
-                onClick={toggleMode}
-                className="text-green-600 hover:text-green-800 font-medium transition-colors"
-              >
-                {isLogin ? "Sign up" : "Sign in"}
+            <p className="text-center mt-4 text-slate-600 text-sm">
+              {"Noch kein Konto? "}
+              <button onClick={() => switchView("register")} className="text-teal-600 hover:text-teal-800 font-medium">
+                Registrieren
               </button>
             </p>
           </div>
+        )}
 
-          {/* Social Login Options */}
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
+        {/* ── REGISTER VIEW ───────────────────────────────────────── */}
+        {view === "register" && (
+          <div className="p-6">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center">
+                <User className="w-4 h-4 text-white" />
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or continue with</span>
+              <h2 className="text-2xl font-bold text-slate-800">Konto erstellen</h2>
+            </div>
+            <p className="text-slate-600 mb-6">Starten Sie Ihre nachhaltige Reise.</p>
+
+            {error && (
+              <div className="mb-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>{error}</span>
               </div>
+            )}
+
+            <form onSubmit={handleRegister} className="space-y-4">
+              {/* Role selector */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Kontotyp</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setRegRole("BUYER")}
+                    className={`p-3 border-2 rounded-lg text-center transition-colors ${regRole === "BUYER" ? "border-teal-600 bg-teal-50 text-teal-700" : "border-slate-200 text-slate-600 hover:border-slate-300"}`}
+                  >
+                    <User className="w-5 h-5 mx-auto mb-1" />
+                    <span className="text-sm font-medium">Käufer</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setRegRole("SELLER")}
+                    className={`p-3 border-2 rounded-lg text-center transition-colors ${regRole === "SELLER" ? "border-teal-600 bg-teal-50 text-teal-700" : "border-slate-200 text-slate-600 hover:border-slate-300"}`}
+                  >
+                    <Building2 className="w-5 h-5 mx-auto mb-1" />
+                    <span className="text-sm font-medium">Verkäufer</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="reg-fn" className="block text-sm font-medium text-slate-700 mb-1">Vorname</label>
+                  <input id="reg-fn" type="text" value={regFirstName} onChange={(e) => setRegFirstName(e.target.value)} required className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-800" />
+                </div>
+                <div>
+                  <label htmlFor="reg-ln" className="block text-sm font-medium text-slate-700 mb-1">Nachname</label>
+                  <input id="reg-ln" type="text" value={regLastName} onChange={(e) => setRegLastName(e.target.value)} required className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-800" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="reg-email" className="block text-sm font-medium text-slate-700 mb-1">E-Mail</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <input id="reg-email" type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} required className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-800" placeholder="ihre@email.de" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="reg-pw" className="block text-sm font-medium text-slate-700 mb-1">Passwort</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <input id="reg-pw" type={showPassword ? "text" : "password"} value={regPassword} onChange={(e) => setRegPassword(e.target.value)} required className="w-full pl-10 pr-10 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-800" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {/* Inline password validation */}
+                {regPassword.length > 0 && (
+                  <ul className="mt-2 space-y-1">
+                    {pwValidation.results.map((r) => (
+                      <li key={r.label} className={`flex items-center gap-1.5 text-xs ${r.passed ? "text-emerald-600" : "text-slate-500"}`}>
+                        {r.passed ? <CheckCircle2 className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+                        {r.label}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="reg-cpw" className="block text-sm font-medium text-slate-700 mb-1">Passwort bestätigen</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <input id="reg-cpw" type={showPassword ? "text" : "password"} value={regConfirmPassword} onChange={(e) => setRegConfirmPassword(e.target.value)} required className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-800" />
+                </div>
+                {regConfirmPassword.length > 0 && regPassword !== regConfirmPassword && (
+                  <p className="mt-1 text-xs text-red-600 flex items-center gap-1"><XCircle className="w-3.5 h-3.5" /> Passwörter stimmen nicht überein</p>
+                )}
+              </div>
+
+              {/* SELLER fields */}
+              {regRole === "SELLER" && (
+                <div className="space-y-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-sm font-medium text-slate-700">Unternehmensdaten</p>
+                  <div>
+                    <label htmlFor="reg-company" className="block text-sm text-slate-600 mb-1">Firmenname</label>
+                    <input id="reg-company" type="text" value={regCompanyName} onChange={(e) => setRegCompanyName(e.target.value)} required className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-800" />
+                  </div>
+                  <div>
+                    <label htmlFor="reg-vat" className="block text-sm text-slate-600 mb-1">USt-IdNr.</label>
+                    <input id="reg-vat" type="text" value={regVatId} onChange={(e) => setRegVatId(e.target.value)} required placeholder="DE123456789" className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-800" />
+                  </div>
+                  <div>
+                    <label htmlFor="reg-iban" className="block text-sm text-slate-600 mb-1">IBAN</label>
+                    <input id="reg-iban" type="text" value={regIban} onChange={(e) => setRegIban(e.target.value)} required placeholder="DE89 3704 0044 0532 0130 00" className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-800" />
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-teal-600 text-white py-2.5 rounded-lg font-medium hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                {isLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Registrierung...</> : "Konto erstellen"}
+              </button>
+            </form>
+
+            <p className="text-center mt-4 text-slate-600 text-sm">
+              {"Bereits ein Konto? "}
+              <button onClick={() => switchView("login")} className="text-teal-600 hover:text-teal-800 font-medium">
+                Anmelden
+              </button>
+            </p>
+          </div>
+        )}
+
+        {/* ── FORGOT PASSWORD VIEW ────────────────────────────────── */}
+        {view === "forgot" && (
+          <div className="p-6">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center">
+                <Mail className="w-4 h-4 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-slate-800">Passwort vergessen</h2>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => alert("Google login would be implemented here")}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-                <span className="ml-2">Google</span>
-              </button>
+            {!forgotSubmitted ? (
+              <>
+                <p className="text-slate-600 mb-6">
+                  Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Link zum Zurücksetzen.
+                </p>
+                <form onSubmit={handleForgot} className="space-y-4">
+                  <div>
+                    <label htmlFor="forgot-email" className="block text-sm font-medium text-slate-700 mb-1">E-Mail</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                      <input id="forgot-email" type="email" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-800" placeholder="ihre@email.de" />
+                    </div>
+                  </div>
+                  <button type="submit" className="w-full bg-teal-600 text-white py-2.5 rounded-lg font-medium hover:bg-teal-700 transition-colors">
+                    Link senden
+                  </button>
+                </form>
+              </>
+            ) : (
+              <div className="mt-6 text-center">
+                <CheckCircle2 className="w-12 h-12 text-emerald-500 mx-auto mb-3" />
+                <p className="text-slate-700">
+                  Falls ein Konto mit dieser E-Mail existiert, haben wir Ihnen einen Link zum Zurücksetzen des Passworts gesendet.
+                </p>
+              </div>
+            )}
 
-              <button
-                type="button"
-                onClick={() => alert("Facebook login would be implemented here")}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                </svg>
-                <span className="ml-2">Facebook</span>
+            <div className="mt-6 text-center">
+              <button onClick={() => switchView("login")} className="text-sm text-teal-600 hover:text-teal-800 font-medium">
+                Zurück zur Anmeldung
               </button>
             </div>
           </div>
-        </form>
+        )}
       </div>
     </div>
   )

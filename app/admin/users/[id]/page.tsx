@@ -2,6 +2,6 @@
 
 import App from "@/src/App"
 
-export default function ProductPage() {
+export default function AdminUserDetailPage() {
   return <App />
 }

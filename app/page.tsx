@@ -1,5 +1,7 @@
-import SustainableShop from "@/src/components/SustainableShop"
+"use client"
+
+import App from "@/src/App"
 
 export default function Page() {
-  return <SustainableShop />
+  return <App />
 }
