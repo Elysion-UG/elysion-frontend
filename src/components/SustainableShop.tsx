@@ -1019,7 +1019,6 @@ export default function SustainableShop() {
           </div>
         </div>
       </div>
-    </div>
   )
 }
 
