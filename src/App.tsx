@@ -1,15 +1,21 @@
 import "./styles/globals.css"
+import { AuthProvider } from "./context/AuthContext"
+import { Toaster } from "sonner"
 import SustainableShop from "./components/SustainableShop"
 import ProductDetail from "./components/ProductDetail"
 import ProducerPage from "./components/ProducerPage"
 import Onboarding from "./components/Onboarding"
 import EmailVerification from "./components/EmailVerification"
+import ResetPassword from "./components/ResetPassword"
 import PageLayout from "./components/PageLayout"
 import Contact from "./components/Contact"
 import About from "./components/About"
 import SellerDashboard from "./components/SellerDashboard"
 import Praeferenzen from "./components/Praeferenzen"
 import Profil from "./components/Profil"
+import AdminUsers from "./components/AdminUsers"
+import AdminUserDetail from "./components/AdminUserDetail"
+import AuthGuard from "./components/AuthGuard"
 
 function App() {
   const currentPage = window.location.pathname
@@ -40,6 +46,12 @@ function App() {
             <EmailVerification />
           </PageLayout>
         )
+      case "/reset-password":
+        return (
+          <PageLayout>
+            <ResetPassword />
+          </PageLayout>
+        )
       case "/contact":
         return (
           <PageLayout>
@@ -55,40 +67,63 @@ function App() {
       case "/seller-dashboard":
         return (
           <PageLayout>
-            <SellerDashboard />
+            <AuthGuard requiredRoles={["SELLER"]}>
+              <SellerDashboard />
+            </AuthGuard>
           </PageLayout>
         )
       case "/praeferenzen":
         return (
           <PageLayout>
-            <Praeferenzen />
+            <AuthGuard>
+              <Praeferenzen />
+            </AuthGuard>
           </PageLayout>
         )
       case "/profil":
         return (
           <PageLayout>
-            <Profil />
+            <AuthGuard>
+              <Profil />
+            </AuthGuard>
           </PageLayout>
         )
-      case "/layout-example":
+      case "/admin/users":
         return (
           <PageLayout>
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-slate-800 mb-4">Page Content Area</h2>
-              <p className="text-slate-600">This is where you can add any components you want!</p>
-            </div>
+            <AuthGuard requiredRoles={["ADMIN"]}>
+              <AdminUsers />
+            </AuthGuard>
           </PageLayout>
         )
-      default:
+      default: {
+        // Handle /admin/users/:id
+        if (currentPage.startsWith("/admin/users/")) {
+          return (
+            <PageLayout>
+              <AuthGuard requiredRoles={["ADMIN"]}>
+                <AdminUserDetail />
+              </AuthGuard>
+            </PageLayout>
+          )
+        }
         return (
           <PageLayout>
             <SustainableShop />
           </PageLayout>
         )
+      }
     }
   }
 
-  return <div className="App">{renderPage()}</div>
+  return (
+    <AuthProvider>
+      <div className="App">
+        {renderPage()}
+        <Toaster position="bottom-right" richColors closeButton />
+      </div>
+    </AuthProvider>
+  )
 }
 
 export default App
