@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import {
   User, MapPin, CreditCard, Bell, Shield, ChevronDown, ChevronRight,
-  Plus, Edit2, Trash2, Star, Loader2, AlertTriangle,
+  Plus, Edit2, Trash2, Star, Loader2, AlertTriangle, Building2,
 } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
 import { UserService } from "@/src/services/user.service"
@@ -32,9 +32,16 @@ export default function Profil() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
 
+  // Company data state (for sellers)
+  const [companyName, setCompanyName] = useState("")
+  const [vatId, setVatId] = useState("")
+  const [iban, setIban] = useState("")
+  const [isSavingCompany, setIsSavingCompany] = useState(false)
+
   // Sections
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     personal: true,
+    company: false,
     address: false,
     payment: false,
     notifications: false,
@@ -53,6 +60,12 @@ export default function Profil() {
         setFirstName(u.firstName)
         setLastName(u.lastName)
         setPhone(u.phone ?? "")
+        // Load seller company data if available
+        if (u.sellerProfile) {
+          setCompanyName(u.sellerProfile.companyName)
+          setVatId(u.sellerProfile.vatId)
+          setIban(u.sellerProfile.iban)
+        }
       } catch {
         toast.error("Profil konnte nicht geladen werden.")
       } finally {
@@ -87,6 +100,21 @@ export default function Profil() {
       toast.error("Fehler beim Speichern.")
     } finally {
       setIsSavingProfile(false)
+    }
+  }
+
+  const handleSaveCompanyData = async () => {
+    setIsSavingCompany(true)
+    try {
+      const updated = await UserService.updateSellerProfile({ companyName, vatId, iban })
+      if (user && updated.sellerProfile) {
+        setUser({ ...user, sellerProfile: updated.sellerProfile })
+      }
+      toast.success("Firmendaten gespeichert!")
+    } catch {
+      toast.error("Fehler beim Speichern der Firmendaten.")
+    } finally {
+      setIsSavingCompany(false)
     }
   }
 
@@ -204,6 +232,74 @@ export default function Profil() {
             </div>
           )}
         </div>
+
+        {/* Firmendaten - nur für Seller */}
+        {user?.role === "SELLER" && (
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <SectionHeader id="company" icon={Building2} label="Firmendaten" />
+            {expandedSections.company && (
+              <div className="px-5 pb-5 space-y-4">
+                {isLoadingProfile ? (
+                  <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 text-teal-600 animate-spin" /></div>
+                ) : (
+                  <>
+                    {/* Seller Status Badge */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-sm font-medium text-slate-600">Status:</span>
+                      {user.sellerProfile?.status === "APPROVED" && (
+                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded">Verifiziert</span>
+                      )}
+                      {user.sellerProfile?.status === "PENDING" && (
+                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded">Prüfung ausstehend</span>
+                      )}
+                      {user.sellerProfile?.status === "REJECTED" && (
+                        <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded">Abgelehnt</span>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-600 mb-1">Firmenname</label>
+                      <input
+                        type="text"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-800"
+                        placeholder="Muster GmbH"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-600 mb-1">USt-IdNr. (VAT ID)</label>
+                      <input
+                        type="text"
+                        value={vatId}
+                        onChange={(e) => setVatId(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-800"
+                        placeholder="DE123456789"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-600 mb-1">IBAN</label>
+                      <input
+                        type="text"
+                        value={iban}
+                        onChange={(e) => setIban(e.target.value)}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 text-slate-800"
+                        placeholder="DE89 3704 0044 0532 0130 00"
+                      />
+                    </div>
+                    <button
+                      onClick={handleSaveCompanyData}
+                      disabled={isSavingCompany}
+                      className="mt-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 transition-colors flex items-center gap-2 text-sm font-medium"
+                    >
+                      {isSavingCompany ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern...</> : "Firmendaten speichern"}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Adressen */}
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">

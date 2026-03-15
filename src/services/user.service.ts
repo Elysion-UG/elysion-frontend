@@ -46,6 +46,26 @@ export const UserService = {
     await delay(800)
   },
 
+  async updateSellerProfile(data: { companyName: string; vatId: string; iban: string }): Promise<User> {
+    await delay()
+    return {
+      id: "usr_1",
+      email: "seller@email.de",
+      firstName: "Max",
+      lastName: "Mustermann",
+      phone: "+49 123 456789",
+      role: "SELLER",
+      status: "ACTIVE",
+      sellerProfile: {
+        companyName: data.companyName,
+        vatId: data.vatId,
+        iban: data.iban,
+        status: "APPROVED",
+      },
+      createdAt: "2024-01-15T10:00:00Z",
+    }
+  },
+
   // ── Values Profile ─────────────────────────────────────────────────
   async getValuesProfile(): Promise<ValuesProfile> {
     await delay()
