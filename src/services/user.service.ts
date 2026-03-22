@@ -77,7 +77,7 @@ export const UserService = {
         lastName: "Schmidt",
         role: "SELLER",
         status: "ACTIVE",
-        sellerProfile: { companyName: "GreenGoods GmbH", vatId: "DE123456789", iban: "DE89370400440532013000", status: "APPROVED" },
+        sellerProfile: { id: "sp_1", companyName: "GreenGoods GmbH", vatId: "DE123456789", iban: "DE89370400440532013000", status: "APPROVED" },
         createdAt: "2024-02-20T14:30:00Z",
       },
       {
@@ -87,7 +87,7 @@ export const UserService = {
         lastName: "Meier",
         role: "SELLER",
         status: "ACTIVE",
-        sellerProfile: { companyName: "EcoStyle", vatId: "DE987654321", iban: "DE02120300000000202051", status: "PENDING" },
+        sellerProfile: { id: "sp_2", companyName: "EcoStyle", vatId: "DE987654321", iban: "DE02120300000000202051", status: "PENDING" },
         createdAt: "2024-03-10T09:15:00Z",
       },
       {

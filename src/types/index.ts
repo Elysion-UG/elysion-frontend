@@ -16,10 +16,14 @@ export interface User {
 }
 
 export interface SellerProfile {
+  id: string
   companyName: string
-  vatId: string
-  iban: string
+  vatId?: string
+  iban?: string
   status: SellerStatus
+  rejectionReason?: string
+  approvedAt?: string
+  rejectedAt?: string
 }
 
 export interface AuthState {
@@ -110,11 +114,22 @@ export interface NoValuesProfile {
 export type ValuesProfile = NoValuesProfile | SimpleValuesProfile | ExtendedValuesProfile
 
 // ── Admin Types ────────────────────────────────────────────────────
+
+/** Frontend-shaped paginated response (used by components) */
 export interface PaginatedResponse<T> {
   data: T[]
   total: number
   page: number
   pageSize: number
+  totalPages: number
+}
+
+/** Backend-shaped paginated response envelope */
+export interface PagedResponse<T> {
+  items: T[]
+  page: number
+  size: number
+  totalElements: number
   totalPages: number
 }
 
@@ -124,4 +139,26 @@ export interface AdminUserListParams {
   search?: string
   role?: UserRole
   status?: AccountStatus
+}
+
+export interface AdminUserListItem {
+  id: string
+  email: string
+  role: UserRole
+  status: AccountStatus
+  emailVerified: boolean
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface AdminUserDetails extends AdminUserListItem {
+  firstName?: string
+  lastName?: string
+  phone?: string
+  sellerProfile?: SellerProfile & {
+    approvedBy?: string
+    rejectedBy?: string
+    createdAt: string
+    updatedAt: string
+  }
 }
