@@ -98,12 +98,7 @@ export default function SustainableShop() {
   }, [debouncedSearch, selectedCategoryId, sortBy])
 
   const handleProductClick = (product: ProductListItem) => {
-    const slug = (product as unknown as { slug?: string }).slug
-    if (slug) {
-      window.location.href = `/product?slug=${slug}`
-    } else {
-      window.location.href = `/product?id=${product.id}`
-    }
+    window.location.href = `/product?id=${product.id}`
   }
 
   return (

@@ -21,10 +21,10 @@
  *
  * Note on response styles:
  *   - Product list and internal UUID detail return raw objects (no ApiResponse wrapper)
- *     → apiRequest returns them as-is
+ *     → use apiRequestRaw (returns body as-is) instead of apiRequest (which extracts body.data)
  *   - All other endpoints return wrapped ApiResponse → apiRequest unwraps to data field
  */
-import { apiRequest } from "@/src/lib/api-client"
+import { apiRequest, apiRequestRaw } from "@/src/lib/api-client"
 import type {
   ProductPage,
   ProductListParams,
@@ -53,7 +53,7 @@ export const ProductService = {
     if (params.page !== undefined) query.set("page", String(params.page))
     if (params.size !== undefined) query.set("size", String(params.size))
     const qs = query.toString()
-    return apiRequest(`/api/v1/products${qs ? `?${qs}` : ""}`)
+    return apiRequestRaw(`/api/v1/products${qs ? `?${qs}` : ""}`)
   },
 
   async getBySlug(slug: string): Promise<ProductDetail> {

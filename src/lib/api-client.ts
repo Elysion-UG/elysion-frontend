@@ -76,6 +76,31 @@ export async function apiUpload<T>(path: string, formData: FormData): Promise<T>
   return body.data as T
 }
 
+// ── Raw request function (for endpoints that return unwrapped JSON, e.g. Spring Page) ──
+export async function apiRequestRaw<T>(
+  path: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...((options.headers as Record<string, string>) ?? {}),
+  }
+  if (_accessToken) {
+    headers["Authorization"] = `Bearer ${_accessToken}`
+  }
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers,
+    credentials: "include",
+  })
+  if (response.status === 204) return null as T
+  const body = await response.json()
+  if (!response.ok) {
+    throw new ApiError(response.status, body?.message ?? `Request failed (${response.status})`, body)
+  }
+  return body as T
+}
+
 // ── Core request function ─────────────────────────────────────────────────────
 export async function apiRequest<T>(
   path: string,
