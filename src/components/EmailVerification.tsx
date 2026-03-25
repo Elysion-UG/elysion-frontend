@@ -121,7 +121,7 @@ export default function EmailVerification() {
               </button>
 
               <button
-                onClick={handleBackToLogin}
+                onClick={() => handleBackToLogin()}
                 className="w-full border border-slate-300 text-slate-700 py-2.5 rounded-lg font-medium hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
               >
                 <ArrowLeft className="w-4 h-4" /> Zurück zur Startseite

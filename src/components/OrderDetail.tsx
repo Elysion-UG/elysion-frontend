@@ -152,10 +152,10 @@ export default function OrderDetail() {
                   {item.variantOptions?.length > 0 && (
                     <p className="text-xs text-slate-500">{item.variantOptions.map(o => `${o.name}: ${o.value}`).join(", ")}</p>
                   )}
-                  <p className="text-xs text-slate-500 mt-0.5">{item.quantity}× {formatEuro(item.unitPrice ?? (item as unknown as { unitPriceCents: number }).unitPriceCents / 100)}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{item.quantity}× {formatEuro(item.unitPriceCents / 100)}</p>
                 </div>
                 <span className="font-medium text-slate-800 text-sm whitespace-nowrap">
-                  {formatEuro(item.totalPrice ?? (item as unknown as { totalPriceCents: number }).totalPriceCents / 100)}
+                  {formatEuro(item.totalPriceCents / 100)}
                 </span>
               </div>
             ))}

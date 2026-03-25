@@ -50,7 +50,7 @@ function EndpointCard({
     <Card className="mb-4">
       <CardHeader className="pb-3">
         <CardTitle className="flex flex-wrap items-center gap-2 text-sm font-mono">
-          <span className={`px-2 py-0.5 rounded text-xs font-bold ${MC[method] ?? "bg-gray-100"}`}>{method}</span>
+          <span className={`px-2 py-0.5 rounded text-xs font-bold ${METHOD_COLORS[method] ?? "bg-gray-100"}`}>{method}</span>
           <span className="text-slate-700 break-all">{path}</span>
           <span className="ml-auto text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded shrink-0">{auth}</span>
         </CardTitle>
