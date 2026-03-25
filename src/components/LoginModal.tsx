@@ -4,6 +4,7 @@ import type React from "react"
 import { useState } from "react"
 import { X, Eye, EyeOff, Mail, Lock, User, Building2, Loader2, CheckCircle2, XCircle, AlertTriangle } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
+import { AuthService } from "@/src/services/auth.service"
 import type { UserRole } from "@/src/types"
 import { validatePassword, isValidEmail } from "@/src/lib/validation"
 import { toast } from "sonner"
@@ -137,8 +138,11 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    // Simulate API call
-    await new Promise((r) => setTimeout(r, 600))
+    try {
+      await AuthService.forgotPassword(forgotEmail)
+    } catch {
+      // Silently ignore errors — backend always returns 200 to prevent email enumeration
+    }
     setForgotSubmitted(true)
   }
 

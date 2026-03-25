@@ -1,6 +1,8 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import { AuthProvider } from "./context/AuthContext"
+import { CartProvider } from "./context/CartContext"
 import { Toaster } from "sonner"
 import SustainableShop from "./components/SustainableShop"
 import ProductDetail from "./components/ProductDetail"
@@ -16,23 +18,39 @@ import Praeferenzen from "./components/Praeferenzen"
 import Profil from "./components/Profil"
 import AdminUsers from "./components/AdminUsers"
 import AdminUserDetail from "./components/AdminUserDetail"
+import AdminSellers from "./components/AdminSellers"
+import AdminProducts from "./components/AdminProducts"
+import AdminOrders from "./components/AdminOrders"
+import AdminFinance from "./components/AdminFinance"
+import AdminCertificates from "./components/AdminCertificates"
+import SellerLogin from "./components/SellerLogin"
+import AdminLogin from "./components/AdminLogin"
 import AuthGuard from "./components/AuthGuard"
+import BuyerGuard from "./components/BuyerGuard"
+import Cart from "./components/Cart"
+import Checkout from "./components/Checkout"
+import Orders from "./components/Orders"
+import OrderDetail from "./components/OrderDetail"
 
 function App() {
-  const currentPage = typeof window !== "undefined" ? window.location.pathname : "/"
+  const currentPage = usePathname()
 
   const renderPage = () => {
     switch (currentPage) {
       case "/product":
         return (
           <PageLayout>
-            <ProductDetail />
+            <BuyerGuard>
+              <ProductDetail />
+            </BuyerGuard>
           </PageLayout>
         )
       case "/producer":
         return (
           <PageLayout>
-            <ProducerPage />
+            <BuyerGuard>
+              <ProducerPage />
+            </BuyerGuard>
           </PageLayout>
         )
       case "/onboarding":
@@ -76,9 +94,11 @@ function App() {
       case "/praeferenzen":
         return (
           <PageLayout>
-            <AuthGuard>
-              <Praeferenzen />
-            </AuthGuard>
+            <BuyerGuard>
+              <AuthGuard>
+                <Praeferenzen />
+              </AuthGuard>
+            </BuyerGuard>
           </PageLayout>
         )
       case "/profil":
@@ -89,6 +109,34 @@ function App() {
             </AuthGuard>
           </PageLayout>
         )
+      case "/cart":
+        return (
+          <PageLayout>
+            <BuyerGuard>
+              <Cart />
+            </BuyerGuard>
+          </PageLayout>
+        )
+      case "/checkout":
+        return (
+          <PageLayout>
+            <BuyerGuard>
+              <AuthGuard>
+                <Checkout />
+              </AuthGuard>
+            </BuyerGuard>
+          </PageLayout>
+        )
+      case "/orders":
+        return (
+          <PageLayout>
+            <BuyerGuard>
+              <AuthGuard>
+                <Orders />
+              </AuthGuard>
+            </BuyerGuard>
+          </PageLayout>
+        )
       case "/admin/users":
         return (
           <PageLayout>
@@ -97,7 +145,63 @@ function App() {
             </AuthGuard>
           </PageLayout>
         )
+      case "/admin/sellers":
+        return (
+          <PageLayout>
+            <AuthGuard requiredRoles={["ADMIN"]}>
+              <AdminSellers />
+            </AuthGuard>
+          </PageLayout>
+        )
+      case "/admin/products":
+        return (
+          <PageLayout>
+            <AuthGuard requiredRoles={["ADMIN"]}>
+              <AdminProducts />
+            </AuthGuard>
+          </PageLayout>
+        )
+      case "/admin/orders":
+        return (
+          <PageLayout>
+            <AuthGuard requiredRoles={["ADMIN"]}>
+              <AdminOrders />
+            </AuthGuard>
+          </PageLayout>
+        )
+      case "/admin/finance":
+        return (
+          <PageLayout>
+            <AuthGuard requiredRoles={["ADMIN"]}>
+              <AdminFinance />
+            </AuthGuard>
+          </PageLayout>
+        )
+      case "/admin/certificates":
+        return (
+          <PageLayout>
+            <AuthGuard requiredRoles={["ADMIN"]}>
+              <AdminCertificates />
+            </AuthGuard>
+          </PageLayout>
+        )
+      case "/login/seller":
+        return <SellerLogin />
+      case "/login/admin":
+        return <AdminLogin />
       default: {
+        // Handle /orders/:id
+        if (currentPage.startsWith("/orders/")) {
+          return (
+            <PageLayout>
+              <BuyerGuard>
+                <AuthGuard>
+                  <OrderDetail />
+                </AuthGuard>
+              </BuyerGuard>
+            </PageLayout>
+          )
+        }
         // Handle /admin/users/:id
         if (currentPage.startsWith("/admin/users/")) {
           return (
@@ -108,9 +212,12 @@ function App() {
             </PageLayout>
           )
         }
+        // Default: buyer shop homepage
         return (
           <PageLayout>
-            <SustainableShop />
+            <BuyerGuard>
+              <SustainableShop />
+            </BuyerGuard>
           </PageLayout>
         )
       }
@@ -119,10 +226,12 @@ function App() {
 
   return (
     <AuthProvider>
-      <div className="App">
-        {renderPage()}
-        <Toaster position="bottom-right" richColors closeButton />
-      </div>
+      <CartProvider>
+        <div className="App">
+          {renderPage()}
+          <Toaster position="bottom-right" richColors closeButton />
+        </div>
+      </CartProvider>
     </AuthProvider>
   )
 }

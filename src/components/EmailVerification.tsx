@@ -9,8 +9,6 @@ type VerifyStatus = "loading" | "success" | "error" | "awaiting"
 
 export default function EmailVerification() {
   const [status, setStatus] = useState<VerifyStatus>("awaiting")
-  const [isResending, setIsResending] = useState(false)
-  const [resendCount, setResendCount] = useState(0)
 
   // Extract token from search params
   useEffect(() => {
@@ -19,8 +17,8 @@ export default function EmailVerification() {
     if (token) {
       setStatus("loading")
       AuthService.verifyEmail(token)
-        .then((res) => {
-          setStatus(res.success ? "success" : "error")
+        .then(() => {
+          setStatus("success")
         })
         .catch(() => {
           setStatus("error")
@@ -29,21 +27,13 @@ export default function EmailVerification() {
   }, [])
 
   const handleResendEmail = async () => {
-    setIsResending(true)
-    try {
-      // Simulate resend
-      await new Promise((r) => setTimeout(r, 1500))
-      setResendCount((c) => c + 1)
-      toast.success("Verifizierungs-E-Mail wurde erneut gesendet!")
-    } catch {
-      toast.error("Fehler beim erneuten Senden.")
-    } finally {
-      setIsResending(false)
-    }
+    // TODO: Backend hat noch keinen Resend-Verification-Endpunkt.
+    // Sobald POST /api/v1/auth/resend-verification (o.ä.) existiert, hier einbinden.
+    toast.info("Bitte wenden Sie sich an den Support oder registrieren Sie sich erneut.")
   }
 
-  const handleBackToLogin = () => {
-    window.location.href = "/"
+  const handleBackToLogin = (openLogin = false) => {
+    window.location.href = openLogin ? "/?openLogin=true" : "/"
   }
 
   return (
@@ -67,7 +57,7 @@ export default function EmailVerification() {
             <h1 className="text-xl font-bold text-slate-800 mb-2">E-Mail verifiziert!</h1>
             <p className="text-slate-600 mb-6">Ihr Konto wurde erfolgreich verifiziert. Sie können sich jetzt anmelden.</p>
             <button
-              onClick={handleBackToLogin}
+              onClick={() => handleBackToLogin(true)}
               className="w-full bg-teal-600 text-white py-2.5 rounded-lg font-medium hover:bg-teal-700 transition-colors"
             >
               Zur Anmeldung
@@ -87,10 +77,9 @@ export default function EmailVerification() {
             </p>
             <button
               onClick={handleResendEmail}
-              disabled={isResending}
-              className="w-full bg-teal-600 text-white py-2.5 rounded-lg font-medium hover:bg-teal-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              className="w-full bg-teal-600 text-white py-2.5 rounded-lg font-medium hover:bg-teal-700 transition-colors flex items-center justify-center gap-2"
             >
-              {isResending ? <><Loader2 className="w-4 h-4 animate-spin" /> Senden...</> : <><RefreshCw className="w-4 h-4" /> Neuen Link anfordern</>}
+              <RefreshCw className="w-4 h-4" /> Neuen Link anfordern
             </button>
           </div>
         )}
@@ -126,17 +115,10 @@ export default function EmailVerification() {
             <div className="space-y-3">
               <button
                 onClick={handleResendEmail}
-                disabled={isResending}
-                className="w-full bg-teal-600 text-white py-2.5 rounded-lg font-medium hover:bg-teal-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-teal-600 text-white py-2.5 rounded-lg font-medium hover:bg-teal-700 transition-colors flex items-center justify-center gap-2"
               >
-                {isResending ? <><Loader2 className="w-4 h-4 animate-spin" /> Senden...</> : <><Mail className="w-4 h-4" /> Erneut senden</>}
+                <Mail className="w-4 h-4" /> Erneut senden
               </button>
-
-              {resendCount > 0 && (
-                <p className="text-center text-sm text-teal-600">
-                  E-Mail gesendet! ({resendCount}x)
-                </p>
-              )}
 
               <button
                 onClick={handleBackToLogin}

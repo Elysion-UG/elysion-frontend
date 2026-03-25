@@ -50,7 +50,8 @@ export default function AdminUserDetail() {
     if (!user?.sellerProfile) return
     setIsUpdating(true)
     try {
-      await UserService.updateSellerStatus(user.id, action)
+      // Use the seller profile's own ID (not the user ID) for admin seller endpoints
+      await UserService.updateSellerStatus(user.sellerProfile.id, action)
       setUser({
         ...user,
         sellerProfile: { ...user.sellerProfile, status: action },

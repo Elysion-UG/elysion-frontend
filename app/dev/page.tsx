@@ -125,9 +125,8 @@ export default function DevIndexPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-5xl mx-auto px-4 py-12">
-        {/* Header */}
         <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-slate-800 mb-2">🛠 API Test Playground</h1>
+          <h1 className="text-4xl font-bold text-slate-800 mb-2">API Test Playground</h1>
           <p className="text-lg text-slate-500">Direkter Test aller Backend-Endpunkte</p>
           <p className="text-sm text-slate-400 mt-1">
             Backend:{" "}
@@ -137,7 +136,6 @@ export default function DevIndexPage() {
           </p>
         </div>
 
-        {/* Warning */}
         <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-8 text-sm text-amber-800">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           <span>
@@ -146,7 +144,6 @@ export default function DevIndexPage() {
           </span>
         </div>
 
-        {/* Domain Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {domains.map((d) => {
             const Icon = d.icon
@@ -155,7 +152,7 @@ export default function DevIndexPage() {
                 <Card className={`border ${d.color} hover:shadow-md transition-shadow cursor-pointer h-full`}>
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-3 text-base">
-                      <div className={`p-2 rounded-lg bg-white border ${d.color}`}>
+                      <div className="p-2 rounded-lg bg-white">
                         <Icon className={`w-5 h-5 ${d.iconColor}`} />
                       </div>
                       <div>

@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { ChevronDown, ChevronRight, Star, Leaf, Recycle, Heart, Shield, Globe, Cpu, Loader2 } from "lucide-react"
-import type { ValuesProfileType, ValuesProfile } from "@/src/types"
-import { UserService } from "@/src/services/user.service"
+import type { ValuesProfileType } from "@/src/types"
+import { useAuth } from "@/src/context/AuthContext"
+import { BuyerValueProfileService } from "@/src/services/buyer-value-profile.service"
+import { ApiError } from "@/src/lib/api-client"
 import { toast } from "sonner"
 
 // Exactly 7 categories as per Module 01 spec
@@ -39,53 +41,55 @@ const CATEGORIES = [
   ]},
 ]
 
+const defaultSimpleWeights = (): Record<string, number> => {
+  const init: Record<string, number> = {}
+  CATEGORIES.forEach((c) => { init[c.id] = 50 })
+  return init
+}
+
+const defaultExtendedWeights = (): Record<string, Record<string, number>> => {
+  const init: Record<string, Record<string, number>> = {}
+  CATEGORIES.forEach((c) => {
+    init[c.id] = {}
+    c.subs.forEach((s) => { init[c.id][s.id] = 50 })
+  })
+  return init
+}
+
 export default function Praeferenzen() {
+  const { user } = useAuth()
   const [profileType, setProfileType] = useState<ValuesProfileType>("none")
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
+  const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
+  const [simpleWeights, setSimpleWeights] = useState<Record<string, number>>(defaultSimpleWeights)
+  const [extendedWeights, setExtendedWeights] = useState<Record<string, Record<string, number>>>(defaultExtendedWeights)
 
-  // Simple mode: one weight per category
-  const [simpleWeights, setSimpleWeights] = useState<Record<string, number>>(() => {
-    const init: Record<string, number> = {}
-    CATEGORIES.forEach((c) => { init[c.id] = 50 })
-    return init
-  })
-
-  // Extended mode: weight per subcategory
-  const [extendedWeights, setExtendedWeights] = useState<Record<string, Record<string, number>>>(() => {
-    const init: Record<string, Record<string, number>> = {}
-    CATEGORIES.forEach((c) => {
-      init[c.id] = {}
-      c.subs.forEach((s) => { init[c.id][s.id] = 50 })
-    })
-    return init
-  })
-
-  // Load existing profile
   useEffect(() => {
     async function load() {
       try {
-        const profile = await UserService.getValuesProfile()
-        if (profile.type === "simple") {
-          setProfileType("simple")
-          setSimpleWeights((prev) => ({ ...prev, ...profile.categories }))
-        } else if (profile.type === "extended") {
-          setProfileType("extended")
+        const profile = await BuyerValueProfileService.get()
+        setProfileType(profile.activeProfileType)
+        if (profile.simpleProfile) {
+          setSimpleWeights((prev) => ({ ...prev, ...profile.simpleProfile }))
+        }
+        if (profile.extendedProfile) {
           setExtendedWeights((prev) => {
             const next = { ...prev }
-            for (const [catId, subs] of Object.entries(profile.categories)) {
-              next[catId] = { ...next[catId], ...subs }
+            for (const catId of Object.keys(profile.extendedProfile!)) {
+              next[catId] = { ...(prev[catId] ?? {}), ...profile.extendedProfile![catId] }
             }
             return next
           })
-        } else {
-          setProfileType("none")
         }
-      } catch {
-        // Ignore — use defaults
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 404) {
+          // No profile yet — defaults remain
+        } else {
+          toast.error("Profil konnte nicht geladen werden.")
+        }
       } finally {
-        setIsLoadingProfile(false)
+        setIsLoading(false)
       }
     }
     load()
@@ -98,27 +102,23 @@ export default function Praeferenzen() {
   const handleSave = async () => {
     setIsSaving(true)
     try {
-      let payload: ValuesProfile
-      if (profileType === "none") {
-        payload = { type: "none" }
-      } else if (profileType === "simple") {
-        payload = { type: "simple", categories: simpleWeights }
-      } else {
-        payload = { type: "extended", categories: extendedWeights }
-      }
-      await UserService.saveValuesProfile(payload)
-      toast.success("Präferenzen gespeichert!")
-    } catch {
-      toast.error("Fehler beim Speichern der Präferenzen.")
+      await BuyerValueProfileService.upsert({
+        activeProfileType: profileType,
+        simpleProfile: profileType === "simple" ? simpleWeights : null,
+        extendedProfile: profileType === "extended" ? extendedWeights : null,
+      })
+      toast.success("Präferenzen gespeichert.")
+    } catch (e) {
+      toast.error("Fehler beim Speichern.")
     } finally {
       setIsSaving(false)
     }
   }
 
-  if (isLoadingProfile) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[40vh]">
-        <Loader2 className="w-8 h-8 text-teal-600 animate-spin" />
+      <div className="max-w-4xl mx-auto flex justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
       </div>
     )
   }

@@ -7,30 +7,47 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import Link from "next/link"
+import { apiRequest, setAccessToken } from "@/src/lib/api-client"
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"
-const MC: Record<string, string> = { GET: "bg-blue-100 text-blue-800", POST: "bg-green-100 text-green-800", PATCH: "bg-yellow-100 text-yellow-800" }
-
-async function call(method: string, path: string, body?: unknown, token?: string) {
-  const headers: Record<string, string> = { "Content-Type": "application/json" }
-  if (token) headers["Authorization"] = `Bearer ${token}`
-  const res = await fetch(`${API}${path}`, { method, headers, credentials: "include", body: body !== undefined ? JSON.stringify(body) : undefined })
-  const text = await res.text()
-  try { return { status: res.status, data: JSON.parse(text) } } catch { return { status: res.status, data: text } }
+const MC: Record<string, string> = {
+  GET: "bg-blue-100 text-blue-800",
+  POST: "bg-green-100 text-green-800",
+  PATCH: "bg-yellow-100 text-yellow-800",
 }
 
-function EC({ method, path, auth, description, children, onExecute }: { method: string; path: string; auth: string; description: string; children?: React.ReactNode; onExecute: () => Promise<unknown> }) {
+function EC({
+  method, path, auth, description, children, onExecute,
+}: {
+  method: string
+  path: string
+  auth: string
+  description: string
+  children?: React.ReactNode
+  onExecute: () => Promise<unknown>
+}) {
   const [loading, setLoading] = useState(false)
   const [response, setResponse] = useState<unknown>(null)
+  const [isError, setIsError] = useState(false)
+
   const execute = async () => {
     setLoading(true)
-    try { setResponse(await onExecute()); toast.success("OK") }
-    catch (e: unknown) { const m = e instanceof Error ? e.message : String(e); setResponse({ error: m }); toast.error(m) }
-    finally { setLoading(false) }
+    setIsError(false)
+    try {
+      const result = await onExecute()
+      setResponse(result)
+      toast.success("OK")
+    } catch (e: unknown) {
+      const m = e instanceof Error ? e.message : String(e)
+      setResponse({ error: m })
+      setIsError(true)
+      toast.error(m)
+    } finally {
+      setLoading(false)
+    }
   }
+
   return (
     <Card className="mb-4">
       <CardHeader className="pb-3">
@@ -46,112 +63,274 @@ function EC({ method, path, auth, description, children, onExecute }: { method: 
         <Button size="sm" onClick={execute} disabled={loading} className="bg-teal-600 hover:bg-teal-700">
           {loading && <Loader2 className="w-3 h-3 animate-spin mr-1" />} Execute
         </Button>
-        {response !== null && <pre className="mt-2 p-3 bg-slate-50 border rounded text-xs overflow-auto max-h-60 whitespace-pre-wrap">{JSON.stringify(response, null, 2)}</pre>}
+        {response !== null && (
+          <pre className={`mt-2 p-3 border rounded text-xs overflow-auto max-h-60 whitespace-pre-wrap ${isError ? "bg-red-50 border-red-200 text-red-800" : "bg-slate-50"}`}>
+            {JSON.stringify(response, null, 2)}
+          </pre>
+        )}
       </CardContent>
     </Card>
+  )
+}
+
+function SectionHeader({ title }: { title: string }) {
+  return (
+    <h2 className="text-base font-semibold text-slate-700 mt-8 mb-3 pb-1 border-b border-slate-200">{title}</h2>
   )
 }
 
 export default function DevOrdersPage() {
   const [token, setToken] = useState("")
 
-  // Buyer
+  // Buyer Orders
+  const [buyerPage, setBuyerPage] = useState("0")
+  const [buyerSize, setBuyerSize] = useState("10")
+  const [buyerStatus, setBuyerStatus] = useState("")
   const [buyerOrderId, setBuyerOrderId] = useState("")
 
-  // Seller order groups
+  // Seller Orders
+  const [sellerPage, setSellerPage] = useState("0")
+  const [sellerSize, setSellerSize] = useState("10")
+  const [sellerStatus, setSellerStatus] = useState("")
   const [sellerOrderGroupId, setSellerOrderGroupId] = useState("")
   const [orderStatus, setOrderStatus] = useState("PROCESSING")
   const [trackingNumber, setTrackingNumber] = useState("")
   const [carrier, setCarrier] = useState("")
+
+  // Settlements
+  const [settlPage, setSettlPage] = useState("0")
+  const [settlSize, setSettlSize] = useState("10")
+
+  const applyToken = () => {
+    setAccessToken(token || null)
+  }
+
+  function buildQuery(params: Record<string, string | number | undefined>) {
+    const q = new URLSearchParams()
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined && v !== "") q.set(k, String(v))
+    }
+    const s = q.toString()
+    return s ? `?${s}` : ""
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
       <Toaster position="bottom-right" richColors />
       <div className="max-w-3xl mx-auto px-4 py-8">
         <Link href="/dev" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-6">
-          <ArrowLeft className="w-4 h-4" /> Zurück
+          <ArrowLeft className="w-4 h-4" /> Back to Dev Index
         </Link>
-        <h1 className="text-2xl font-bold text-slate-800 mb-1">Orders API Test</h1>
-        <p className="text-sm text-slate-500 mb-6">Käufer-Bestellungen, Seller-OrderGroups, Versand, Auszahlungen</p>
+        <h1 className="text-2xl font-bold text-slate-800 mb-1">Orders Endpoints</h1>
+        <p className="text-sm text-slate-500 mb-6">Buyer orders, seller order groups, shipping, settlements</p>
 
         <Card className="mb-6 border-teal-200 bg-teal-50">
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Bearer Token</CardTitle></CardHeader>
-          <CardContent>
-            <Input value={token} onChange={e => setToken(e.target.value)} placeholder="eyJhbGci..." className="font-mono text-xs bg-white" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Bearer Token</CardTitle>
+          </CardHeader>
+          <CardContent className="flex gap-2">
+            <Input
+              value={token}
+              onChange={e => setToken(e.target.value)}
+              placeholder="eyJhbGci..."
+              className="font-mono text-xs bg-white"
+            />
+            <Button size="sm" variant="outline" onClick={applyToken} className="shrink-0">
+              Apply
+            </Button>
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="buyer">
-          <TabsList className="mb-4">
-            <TabsTrigger value="buyer">Käufer</TabsTrigger>
-            <TabsTrigger value="seller">Seller</TabsTrigger>
-            <TabsTrigger value="settlements">Auszahlungen</TabsTrigger>
-          </TabsList>
+        {/* ── Buyer Orders ─────────────────────────────────────── */}
+        <SectionHeader title="Buyer Orders" />
 
-          <TabsContent value="buyer">
-            <EC method="GET" path="/api/v1/orders" auth="BUYER" description="Alle eigenen Bestellungen abrufen"
-              onExecute={() => call("GET", "/api/v1/orders", undefined, token)} />
+        <EC
+          method="GET"
+          path="/api/v1/orders"
+          auth="BUYER"
+          description="List the authenticated buyer's orders. Supports pagination and optional status filter."
+          onExecute={() => {
+            applyToken()
+            return apiRequest(`/api/v1/orders${buildQuery({ page: buyerPage, size: buyerSize, status: buyerStatus || undefined })}`)
+          }}
+        >
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <Label className="text-xs">page</Label>
+              <Input type="number" min="0" value={buyerPage} onChange={e => setBuyerPage(e.target.value)} className="h-8 text-xs" />
+            </div>
+            <div>
+              <Label className="text-xs">size</Label>
+              <Input type="number" min="1" value={buyerSize} onChange={e => setBuyerSize(e.target.value)} className="h-8 text-xs" />
+            </div>
+            <div>
+              <Label className="text-xs">status (optional)</Label>
+              <Input value={buyerStatus} onChange={e => setBuyerStatus(e.target.value)} placeholder="e.g. PAID" className="h-8 text-xs" />
+            </div>
+          </div>
+        </EC>
 
-            <Card className="mb-4 border-slate-200">
-              <CardContent className="pt-4">
-                <Label className="text-xs font-semibold">Order-ID</Label>
-                <Input value={buyerOrderId} onChange={e => setBuyerOrderId(e.target.value)} placeholder="UUID der Bestellung" className="h-8 text-xs mt-1" />
-              </CardContent>
-            </Card>
+        <EC
+          method="GET"
+          path="/api/v1/orders/{id}"
+          auth="BUYER"
+          description="Get full order detail including items, shipping address, and payment status."
+          onExecute={() => {
+            applyToken()
+            return apiRequest(`/api/v1/orders/${buyerOrderId}`)
+          }}
+        >
+          <div>
+            <Label className="text-xs">id</Label>
+            <Input value={buyerOrderId} onChange={e => setBuyerOrderId(e.target.value)} placeholder="UUID" className="h-8 text-xs" />
+          </div>
+        </EC>
 
-            <EC method="GET" path="/api/v1/orders/{id}" auth="BUYER" description="Einzelne Bestellung abrufen"
-              onExecute={() => call("GET", `/api/v1/orders/${buyerOrderId}`, undefined, token)} />
-          </TabsContent>
+        {/* ── Seller Orders ─────────────────────────────────────── */}
+        <SectionHeader title="Seller Orders" />
 
-          <TabsContent value="seller">
-            <EC method="GET" path="/api/v1/seller/orders" auth="SELLER" description="Alle Seller-Bestellgruppen abrufen"
-              onExecute={() => call("GET", "/api/v1/seller/orders", undefined, token)} />
+        <EC
+          method="GET"
+          path="/api/v1/seller/orders"
+          auth="SELLER"
+          description="List the seller's order groups. Supports pagination and optional status filter."
+          onExecute={() => {
+            applyToken()
+            return apiRequest(`/api/v1/seller/orders${buildQuery({ page: sellerPage, size: sellerSize, status: sellerStatus || undefined })}`)
+          }}
+        >
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <Label className="text-xs">page</Label>
+              <Input type="number" min="0" value={sellerPage} onChange={e => setSellerPage(e.target.value)} className="h-8 text-xs" />
+            </div>
+            <div>
+              <Label className="text-xs">size</Label>
+              <Input type="number" min="1" value={sellerSize} onChange={e => setSellerSize(e.target.value)} className="h-8 text-xs" />
+            </div>
+            <div>
+              <Label className="text-xs">status (optional)</Label>
+              <Input value={sellerStatus} onChange={e => setSellerStatus(e.target.value)} placeholder="e.g. PROCESSING" className="h-8 text-xs" />
+            </div>
+          </div>
+        </EC>
 
-            <Card className="mb-4 border-slate-200">
-              <CardContent className="pt-4">
-                <Label className="text-xs font-semibold">OrderGroup-ID (für alle folgenden Endpunkte)</Label>
-                <Input value={sellerOrderGroupId} onChange={e => setSellerOrderGroupId(e.target.value)} placeholder="UUID der OrderGroup" className="h-8 text-xs mt-1" />
-              </CardContent>
-            </Card>
+        <Card className="mb-4 border-slate-200">
+          <CardContent className="pt-4">
+            <Label className="text-xs font-semibold">OrderGroup ID (used for all endpoints below)</Label>
+            <Input
+              value={sellerOrderGroupId}
+              onChange={e => setSellerOrderGroupId(e.target.value)}
+              placeholder="UUID of the order group"
+              className="h-8 text-xs mt-1"
+            />
+          </CardContent>
+        </Card>
 
-            <EC method="GET" path="/api/v1/seller/orders/{id}" auth="SELLER" description="Einzelne Bestellgruppe abrufen"
-              onExecute={() => call("GET", `/api/v1/seller/orders/${sellerOrderGroupId}`, undefined, token)} />
+        <EC
+          method="GET"
+          path="/api/v1/seller/orders/{id}"
+          auth="SELLER"
+          description="Get seller order group detail."
+          onExecute={() => {
+            applyToken()
+            return apiRequest(`/api/v1/seller/orders/${sellerOrderGroupId}`)
+          }}
+        />
 
-            <EC method="PATCH" path="/api/v1/seller/orders/{id}/status" auth="SELLER" description="Status der Bestellgruppe aktualisieren"
-              onExecute={() => call("PATCH", `/api/v1/seller/orders/${sellerOrderGroupId}/status`, { status: orderStatus }, token)}>
-              <div>
-                <Label className="text-xs">Neuer Status</Label>
-                <Select value={orderStatus} onValueChange={setOrderStatus}>
-                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"].map(s =>
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            </EC>
+        <EC
+          method="PATCH"
+          path="/api/v1/seller/orders/{id}/status"
+          auth="SELLER"
+          description="Update the status of an order group."
+          onExecute={() => {
+            applyToken()
+            return apiRequest(`/api/v1/seller/orders/${sellerOrderGroupId}/status`, {
+              method: "PATCH",
+              body: JSON.stringify({ status: orderStatus }),
+            })
+          }}
+        >
+          <div>
+            <Label className="text-xs">status</Label>
+            <Select value={orderStatus} onValueChange={setOrderStatus}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {["PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"].map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </EC>
 
-            <EC method="POST" path="/api/v1/seller/orders/{id}/ship" auth="SELLER" description="Bestellung als versendet markieren"
-              onExecute={() => call("POST", `/api/v1/seller/orders/${sellerOrderGroupId}/ship`, {
+        <EC
+          method="POST"
+          path="/api/v1/seller/orders/{id}/ship"
+          auth="SELLER"
+          description="Mark the order group as shipped. Tracking number and carrier are optional."
+          onExecute={() => {
+            applyToken()
+            return apiRequest(`/api/v1/seller/orders/${sellerOrderGroupId}/ship`, {
+              method: "POST",
+              body: JSON.stringify({
                 ...(trackingNumber ? { trackingNumber } : {}),
                 ...(carrier ? { carrier } : {}),
-              }, token)}>
-              <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-xs">Tracking-Nummer (optional)</Label><Input value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="1Z999AA10123456784" className="h-8 text-xs" /></div>
-                <div><Label className="text-xs">Carrier (optional)</Label><Input value={carrier} onChange={e => setCarrier(e.target.value)} placeholder="DHL, UPS, ..." className="h-8 text-xs" /></div>
-              </div>
-            </EC>
+              }),
+            })
+          }}
+        >
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">trackingNumber (optional)</Label>
+              <Input value={trackingNumber} onChange={e => setTrackingNumber(e.target.value)} placeholder="1Z999AA10123456784" className="h-8 text-xs" />
+            </div>
+            <div>
+              <Label className="text-xs">carrier (optional)</Label>
+              <Input value={carrier} onChange={e => setCarrier(e.target.value)} placeholder="DHL, UPS, ..." className="h-8 text-xs" />
+            </div>
+          </div>
+        </EC>
 
-            <EC method="POST" path="/api/v1/seller/orders/{id}/deliver" auth="SELLER" description="Bestellung als zugestellt markieren"
-              onExecute={() => call("POST", `/api/v1/seller/orders/${sellerOrderGroupId}/deliver`, {}, token)} />
-          </TabsContent>
+        <EC
+          method="POST"
+          path="/api/v1/seller/orders/{id}/deliver"
+          auth="SELLER"
+          description="Mark the order group as delivered. No request body required."
+          onExecute={() => {
+            applyToken()
+            return apiRequest(`/api/v1/seller/orders/${sellerOrderGroupId}/deliver`, {
+              method: "POST",
+            })
+          }}
+        />
 
-          <TabsContent value="settlements">
-            <EC method="GET" path="/api/v1/seller/settlements" auth="SELLER" description="Eigene Auszahlungen abrufen"
-              onExecute={() => call("GET", "/api/v1/seller/settlements", undefined, token)} />
-          </TabsContent>
-        </Tabs>
+        {/* ── Seller Settlements ───────────────────────────────── */}
+        <SectionHeader title="Seller Settlements" />
+
+        <EC
+          method="GET"
+          path="/api/v1/seller/settlements"
+          auth="SELLER"
+          description="Get the seller's settlements. Returns paged list with id, amountCents, currency, status, createdAt."
+          onExecute={() => {
+            applyToken()
+            return apiRequest(`/api/v1/seller/settlements${buildQuery({ page: settlPage, size: settlSize })}`)
+          }}
+        >
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">page</Label>
+              <Input type="number" min="0" value={settlPage} onChange={e => setSettlPage(e.target.value)} className="h-8 text-xs" />
+            </div>
+            <div>
+              <Label className="text-xs">size</Label>
+              <Input type="number" min="1" value={settlSize} onChange={e => setSettlSize(e.target.value)} className="h-8 text-xs" />
+            </div>
+          </div>
+        </EC>
       </div>
     </div>
   )

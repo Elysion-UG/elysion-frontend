@@ -1,60 +1,75 @@
 /**
- * AuthService — abstract service layer for authentication.
- * All methods simulate async API calls. Replace the bodies
- * with real fetch/axios calls when the backend is ready.
+ * AuthService — real API calls to the backend authentication endpoints.
+ *
+ * Endpoints (base: /api/v1/auth):
+ *   POST /register          — register BUYER or SELLER
+ *   POST /login             — returns accessToken in JSON + refreshToken as HttpOnly cookie
+ *   POST /refresh           — rotates refresh token (cookie), returns new accessToken
+ *   POST /logout            — revokes refresh token, clears cookie
+ *   POST /verify-email      — verify email with one-time token
+ *   POST /forgot-password   — trigger password reset email (always 200 to prevent enumeration)
+ *   POST /reset-password    — set new password with reset token
  */
-import type { LoginDTO, LoginResponse, RegisterDTO, User } from "@/src/types"
-
-const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms))
+import { apiRequest } from "@/src/lib/api-client"
+import type { LoginDTO, RegisterDTO, TokensResponse } from "@/src/types"
 
 export const AuthService = {
-  async login(dto: LoginDTO): Promise<LoginResponse> {
-    await delay()
-    // Simulate: on success, return a mock user + token
-    const user: User = {
-      id: "usr_1",
-      email: dto.email,
-      firstName: "Max",
-      lastName: "Mustermann",
-      phone: "+49 123 456789",
-      role: "BUYER",
-      status: "ACTIVE",
-      createdAt: new Date().toISOString(),
-    }
-    return { token: "mock-jwt-token", user }
+  async register(dto: RegisterDTO): Promise<{ userId: string; email: string }> {
+    return apiRequest("/api/v1/auth/register", {
+      method: "POST",
+      body: JSON.stringify(dto),
+    })
   },
 
-  async register(dto: RegisterDTO): Promise<void> {
-    await delay(800)
-    // Simulate successful registration — backend sends verification email
-    void dto
+  async login(dto: LoginDTO): Promise<TokensResponse> {
+    return apiRequest("/api/v1/auth/login", {
+      method: "POST",
+      body: JSON.stringify(dto),
+    })
   },
 
-  async verifyEmail(token: string): Promise<{ success: boolean }> {
-    await delay()
-    void token
-    return { success: true }
+  /**
+   * Uses the HttpOnly refreshToken cookie automatically (credentials: 'include').
+   * Returns a new access token and rotates the refresh cookie.
+   */
+  async refresh(): Promise<TokensResponse> {
+    return apiRequest("/api/v1/auth/refresh", {
+      method: "POST",
+      body: "{}",
+    })
   },
 
+  /**
+   * Revokes the current refresh token and clears the HttpOnly cookie.
+   */
+  async logout(): Promise<void> {
+    return apiRequest("/api/v1/auth/logout", {
+      method: "POST",
+      body: "{}",
+    })
+  },
+
+  async verifyEmail(token: string): Promise<void> {
+    return apiRequest("/api/v1/auth/verify-email", {
+      method: "POST",
+      body: JSON.stringify({ token }),
+    })
+  },
+
+  /**
+   * Always responds 200 to prevent email enumeration.
+   */
   async forgotPassword(email: string): Promise<void> {
-    await delay()
-    void email
-    // Always resolves — generic response to prevent email enumeration
+    return apiRequest("/api/v1/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    })
   },
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    await delay()
-    void token
-    void newPassword
-  },
-
-  async refreshToken(currentToken: string): Promise<{ token: string }> {
-    await delay(300)
-    void currentToken
-    return { token: "refreshed-mock-jwt-token" }
-  },
-
-  async logout(): Promise<void> {
-    await delay(200)
+    return apiRequest("/api/v1/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, newPassword }),
+    })
   },
 }

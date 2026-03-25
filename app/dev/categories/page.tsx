@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
 import Link from "next/link"
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"
@@ -37,12 +36,22 @@ function EndpointCard({ method, path, auth, description, children, onExecute }: 
 }) {
   const [loading, setLoading] = useState(false)
   const [response, setResponse] = useState<unknown>(null)
+
   const execute = async () => {
     setLoading(true)
-    try { const r = await onExecute(); setResponse(r); toast.success("OK") }
-    catch (e: unknown) { const m = e instanceof Error ? e.message : String(e); setResponse({ error: m }); toast.error(m) }
-    finally { setLoading(false) }
+    try {
+      const r = await onExecute()
+      setResponse(r)
+      toast.success("Request sent")
+    } catch (e: unknown) {
+      const m = e instanceof Error ? e.message : String(e)
+      setResponse({ error: m })
+      toast.error(m)
+    } finally {
+      setLoading(false)
+    }
   }
+
   return (
     <Card className="mb-4">
       <CardHeader className="pb-3">
@@ -59,7 +68,7 @@ function EndpointCard({ method, path, auth, description, children, onExecute }: 
           {loading && <Loader2 className="w-3 h-3 animate-spin mr-1" />} Execute
         </Button>
         {response !== null && (
-          <pre className="mt-2 p-3 bg-slate-50 border rounded text-xs overflow-auto max-h-60 whitespace-pre-wrap">
+          <pre className="mt-3 p-3 bg-slate-50 rounded text-xs overflow-auto max-h-60 whitespace-pre-wrap">
             {JSON.stringify(response, null, 2)}
           </pre>
         )}
@@ -70,95 +79,146 @@ function EndpointCard({ method, path, auth, description, children, onExecute }: 
 
 export default function DevCategoriesPage() {
   const [token, setToken] = useState("")
+
+  // Create
   const [createName, setCreateName] = useState("")
   const [createSlug, setCreateSlug] = useState("")
   const [createParentId, setCreateParentId] = useState("")
   const [createDesc, setCreateDesc] = useState("")
-  const [createOrder, setCreateOrder] = useState("0")
+
+  // Update
   const [updateId, setUpdateId] = useState("")
   const [updateName, setUpdateName] = useState("")
   const [updateSlug, setUpdateSlug] = useState("")
-  const [updateActive, setUpdateActive] = useState(true)
-  const [toggleId, setToggleId] = useState("")
+  const [updateDesc, setUpdateDesc] = useState("")
+
+  // Deactivate / Activate (separate IDs)
+  const [deactivateId, setDeactivateId] = useState("")
+  const [activateId, setActivateId] = useState("")
 
   return (
     <div className="min-h-screen bg-slate-50">
       <Toaster position="bottom-right" richColors />
       <div className="max-w-3xl mx-auto px-4 py-8">
         <Link href="/dev" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-6">
-          <ArrowLeft className="w-4 h-4" /> Zurück
+          <ArrowLeft className="w-4 h-4" /> Back to Dev Index
         </Link>
-        <h1 className="text-2xl font-bold text-slate-800 mb-1">Categories API Test</h1>
-        <p className="text-sm text-slate-500 mb-6">Kategorie-Endpunkte (Public + Admin)</p>
+        <h1 className="text-2xl font-bold text-slate-800 mb-1">Categories Endpoints</h1>
+        <p className="text-sm text-slate-500 mb-6">6 endpoints — category management</p>
 
         <Card className="mb-6 border-teal-200 bg-teal-50">
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Admin Bearer Token</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Bearer Token (for admin endpoints)</CardTitle>
+          </CardHeader>
           <CardContent>
-            <Input value={token} onChange={e => setToken(e.target.value)} placeholder="eyJhbGci... (ADMIN-Token für Schreib-Endpunkte)" className="font-mono text-xs bg-white" />
+            <Input
+              value={token}
+              onChange={e => setToken(e.target.value)}
+              placeholder="eyJhbGci... (paste admin token)"
+              className="font-mono text-xs bg-white"
+            />
           </CardContent>
         </Card>
 
-        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-3">Öffentliche Endpunkte</h2>
+        {/* ── Public Endpoints ────────────────────────────────────────────── */}
+        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Public</h2>
 
-        <EndpointCard method="GET" path="/api/v1/categories" auth="PUBLIC"
-          description="Alle aktiven Kategorien als flache Liste"
-          onExecute={() => call("GET", "/api/v1/categories")} />
+        <EndpointCard
+          method="GET" path="/api/v1/categories" auth="PUBLIC"
+          description="List all categories as a flat array with id, name, slug, parentId, and isActive."
+          onExecute={() => call("GET", "/api/v1/categories")}
+        />
 
-        <EndpointCard method="GET" path="/api/v1/categories/tree" auth="PUBLIC"
-          description="Kategorie-Hierarchie als Baum (3 Ebenen)"
-          onExecute={() => call("GET", "/api/v1/categories/tree")} />
+        <EndpointCard
+          method="GET" path="/api/v1/categories/tree" auth="PUBLIC"
+          description="Get category hierarchy as a nested tree structure."
+          onExecute={() => call("GET", "/api/v1/categories/tree")}
+        />
 
-        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-3 mt-6">Admin-Endpunkte (ADMIN Token erforderlich)</h2>
+        {/* ── Admin Endpoints ──────────────────────────────────────────────── */}
+        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mt-6 mb-3">Admin</h2>
 
-        <EndpointCard method="POST" path="/api/v1/categories" auth="ADMIN"
-          description="Neue Kategorie erstellen"
-          onExecute={() => call("POST", "/api/v1/categories", {
-            name: createName, slug: createSlug,
-            ...(createParentId ? { parentId: createParentId } : {}),
-            ...(createDesc ? { description: createDesc } : {}),
-            order: parseInt(createOrder) || 0,
-          }, token)}
+        <EndpointCard
+          method="POST" path="/api/v1/admin/categories" auth="ADMIN"
+          description="Create a new category. name and slug are required; parentId and description are optional."
+          onExecute={() => {
+            const body: Record<string, string> = { name: createName, slug: createSlug }
+            if (createParentId) body.parentId = createParentId
+            if (createDesc) body.description = createDesc
+            return call("POST", "/api/v1/admin/categories", body, token)
+          }}
         >
           <div className="grid grid-cols-2 gap-2">
-            <div><Label className="text-xs">Name</Label><Input value={createName} onChange={e => setCreateName(e.target.value)} placeholder="Elektronik" className="h-8 text-xs" /></div>
-            <div><Label className="text-xs">Slug</Label><Input value={createSlug} onChange={e => setCreateSlug(e.target.value)} placeholder="elektronik" className="h-8 text-xs" /></div>
-            <div><Label className="text-xs">Parent ID (optional)</Label><Input value={createParentId} onChange={e => setCreateParentId(e.target.value)} placeholder="UUID" className="h-8 text-xs" /></div>
-            <div><Label className="text-xs">Reihenfolge</Label><Input type="number" value={createOrder} onChange={e => setCreateOrder(e.target.value)} className="h-8 text-xs" /></div>
-            <div className="col-span-2"><Label className="text-xs">Beschreibung (optional)</Label><Input value={createDesc} onChange={e => setCreateDesc(e.target.value)} className="h-8 text-xs" /></div>
-          </div>
-        </EndpointCard>
-
-        <EndpointCard method="PATCH" path="/api/v1/categories/{id}" auth="ADMIN"
-          description="Kategorie aktualisieren"
-          onExecute={() => call("PATCH", `/api/v1/categories/${updateId}`, {
-            ...(updateName ? { name: updateName } : {}),
-            ...(updateSlug ? { slug: updateSlug } : {}),
-            isActive: updateActive,
-          }, token)}
-        >
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label className="text-xs">Kategorie-ID (UUID)</Label><Input value={updateId} onChange={e => setUpdateId(e.target.value)} placeholder="UUID" className="h-8 text-xs" /></div>
-            <div className="flex items-end gap-2">
-              <Checkbox checked={updateActive} onCheckedChange={v => setUpdateActive(!!v)} />
-              <Label className="text-xs">Aktiv</Label>
+            <div>
+              <Label className="text-xs">Name *</Label>
+              <Input value={createName} onChange={e => setCreateName(e.target.value)} placeholder="Electronics" className="h-8 text-xs" />
             </div>
-            <div><Label className="text-xs">Neuer Name (optional)</Label><Input value={updateName} onChange={e => setUpdateName(e.target.value)} className="h-8 text-xs" /></div>
-            <div><Label className="text-xs">Neuer Slug (optional)</Label><Input value={updateSlug} onChange={e => setUpdateSlug(e.target.value)} className="h-8 text-xs" /></div>
+            <div>
+              <Label className="text-xs">Slug *</Label>
+              <Input value={createSlug} onChange={e => setCreateSlug(e.target.value)} placeholder="electronics" className="h-8 text-xs" />
+            </div>
+            <div>
+              <Label className="text-xs">Parent ID (optional)</Label>
+              <Input value={createParentId} onChange={e => setCreateParentId(e.target.value)} placeholder="uuid of parent" className="h-8 text-xs" />
+            </div>
+            <div>
+              <Label className="text-xs">Description (optional)</Label>
+              <Input value={createDesc} onChange={e => setCreateDesc(e.target.value)} placeholder="Category description" className="h-8 text-xs" />
+            </div>
           </div>
         </EndpointCard>
 
-        <EndpointCard method="PATCH" path="/api/v1/categories/{id}/deactivate" auth="ADMIN"
-          description="Kategorie deaktivieren"
-          onExecute={() => call("PATCH", `/api/v1/categories/${toggleId}/deactivate`, {}, token)}
+        <EndpointCard
+          method="PATCH" path="/api/v1/admin/categories/{id}" auth="ADMIN"
+          description="Update an existing category. All body fields are optional."
+          onExecute={() => {
+            const body: Record<string, string> = {}
+            if (updateName) body.name = updateName
+            if (updateSlug) body.slug = updateSlug
+            if (updateDesc) body.description = updateDesc
+            return call("PATCH", `/api/v1/admin/categories/${updateId}`, body, token)
+          }}
         >
-          <div><Label className="text-xs">Kategorie-ID</Label><Input value={toggleId} onChange={e => setToggleId(e.target.value)} placeholder="UUID" className="h-8 text-xs" /></div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="col-span-2">
+              <Label className="text-xs">Category ID *</Label>
+              <Input value={updateId} onChange={e => setUpdateId(e.target.value)} placeholder="uuid" className="h-8 text-xs font-mono" />
+            </div>
+            <div>
+              <Label className="text-xs">Name (optional)</Label>
+              <Input value={updateName} onChange={e => setUpdateName(e.target.value)} placeholder="New name" className="h-8 text-xs" />
+            </div>
+            <div>
+              <Label className="text-xs">Slug (optional)</Label>
+              <Input value={updateSlug} onChange={e => setUpdateSlug(e.target.value)} placeholder="new-slug" className="h-8 text-xs" />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">Description (optional)</Label>
+              <Input value={updateDesc} onChange={e => setUpdateDesc(e.target.value)} placeholder="Updated description" className="h-8 text-xs" />
+            </div>
+          </div>
         </EndpointCard>
 
-        <EndpointCard method="PATCH" path="/api/v1/categories/{id}/activate" auth="ADMIN"
-          description="Kategorie aktivieren"
-          onExecute={() => call("PATCH", `/api/v1/categories/${toggleId}/activate`, {}, token)}
+        <EndpointCard
+          method="PATCH" path="/api/v1/admin/categories/{id}/deactivate" auth="ADMIN"
+          description="Deactivate a category by ID. No request body required."
+          onExecute={() => call("PATCH", `/api/v1/admin/categories/${deactivateId}/deactivate`, undefined, token)}
         >
-          <p className="text-xs text-slate-500">Verwendet dieselbe ID wie oben</p>
+          <div>
+            <Label className="text-xs">Category ID *</Label>
+            <Input value={deactivateId} onChange={e => setDeactivateId(e.target.value)} placeholder="uuid" className="h-8 text-xs font-mono" />
+          </div>
+        </EndpointCard>
+
+        <EndpointCard
+          method="PATCH" path="/api/v1/admin/categories/{id}/activate" auth="ADMIN"
+          description="Activate a category by ID. No request body required."
+          onExecute={() => call("PATCH", `/api/v1/admin/categories/${activateId}/activate`, undefined, token)}
+        >
+          <div>
+            <Label className="text-xs">Category ID *</Label>
+            <Input value={activateId} onChange={e => setActivateId(e.target.value)} placeholder="uuid" className="h-8 text-xs font-mono" />
+          </div>
         </EndpointCard>
       </div>
     </div>

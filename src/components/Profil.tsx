@@ -45,22 +45,15 @@ export default function Profil() {
     setExpandedSections((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
-  // Load profile
+  // Populate form from AuthContext user (already loaded on app start)
   useEffect(() => {
-    async function load() {
-      try {
-        const u = await UserService.getCurrentUser()
-        setFirstName(u.firstName)
-        setLastName(u.lastName)
-        setPhone(u.phone ?? "")
-      } catch {
-        toast.error("Profil konnte nicht geladen werden.")
-      } finally {
-        setIsLoadingProfile(false)
-      }
+    if (user) {
+      setFirstName(user.firstName ?? "")
+      setLastName(user.lastName ?? "")
+      setPhone(user.phone ?? "")
     }
-    load()
-  }, [])
+    setIsLoadingProfile(false)
+  }, [user])
 
   // Load addresses
   useEffect(() => {

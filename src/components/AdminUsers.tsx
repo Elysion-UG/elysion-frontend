@@ -45,14 +45,16 @@ export default function AdminUsers() {
 
   const getStatusBadge = (status: AccountStatus) => {
     const styles: Record<AccountStatus, string> = {
+      PENDING: "bg-yellow-100 text-yellow-700",
       ACTIVE: "bg-emerald-100 text-emerald-700",
       SUSPENDED: "bg-red-100 text-red-700",
-      PENDING_VERIFICATION: "bg-amber-100 text-amber-700",
+      DELETED: "bg-slate-100 text-slate-500",
     }
     const labels: Record<AccountStatus, string> = {
+      PENDING: "Ausstehend",
       ACTIVE: "Aktiv",
       SUSPENDED: "Gesperrt",
-      PENDING_VERIFICATION: "Ausstehend",
+      DELETED: "Gelöscht",
     }
     return <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${styles[status]}`}>{labels[status]}</span>
   }
@@ -103,7 +105,7 @@ export default function AdminUsers() {
           <option value="">Alle Status</option>
           <option value="ACTIVE">Aktiv</option>
           <option value="SUSPENDED">Gesperrt</option>
-          <option value="PENDING_VERIFICATION">Ausstehend</option>
+          <option value="DELETED">Gelöscht</option>
         </select>
       </div>
 

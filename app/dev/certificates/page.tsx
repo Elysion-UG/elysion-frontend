@@ -8,35 +8,59 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import Link from "next/link"
+import { apiRequest, setAccessToken } from "@/src/lib/api-client"
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"
-const MC: Record<string, string> = { GET: "bg-blue-100 text-blue-800", POST: "bg-green-100 text-green-800", DELETE: "bg-red-100 text-red-800" }
-
-async function call(method: string, path: string, body?: unknown, token?: string) {
-  const headers: Record<string, string> = { "Content-Type": "application/json" }
-  if (token) headers["Authorization"] = `Bearer ${token}`
-  const res = await fetch(`${API}${path}`, { method, headers, credentials: "include", body: body !== undefined ? JSON.stringify(body) : undefined })
-  const text = await res.text()
-  try { return { status: res.status, data: JSON.parse(text) } } catch { return { status: res.status, data: text } }
+const MC: Record<string, string> = {
+  GET: "bg-blue-100 text-blue-800",
+  POST: "bg-green-100 text-green-800",
+  DELETE: "bg-red-100 text-red-800",
 }
 
-function EC({ method, path, auth, description, children, onExecute }: { method: string; path: string; auth: string; description: string; children?: React.ReactNode; onExecute: () => Promise<unknown> }) {
+function EC({
+  method,
+  path,
+  auth,
+  description,
+  children,
+  onExecute,
+}: {
+  method: string
+  path: string
+  auth: string
+  description: string
+  children?: React.ReactNode
+  onExecute: () => Promise<unknown>
+}) {
   const [loading, setLoading] = useState(false)
   const [response, setResponse] = useState<unknown>(null)
+  const [isError, setIsError] = useState(false)
+
   const execute = async () => {
     setLoading(true)
-    try { setResponse(await onExecute()); toast.success("OK") }
-    catch (e: unknown) { const m = e instanceof Error ? e.message : String(e); setResponse({ error: m }); toast.error(m) }
-    finally { setLoading(false) }
+    setIsError(false)
+    try {
+      const result = await onExecute()
+      setResponse(result)
+      toast.success("OK")
+    } catch (e: unknown) {
+      const m = e instanceof Error ? e.message : String(e)
+      setResponse({ error: m })
+      setIsError(true)
+      toast.error(m)
+    } finally {
+      setLoading(false)
+    }
   }
+
   return (
     <Card className="mb-4">
       <CardHeader className="pb-3">
         <CardTitle className="flex flex-wrap items-center gap-2 text-sm font-mono">
           <span className={`px-2 py-0.5 rounded text-xs font-bold ${MC[method] ?? "bg-gray-100"}`}>{method}</span>
-          <span className="text-slate-700">{path}</span>
-          <span className="ml-auto text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{auth}</span>
+          <span className="text-slate-700 break-all">{path}</span>
+          <span className="ml-auto text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded shrink-0">{auth}</span>
         </CardTitle>
         <CardDescription className="text-xs">{description}</CardDescription>
       </CardHeader>
@@ -45,7 +69,15 @@ function EC({ method, path, auth, description, children, onExecute }: { method: 
         <Button size="sm" onClick={execute} disabled={loading} className="bg-teal-600 hover:bg-teal-700">
           {loading && <Loader2 className="w-3 h-3 animate-spin mr-1" />} Execute
         </Button>
-        {response !== null && <pre className="mt-2 p-3 bg-slate-50 border rounded text-xs overflow-auto max-h-60 whitespace-pre-wrap">{JSON.stringify(response, null, 2)}</pre>}
+        {response !== null && (
+          <pre
+            className={`mt-2 p-3 border rounded text-xs overflow-auto max-h-60 whitespace-pre-wrap ${
+              isError ? "bg-red-50 border-red-200 text-red-800" : "bg-slate-50 border-slate-200"
+            }`}
+          >
+            {JSON.stringify(response, null, 2)}
+          </pre>
+        )}
       </CardContent>
     </Card>
   )
@@ -54,100 +86,228 @@ function EC({ method, path, auth, description, children, onExecute }: { method: 
 export default function DevCertificatesPage() {
   const [token, setToken] = useState("")
 
-  // Create
+  // Create certificate fields
+  const [certName, setCertName] = useState("")
+  const [certIssuingBody, setCertIssuingBody] = useState("")
+  const [certDescription, setCertDescription] = useState("")
+  const [certValidFrom, setCertValidFrom] = useState("")
+  const [certValidUntil, setCertValidUntil] = useState("")
   const [certType, setCertType] = useState("ORGANIC")
-  const [certTitle, setCertTitle] = useState("")
-  const [certIssuer, setCertIssuer] = useState("")
-  const [certDocUrl, setCertDocUrl] = useState("")
-  const [certIssueDate, setCertIssueDate] = useState("")
-  const [certExpiry, setCertExpiry] = useState("")
 
   // Get by ID
   const [certId, setCertId] = useState("")
 
   // Link / Unlink
-  const [linkCertId, setLinkCertId] = useState("")
   const [linkProductId, setLinkProductId] = useState("")
+  const [linkCertId, setLinkCertId] = useState("")
+
+  function applyToken(t: string) {
+    setAccessToken(t || null)
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
       <Toaster position="bottom-right" richColors />
       <div className="max-w-3xl mx-auto px-4 py-8">
         <Link href="/dev" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-6">
-          <ArrowLeft className="w-4 h-4" /> Zurück
+          <ArrowLeft className="w-4 h-4" /> Back to Dev Index
         </Link>
-        <h1 className="text-2xl font-bold text-slate-800 mb-1">Certificates API Test</h1>
-        <p className="text-sm text-slate-500 mb-6">Seller-Zertifikate erstellen, auflisten, mit Produkten verknüpfen</p>
+        <h1 className="text-2xl font-bold text-slate-800 mb-1">Certificate Endpoints</h1>
+        <p className="text-sm text-slate-500 mb-6">
+          Create, list, and link seller certificates to products.
+        </p>
 
+        {/* Token card */}
         <Card className="mb-6 border-teal-200 bg-teal-50">
-          <CardHeader className="pb-2"><CardTitle className="text-sm">Bearer Token (SELLER)</CardTitle></CardHeader>
-          <CardContent>
-            <Input value={token} onChange={e => setToken(e.target.value)} placeholder="eyJhbGci..." className="font-mono text-xs bg-white" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Bearer Token (SELLER)</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Input
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              placeholder="eyJhbGci..."
+              className="font-mono text-xs bg-white"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => applyToken(token)}
+              className="text-teal-700 border-teal-300"
+            >
+              Apply Token
+            </Button>
           </CardContent>
         </Card>
 
-        <EC method="GET" path="/api/v1/certificates" auth="SELLER" description="Alle eigenen Zertifikate abrufen"
-          onExecute={() => call("GET", "/api/v1/certificates", undefined, token)} />
+        {/* ── Certificate CRUD ─────────────────────────────────────────────── */}
+        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-3">Certificate CRUD</h2>
 
-        <EC method="POST" path="/api/v1/certificates" auth="SELLER" description="Neues Zertifikat erstellen"
-          onExecute={() => call("POST", "/api/v1/certificates", {
-            certificateType: certType,
-            title: certTitle,
-            issuerName: certIssuer,
-            ...(certDocUrl ? { documentUrl: certDocUrl } : {}),
-            ...(certIssueDate ? { issueDate: certIssueDate } : {}),
-            ...(certExpiry ? { expiryDate: certExpiry } : {}),
-          }, token)}>
+        <EC
+          method="POST"
+          path="/api/v1/certificates"
+          auth="SELLER"
+          description="Create a new certificate for the authenticated seller."
+          onExecute={() =>
+            apiRequest("/api/v1/certificates", {
+              method: "POST",
+              body: JSON.stringify({
+                name: certName,
+                issuingBody: certIssuingBody,
+                ...(certDescription ? { description: certDescription } : {}),
+                validFrom: certValidFrom || undefined,
+                ...(certValidUntil ? { validUntil: certValidUntil } : {}),
+                certificateType: certType,
+              }),
+            })
+          }
+        >
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-xs">Typ</Label>
+              <Label className="text-xs">Name</Label>
+              <Input
+                value={certName}
+                onChange={(e) => setCertName(e.target.value)}
+                placeholder="Bio Certificate"
+                className="h-8 text-xs"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Issuing Body</Label>
+              <Input
+                value={certIssuingBody}
+                onChange={(e) => setCertIssuingBody(e.target.value)}
+                placeholder="Demeter e.V."
+                className="h-8 text-xs"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Certificate Type</Label>
               <Select value={certType} onValueChange={setCertType}>
-                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {["ORGANIC", "FAIR_TRADE", "CO2_NEUTRAL", "RECYCLED", "ENERGY_EFFICIENT", "VEGAN", "CRUELTY_FREE", "FSC", "RAINFOREST_ALLIANCE", "OTHER"].map(t =>
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  {["ORGANIC", "FAIR_TRADE", "CO2_NEUTRAL", "RECYCLED", "ENERGY_EFFICIENT", "VEGAN", "CRUELTY_FREE", "FSC", "RAINFOREST_ALLIANCE", "OTHER"].map(
+                    (t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    )
                   )}
                 </SelectContent>
               </Select>
             </div>
-            <div><Label className="text-xs">Titel</Label><Input value={certTitle} onChange={e => setCertTitle(e.target.value)} placeholder="Bio-Zertifikat" className="h-8 text-xs" /></div>
-            <div><Label className="text-xs">Aussteller</Label><Input value={certIssuer} onChange={e => setCertIssuer(e.target.value)} placeholder="Demeter e.V." className="h-8 text-xs" /></div>
-            <div><Label className="text-xs">Dokument-URL (optional)</Label><Input value={certDocUrl} onChange={e => setCertDocUrl(e.target.value)} placeholder="https://..." className="h-8 text-xs" /></div>
-            <div><Label className="text-xs">Ausstellungsdatum</Label><Input type="date" value={certIssueDate} onChange={e => setCertIssueDate(e.target.value)} className="h-8 text-xs" /></div>
-            <div><Label className="text-xs">Ablaufdatum (optional)</Label><Input type="date" value={certExpiry} onChange={e => setCertExpiry(e.target.value)} className="h-8 text-xs" /></div>
+            <div>
+              <Label className="text-xs">Valid From</Label>
+              <Input
+                type="date"
+                value={certValidFrom}
+                onChange={(e) => setCertValidFrom(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Valid Until (optional)</Label>
+              <Input
+                type="date"
+                value={certValidUntil}
+                onChange={(e) => setCertValidUntil(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="col-span-2">
+              <Label className="text-xs">Description (optional)</Label>
+              <Textarea
+                value={certDescription}
+                onChange={(e) => setCertDescription(e.target.value)}
+                placeholder="Additional details..."
+                className="text-xs h-16"
+              />
+            </div>
           </div>
         </EC>
 
+        <EC
+          method="GET"
+          path="/api/v1/certificates"
+          auth="SELLER"
+          description="List all certificates belonging to the authenticated seller."
+          onExecute={() => apiRequest("/api/v1/certificates")}
+        />
+
         <Card className="mb-4 border-slate-200">
           <CardContent className="pt-4">
-            <Label className="text-xs font-semibold">Zertifikat-ID (für GET by ID)</Label>
-            <Input value={certId} onChange={e => setCertId(e.target.value)} placeholder="UUID des Zertifikats" className="h-8 text-xs mt-1" />
+            <Label className="text-xs font-semibold">Certificate ID (for GET by ID)</Label>
+            <Input
+              value={certId}
+              onChange={(e) => setCertId(e.target.value)}
+              placeholder="UUID of the certificate"
+              className="h-8 text-xs mt-1"
+            />
           </CardContent>
         </Card>
 
-        <EC method="GET" path="/api/v1/certificates/{id}" auth="SELLER" description="Einzelnes Zertifikat abrufen"
-          onExecute={() => call("GET", `/api/v1/certificates/${certId}`, undefined, token)} />
+        <EC
+          method="GET"
+          path="/api/v1/certificates/{id}"
+          auth="SELLER"
+          description="Get a single certificate by ID. Returns { id, name, issuingBody, status, validFrom, validUntil, ... }"
+          onExecute={() => apiRequest(`/api/v1/certificates/${certId}`)}
+        />
 
-        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-3 mt-6">Produkt-Verknüpfung</h2>
+        {/* ── Product-Certificate Links ───────────────────────────────────── */}
+        <h2 className="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-3 mt-6">
+          Product-Certificate Links
+        </h2>
 
         <Card className="mb-4 border-slate-200">
           <CardContent className="pt-4 grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-xs font-semibold">Zertifikat-ID</Label>
-              <Input value={linkCertId} onChange={e => setLinkCertId(e.target.value)} placeholder="UUID" className="h-8 text-xs mt-1" />
+              <Label className="text-xs font-semibold">Product ID</Label>
+              <Input
+                value={linkProductId}
+                onChange={(e) => setLinkProductId(e.target.value)}
+                placeholder="UUID"
+                className="h-8 text-xs mt-1"
+              />
             </div>
             <div>
-              <Label className="text-xs font-semibold">Produkt-ID</Label>
-              <Input value={linkProductId} onChange={e => setLinkProductId(e.target.value)} placeholder="UUID" className="h-8 text-xs mt-1" />
+              <Label className="text-xs font-semibold">Certificate ID</Label>
+              <Input
+                value={linkCertId}
+                onChange={(e) => setLinkCertId(e.target.value)}
+                placeholder="UUID"
+                className="h-8 text-xs mt-1"
+              />
             </div>
           </CardContent>
         </Card>
 
-        <EC method="POST" path="/api/v1/certificates/{id}/products/{productId}" auth="SELLER" description="Zertifikat mit Produkt verknüpfen"
-          onExecute={() => call("POST", `/api/v1/certificates/${linkCertId}/products/${linkProductId}`, {}, token)} />
+        <EC
+          method="POST"
+          path="/api/v1/products/{productId}/certificates"
+          auth="SELLER"
+          description="Link an existing certificate to a product. Both must belong to the authenticated seller."
+          onExecute={() =>
+            apiRequest(`/api/v1/products/${linkProductId}/certificates`, {
+              method: "POST",
+              body: JSON.stringify({ certificateId: linkCertId }),
+            })
+          }
+        />
 
-        <EC method="DELETE" path="/api/v1/certificates/{id}/products/{productId}" auth="SELLER" description="Zertifikat von Produkt trennen"
-          onExecute={() => call("DELETE", `/api/v1/certificates/${linkCertId}/products/${linkProductId}`, undefined, token)} />
+        <EC
+          method="DELETE"
+          path="/api/v1/products/{productId}/certificates/{certificateId}"
+          auth="SELLER"
+          description="Unlink a certificate from a product. Returns 204 No Content on success."
+          onExecute={() =>
+            apiRequest(`/api/v1/products/${linkProductId}/certificates/${linkCertId}`, {
+              method: "DELETE",
+            })
+          }
+        />
       </div>
     </div>
   )

@@ -252,6 +252,7 @@ export interface ProductListItem {
   price: number        // EUR decimal
   currency: string
   sellerId: string
+  status?: ProductStatus
   createdAt: string
 }
 
@@ -817,4 +818,123 @@ export interface SettlementsPage {
   totalPages: number
   size: number
   number: number
+}
+
+// ============================================================
+// Admin — Sellers
+// ============================================================
+export interface AdminSellerListItem {
+  id: string            // seller profile id
+  userId: string
+  companyName: string
+  vatId?: string
+  status: SellerStatus
+  approvedAt?: string
+  rejectedAt?: string
+  rejectionReason?: string
+  createdAt: string
+  user?: {
+    email: string
+    firstName?: string
+    lastName?: string
+  }
+}
+
+export interface AdminSellerDetails extends AdminSellerListItem {
+  iban?: string
+  suspendedAt?: string
+  suspensionReason?: string
+  updatedAt: string
+}
+
+export interface AdminSellerListParams {
+  page?: number
+  size?: number
+  status?: SellerStatus
+}
+
+// ============================================================
+// Admin — Products
+// ============================================================
+export interface AdminProductListItem {
+  id: string
+  title: string
+  status: ProductStatus
+  price: number
+  currency: string
+  sellerId: string
+  sellerName?: string
+  createdAt: string
+}
+
+export interface AdminProductDetails extends AdminProductListItem {
+  description?: string
+  slug?: string
+  updatedAt: string
+}
+
+export interface AdminProductListParams {
+  page?: number
+  size?: number
+  status?: ProductStatus
+}
+
+// ============================================================
+// Admin — Orders
+// ============================================================
+export interface AdminOrderListItem {
+  id: string
+  orderNumber: string
+  status: OrderStatus
+  paymentStatus: PaymentStatusType
+  total: number
+  currency: string
+  userId?: string
+  guestEmail?: string
+  createdAt: string
+}
+
+export interface AdminOrderListParams {
+  page?: number
+  size?: number
+  status?: OrderStatus
+}
+
+// ============================================================
+// Admin — Finance
+// ============================================================
+export interface AdminPaymentItem {
+  id: string
+  orderId: string
+  orderNumber?: string
+  status: PaymentStatusType
+  amountCents: number
+  currency: string
+  method?: string
+  createdAt: string
+}
+
+export interface AdminRefundItem {
+  id: string
+  paymentId: string
+  amountCents: number
+  currency: string
+  reason?: string
+  status: string
+  createdAt: string
+}
+
+export interface AdminPayoutItem {
+  id: string
+  sellerId: string
+  sellerName?: string
+  amountCents: number
+  currency: string
+  status: string
+  createdAt: string
+}
+
+export interface AdminFinanceListParams {
+  page?: number
+  size?: number
 }

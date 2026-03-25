@@ -2,38 +2,59 @@
 
 import { useState } from "react"
 import { Toaster, toast } from "sonner"
-import { Loader2, ArrowLeft } from "lucide-react"
+import { Loader2, ArrowLeft, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
 import Link from "next/link"
+import { apiRequest, setAccessToken } from "@/src/lib/api-client"
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"
-const MC: Record<string, string> = { GET: "bg-blue-100 text-blue-800", POST: "bg-green-100 text-green-800", PATCH: "bg-yellow-100 text-yellow-800", DELETE: "bg-red-100 text-red-800" }
-
-async function call(method: string, path: string, body?: unknown, token?: string) {
-  const headers: Record<string, string> = { "Content-Type": "application/json" }
-  if (token) headers["Authorization"] = `Bearer ${token}`
-  const res = await fetch(`${API}${path}`, { method, headers, credentials: "include", body: body !== undefined ? JSON.stringify(body) : undefined })
-  const text = await res.text()
-  try { return { status: res.status, data: JSON.parse(text) } } catch { return { status: res.status, data: text } }
+const MC: Record<string, string> = {
+  GET: "bg-blue-100 text-blue-800",
+  POST: "bg-green-100 text-green-800",
+  PATCH: "bg-yellow-100 text-yellow-800",
+  DELETE: "bg-red-100 text-red-800",
 }
 
-function EC({ method, path, auth, description, children, onExecute }: { method: string; path: string; auth: string; description: string; children?: React.ReactNode; onExecute: () => Promise<unknown> }) {
+function EC({
+  method,
+  path,
+  auth,
+  description,
+  children,
+  onExecute,
+  warning,
+}: {
+  method: string
+  path: string
+  auth: string
+  description: string
+  children?: React.ReactNode
+  onExecute: () => Promise<unknown>
+  warning?: boolean
+}) {
   const [loading, setLoading] = useState(false)
   const [response, setResponse] = useState<unknown>(null)
+
   const execute = async () => {
     setLoading(true)
-    try { setResponse(await onExecute()); toast.success("OK") }
-    catch (e: unknown) { const m = e instanceof Error ? e.message : String(e); setResponse({ error: m }); toast.error(m) }
-    finally { setLoading(false) }
+    try {
+      setResponse(await onExecute())
+      toast.success("OK")
+    } catch (e: unknown) {
+      const m = e instanceof Error ? e.message : String(e)
+      setResponse({ error: m })
+      toast.error(m)
+    } finally {
+      setLoading(false)
+    }
   }
+
   return (
-    <Card className="mb-4">
+    <Card className={`mb-4 ${warning ? "border-amber-300 bg-amber-50" : ""}`}>
       <CardHeader className="pb-3">
         <CardTitle className="flex flex-wrap items-center gap-2 text-sm font-mono">
           <span className={`px-2 py-0.5 rounded text-xs font-bold ${MC[method] ?? "bg-gray-100"}`}>{method}</span>
@@ -47,7 +68,11 @@ function EC({ method, path, auth, description, children, onExecute }: { method: 
         <Button size="sm" onClick={execute} disabled={loading} className="bg-teal-600 hover:bg-teal-700">
           {loading && <Loader2 className="w-3 h-3 animate-spin mr-1" />} Execute
         </Button>
-        {response !== null && <pre className="mt-2 p-3 bg-slate-50 border rounded text-xs overflow-auto max-h-60 whitespace-pre-wrap">{JSON.stringify(response, null, 2)}</pre>}
+        {response !== null && (
+          <pre className="mt-2 p-3 bg-slate-50 border rounded text-xs overflow-auto max-h-60 whitespace-pre-wrap">
+            {JSON.stringify(response, null, 2)}
+          </pre>
+        )}
       </CardContent>
     </Card>
   )
@@ -57,189 +82,482 @@ export default function DevAdminFinancePage() {
   const [token, setToken] = useState("")
 
   // Products
-  const [adminProductId, setAdminProductId] = useState("")
-  const [adminProductStatus, setAdminProductStatus] = useState("ACTIVE")
-
-  // Certificates
-  const [adminCertId, setAdminCertId] = useState("")
-  const [certRejectReason, setCertRejectReason] = useState("")
+  const [productPage, setProductPage] = useState("0")
+  const [productSize, setProductSize] = useState("20")
+  const [productStatus, setProductStatus] = useState("")
+  const [productSearch, setProductSearch] = useState("")
+  const [productId, setProductId] = useState("")
 
   // Orders
-  const [adminOrderId, setAdminOrderId] = useState("")
-  const [adminOrderStatus, setAdminOrderStatus] = useState("PROCESSING")
+  const [orderPage, setOrderPage] = useState("0")
+  const [orderSize, setOrderSize] = useState("20")
+  const [orderStatus, setOrderStatus] = useState("")
+  const [orderPaymentStatus, setOrderPaymentStatus] = useState("")
+  const [orderId, setOrderId] = useState("")
 
-  // Finance
-  const [adminPaymentId, setAdminPaymentId] = useState("")
-  const [refundAmount, setRefundAmount] = useState("")
+  // Payments
+  const [paymentPage, setPaymentPage] = useState("0")
+  const [paymentSize, setPaymentSize] = useState("20")
+  const [paymentStatus, setPaymentStatus] = useState("")
+  const [paymentId, setPaymentId] = useState("")
+
+  // Refunds
+  const [refundPage, setRefundPage] = useState("0")
+  const [refundSize, setRefundSize] = useState("20")
+  const [refundPaymentId, setRefundPaymentId] = useState("")
+  const [refundAmountCents, setRefundAmountCents] = useState("")
   const [refundReason, setRefundReason] = useState("")
-  const [settlementId, setSettlementId] = useState("")
-  const [payoutSellerId, setPayoutSellerId] = useState("")
-  const [payoutAmount, setPayoutAmount] = useState("")
 
-  // Maintenance
-  const [cleanupDays, setCleanupDays] = useState("30")
+  // Settlements
+  const [settlementPage, setSettlementPage] = useState("0")
+  const [settlementSize, setSettlementSize] = useState("20")
+  const [settlementSellerId, setSettlementSellerId] = useState("")
+
+  // Payouts
+  const [payoutPage, setPayoutPage] = useState("0")
+  const [payoutSize, setPayoutSize] = useState("20")
+  const [payoutListStatus, setPayoutListStatus] = useState("")
+  const [payoutSellerId, setPayoutSellerId] = useState("")
+  const [payoutAmountCents, setPayoutAmountCents] = useState("")
+  const [payoutCurrency, setPayoutCurrency] = useState("EUR")
+
+  function applyToken() {
+    setAccessToken(token || null)
+  }
+
+  function req<T>(method: string, path: string, body?: unknown): Promise<T> {
+    applyToken()
+    return apiRequest<T>(path, {
+      method,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    })
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
       <Toaster position="bottom-right" richColors />
       <div className="max-w-3xl mx-auto px-4 py-8">
         <Link href="/dev" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-6">
-          <ArrowLeft className="w-4 h-4" /> Zurück
+          <ArrowLeft className="w-4 h-4" /> Back to Dev Index
         </Link>
         <h1 className="text-2xl font-bold text-slate-800 mb-1">Admin: Finance & Maintenance API Test</h1>
-        <p className="text-sm text-slate-500 mb-6">Produkte, Zertifikate, Bestellungen, Zahlungen, Wartungs-Jobs</p>
+        <p className="text-sm text-slate-500 mb-4">Products, Orders, Payments, Refunds, Settlements, Payouts, Maintenance</p>
+
+        <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-6 text-sm text-amber-800">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span>Requires ADMIN role &mdash; login at <Link href="/login/admin" className="underline">/login/admin</Link> first</span>
+        </div>
 
         <Card className="mb-6 border-red-200 bg-red-50">
-          <CardHeader className="pb-2"><CardTitle className="text-sm text-red-800">Admin Bearer Token erforderlich</CardTitle></CardHeader>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-red-800">Admin Bearer Token required</CardTitle>
+          </CardHeader>
           <CardContent>
-            <Input value={token} onChange={e => setToken(e.target.value)} placeholder="eyJhbGci... (ADMIN)" className="font-mono text-xs bg-white" />
+            <Input
+              value={token}
+              onChange={e => setToken(e.target.value)}
+              placeholder="eyJhbGci... (ADMIN)"
+              className="font-mono text-xs bg-white"
+            />
           </CardContent>
         </Card>
 
         <Tabs defaultValue="products">
           <TabsList className="mb-4 flex-wrap h-auto gap-1">
-            <TabsTrigger value="products">Produkte</TabsTrigger>
-            <TabsTrigger value="certificates">Zertifikate</TabsTrigger>
-            <TabsTrigger value="orders">Bestellungen</TabsTrigger>
-            <TabsTrigger value="finance">Finanzen</TabsTrigger>
-            <TabsTrigger value="maintenance">Wartung</TabsTrigger>
+            <TabsTrigger value="products">Products</TabsTrigger>
+            <TabsTrigger value="orders">Orders</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
+            <TabsTrigger value="refunds">Refunds</TabsTrigger>
+            <TabsTrigger value="settlements">Settlements</TabsTrigger>
+            <TabsTrigger value="payouts">Payouts</TabsTrigger>
+            <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
           </TabsList>
 
+          {/* Products */}
           <TabsContent value="products">
-            <EC method="GET" path="/api/v1/admin/products" auth="ADMIN" description="Alle Produkte auflisten (Admin-Sicht, inkl. DRAFT/REVIEW)"
-              onExecute={() => call("GET", "/api/v1/admin/products", undefined, token)} />
+            <h2 className="text-sm font-semibold text-slate-600 mb-3">Products</h2>
 
-            <EC method="GET" path="/api/v1/admin/products/review" auth="ADMIN" description="Produkte im REVIEW-Status abrufen"
-              onExecute={() => call("GET", "/api/v1/admin/products/review", undefined, token)} />
-
-            <Card className="mb-4 border-slate-200">
-              <CardContent className="pt-4">
-                <Label className="text-xs font-semibold">Produkt-ID (für Status-Änderung)</Label>
-                <Input value={adminProductId} onChange={e => setAdminProductId(e.target.value)} placeholder="UUID des Produkts" className="h-8 text-xs mt-1" />
-              </CardContent>
-            </Card>
-
-            <EC method="PATCH" path="/api/v1/admin/products/{id}/status" auth="ADMIN" description="Produkt-Status setzen (z.B. REJECTED)"
-              onExecute={() => call("PATCH", `/api/v1/admin/products/${adminProductId}/status`, { status: adminProductStatus }, token)}>
-              <div>
-                <Label className="text-xs">Status</Label>
-                <Select value={adminProductStatus} onValueChange={setAdminProductStatus}>
-                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {["ACTIVE", "INACTIVE", "REJECTED", "REVIEW"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </EC>
-
-            <EC method="DELETE" path="/api/v1/admin/products/{id}" auth="ADMIN" description="Produkt löschen (Admin)"
-              onExecute={() => call("DELETE", `/api/v1/admin/products/${adminProductId}`, undefined, token)} />
-          </TabsContent>
-
-          <TabsContent value="certificates">
-            <EC method="GET" path="/api/v1/admin/certificates" auth="ADMIN" description="Alle Zertifikate auflisten (Admin)"
-              onExecute={() => call("GET", "/api/v1/admin/certificates", undefined, token)} />
-
-            <Card className="mb-4 border-slate-200">
-              <CardContent className="pt-4">
-                <Label className="text-xs font-semibold">Zertifikat-ID</Label>
-                <Input value={adminCertId} onChange={e => setAdminCertId(e.target.value)} placeholder="UUID des Zertifikats" className="h-8 text-xs mt-1" />
-              </CardContent>
-            </Card>
-
-            <EC method="PATCH" path="/api/v1/admin/certificates/{id}/verify" auth="ADMIN" description="Zertifikat verifizieren / genehmigen"
-              onExecute={() => call("PATCH", `/api/v1/admin/certificates/${adminCertId}/verify`, {}, token)} />
-
-            <EC method="PATCH" path="/api/v1/admin/certificates/{id}/reject" auth="ADMIN" description="Zertifikat ablehnen"
-              onExecute={() => call("PATCH", `/api/v1/admin/certificates/${adminCertId}/reject`, { reason: certRejectReason }, token)}>
-              <div><Label className="text-xs">Ablehnungsgrund</Label><Textarea value={certRejectReason} onChange={e => setCertRejectReason(e.target.value)} className="text-xs h-16" /></div>
-            </EC>
-          </TabsContent>
-
-          <TabsContent value="orders">
-            <EC method="GET" path="/api/v1/admin/orders" auth="ADMIN" description="Alle Bestellungen auflisten (Admin)"
-              onExecute={() => call("GET", "/api/v1/admin/orders", undefined, token)} />
-
-            <Card className="mb-4 border-slate-200">
-              <CardContent className="pt-4">
-                <Label className="text-xs font-semibold">Order-ID</Label>
-                <Input value={adminOrderId} onChange={e => setAdminOrderId(e.target.value)} placeholder="UUID der Bestellung" className="h-8 text-xs mt-1" />
-              </CardContent>
-            </Card>
-
-            <EC method="PATCH" path="/api/v1/admin/orders/{id}/status" auth="ADMIN" description="Bestell-Status überschreiben (Admin)"
-              onExecute={() => call("PATCH", `/api/v1/admin/orders/${adminOrderId}/status`, { status: adminOrderStatus }, token)}>
-              <div>
-                <Label className="text-xs">Status</Label>
-                <Select value={adminOrderStatus} onValueChange={setAdminOrderStatus}>
-                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </EC>
-          </TabsContent>
-
-          <TabsContent value="finance">
-            <EC method="GET" path="/api/v1/admin/payments" auth="ADMIN" description="Alle Zahlungen auflisten"
-              onExecute={() => call("GET", "/api/v1/admin/payments", undefined, token)} />
-
-            <Card className="mb-4 border-slate-200">
-              <CardContent className="pt-4">
-                <Label className="text-xs font-semibold">Payment-ID (für Refund)</Label>
-                <Input value={adminPaymentId} onChange={e => setAdminPaymentId(e.target.value)} placeholder="UUID des Payments" className="h-8 text-xs mt-1" />
-              </CardContent>
-            </Card>
-
-            <EC method="POST" path="/api/v1/admin/payments/{id}/refund" auth="ADMIN" description="Rückerstattung auslösen"
-              onExecute={() => call("POST", `/api/v1/admin/payments/${adminPaymentId}/refund`, {
-                ...(refundAmount ? { amount: Math.round(parseFloat(refundAmount) * 100) } : {}),
-                ...(refundReason ? { reason: refundReason } : {}),
-              }, token)}>
+            <EC
+              method="GET"
+              path="/api/v1/admin/products"
+              auth="ADMIN"
+              description="List all products across all sellers (paginated, filterable by status and search)"
+              onExecute={() => {
+                const params = new URLSearchParams({ page: productPage, size: productSize })
+                if (productStatus) params.set("status", productStatus)
+                if (productSearch) params.set("search", productSearch)
+                return req("GET", `/api/v1/admin/products?${params}`)
+              }}
+            >
               <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-xs">Betrag EUR (leer = komplett)</Label><Input type="number" step="0.01" value={refundAmount} onChange={e => setRefundAmount(e.target.value)} placeholder="29.99" className="h-8 text-xs" /></div>
-                <div><Label className="text-xs">Grund</Label><Input value={refundReason} onChange={e => setRefundReason(e.target.value)} placeholder="Defekt, ..." className="h-8 text-xs" /></div>
+                <div>
+                  <Label className="text-xs">Page</Label>
+                  <Input type="number" value={productPage} onChange={e => setProductPage(e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-xs">Size</Label>
+                  <Input type="number" value={productSize} onChange={e => setProductSize(e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-xs">Status (optional)</Label>
+                  <Select value={productStatus} onValueChange={setProductStatus}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="all" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">all</SelectItem>
+                      {["DRAFT", "REVIEW", "ACTIVE", "INACTIVE", "REJECTED"].map(s => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Search (optional)</Label>
+                  <Input value={productSearch} onChange={e => setProductSearch(e.target.value)} placeholder="name or SKU" className="h-8 text-xs" />
+                </div>
               </div>
             </EC>
 
-            <EC method="GET" path="/api/v1/admin/settlements" auth="ADMIN" description="Alle Auszahlungen auflisten"
-              onExecute={() => call("GET", "/api/v1/admin/settlements", undefined, token)} />
+            <Card className="mb-4 border-slate-200">
+              <CardContent className="pt-4">
+                <Label className="text-xs font-semibold">Product ID (for detail / activate / deactivate)</Label>
+                <Input value={productId} onChange={e => setProductId(e.target.value)} placeholder="UUID" className="h-8 text-xs mt-1" />
+              </CardContent>
+            </Card>
+
+            <EC
+              method="GET"
+              path="/api/v1/admin/products/{id}"
+              auth="ADMIN"
+              description="Get full product detail by ID"
+              onExecute={() => req("GET", `/api/v1/admin/products/${productId}`)}
+            />
+
+            <EC
+              method="PATCH"
+              path="/api/v1/admin/products/{id}/activate"
+              auth="ADMIN"
+              description="Force-activate a product (bypasses normal state machine)"
+              onExecute={() => req("PATCH", `/api/v1/admin/products/${productId}/activate`)}
+            />
+
+            <EC
+              method="PATCH"
+              path="/api/v1/admin/products/{id}/deactivate"
+              auth="ADMIN"
+              description="Deactivate a product"
+              onExecute={() => req("PATCH", `/api/v1/admin/products/${productId}/deactivate`)}
+            />
+          </TabsContent>
+
+          {/* Orders */}
+          <TabsContent value="orders">
+            <h2 className="text-sm font-semibold text-slate-600 mb-3">Orders</h2>
+
+            <EC
+              method="GET"
+              path="/api/v1/admin/orders"
+              auth="ADMIN"
+              description="List all orders (paginated, filterable by status and payment status)"
+              onExecute={() => {
+                const params = new URLSearchParams({ page: orderPage, size: orderSize })
+                if (orderStatus) params.set("status", orderStatus)
+                if (orderPaymentStatus) params.set("paymentStatus", orderPaymentStatus)
+                return req("GET", `/api/v1/admin/orders?${params}`)
+              }}
+            >
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">Page</Label>
+                  <Input type="number" value={orderPage} onChange={e => setOrderPage(e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-xs">Size</Label>
+                  <Input type="number" value={orderSize} onChange={e => setOrderSize(e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-xs">Status (optional)</Label>
+                  <Select value={orderStatus} onValueChange={setOrderStatus}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="all" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">all</SelectItem>
+                      {["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"].map(s => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Payment Status (optional)</Label>
+                  <Select value={orderPaymentStatus} onValueChange={setOrderPaymentStatus}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="all" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">all</SelectItem>
+                      {["PENDING", "PAID", "FAILED", "REFUNDED"].map(s => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </EC>
 
             <Card className="mb-4 border-slate-200">
               <CardContent className="pt-4">
-                <Label className="text-xs font-semibold">Settlement-ID (für manuelle Auszahlung)</Label>
-                <Input value={settlementId} onChange={e => setSettlementId(e.target.value)} placeholder="UUID" className="h-8 text-xs mt-1" />
+                <Label className="text-xs font-semibold">Order ID (for detail)</Label>
+                <Input value={orderId} onChange={e => setOrderId(e.target.value)} placeholder="UUID" className="h-8 text-xs mt-1" />
               </CardContent>
             </Card>
 
-            <EC method="POST" path="/api/v1/admin/settlements/{id}/payout" auth="ADMIN" description="Manuelle Auszahlung anstoßen"
-              onExecute={() => call("POST", `/api/v1/admin/settlements/${settlementId}/payout`, {}, token)} />
-
-            <h3 className="text-sm font-semibold text-slate-600 mt-4 mb-2">Seller-Auszahlung</h3>
-            <Card className="mb-4 border-slate-200">
-              <CardContent className="pt-4 grid grid-cols-2 gap-2">
-                <div><Label className="text-xs">Seller-ID</Label><Input value={payoutSellerId} onChange={e => setPayoutSellerId(e.target.value)} placeholder="UUID" className="h-8 text-xs mt-1" /></div>
-                <div><Label className="text-xs">Betrag EUR</Label><Input type="number" step="0.01" value={payoutAmount} onChange={e => setPayoutAmount(e.target.value)} placeholder="150.00" className="h-8 text-xs mt-1" /></div>
-              </CardContent>
-            </Card>
-
-            <EC method="POST" path="/api/v1/admin/sellers/{id}/payout" auth="ADMIN" description="Seller-Auszahlung manuell auslösen"
-              onExecute={() => call("POST", `/api/v1/admin/sellers/${payoutSellerId}/payout`, {
-                ...(payoutAmount ? { amount: Math.round(parseFloat(payoutAmount) * 100) } : {}),
-              }, token)} />
+            <EC
+              method="GET"
+              path="/api/v1/admin/orders/{id}"
+              auth="ADMIN"
+              description="Get full order detail by ID"
+              onExecute={() => req("GET", `/api/v1/admin/orders/${orderId}`)}
+            />
           </TabsContent>
 
-          <TabsContent value="maintenance">
-            <p className="text-xs text-slate-500 mb-4">Wartungs-Jobs manuell anstoßen. Normalerweise laufen diese automatisch via Scheduler.</p>
+          {/* Payments */}
+          <TabsContent value="payments">
+            <h2 className="text-sm font-semibold text-slate-600 mb-3">Payments</h2>
 
-            <EC method="POST" path="/api/v1/admin/maintenance/cleanup-sessions" auth="ADMIN" description="Abgelaufene Sessions bereinigen"
-              onExecute={() => call("POST", "/api/v1/admin/maintenance/cleanup-sessions", { olderThanDays: parseInt(cleanupDays) || 30 }, token)}>
-              <div><Label className="text-xs">Älter als (Tage)</Label><Input type="number" value={cleanupDays} onChange={e => setCleanupDays(e.target.value)} className="h-8 text-xs" /></div>
+            <EC
+              method="GET"
+              path="/api/v1/admin/payments"
+              auth="ADMIN"
+              description="List all payments (paginated, filterable by status)"
+              onExecute={() => {
+                const params = new URLSearchParams({ page: paymentPage, size: paymentSize })
+                if (paymentStatus) params.set("status", paymentStatus)
+                return req("GET", `/api/v1/admin/payments?${params}`)
+              }}
+            >
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Label className="text-xs">Page</Label>
+                  <Input type="number" value={paymentPage} onChange={e => setPaymentPage(e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-xs">Size</Label>
+                  <Input type="number" value={paymentSize} onChange={e => setPaymentSize(e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-xs">Status (optional)</Label>
+                  <Select value={paymentStatus} onValueChange={setPaymentStatus}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="all" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">all</SelectItem>
+                      {["PENDING", "PAID", "FAILED", "REFUNDED"].map(s => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </EC>
 
-            <EC method="POST" path="/api/v1/admin/maintenance/expire-certificates" auth="ADMIN" description="Abgelaufene Zertifikate deaktivieren"
-              onExecute={() => call("POST", "/api/v1/admin/maintenance/expire-certificates", {}, token)} />
+            <Card className="mb-4 border-slate-200">
+              <CardContent className="pt-4">
+                <Label className="text-xs font-semibold">Payment ID (for detail)</Label>
+                <Input value={paymentId} onChange={e => setPaymentId(e.target.value)} placeholder="UUID" className="h-8 text-xs mt-1" />
+              </CardContent>
+            </Card>
+
+            <EC
+              method="GET"
+              path="/api/v1/admin/payments/{id}"
+              auth="ADMIN"
+              description="Get full payment detail by ID"
+              onExecute={() => req("GET", `/api/v1/admin/payments/${paymentId}`)}
+            />
+          </TabsContent>
+
+          {/* Refunds */}
+          <TabsContent value="refunds">
+            <h2 className="text-sm font-semibold text-slate-600 mb-3">Refunds</h2>
+
+            <EC
+              method="GET"
+              path="/api/v1/admin/refunds"
+              auth="ADMIN"
+              description="List all refunds (paginated)"
+              onExecute={() => {
+                const params = new URLSearchParams({ page: refundPage, size: refundSize })
+                return req("GET", `/api/v1/admin/refunds?${params}`)
+              }}
+            >
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">Page</Label>
+                  <Input type="number" value={refundPage} onChange={e => setRefundPage(e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-xs">Size</Label>
+                  <Input type="number" value={refundSize} onChange={e => setRefundSize(e.target.value)} className="h-8 text-xs" />
+                </div>
+              </div>
+            </EC>
+
+            <EC
+              method="POST"
+              path="/api/v1/admin/refunds"
+              auth="ADMIN"
+              description="Create a refund for a payment"
+              onExecute={() =>
+                req("POST", "/api/v1/admin/refunds", {
+                  paymentId: refundPaymentId,
+                  amountCents: parseInt(refundAmountCents) || 0,
+                  reason: refundReason,
+                })
+              }
+            >
+              <div className="grid grid-cols-2 gap-2">
+                <div className="col-span-2">
+                  <Label className="text-xs">Payment ID</Label>
+                  <Input value={refundPaymentId} onChange={e => setRefundPaymentId(e.target.value)} placeholder="UUID of payment" className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-xs">Amount (cents)</Label>
+                  <Input type="number" value={refundAmountCents} onChange={e => setRefundAmountCents(e.target.value)} placeholder="2999" className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-xs">Reason</Label>
+                  <Input value={refundReason} onChange={e => setRefundReason(e.target.value)} placeholder="Defective item, ..." className="h-8 text-xs" />
+                </div>
+              </div>
+            </EC>
+          </TabsContent>
+
+          {/* Settlements */}
+          <TabsContent value="settlements">
+            <h2 className="text-sm font-semibold text-slate-600 mb-3">Settlements</h2>
+
+            <EC
+              method="GET"
+              path="/api/v1/admin/settlements"
+              auth="ADMIN"
+              description="List all settlements (paginated, optionally filter by seller)"
+              onExecute={() => {
+                const params = new URLSearchParams({ page: settlementPage, size: settlementSize })
+                if (settlementSellerId) params.set("sellerId", settlementSellerId)
+                return req("GET", `/api/v1/admin/settlements?${params}`)
+              }}
+            >
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Label className="text-xs">Page</Label>
+                  <Input type="number" value={settlementPage} onChange={e => setSettlementPage(e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-xs">Size</Label>
+                  <Input type="number" value={settlementSize} onChange={e => setSettlementSize(e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-xs">Seller ID (optional)</Label>
+                  <Input value={settlementSellerId} onChange={e => setSettlementSellerId(e.target.value)} placeholder="UUID" className="h-8 text-xs" />
+                </div>
+              </div>
+            </EC>
+          </TabsContent>
+
+          {/* Payouts */}
+          <TabsContent value="payouts">
+            <h2 className="text-sm font-semibold text-slate-600 mb-3">Payouts</h2>
+
+            <EC
+              method="GET"
+              path="/api/v1/admin/payouts"
+              auth="ADMIN"
+              description="List all payouts (paginated, filterable by status)"
+              onExecute={() => {
+                const params = new URLSearchParams({ page: payoutPage, size: payoutSize })
+                if (payoutListStatus) params.set("status", payoutListStatus)
+                return req("GET", `/api/v1/admin/payouts?${params}`)
+              }}
+            >
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <Label className="text-xs">Page</Label>
+                  <Input type="number" value={payoutPage} onChange={e => setPayoutPage(e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-xs">Size</Label>
+                  <Input type="number" value={payoutSize} onChange={e => setPayoutSize(e.target.value)} className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-xs">Status (optional)</Label>
+                  <Select value={payoutListStatus} onValueChange={setPayoutListStatus}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="all" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">all</SelectItem>
+                      {["PENDING", "PROCESSING", "COMPLETED", "FAILED"].map(s => (
+                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </EC>
+
+            <EC
+              method="POST"
+              path="/api/v1/admin/payouts"
+              auth="ADMIN"
+              description="Create a payout for a seller"
+              onExecute={() =>
+                req("POST", "/api/v1/admin/payouts", {
+                  sellerId: payoutSellerId,
+                  amountCents: parseInt(payoutAmountCents) || 0,
+                  currency: payoutCurrency || "EUR",
+                })
+              }
+            >
+              <div className="grid grid-cols-3 gap-2">
+                <div className="col-span-3">
+                  <Label className="text-xs">Seller ID</Label>
+                  <Input value={payoutSellerId} onChange={e => setPayoutSellerId(e.target.value)} placeholder="UUID of seller" className="h-8 text-xs" />
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-xs">Amount (cents)</Label>
+                  <Input type="number" value={payoutAmountCents} onChange={e => setPayoutAmountCents(e.target.value)} placeholder="15000" className="h-8 text-xs" />
+                </div>
+                <div>
+                  <Label className="text-xs">Currency</Label>
+                  <Input value={payoutCurrency} onChange={e => setPayoutCurrency(e.target.value)} placeholder="EUR" className="h-8 text-xs" />
+                </div>
+              </div>
+            </EC>
+          </TabsContent>
+
+          {/* Maintenance */}
+          <TabsContent value="maintenance">
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-300 rounded-lg px-4 py-3 mb-4 text-sm text-amber-800">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>
+                <strong>Warning:</strong> These are destructive admin operations. They modify data irreversibly.
+                Normally run automatically via scheduler.
+              </span>
+            </div>
+
+            <h2 className="text-sm font-semibold text-slate-600 mb-3">Maintenance</h2>
+
+            <EC
+              method="POST"
+              path="/api/v1/admin/maintenance/cleanup-refresh-tokens"
+              auth="ADMIN"
+              description="Cleanup expired refresh tokens. Returns how many tokens were removed."
+              onExecute={() => req("POST", "/api/v1/admin/maintenance/cleanup-refresh-tokens")}
+              warning
+            />
+
+            <EC
+              method="POST"
+              path="/api/v1/admin/maintenance/expire-pending-orders"
+              auth="ADMIN"
+              description="Expire old pending orders that have not been paid. Returns how many orders were expired."
+              onExecute={() => req("POST", "/api/v1/admin/maintenance/expire-pending-orders")}
+              warning
+            />
           </TabsContent>
         </Tabs>
       </div>
