@@ -8,6 +8,17 @@ import {
   apiUpload,
 } from "./api-client"
 
+// Mock dynamic imports used inside tryRefreshAndRetry to prevent loading the
+// full service tree during tests (avoids OOM when running with coverage).
+vi.mock("@/src/services/auth.service", () => ({
+  AuthService: {
+    refresh: vi.fn().mockResolvedValue({ token: "new-refresh-token" }),
+  },
+}))
+vi.mock("sonner", () => ({
+  toast: { error: vi.fn() },
+}))
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function mockFetchResponse(status: number, body: unknown, ok?: boolean): Response {

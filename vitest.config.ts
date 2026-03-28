@@ -23,7 +23,12 @@ export default defineConfig({
         "src/**/*.{test,spec}.{ts,tsx}",
         "src/test-setup.ts",
         "src/types/**",
-        "src/lib/cn.ts", // thin re-export, not meaningful to test
+        "src/lib/cn.ts", // thin re-export
+        "src/lib/utils.ts", // shadcn cn() wrapper
+        "src/hooks/use-toast.ts", // shadcn generated
+        "src/hooks/use-mobile.ts", // shadcn generated
+        "src/hooks/index.ts", // barrel re-export
+        "src/services/index.ts", // barrel re-export
       ],
       thresholds: { lines: 80, functions: 80, branches: 70, statements: 80 },
     },
