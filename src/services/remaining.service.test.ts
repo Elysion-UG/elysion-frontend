@@ -307,14 +307,24 @@ import { FileService } from "./file.service"
 
 describe("FileService", () => {
   it("upload calls apiUpload with FormData", async () => {
-    mockApiUpload.mockResolvedValue({ fileId: "f1", url: "http://x", contentType: "image/jpeg", sizeBytes: 100 })
+    mockApiUpload.mockResolvedValue({
+      fileId: "f1",
+      url: "http://x",
+      contentType: "image/jpeg",
+      sizeBytes: 100,
+    })
     const file = new File(["data"], "photo.jpg", { type: "image/jpeg" })
     await FileService.upload(file, "PRODUCT_IMAGE")
     expect(mockApiUpload).toHaveBeenCalledWith("/api/v1/files/upload", expect.any(FormData))
   })
 
   it("upload appends relatedEntityType and relatedEntityId when provided", async () => {
-    mockApiUpload.mockResolvedValue({ fileId: "f1", url: "http://x", contentType: "image/jpeg", sizeBytes: 100 })
+    mockApiUpload.mockResolvedValue({
+      fileId: "f1",
+      url: "http://x",
+      contentType: "image/jpeg",
+      sizeBytes: 100,
+    })
     const file = new File(["data"], "photo.jpg", { type: "image/jpeg" })
     await FileService.upload(file, "PRODUCT_IMAGE", "PRODUCT", "p1")
     const form = mockApiUpload.mock.calls[0][1] as FormData
@@ -361,7 +371,12 @@ describe("FileService", () => {
   })
 
   it("uploadAndLink uploads then links", async () => {
-    mockApiUpload.mockResolvedValue({ fileId: "f1", url: "http://x", contentType: "image/jpeg", sizeBytes: 100 })
+    mockApiUpload.mockResolvedValue({
+      fileId: "f1",
+      url: "http://x",
+      contentType: "image/jpeg",
+      sizeBytes: 100,
+    })
     mockApiRequest.mockResolvedValue(null)
     const file = new File(["data"], "photo.jpg", { type: "image/jpeg" })
     const result = await FileService.uploadAndLink(file, "PRODUCT_IMAGE", "PRODUCT", "p1")
@@ -378,7 +393,13 @@ import { PaymentService } from "./payment.service"
 
 describe("PaymentService", () => {
   it("createIntent calls POST /api/v1/payments/create-intent", async () => {
-    mockApiRequest.mockResolvedValue({ id: "pi_1", clientSecret: "sec", amount: 100, currency: "eur", status: "created" })
+    mockApiRequest.mockResolvedValue({
+      id: "pi_1",
+      clientSecret: "sec",
+      amount: 100,
+      currency: "eur",
+      status: "created",
+    })
     await PaymentService.createIntent({ orderId: "o1", amount: 100 })
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/payments/create-intent",
@@ -387,7 +408,12 @@ describe("PaymentService", () => {
   })
 
   it("getStatus calls GET /api/v1/payments/:paymentId", async () => {
-    mockApiRequest.mockResolvedValue({ paymentId: "p1", status: "SUCCEEDED", amount: 100, updatedAt: "" })
+    mockApiRequest.mockResolvedValue({
+      paymentId: "p1",
+      status: "SUCCEEDED",
+      amount: 100,
+      updatedAt: "",
+    })
     await PaymentService.getStatus("p1")
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/payments/p1")
   })
@@ -415,7 +441,13 @@ import { SellerOrderService } from "./seller-order.service"
 
 describe("SellerOrderService", () => {
   it("list calls GET /api/v1/seller/orders with no params", async () => {
-    mockApiRequest.mockResolvedValue({ items: [], page: 0, size: 20, totalElements: 0, totalPages: 0 })
+    mockApiRequest.mockResolvedValue({
+      items: [],
+      page: 0,
+      size: 20,
+      totalElements: 0,
+      totalPages: 0,
+    })
     await SellerOrderService.list()
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/seller/orders")
   })
@@ -464,9 +496,7 @@ describe("SellerOrderService", () => {
   it("listSettlements calls correct endpoint with params", async () => {
     mockApiRequest.mockResolvedValue({ items: [] })
     await SellerOrderService.listSettlements({ page: 0, size: 20 })
-    expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/seller/settlements?page=0&size=20"
-    )
+    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/seller/settlements?page=0&size=20")
   })
 })
 

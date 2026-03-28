@@ -223,9 +223,7 @@ describe("UserService", () => {
     })
 
     it("throws an error for an unknown id", async () => {
-      await expect(UserService.getUserById("nonexistent_id")).rejects.toThrow(
-        "User not found"
-      )
+      await expect(UserService.getUserById("nonexistent_id")).rejects.toThrow("User not found")
     })
   })
 

@@ -10,11 +10,7 @@ import {
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
-function mockFetchResponse(
-  status: number,
-  body: unknown,
-  ok?: boolean
-): Response {
+function mockFetchResponse(status: number, body: unknown, ok?: boolean): Response {
   const resolvedOk = ok ?? (status >= 200 && status < 300)
   return {
     status,
@@ -100,9 +96,9 @@ describe("apiRequest", () => {
   })
 
   it("returns data from a successful 200 response", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { data: { id: "123", name: "Test" } })
-    )
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(mockFetchResponse(200, { data: { id: "123", name: "Test" } }))
     vi.stubGlobal("fetch", mockFetch)
 
     const result = await apiRequest<{ id: string; name: string }>("/api/v1/items")
@@ -122,9 +118,9 @@ describe("apiRequest", () => {
   })
 
   it("throws ApiError on 400 Bad Request", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(400, { message: "Validation failed" }, false)
-    )
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(mockFetchResponse(400, { message: "Validation failed" }, false))
     vi.stubGlobal("fetch", mockFetch)
 
     await expect(apiRequest("/api/v1/items")).rejects.toMatchObject({
@@ -135,9 +131,9 @@ describe("apiRequest", () => {
   })
 
   it("throws ApiError on 401 Unauthorized", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(401, { message: "Unauthorized" }, false)
-    )
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(mockFetchResponse(401, { message: "Unauthorized" }, false))
     vi.stubGlobal("fetch", mockFetch)
 
     await expect(apiRequest("/api/v1/protected")).rejects.toMatchObject({
@@ -147,9 +143,9 @@ describe("apiRequest", () => {
   })
 
   it("throws ApiError on 404 Not Found", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(404, { message: "Not Found" }, false)
-    )
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(mockFetchResponse(404, { message: "Not Found" }, false))
     vi.stubGlobal("fetch", mockFetch)
 
     await expect(apiRequest("/api/v1/items/999")).rejects.toMatchObject({
@@ -159,9 +155,7 @@ describe("apiRequest", () => {
   })
 
   it("throws ApiError on 500 with fallback message when body.message is missing", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(500, {}, false)
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(500, {}, false))
     vi.stubGlobal("fetch", mockFetch)
 
     await expect(apiRequest("/api/v1/items")).rejects.toMatchObject({
@@ -171,9 +165,7 @@ describe("apiRequest", () => {
   })
 
   it("includes Authorization header when access token is set", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { data: {} })
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { data: {} }))
     vi.stubGlobal("fetch", mockFetch)
     setAccessToken("bearer-token-xyz")
 
@@ -186,9 +178,7 @@ describe("apiRequest", () => {
   })
 
   it("does NOT include Authorization header when no token is set", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { data: {} })
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { data: {} }))
     vi.stubGlobal("fetch", mockFetch)
 
     await apiRequest("/api/v1/public")
@@ -198,23 +188,17 @@ describe("apiRequest", () => {
   })
 
   it("always sets Content-Type: application/json", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { data: null })
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { data: null }))
     vi.stubGlobal("fetch", mockFetch)
 
     await apiRequest("/api/v1/items")
 
     const [, options] = mockFetch.mock.calls[0]
-    expect((options.headers as Record<string, string>)["Content-Type"]).toBe(
-      "application/json"
-    )
+    expect((options.headers as Record<string, string>)["Content-Type"]).toBe("application/json")
   })
 
   it("always sends credentials: include", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { data: null })
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { data: null }))
     vi.stubGlobal("fetch", mockFetch)
 
     await apiRequest("/api/v1/items")
@@ -224,9 +208,7 @@ describe("apiRequest", () => {
   })
 
   it("merges custom headers with default headers", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { data: {} })
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { data: {} }))
     vi.stubGlobal("fetch", mockFetch)
 
     await apiRequest("/api/v1/items", {
@@ -240,9 +222,7 @@ describe("apiRequest", () => {
   })
 
   it("custom headers can override Content-Type", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { data: {} })
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { data: {} }))
     vi.stubGlobal("fetch", mockFetch)
 
     await apiRequest("/api/v1/items", {
@@ -250,15 +230,11 @@ describe("apiRequest", () => {
     })
 
     const [, options] = mockFetch.mock.calls[0]
-    expect((options.headers as Record<string, string>)["Content-Type"]).toBe(
-      "text/plain"
-    )
+    expect((options.headers as Record<string, string>)["Content-Type"]).toBe("text/plain")
   })
 
   it("passes method and body through to fetch", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { data: { id: "new-1" } })
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { data: { id: "new-1" } }))
     vi.stubGlobal("fetch", mockFetch)
 
     await apiRequest("/api/v1/items", {
@@ -274,9 +250,7 @@ describe("apiRequest", () => {
 
   it("includes the error body in thrown ApiError", async () => {
     const errorBody = { message: "Conflict", field: "email" }
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(409, errorBody, false)
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(409, errorBody, false))
     vi.stubGlobal("fetch", mockFetch)
 
     await expect(apiRequest("/api/v1/items")).rejects.toMatchObject({
@@ -301,9 +275,7 @@ describe("apiRequestRaw", () => {
 
   it("returns the raw body (no .data unwrapping)", async () => {
     const rawBody = { status: "success", message: null, data: { id: "42" } }
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, rawBody)
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, rawBody))
     vi.stubGlobal("fetch", mockFetch)
 
     const result = await apiRequestRaw<typeof rawBody>("/api/v1/items")
@@ -323,9 +295,9 @@ describe("apiRequestRaw", () => {
   })
 
   it("throws ApiError on 4xx response", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(403, { message: "Forbidden" }, false)
-    )
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(mockFetchResponse(403, { message: "Forbidden" }, false))
     vi.stubGlobal("fetch", mockFetch)
 
     await expect(apiRequestRaw("/api/v1/admin")).rejects.toMatchObject({
@@ -336,9 +308,9 @@ describe("apiRequestRaw", () => {
   })
 
   it("throws ApiError on 5xx response", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(503, { message: "Service Unavailable" }, false)
-    )
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(mockFetchResponse(503, { message: "Service Unavailable" }, false))
     vi.stubGlobal("fetch", mockFetch)
 
     await expect(apiRequestRaw("/api/v1/items")).rejects.toMatchObject({
@@ -348,9 +320,7 @@ describe("apiRequestRaw", () => {
   })
 
   it("uses fallback message when body.message is absent on error", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(500, {}, false)
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(500, {}, false))
     vi.stubGlobal("fetch", mockFetch)
 
     await expect(apiRequestRaw("/api/v1/items")).rejects.toMatchObject({
@@ -360,24 +330,18 @@ describe("apiRequestRaw", () => {
   })
 
   it("includes Authorization header when token is set", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { ok: true })
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { ok: true }))
     vi.stubGlobal("fetch", mockFetch)
     setAccessToken("raw-token")
 
     await apiRequestRaw("/api/v1/items")
 
     const [, options] = mockFetch.mock.calls[0]
-    expect((options.headers as Record<string, string>)["Authorization"]).toBe(
-      "Bearer raw-token"
-    )
+    expect((options.headers as Record<string, string>)["Authorization"]).toBe("Bearer raw-token")
   })
 
   it("does NOT include Authorization header without a token", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { ok: true })
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { ok: true }))
     vi.stubGlobal("fetch", mockFetch)
 
     await apiRequestRaw("/api/v1/items")
@@ -387,9 +351,7 @@ describe("apiRequestRaw", () => {
   })
 
   it("sends credentials: include", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { ok: true })
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { ok: true }))
     vi.stubGlobal("fetch", mockFetch)
 
     await apiRequestRaw("/api/v1/items")
@@ -414,24 +376,21 @@ describe("apiUpload", () => {
 
   it("returns data on a successful upload", async () => {
     const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { data: { fileId: "file-abc", url: "https://cdn.example.com/file-abc" } })
+      mockFetchResponse(200, {
+        data: { fileId: "file-abc", url: "https://cdn.example.com/file-abc" },
+      })
     )
     vi.stubGlobal("fetch", mockFetch)
 
     const form = new FormData()
     form.append("file", new Blob(["content"]), "test.jpg")
 
-    const result = await apiUpload<{ fileId: string; url: string }>(
-      "/api/v1/files",
-      form
-    )
+    const result = await apiUpload<{ fileId: string; url: string }>("/api/v1/files", form)
     expect(result).toEqual({ fileId: "file-abc", url: "https://cdn.example.com/file-abc" })
   })
 
   it("sends the FormData as the request body", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { data: {} })
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { data: {} }))
     vi.stubGlobal("fetch", mockFetch)
 
     const form = new FormData()
@@ -445,9 +404,7 @@ describe("apiUpload", () => {
   })
 
   it("does not set Content-Type header (lets browser set multipart boundary)", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { data: {} })
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { data: {} }))
     vi.stubGlobal("fetch", mockFetch)
 
     await apiUpload("/api/v1/files", new FormData())
@@ -457,24 +414,18 @@ describe("apiUpload", () => {
   })
 
   it("includes Authorization header when token is set", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { data: {} })
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { data: {} }))
     vi.stubGlobal("fetch", mockFetch)
     setAccessToken("upload-token")
 
     await apiUpload("/api/v1/files", new FormData())
 
     const [, options] = mockFetch.mock.calls[0]
-    expect((options.headers as Record<string, string>)["Authorization"]).toBe(
-      "Bearer upload-token"
-    )
+    expect((options.headers as Record<string, string>)["Authorization"]).toBe("Bearer upload-token")
   })
 
   it("does NOT include Authorization header without a token", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { data: {} })
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { data: {} }))
     vi.stubGlobal("fetch", mockFetch)
 
     await apiUpload("/api/v1/files", new FormData())
@@ -484,9 +435,7 @@ describe("apiUpload", () => {
   })
 
   it("sends credentials: include", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(200, { data: {} })
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { data: {} }))
     vi.stubGlobal("fetch", mockFetch)
 
     await apiUpload("/api/v1/files", new FormData())
@@ -508,9 +457,9 @@ describe("apiUpload", () => {
   })
 
   it("throws ApiError on upload failure (4xx)", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(422, { message: "File too large" }, false)
-    )
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(mockFetchResponse(422, { message: "File too large" }, false))
     vi.stubGlobal("fetch", mockFetch)
 
     await expect(apiUpload("/api/v1/files", new FormData())).rejects.toMatchObject({
@@ -521,9 +470,7 @@ describe("apiUpload", () => {
   })
 
   it("throws ApiError on upload failure (5xx) with fallback message", async () => {
-    const mockFetch = vi.fn().mockResolvedValue(
-      mockFetchResponse(500, {}, false)
-    )
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(500, {}, false))
     vi.stubGlobal("fetch", mockFetch)
 
     await expect(apiUpload("/api/v1/files", new FormData())).rejects.toMatchObject({

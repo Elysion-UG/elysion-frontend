@@ -94,11 +94,11 @@ export default function OrderDetail() {
               <Package className="h-6 w-6 text-teal-600" />#{order.orderNumber}
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              Aufgegeben am {formatDate(order.createdAt ?? '')}
+              Aufgegeben am {formatDate(order.createdAt ?? "")}
             </p>
           </div>
           <span className="rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-800">
-            {order.status ? orderStatusLabel[order.status] : ''}
+            {order.status ? orderStatusLabel[order.status] : ""}
           </span>
         </div>
       </div>

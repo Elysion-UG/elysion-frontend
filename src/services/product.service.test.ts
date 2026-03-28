@@ -67,9 +67,7 @@ describe("ProductService", () => {
     it("appends minPrice and maxPrice", async () => {
       mockApiRequestRaw.mockResolvedValue(mockProductPage)
       await ProductService.list({ minPrice: 10, maxPrice: 100 })
-      expect(mockApiRequestRaw).toHaveBeenCalledWith(
-        "/api/v1/products?minPrice=10&maxPrice=100"
-      )
+      expect(mockApiRequestRaw).toHaveBeenCalledWith("/api/v1/products?minPrice=10&maxPrice=100")
     })
 
     it("appends sort, page and size", async () => {
@@ -307,9 +305,7 @@ describe("ProductService", () => {
     it("GETs /api/v1/products/{productId}/certificates", async () => {
       mockApiRequest.mockResolvedValue([])
       await ProductService.getProductCertificates("prod_1")
-      expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/v1/products/prod_1/certificates"
-      )
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products/prod_1/certificates")
     })
 
     it("returns the certificates array", async () => {

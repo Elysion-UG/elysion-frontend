@@ -55,9 +55,7 @@ describe("OrderService", () => {
     it("appends all params together", async () => {
       mockApiRequest.mockResolvedValue(mockOrders)
       await OrderService.list({ page: 1, size: 20, status: "PENDING" })
-      expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/v1/orders?page=1&size=20&status=PENDING"
-      )
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/orders?page=1&size=20&status=PENDING")
     })
 
     it("omits undefined page and size", async () => {

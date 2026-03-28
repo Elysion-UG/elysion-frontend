@@ -150,7 +150,7 @@ export default function Cart() {
 
                 <div className="flex flex-col items-end justify-between">
                   <button
-                    onClick={() => handleRemove(item.id, item.productName ?? '')}
+                    onClick={() => handleRemove(item.id, item.productName ?? "")}
                     disabled={isItemLoading}
                     className="text-slate-400 transition-colors hover:text-red-500"
                   >

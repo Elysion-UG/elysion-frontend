@@ -41,9 +41,7 @@ describe("useCart", () => {
     // Suppress the expected error output from React
     const consoleError = console.error
     console.error = () => {}
-    expect(() => renderHook(() => useCart())).toThrow(
-      "useCart must be used within CartProvider"
-    )
+    expect(() => renderHook(() => useCart())).toThrow("useCart must be used within CartProvider")
     console.error = consoleError
   })
 })

@@ -216,7 +216,9 @@ export default function ProductDetail() {
 
             {/* Seller Card */}
             <div
-              onClick={() => (window.location.href = `/producer?sellerId=${product.seller?.userId}`)}
+              onClick={() =>
+                (window.location.href = `/producer?sellerId=${product.seller?.userId}`)
+              }
               className="cursor-pointer rounded-lg border border-slate-200 bg-white p-4 transition-all hover:border-teal-400 hover:shadow-md"
             >
               <div className="flex items-center gap-3">
@@ -250,7 +252,9 @@ export default function ProductDetail() {
 
             {/* Price */}
             <div className="flex items-center gap-3">
-              <span className="text-3xl font-bold text-slate-800">{formatEuro(displayPrice ?? 0)}</span>
+              <span className="text-3xl font-bold text-slate-800">
+                {formatEuro(displayPrice ?? 0)}
+              </span>
               {selectedVariant &&
                 selectedVariant.price !== null &&
                 selectedVariant.price !== product.basePrice && (
@@ -392,7 +396,9 @@ export default function ProductDetail() {
                   </div>
                   <div className="rounded-lg border border-slate-200 bg-white p-4">
                     <p className="mb-1 text-xs uppercase tracking-wide text-slate-500">MwSt.</p>
-                    <p className="font-medium text-slate-800">{bpsToPercent(product.taxRate ?? 0)}%</p>
+                    <p className="font-medium text-slate-800">
+                      {bpsToPercent(product.taxRate ?? 0)}%
+                    </p>
                   </div>
                 </div>
               </div>

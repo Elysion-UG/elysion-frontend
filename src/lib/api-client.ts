@@ -126,11 +126,7 @@ export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
   const body = await response.json()
 
   if (!response.ok) {
-    throw new ApiError(
-      response.status,
-      body?.message ?? `Upload failed (${response.status})`,
-      body
-    )
+    throw new ApiError(response.status, body?.message ?? `Upload failed (${response.status})`, body)
   }
 
   return body.data as T

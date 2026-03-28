@@ -86,9 +86,7 @@ describe("useAuth", () => {
   it("throws when used outside AuthProvider", () => {
     const consoleError = console.error
     console.error = () => {}
-    expect(() => renderHook(() => useAuth())).toThrow(
-      "useAuth must be used within AuthProvider"
-    )
+    expect(() => renderHook(() => useAuth())).toThrow("useAuth must be used within AuthProvider")
     console.error = consoleError
   })
 })

@@ -26,9 +26,7 @@ describe("useAuth hook", () => {
   })
 
   it("throws when used outside AuthProvider", () => {
-    expect(() => renderHook(() => useAuth())).toThrow(
-      "useAuth must be used within"
-    )
+    expect(() => renderHook(() => useAuth())).toThrow("useAuth must be used within")
   })
 })
 
@@ -43,8 +41,6 @@ describe("useCart hook", () => {
   })
 
   it("throws when used outside CartProvider", () => {
-    expect(() => renderHook(() => useCart())).toThrow(
-      "useCart must be used within"
-    )
+    expect(() => renderHook(() => useCart())).toThrow("useCart must be used within")
   })
 })
