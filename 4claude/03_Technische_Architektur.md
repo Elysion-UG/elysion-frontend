@@ -1,4 +1,5 @@
 # Technische Architektur
+
 ## Nachhaltigkeits-Zertifikat-Plattform
 
 **Version:** 1.0  
@@ -8,6 +9,7 @@
 ---
 
 ## Inhaltsverzeichnis
+
 1. [System-Überblick](#1-system-überblick)
 2. [Technologie-Stack](#2-technologie-stack)
 3. [Architektur-Muster](#3-architektur-muster)
@@ -89,18 +91,18 @@
 
 ### 1.2 Systemkomponenten
 
-| Komponente | Zweck | Technologie |
-|------------|-------|-------------|
-| **Web Frontend** | Käufer- & Verkäufer-Interface | React.js, Next.js |
-| **Admin Dashboard** | Plattform-Verwaltung | React.js, Material-UI |
-| **API Gateway** | Load Balancing, Rate Limiting | NGINX / AWS ALB |
-| **Backend API** | Business Logic | Node.js, Express.js |
-| **Datenbank** | Persistente Daten | PostgreSQL 14+ |
-| **Cache** | Session, Match-Scores | Redis 7+ |
-| **File Storage** | Bilder, PDFs | AWS S3 / MinIO |
-| **Search Engine** | Produktsuche | Elasticsearch 8+ |
-| **Payment Gateway** | Zahlungsabwicklung | Stripe |
-| **Email Service** | Transaktions-E-Mails | SendGrid / AWS SES |
+| Komponente          | Zweck                         | Technologie           |
+| ------------------- | ----------------------------- | --------------------- |
+| **Web Frontend**    | Käufer- & Verkäufer-Interface | React.js, Next.js     |
+| **Admin Dashboard** | Plattform-Verwaltung          | React.js, Material-UI |
+| **API Gateway**     | Load Balancing, Rate Limiting | NGINX / AWS ALB       |
+| **Backend API**     | Business Logic                | Node.js, Express.js   |
+| **Datenbank**       | Persistente Daten             | PostgreSQL 14+        |
+| **Cache**           | Session, Match-Scores         | Redis 7+              |
+| **File Storage**    | Bilder, PDFs                  | AWS S3 / MinIO        |
+| **Search Engine**   | Produktsuche                  | Elasticsearch 8+      |
+| **Payment Gateway** | Zahlungsabwicklung            | Stripe                |
+| **Email Service**   | Transaktions-E-Mails          | SendGrid / AWS SES    |
 
 ---
 
@@ -111,6 +113,7 @@
 #### 2.1.1 Kern-Technologien
 
 **Framework: React.js 18+ mit Next.js 14+**
+
 - **Begründung:**
   - Server-Side Rendering (SSR) für SEO
   - File-based Routing
@@ -119,6 +122,7 @@
   - Große Community & Ecosystem
 
 **Styling: Tailwind CSS 3+**
+
 - **Begründung:**
   - Utility-First → schnelle Entwicklung
   - Geringe Bundle-Size (PurgeCSS)
@@ -126,17 +130,20 @@
   - Konsistentes Design-System
 
 **State Management: Zustand oder React Context**
+
 - **Begründung:**
   - Zustand: Leichtgewichtig, weniger Boilerplate als Redux
   - React Context: Für einfache globale States (User, Theme)
 
 **Form Handling: React Hook Form**
+
 - **Begründung:**
   - Performance (uncontrolled components)
   - Einfache Validierung (mit Yup/Zod)
   - Geringe Bundle-Size
 
 **UI Components: Headless UI + Custom**
+
 - **Begründung:**
   - Headless UI: Unstyled, accessible Components
   - Custom: Volle Kontrolle über Design
@@ -175,6 +182,7 @@
 #### 2.2.1 Kern-Technologien
 
 **Runtime: Node.js 20 LTS**
+
 - **Begründung:**
   - Gleiche Sprache wie Frontend (TypeScript)
   - Non-blocking I/O (gut für API-Server)
@@ -182,6 +190,7 @@
   - Performance für I/O-intensive Tasks
 
 **Framework: Express.js 4+**
+
 - **Begründung:**
   - Minimalistisch, flexibel
   - Große Community
@@ -190,6 +199,7 @@
   - **Alternative:** Fastify (schneller, aber weniger Middleware)
 
 **Sprache: TypeScript 5+**
+
 - **Begründung:**
   - Type Safety → weniger Runtime-Fehler
   - Bessere IDE-Unterstützung
@@ -197,6 +207,7 @@
   - Dokumentation durch Types
 
 **ORM: Prisma 5+**
+
 - **Begründung:**
   - Type-Safe Database Client
   - Migrationen integriert
@@ -205,6 +216,7 @@
   - **Alternative:** TypeORM (mehr Features, komplexer)
 
 **Validierung: Zod**
+
 - **Begründung:**
   - TypeScript-first
   - Schema-Validierung für API-Input
@@ -246,6 +258,7 @@
 ### 2.3 Datenbank
 
 **PostgreSQL 14+**
+
 - **Begründung:**
   - Relational (passt zu Datenmodell: Bestellungen, Produkte, Zertifikate)
   - ACID-Compliant (wichtig für Transaktionen)
@@ -254,6 +267,7 @@
   - Open Source
 
 **Redis 7+** (Caching)
+
 - **Begründung:**
   - In-Memory → extrem schnell
   - Key-Value Store für Session-Daten
@@ -263,6 +277,7 @@
 ### 2.4 File Storage
 
 **AWS S3 / Google Cloud Storage**
+
 - **Begründung:**
   - Unbegrenzte Skalierung
   - CDN-Integration
@@ -273,6 +288,7 @@
 ### 2.5 Search Engine
 
 **Elasticsearch 8+ oder Algolia**
+
 - **Begründung:**
   - Volltextsuche mit Fuzzy-Matching
   - Faceted Search (Filter)
@@ -285,12 +301,12 @@
 
 ### 2.6 Drittanbieter-Services
 
-| Service | Zweck | Alternative |
-|---------|-------|-------------|
-| **Stripe** | Zahlungsabwicklung | PayPal, Adyen |
-| **SendGrid** | Transaktions-E-Mails | AWS SES, Postmark |
-| **Sentry** | Error Tracking | Rollbar, Bugsnag |
-| **Cloudflare** | CDN, DDoS-Schutz | AWS CloudFront |
+| Service        | Zweck                | Alternative       |
+| -------------- | -------------------- | ----------------- |
+| **Stripe**     | Zahlungsabwicklung   | PayPal, Adyen     |
+| **SendGrid**   | Transaktions-E-Mails | AWS SES, Postmark |
+| **Sentry**     | Error Tracking       | Rollbar, Bugsnag  |
+| **Cloudflare** | CDN, DDoS-Schutz     | AWS CloudFront    |
 
 ---
 
@@ -300,12 +316,14 @@
 
 **Entscheidung:** Initial als Monolith  
 **Begründung:**
+
 - Schnellere Entwicklung (keine Service-Grenzen)
 - Einfacheres Deployment
 - Weniger Overhead (keine Inter-Service-Kommunikation)
 - Ausreichend für 100 Verkäufer, 10.000 Produkte
 
 **Struktur:**
+
 ```
 backend/
 ├── src/
@@ -334,6 +352,7 @@ backend/
 ### 3.2 Migration zu Microservices (Phase 3, optional)
 
 **Bei Skalierung:** Aufteilung in Services
+
 - **User Service:** Authentifizierung, Nutzer-Verwaltung
 - **Product Service:** Produkte, Kategorien
 - **Order Service:** Bestellungen, Warenkorb
@@ -348,6 +367,7 @@ backend/
 #### 3.3.1 Backend-Patterns
 
 **1. Repository Pattern**
+
 - Abstrahierung der Datenbank-Zugriffe
 - Testbarkeit (Mock Repositories)
 
@@ -355,19 +375,20 @@ backend/
 // product.repository.ts
 export class ProductRepository {
   async findById(id: string): Promise<Product | null> {
-    return prisma.product.findUnique({ where: { id } });
+    return prisma.product.findUnique({ where: { id } })
   }
-  
+
   async findAll(filters: ProductFilters): Promise<Product[]> {
     return prisma.product.findMany({
       where: this.buildWhereClause(filters),
-      include: { certificates: true }
-    });
+      include: { certificates: true },
+    })
   }
 }
 ```
 
 **2. Service Layer Pattern**
+
 - Business Logic in Services
 - Controllers sind dünn (nur Request/Response-Handling)
 
@@ -378,63 +399,66 @@ export class ProductService {
     private productRepo: ProductRepository,
     private matchingService: MatchingService
   ) {}
-  
+
   async getRecommendedProducts(userId: string): Promise<Product[]> {
-    const userProfile = await this.getUserProfile(userId);
-    const products = await this.productRepo.findAll({ active: true });
-    
+    const userProfile = await this.getUserProfile(userId)
+    const products = await this.productRepo.findAll({ active: true })
+
     return products
-      .map(p => ({
+      .map((p) => ({
         ...p,
-        matchScore: this.matchingService.calculate(userProfile, p)
+        matchScore: this.matchingService.calculate(userProfile, p),
       }))
       .sort((a, b) => b.matchScore - a.matchScore)
-      .slice(0, 12);
+      .slice(0, 12)
   }
 }
 ```
 
 **3. Middleware Pattern**
+
 - Authentifizierung, Validierung, Logging als Middleware
 
 ```typescript
 // auth.middleware.ts
 export const authenticate = async (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Unauthorized' });
-  
+  const token = req.headers.authorization?.split(" ")[1]
+  if (!token) return res.status(401).json({ error: "Unauthorized" })
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-    next();
+    const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    req.user = decoded
+    next()
   } catch (err) {
-    res.status(401).json({ error: 'Invalid token' });
+    res.status(401).json({ error: "Invalid token" })
   }
-};
+}
 ```
 
 #### 3.3.2 Frontend-Patterns
 
 **1. Component Composition**
+
 - Kleine, wiederverwendbare Components
 - Container/Presentational Trennung
 
 **2. Custom Hooks**
+
 - Wiederverwendbare Logic
 
 ```typescript
 // useProducts.ts
 export const useProducts = (filters: ProductFilters) => {
-  const { data, error, isLoading } = useSWR(
-    ['/api/products', filters],
-    ([url, filters]) => fetchProducts(url, filters)
-  );
-  
-  return { products: data, error, isLoading };
-};
+  const { data, error, isLoading } = useSWR(["/api/products", filters], ([url, filters]) =>
+    fetchProducts(url, filters)
+  )
+
+  return { products: data, error, isLoading }
+}
 ```
 
 **3. Render Props / HOCs** (sparsam)
+
 - Für komplexe Zugriffskontrolle (ProtectedRoute)
 
 ---
@@ -484,11 +508,13 @@ frontend/
 ### 4.2 Routing-Strategie
 
 **Next.js App Router** (Next.js 13+)
+
 - File-based Routing
 - Server Components (default)
 - Client Components (opt-in mit `"use client"`)
 
 **Route-Gruppen:**
+
 ```
 app/
 ├── (auth)/              # Gruppe für Auth-Pages (ohne Layout)
@@ -512,13 +538,15 @@ app/
 #### 4.3.1 Server State (SWR)
 
 **Für Daten vom Backend:**
-```typescript
-import useSWR from 'swr';
 
-const { data: products, error, isLoading } = useSWR('/api/products', fetcher);
+```typescript
+import useSWR from "swr"
+
+const { data: products, error, isLoading } = useSWR("/api/products", fetcher)
 ```
 
 **Vorteile:**
+
 - Automatisches Caching
 - Revalidation (Background-Updates)
 - Deduplication (gleiche Requests werden zusammengefasst)
@@ -527,32 +555,36 @@ const { data: products, error, isLoading } = useSWR('/api/products', fetcher);
 #### 4.3.2 Client State (Zustand)
 
 **Für UI-State & globale App-States:**
+
 ```typescript
 // store/cartStore.ts
-import create from 'zustand';
+import create from "zustand"
 
 interface CartState {
-  items: CartItem[];
-  addItem: (item: CartItem) => void;
-  removeItem: (id: string) => void;
-  clearCart: () => void;
+  items: CartItem[]
+  addItem: (item: CartItem) => void
+  removeItem: (id: string) => void
+  clearCart: () => void
 }
 
 export const useCartStore = create<CartState>((set) => ({
   items: [],
-  addItem: (item) => set((state) => ({ 
-    items: [...state.items, item] 
-  })),
-  removeItem: (id) => set((state) => ({ 
-    items: state.items.filter(i => i.id !== id) 
-  })),
-  clearCart: () => set({ items: [] })
-}));
+  addItem: (item) =>
+    set((state) => ({
+      items: [...state.items, item],
+    })),
+  removeItem: (id) =>
+    set((state) => ({
+      items: state.items.filter((i) => i.id !== id),
+    })),
+  clearCart: () => set({ items: [] }),
+}))
 ```
 
 **Verwendung:**
+
 ```typescript
-const { items, addItem } = useCartStore();
+const { items, addItem } = useCartStore()
 ```
 
 #### 4.3.3 Form State (React Hook Form)
@@ -571,9 +603,9 @@ const LoginForm = () => {
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(schema)
   });
-  
+
   const onSubmit = (data) => { /* ... */ };
-  
+
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <input {...register('email')} />
@@ -590,21 +622,21 @@ const LoginForm = () => {
 
 ```typescript
 // lib/api.ts
-import axios from 'axios';
+import axios from "axios"
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
-  timeout: 10000
-});
+  timeout: 10000,
+})
 
 // Request Interceptor (JWT Token)
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('access_token');
+  const token = localStorage.getItem("access_token")
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers.Authorization = `Bearer ${token}`
   }
-  return config;
-});
+  return config
+})
 
 // Response Interceptor (Error Handling)
 api.interceptors.response.use(
@@ -612,15 +644,15 @@ api.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       // Token abgelaufen → Refresh
-      const newToken = await refreshToken();
-      error.config.headers.Authorization = `Bearer ${newToken}`;
-      return api(error.config);
+      const newToken = await refreshToken()
+      error.config.headers.Authorization = `Bearer ${newToken}`
+      return api(error.config)
     }
-    return Promise.reject(error);
+    return Promise.reject(error)
   }
-);
+)
 
-export default api;
+export default api
 ```
 
 **Typed API Functions:**
@@ -628,15 +660,12 @@ export default api;
 ```typescript
 // lib/api/products.ts
 export const productApi = {
-  getAll: (filters?: ProductFilters) => 
-    api.get<Product[]>('/products', { params: filters }),
-  
-  getById: (id: string) => 
-    api.get<Product>(`/products/${id}`),
-  
-  create: (data: CreateProductDto) => 
-    api.post<Product>('/products', data)
-};
+  getAll: (filters?: ProductFilters) => api.get<Product[]>("/products", { params: filters }),
+
+  getById: (id: string) => api.get<Product>(`/products/${id}`),
+
+  create: (data: CreateProductDto) => api.post<Product>("/products", data),
+}
 ```
 
 ---
@@ -713,34 +742,36 @@ products/
 ```
 
 **Controller (HTTP Layer):**
+
 ```typescript
 // products.controller.ts
 export class ProductsController {
   constructor(private productService: ProductsService) {}
-  
+
   async getAll(req: Request, res: Response, next: NextFunction) {
     try {
-      const filters = req.query as ProductFiltersDto;
-      const products = await this.productService.findAll(filters);
-      res.json(products);
+      const filters = req.query as ProductFiltersDto
+      const products = await this.productService.findAll(filters)
+      res.json(products)
     } catch (error) {
-      next(error);
+      next(error)
     }
   }
-  
+
   async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const dto = req.body as CreateProductDto;
-      const product = await this.productService.create(dto, req.user.id);
-      res.status(201).json(product);
+      const dto = req.body as CreateProductDto
+      const product = await this.productService.create(dto, req.user.id)
+      res.status(201).json(product)
     } catch (error) {
-      next(error);
+      next(error)
     }
   }
 }
 ```
 
 **Service (Business Logic):**
+
 ```typescript
 // products.service.ts
 export class ProductsService {
@@ -749,112 +780,110 @@ export class ProductsService {
     private certService: CertificatesService,
     private cacheService: CacheService
   ) {}
-  
+
   async findAll(filters: ProductFiltersDto): Promise<Product[]> {
-    const cacheKey = `products:${JSON.stringify(filters)}`;
-    
+    const cacheKey = `products:${JSON.stringify(filters)}`
+
     // Check Cache
-    const cached = await this.cacheService.get(cacheKey);
-    if (cached) return cached;
-    
+    const cached = await this.cacheService.get(cacheKey)
+    if (cached) return cached
+
     // Fetch from DB
-    const products = await this.productRepo.findAll(filters);
-    
+    const products = await this.productRepo.findAll(filters)
+
     // Cache for 5 minutes
-    await this.cacheService.set(cacheKey, products, 300);
-    
-    return products;
+    await this.cacheService.set(cacheKey, products, 300)
+
+    return products
   }
-  
+
   async create(dto: CreateProductDto, sellerId: string): Promise<Product> {
     // Validate certificate
-    const cert = await this.certService.findById(dto.certificateId);
-    if (!cert || cert.status !== 'VERIFIED') {
-      throw new BadRequestError('Certificate must be verified');
+    const cert = await this.certService.findById(dto.certificateId)
+    if (!cert || cert.status !== "VERIFIED") {
+      throw new BadRequestError("Certificate must be verified")
     }
-    
+
     // Create product
     const product = await this.productRepo.create({
       ...dto,
       sellerId,
-      status: cert ? 'ACTIVE' : 'DRAFT'
-    });
-    
+      status: cert ? "ACTIVE" : "DRAFT",
+    })
+
     // Invalidate cache
-    await this.cacheService.invalidatePattern('products:*');
-    
-    return product;
+    await this.cacheService.invalidatePattern("products:*")
+
+    return product
   }
 }
 ```
 
 **Repository (Data Access):**
+
 ```typescript
 // products.repository.ts
 export class ProductRepository {
   async findAll(filters: ProductFiltersDto): Promise<Product[]> {
     const where: Prisma.ProductWhereInput = {
-      status: 'ACTIVE',
+      status: "ACTIVE",
       ...(filters.category && { categoryId: filters.category }),
       ...(filters.minPrice && { price: { gte: filters.minPrice } }),
       ...(filters.maxPrice && { price: { lte: filters.maxPrice } }),
-      ...(filters.sellerId && { sellerId: filters.sellerId })
-    };
-    
+      ...(filters.sellerId && { sellerId: filters.sellerId }),
+    }
+
     return prisma.product.findMany({
       where,
       include: {
         certificates: true,
         images: true,
-        seller: { select: { name: true, shopName: true } }
+        seller: { select: { name: true, shopName: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       take: filters.limit || 50,
-      skip: filters.offset || 0
-    });
+      skip: filters.offset || 0,
+    })
   }
-  
+
   async create(data: CreateProductData): Promise<Product> {
-    return prisma.product.create({ data });
+    return prisma.product.create({ data })
   }
 }
 ```
 
 **Routes:**
+
 ```typescript
 // products.routes.ts
-import { Router } from 'express';
-import { authenticate, authorize } from '../shared/middleware/auth.middleware';
-import { validate } from '../shared/middleware/validation.middleware';
-import { createProductSchema } from './validators/product.validators';
+import { Router } from "express"
+import { authenticate, authorize } from "../shared/middleware/auth.middleware"
+import { validate } from "../shared/middleware/validation.middleware"
+import { createProductSchema } from "./validators/product.validators"
 
-const router = Router();
-const controller = new ProductsController(new ProductsService(/*...*/));
+const router = Router()
+const controller = new ProductsController(new ProductsService(/*...*/))
 
-router.get('/', controller.getAll.bind(controller));
-router.get('/:id', controller.getById.bind(controller));
+router.get("/", controller.getAll.bind(controller))
+router.get("/:id", controller.getById.bind(controller))
 
 router.post(
-  '/',
+  "/",
   authenticate,
-  authorize(['SELLER']),
+  authorize(["SELLER"]),
   validate(createProductSchema),
   controller.create.bind(controller)
-);
+)
 
-router.patch(
-  '/:id',
-  authenticate,
-  authorize(['SELLER']),
-  controller.update.bind(controller)
-);
+router.patch("/:id", authenticate, authorize(["SELLER"]), controller.update.bind(controller))
 
-export default router;
+export default router
 ```
 
 ### 5.3 Error Handling
 
 **Custom Error Classes:**
+
 ```typescript
 // shared/errors/AppError.ts
 export class AppError extends Error {
@@ -863,67 +892,62 @@ export class AppError extends Error {
     public message: string,
     public isOperational = true
   ) {
-    super(message);
-    Object.setPrototypeOf(this, AppError.prototype);
+    super(message)
+    Object.setPrototypeOf(this, AppError.prototype)
   }
 }
 
 export class BadRequestError extends AppError {
   constructor(message: string) {
-    super(400, message);
+    super(400, message)
   }
 }
 
 export class UnauthorizedError extends AppError {
-  constructor(message = 'Unauthorized') {
-    super(401, message);
+  constructor(message = "Unauthorized") {
+    super(401, message)
   }
 }
 
 export class NotFoundError extends AppError {
-  constructor(message = 'Resource not found') {
-    super(404, message);
+  constructor(message = "Resource not found") {
+    super(404, message)
   }
 }
 ```
 
 **Error Middleware:**
+
 ```typescript
 // shared/middleware/error.middleware.ts
-export const errorHandler = (
-  err: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
   if (err instanceof AppError) {
     return res.status(err.statusCode).json({
-      status: 'error',
-      message: err.message
-    });
+      status: "error",
+      message: err.message,
+    })
   }
-  
+
   // Log unexpected errors
-  logger.error('Unexpected error:', err);
-  
+  logger.error("Unexpected error:", err)
+
   // Don't leak error details in production
-  const message = process.env.NODE_ENV === 'production'
-    ? 'Internal server error'
-    : err.message;
-  
+  const message = process.env.NODE_ENV === "production" ? "Internal server error" : err.message
+
   res.status(500).json({
-    status: 'error',
-    message
-  });
-};
+    status: "error",
+    message,
+  })
+}
 ```
 
 ### 5.4 Validation
 
 **Zod Schemas:**
+
 ```typescript
 // dto/create-product.dto.ts
-import { z } from 'zod';
+import { z } from "zod"
 
 export const createProductSchema = z.object({
   name: z.string().min(3).max(200),
@@ -934,39 +958,44 @@ export const createProductSchema = z.object({
   shopId: z.string().uuid().optional(),
   sku: z.string().optional(),
   weight: z.number().positive().optional(),
-  variants: z.array(z.object({
-    type: z.enum(['SIZE', 'COLOR', 'CUSTOM']),
-    value: z.string(),
-    price: z.number().positive().optional(),
-    stock: z.number().int().min(0)
-  })).optional()
-});
+  variants: z
+    .array(
+      z.object({
+        type: z.enum(["SIZE", "COLOR", "CUSTOM"]),
+        value: z.string(),
+        price: z.number().positive().optional(),
+        stock: z.number().int().min(0),
+      })
+    )
+    .optional(),
+})
 
-export type CreateProductDto = z.infer<typeof createProductSchema>;
+export type CreateProductDto = z.infer<typeof createProductSchema>
 ```
 
 **Validation Middleware:**
+
 ```typescript
 // shared/middleware/validation.middleware.ts
-import { ZodSchema } from 'zod';
+import { ZodSchema } from "zod"
 
 export const validate = (schema: ZodSchema) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      schema.parse(req.body);
-      next();
+      schema.parse(req.body)
+      next()
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({
-          status: 'error',
-          message: 'Validation failed',
-          errors: error.errors
-        });
+          status: "error",
+          message: "Validation failed",
+          errors: error.errors,
+        })
       }
-      next(error);
+      next(error)
     }
-  };
-};
+  }
+}
 ```
 
 ---
@@ -1078,14 +1107,14 @@ model User {
   emailVerified Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  
+
   // Relations
   profile       UserProfile?
   addresses     Address[]
   orders        Order[]       @relation("UserOrders")
   sellerProfile SellerProfile?
   shops         Shop[]
-  
+
   @@index([email])
 }
 
@@ -1093,11 +1122,11 @@ model UserProfile {
   id                String   @id @default(uuid())
   userId            String   @unique
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   activeProfileType String   @default("none") // none, simple, extended
   simpleProfile     Json?    // { "category1": 80, "category2": 60, ... }
   extendedProfile   Json?    // { "category1": { "sub1": 90, "sub2": 70 }, ... }
-  
+
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
@@ -1106,7 +1135,7 @@ model SellerProfile {
   id            String   @id @default(uuid())
   userId        String   @unique
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   companyName   String
   legalForm     String
   taxId         String   @unique
@@ -1114,13 +1143,13 @@ model SellerProfile {
   logo          String?
   description   String?
   website       String?
-  
+
   status        String   @default("PENDING") // PENDING, ACTIVE, SUSPENDED
   verifiedAt    DateTime?
-  
+
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  
+
   @@index([status])
 }
 
@@ -1128,7 +1157,7 @@ model Address {
   id        String   @id @default(uuid())
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+
   type      String   // SHIPPING, BILLING
   firstName String
   lastName  String
@@ -1137,12 +1166,12 @@ model Address {
   zip       String
   country   String   @default("DE")
   phone     String?
-  
+
   isDefault Boolean  @default(false)
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   @@index([userId])
 }
 
@@ -1150,17 +1179,17 @@ model Shop {
   id          String   @id @default(uuid())
   sellerId    String
   seller      User     @relation(fields: [sellerId], references: [id], onDelete: Cascade)
-  
+
   name        String
   slug        String   @unique
   description String?
   logo        String?
-  
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   products    Product[]
-  
+
   @@index([sellerId])
   @@index([slug])
 }
@@ -1173,9 +1202,9 @@ model Category {
   parentId    String?
   parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryHierarchy")
-  
+
   products    Product[]
-  
+
   @@index([slug])
   @@index([parentId])
 }
@@ -1187,7 +1216,7 @@ model Product {
   shop            Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
   categoryId      String
   category        Category      @relation(fields: [categoryId], references: [id])
-  
+
   name            String
   slug            String        @unique
   description     String
@@ -1196,22 +1225,22 @@ model Product {
   taxRate         Decimal       @default(19) @db.Decimal(4, 2)
   sku             String?       @unique
   weight          Decimal?      @db.Decimal(8, 2)
-  
+
   status          ProductStatus @default(DRAFT)
   availability    String        @default("IN_STOCK") // IN_STOCK, OUT_OF_STOCK, PREORDER
-  
+
   views           Int           @default(0)
   salesCount      Int           @default(0)
-  
+
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  
+
   // Relations
   images          ProductImage[]
   variants        ProductVariant[]
   certificates    ProductCertificate[]
   orderItems      OrderItem[]
-  
+
   @@index([sellerId])
   @@index([shopId])
   @@index([categoryId])
@@ -1223,13 +1252,13 @@ model ProductImage {
   id        String   @id @default(uuid())
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
+
   url       String
   order     Int      @default(0)
   alt       String?
-  
+
   createdAt DateTime @default(now())
-  
+
   @@index([productId])
 }
 
@@ -1237,13 +1266,13 @@ model ProductVariant {
   id        String   @id @default(uuid())
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
+
   type      String   // SIZE, COLOR, CUSTOM
   value     String   // "M", "Red", "30cm"
   price     Decimal? @db.Decimal(10, 2) // Override price (optional)
   stock     Int      @default(0)
   sku       String?  @unique
-  
+
   @@index([productId])
   @@unique([productId, type, value])
 }
@@ -1251,23 +1280,23 @@ model ProductVariant {
 model Certificate {
   id           String            @id @default(uuid())
   sellerId     String
-  
+
   type         String            // IVN_BEST, GOTS, etc.
   number       String            @unique
   issueDate    DateTime
   expiryDate   DateTime
   documentUrl  String
-  
+
   status       CertificateStatus @default(PENDING)
   verifiedAt   DateTime?
   verifiedBy   String?
   rejectedReason String?
-  
+
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
-  
+
   products     ProductCertificate[]
-  
+
   @@index([sellerId])
   @@index([status])
   @@index([expiryDate])
@@ -1278,7 +1307,7 @@ model ProductCertificate {
   product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   certificateId String
   certificate   Certificate @relation(fields: [certificateId], references: [id], onDelete: Cascade)
-  
+
   @@id([productId, certificateId])
   @@index([certificateId])
 }
@@ -1288,31 +1317,31 @@ model Order {
   number          String      @unique // 2026-000001
   buyerId         String
   buyer           User        @relation("UserOrders", fields: [buyerId], references: [id])
-  
+
   status          OrderStatus @default(PENDING)
-  
+
   subtotal        Decimal     @db.Decimal(10, 2)
   shippingCost    Decimal     @db.Decimal(10, 2)
   tax             Decimal     @db.Decimal(10, 2)
   total           Decimal     @db.Decimal(10, 2)
-  
+
   shippingAddress Json        // { firstName, lastName, street, ... }
   billingAddress  Json?
-  
+
   paymentMethod   String      // CARD, PAYPAL, SEPA, ...
   paymentIntentId String?     // Stripe Payment Intent ID
-  
+
   trackingNumber  String?
   trackingUrl     String?
   shippedAt       DateTime?
   deliveredAt     DateTime?
-  
+
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
-  
+
   items           OrderItem[]
   payment         Payment?
-  
+
   @@index([buyerId])
   @@index([status])
   @@index([number])
@@ -1325,17 +1354,17 @@ model OrderItem {
   order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId  String
   product    Product  @relation(fields: [productId], references: [id])
-  
+
   variantId  String?  // Reference to ProductVariant (optional)
-  
+
   name       String   // Snapshot (in case product changes/deleted)
   price      Decimal  @db.Decimal(10, 2)
   taxRate    Decimal  @db.Decimal(4, 2)
   quantity   Int
   subtotal   Decimal  @db.Decimal(10, 2)
-  
+
   sellerId   String   // For commission calculation
-  
+
   @@index([orderId])
   @@index([sellerId])
 }
@@ -1344,36 +1373,36 @@ model Payment {
   id              String   @id @default(uuid())
   orderId         String   @unique
   order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  
+
   stripePaymentId String   @unique
   amount          Decimal  @db.Decimal(10, 2)
   currency        String   @default("EUR")
   status          String   // PENDING, SUCCEEDED, FAILED, REFUNDED
-  
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
+
   @@index([status])
 }
 
 model Payout {
   id              String   @id @default(uuid())
   sellerId        String
-  
+
   period          String   // "2026-W05" (Week 5 of 2026)
   totalRevenue    Decimal  @db.Decimal(10, 2)
   commission      Decimal  @db.Decimal(10, 2)
   commissionRate  Decimal  @db.Decimal(4, 2)
   netPayout       Decimal  @db.Decimal(10, 2)
-  
+
   status          String   @default("PENDING") // PENDING, PROCESSING, PAID
   paidAt          DateTime?
-  
+
   orderCount      Int
-  
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
+
   @@index([sellerId])
   @@index([status])
 }
@@ -1388,16 +1417,19 @@ model Payout {
 ### 6.3 Migrations
 
 **Erstellen einer Migration:**
+
 ```bash
 npx prisma migrate dev --name init
 ```
 
 **Apply Migrations in Production:**
+
 ```bash
 npx prisma migrate deploy
 ```
 
 **Reset Database (Dev only):**
+
 ```bash
 npx prisma migrate reset
 ```
@@ -1409,18 +1441,21 @@ npx prisma migrate reset
 ### 7.1 REST API Konventionen
 
 **Base URL:**
+
 ```
 Development: http://localhost:3000/api/v1
 Production:  https://api.yourplatform.com/v1
 ```
 
 **HTTP Methods:**
+
 - `GET` - Abrufen von Daten
 - `POST` - Erstellen neuer Ressourcen
 - `PATCH` - Teilweises Update
 - `DELETE` - Löschen
 
 **Response Format (JSON):**
+
 ```json
 // Success
 {
@@ -1451,6 +1486,7 @@ Production:  https://api.yourplatform.com/v1
 ### 7.2 API Endpoints (Übersicht)
 
 **Authentifizierung:**
+
 ```
 POST   /auth/register          - Registrierung
 POST   /auth/login             - Login
@@ -1461,6 +1497,7 @@ POST   /auth/verify-email      - E-Mail verifizieren
 ```
 
 **Nutzer:**
+
 ```
 GET    /users/me               - Eigenes Profil
 PATCH  /users/me               - Profil bearbeiten
@@ -1476,6 +1513,7 @@ DELETE /users/me/addresses/:id - Adresse löschen
 ```
 
 **Produkte:**
+
 ```
 GET    /products               - Alle Produkte (mit Filtern)
 GET    /products/:id           - Produkt-Details
@@ -1488,12 +1526,14 @@ GET    /products/:id/match-score     - Match-Score für User
 ```
 
 **Kategorien:**
+
 ```
 GET    /categories             - Alle Kategorien (Baum)
 GET    /categories/:id         - Kategorie-Details
 ```
 
 **Zertifikate:**
+
 ```
 GET    /certificates           - Alle Zertifikate (Seller: nur eigene)
 GET    /certificates/:id       - Zertifikat-Details
@@ -1506,6 +1546,7 @@ PATCH  /certificates/:id/reject - Ablehnen (Admin)
 ```
 
 **Warenkorb:**
+
 ```
 GET    /cart                   - Warenkorb abrufen
 POST   /cart/items             - Artikel hinzufügen
@@ -1515,6 +1556,7 @@ DELETE /cart                   - Warenkorb leeren
 ```
 
 **Bestellungen:**
+
 ```
 GET    /orders                 - Alle Bestellungen (User)
 GET    /orders/:id             - Bestelldetails
@@ -1530,6 +1572,7 @@ GET    /seller/analytics       - Verkaufs-Analytics
 ```
 
 **Zahlungen:**
+
 ```
 POST   /payments/intent        - Payment Intent erstellen (Stripe)
 POST   /payments/confirm       - Zahlung bestätigen
@@ -1537,12 +1580,14 @@ POST   /payments/webhook       - Stripe Webhook
 ```
 
 **Auszahlungen:**
+
 ```
 GET    /seller/payouts         - Auszahlungs-Historie (Seller)
 GET    /seller/payouts/:id     - Auszahlungs-Details
 ```
 
 **Admin:**
+
 ```
 GET    /admin/users            - Alle Nutzer
 PATCH  /admin/users/:id/suspend - Nutzer suspendieren
@@ -1555,7 +1600,8 @@ GET    /admin/dashboard        - Dashboard-Statistiken
 
 **GET /products**
 
-*Query Parameters:*
+_Query Parameters:_
+
 ```
 ?category=uuid          - Filter nach Kategorie
 &minPrice=20           - Min. Preis
@@ -1568,7 +1614,8 @@ GET    /admin/dashboard        - Dashboard-Statistiken
 &matchMin=70           - Nur Produkte mit Match-Score >= 70%
 ```
 
-*Response:*
+_Response:_
+
 ```json
 {
   "status": "success",
@@ -1578,19 +1625,15 @@ GET    /admin/dashboard        - Dashboard-Statistiken
       "name": "Bio Baumwoll T-Shirt",
       "slug": "bio-baumwoll-t-shirt",
       "shortDesc": "Weiches T-Shirt aus 100% Bio-Baumwolle",
-      "price": 29.90,
-      "images": [
-        { "url": "https://cdn.../image1.jpg", "alt": "Vorderansicht" }
-      ],
+      "price": 29.9,
+      "images": [{ "url": "https://cdn.../image1.jpg", "alt": "Vorderansicht" }],
       "matchScore": 87.5,
       "seller": {
         "id": "uuid",
         "name": "EcoFashion GmbH",
         "shopName": "EcoKids"
       },
-      "certificates": [
-        { "type": "IVN_BEST", "logo": "https://..." }
-      ]
+      "certificates": [{ "type": "IVN_BEST", "logo": "https://..." }]
     }
   ],
   "meta": {
@@ -1604,13 +1647,14 @@ GET    /admin/dashboard        - Dashboard-Statistiken
 
 **POST /products** (Seller only)
 
-*Request Body:*
+_Request Body:_
+
 ```json
 {
   "name": "Bio Baumwoll T-Shirt",
   "description": "Sehr langer Beschreibungstext...",
   "shortDesc": "Kurzbeschreibung",
-  "price": 29.90,
+  "price": 29.9,
   "taxRate": 19,
   "categoryId": "uuid",
   "certificateId": "uuid",
@@ -1625,7 +1669,8 @@ GET    /admin/dashboard        - Dashboard-Statistiken
 }
 ```
 
-*Response:*
+_Response:_
+
 ```json
 {
   "status": "success",
@@ -1633,7 +1678,7 @@ GET    /admin/dashboard        - Dashboard-Statistiken
     "id": "uuid",
     "name": "Bio Baumwoll T-Shirt",
     "status": "ACTIVE", // or DRAFT if certificate not verified
-    "createdAt": "2026-02-05T10:30:00Z",
+    "createdAt": "2026-02-05T10:30:00Z"
     // ... all fields
   }
 }
@@ -1646,10 +1691,12 @@ GET    /admin/dashboard        - Dashboard-Statistiken
 ### 8.1 JWT-basierte Authentifizierung
 
 **Tokens:**
+
 - **Access Token:** Kurze Lebensdauer (1 Stunde), für API-Zugriff
 - **Refresh Token:** Lange Lebensdauer (30 Tage), zum Erneuern des Access Tokens
 
 **Token-Struktur:**
+
 ```json
 // Access Token Payload
 {
@@ -1671,6 +1718,7 @@ GET    /admin/dashboard        - Dashboard-Statistiken
 ```
 
 **Login-Flow:**
+
 ```
 1. POST /auth/login { email, password }
 2. Server validates credentials
@@ -1681,6 +1729,7 @@ GET    /admin/dashboard        - Dashboard-Statistiken
 ```
 
 **Token-Refresh-Flow:**
+
 ```
 1. Access Token expires
 2. Client sends POST /auth/refresh { refreshToken }
@@ -1693,56 +1742,54 @@ GET    /admin/dashboard        - Dashboard-Statistiken
 
 ```typescript
 // auth.service.ts
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
+import jwt from "jsonwebtoken"
+import bcrypt from "bcrypt"
 
 export class AuthService {
   async login(email: string, password: string) {
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user) throw new UnauthorizedError('Invalid credentials');
-    
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) throw new UnauthorizedError('Invalid credentials');
-    
-    const accessToken = this.generateAccessToken(user);
-    const refreshToken = this.generateRefreshToken(user);
-    
-    return { accessToken, refreshToken, user };
+    const user = await prisma.user.findUnique({ where: { email } })
+    if (!user) throw new UnauthorizedError("Invalid credentials")
+
+    const isValid = await bcrypt.compare(password, user.password)
+    if (!isValid) throw new UnauthorizedError("Invalid credentials")
+
+    const accessToken = this.generateAccessToken(user)
+    const refreshToken = this.generateRefreshToken(user)
+
+    return { accessToken, refreshToken, user }
   }
-  
+
   generateAccessToken(user: User): string {
     return jwt.sign(
       {
         userId: user.id,
         email: user.email,
         role: user.role,
-        type: 'access'
+        type: "access",
       },
       process.env.JWT_SECRET!,
-      { expiresIn: '1h' }
-    );
+      { expiresIn: "1h" }
+    )
   }
-  
+
   generateRefreshToken(user: User): string {
-    return jwt.sign(
-      { userId: user.id, type: 'refresh' },
-      process.env.JWT_REFRESH_SECRET!,
-      { expiresIn: '30d' }
-    );
+    return jwt.sign({ userId: user.id, type: "refresh" }, process.env.JWT_REFRESH_SECRET!, {
+      expiresIn: "30d",
+    })
   }
-  
+
   async refreshToken(refreshToken: string) {
     try {
-      const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as any;
-      if (decoded.type !== 'refresh') throw new Error();
-      
-      const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
-      if (!user) throw new Error();
-      
-      const accessToken = this.generateAccessToken(user);
-      return { accessToken };
+      const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as any
+      if (decoded.type !== "refresh") throw new Error()
+
+      const user = await prisma.user.findUnique({ where: { id: decoded.userId } })
+      if (!user) throw new Error()
+
+      const accessToken = this.generateAccessToken(user)
+      return { accessToken }
     } catch {
-      throw new UnauthorizedError('Invalid refresh token');
+      throw new UnauthorizedError("Invalid refresh token")
     }
   }
 }
@@ -1753,50 +1800,50 @@ export class AuthService {
 ```typescript
 // auth.middleware.ts
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'No token provided' });
-  
+  const token = req.headers.authorization?.split(" ")[1]
+  if (!token) return res.status(401).json({ error: "No token provided" })
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    if (decoded.type !== 'access') throw new Error();
-    
-    req.user = decoded;
-    next();
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any
+    if (decoded.type !== "access") throw new Error()
+
+    req.user = decoded
+    next()
   } catch {
-    res.status(401).json({ error: 'Invalid token' });
+    res.status(401).json({ error: "Invalid token" })
   }
-};
+}
 
 export const authorize = (roles: UserRole[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
-    
+    if (!req.user) return res.status(401).json({ error: "Unauthorized" })
+
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Forbidden' });
+      return res.status(403).json({ error: "Forbidden" })
     }
-    
-    next();
-  };
-};
+
+    next()
+  }
+}
 
 // Usage:
-router.post('/products', authenticate, authorize(['SELLER', 'ADMIN']), createProduct);
+router.post("/products", authenticate, authorize(["SELLER", "ADMIN"]), createProduct)
 ```
 
 ### 8.3 Passwort-Hashing
 
 ```typescript
-import bcrypt from 'bcrypt';
+import bcrypt from "bcrypt"
 
-const SALT_ROUNDS = 10;
+const SALT_ROUNDS = 10
 
 export const hashPassword = async (password: string): Promise<string> => {
-  return bcrypt.hash(password, SALT_ROUNDS);
-};
+  return bcrypt.hash(password, SALT_ROUNDS)
+}
 
 export const comparePassword = async (password: string, hash: string): Promise<boolean> => {
-  return bcrypt.compare(password, hash);
-};
+  return bcrypt.compare(password, hash)
+}
 ```
 
 ---
@@ -1809,64 +1856,65 @@ export const comparePassword = async (password: string, hash: string): Promise<b
 
 ```typescript
 // middleware/upload.middleware.ts
-import multer from 'multer';
-import path from 'path';
+import multer from "multer"
+import path from "path"
 
 // Memory Storage (files bleiben im RAM, für direkte S3-Upload)
-const storage = multer.memoryStorage();
+const storage = multer.memoryStorage()
 
 // File Filter (nur Bilder erlauben)
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|webp/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
-  
+  const allowedTypes = /jpeg|jpg|png|webp/
+  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase())
+  const mimetype = allowedTypes.test(file.mimetype)
+
   if (extname && mimetype) {
-    cb(null, true);
+    cb(null, true)
   } else {
-    cb(new Error('Only images are allowed'));
+    cb(new Error("Only images are allowed"))
   }
-};
+}
 
 export const upload = multer({
   storage,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
+    fileSize: 5 * 1024 * 1024, // 5MB
   },
-  fileFilter
-});
+  fileFilter,
+})
 ```
 
 **Upload Route:**
+
 ```typescript
 router.post(
-  '/products/:id/images',
+  "/products/:id/images",
   authenticate,
-  authorize(['SELLER']),
-  upload.array('images', 10), // max 10 images
+  authorize(["SELLER"]),
+  upload.array("images", 10), // max 10 images
   uploadProductImages
-);
+)
 
 async function uploadProductImages(req: Request, res: Response) {
-  const files = req.files as Express.Multer.File[];
-  const productId = req.params.id;
-  
+  const files = req.files as Express.Multer.File[]
+  const productId = req.params.id
+
   const uploadPromises = files.map(async (file, index) => {
-    const key = `products/${productId}/${Date.now()}-${index}.${file.originalname.split('.').pop()}`;
-    const url = await s3Service.upload(file.buffer, key, file.mimetype);
-    
+    const key = `products/${productId}/${Date.now()}-${index}.${file.originalname.split(".").pop()}`
+    const url = await s3Service.upload(file.buffer, key, file.mimetype)
+
     return prisma.productImage.create({
       data: {
         productId,
         url,
         order: index,
-        alt: file.originalname
-      }
-    });
-  });
-  
-  const images = await Promise.all(uploadPromises);
-  res.json({ status: 'success', data: images });
+        alt: file.originalname,
+      },
+    })
+  })
+
+  const images = await Promise.all(uploadPromises)
+  res.json({ status: "success", data: images })
 }
 ```
 
@@ -1874,43 +1922,45 @@ async function uploadProductImages(req: Request, res: Response) {
 
 ```typescript
 // services/s3.service.ts
-import AWS from 'aws-sdk';
+import AWS from "aws-sdk"
 
 const s3 = new AWS.S3({
   accessKeyId: process.env.AWS_ACCESS_KEY,
   secretAccessKey: process.env.AWS_SECRET_KEY,
-  region: process.env.AWS_REGION
-});
+  region: process.env.AWS_REGION,
+})
 
 export class S3Service {
-  private bucket = process.env.AWS_BUCKET!;
-  
+  private bucket = process.env.AWS_BUCKET!
+
   async upload(buffer: Buffer, key: string, contentType: string): Promise<string> {
     const params = {
       Bucket: this.bucket,
       Key: key,
       Body: buffer,
       ContentType: contentType,
-      ACL: 'public-read' // or use CloudFront for CDN
-    };
-    
-    const result = await s3.upload(params).promise();
-    return result.Location;
+      ACL: "public-read", // or use CloudFront for CDN
+    }
+
+    const result = await s3.upload(params).promise()
+    return result.Location
   }
-  
+
   async delete(key: string): Promise<void> {
-    await s3.deleteObject({
-      Bucket: this.bucket,
-      Key: key
-    }).promise();
+    await s3
+      .deleteObject({
+        Bucket: this.bucket,
+        Key: key,
+      })
+      .promise()
   }
-  
+
   getSignedUrl(key: string, expiresIn = 3600): string {
-    return s3.getSignedUrl('getObject', {
+    return s3.getSignedUrl("getObject", {
       Bucket: this.bucket,
       Key: key,
-      Expires: expiresIn
-    });
+      Expires: expiresIn,
+    })
   }
 }
 ```
@@ -1918,10 +1968,10 @@ export class S3Service {
 ### 9.3 Image Optimization (Frontend)
 
 **Next.js Image Component:**
-```tsx
-import Image from 'next/image';
 
-<Image
+```tsx
+import Image from "next/image"
+;<Image
   src={product.images[0].url}
   alt={product.name}
   width={400}
@@ -1932,6 +1982,7 @@ import Image from 'next/image';
 ```
 
 **Vorteile:**
+
 - Automatische Lazy Loading
 - Responsive Images (srcset)
 - Automatische Optimierung (WebP wenn unterstützt)
@@ -1944,6 +1995,7 @@ import Image from 'next/image';
 ### 10.1 Stripe (Zahlungen)
 
 **Installation:**
+
 ```bash
 npm install stripe @stripe/stripe-js
 ```
@@ -1952,11 +2004,11 @@ npm install stripe @stripe/stripe-js
 
 ```typescript
 // config/stripe.ts
-import Stripe from 'stripe';
+import Stripe from "stripe"
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16'
-});
+  apiVersion: "2023-10-16",
+})
 ```
 
 **Payment Intent erstellen:**
@@ -1965,32 +2017,35 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 // payments.service.ts
 export class PaymentsService {
   async createPaymentIntent(orderId: string) {
-    const order = await prisma.order.findUnique({ where: { id: orderId }, include: { items: true } });
-    if (!order) throw new NotFoundError('Order not found');
-    
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { items: true },
+    })
+    if (!order) throw new NotFoundError("Order not found")
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(order.total.toNumber() * 100), // Cents
-      currency: 'eur',
+      currency: "eur",
       metadata: {
         orderId: order.id,
-        orderNumber: order.number
+        orderNumber: order.number,
       },
       automatic_payment_methods: {
-        enabled: true
-      }
-    });
-    
+        enabled: true,
+      },
+    })
+
     await prisma.payment.create({
       data: {
         orderId,
         stripePaymentId: paymentIntent.id,
         amount: order.total,
-        currency: 'EUR',
-        status: 'PENDING'
-      }
-    });
-    
-    return { clientSecret: paymentIntent.client_secret };
+        currency: "EUR",
+        status: "PENDING",
+      },
+    })
+
+    return { clientSecret: paymentIntent.client_secret }
   }
 }
 ```
@@ -1999,111 +2054,110 @@ export class PaymentsService {
 
 ```typescript
 // webhooks/stripe.webhook.ts
-import { buffer } from 'micro';
+import { buffer } from "micro"
 
 export const handleStripeWebhook = async (req: Request, res: Response) => {
-  const sig = req.headers['stripe-signature']!;
-  const rawBody = await buffer(req);
-  
-  let event;
+  const sig = req.headers["stripe-signature"]!
+  const rawBody = await buffer(req)
+
+  let event
   try {
-    event = stripe.webhooks.constructEvent(
-      rawBody,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET!
-    );
+    event = stripe.webhooks.constructEvent(rawBody, sig, process.env.STRIPE_WEBHOOK_SECRET!)
   } catch (err) {
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    return res.status(400).send(`Webhook Error: ${err.message}`)
   }
-  
+
   switch (event.type) {
-    case 'payment_intent.succeeded':
-      const paymentIntent = event.data.object;
-      await handlePaymentSuccess(paymentIntent);
-      break;
-      
-    case 'payment_intent.payment_failed':
-      const failedIntent = event.data.object;
-      await handlePaymentFailed(failedIntent);
-      break;
+    case "payment_intent.succeeded":
+      const paymentIntent = event.data.object
+      await handlePaymentSuccess(paymentIntent)
+      break
+
+    case "payment_intent.payment_failed":
+      const failedIntent = event.data.object
+      await handlePaymentFailed(failedIntent)
+      break
   }
-  
-  res.json({ received: true });
-};
+
+  res.json({ received: true })
+}
 
 async function handlePaymentSuccess(paymentIntent: Stripe.PaymentIntent) {
   const payment = await prisma.payment.findUnique({
-    where: { stripePaymentId: paymentIntent.id }
-  });
-  
-  if (!payment) return;
-  
+    where: { stripePaymentId: paymentIntent.id },
+  })
+
+  if (!payment) return
+
   await prisma.$transaction([
     prisma.payment.update({
       where: { id: payment.id },
-      data: { status: 'SUCCEEDED' }
+      data: { status: "SUCCEEDED" },
     }),
     prisma.order.update({
       where: { id: payment.orderId },
-      data: { status: 'PAID' }
-    })
-  ]);
-  
+      data: { status: "PAID" },
+    }),
+  ])
+
   // Send confirmation email
-  await emailService.sendOrderConfirmation(payment.orderId);
+  await emailService.sendOrderConfirmation(payment.orderId)
 }
 ```
 
 **Frontend Integration (React):**
 
 ```tsx
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { loadStripe } from "@stripe/stripe-js"
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js"
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
 
 function CheckoutForm({ clientSecret }: { clientSecret: string }) {
-  const stripe = useStripe();
-  const elements = useElements();
-  
+  const stripe = useStripe()
+  const elements = useElements()
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!stripe || !elements) return;
-    
+    e.preventDefault()
+    if (!stripe || !elements) return
+
     const { error } = await stripe.confirmPayment({
       elements,
       confirmParams: {
-        return_url: `${window.location.origin}/order/success`
-      }
-    });
-    
+        return_url: `${window.location.origin}/order/success`,
+      },
+    })
+
     if (error) {
-      alert(error.message);
+      alert(error.message)
     }
-  };
-  
+  }
+
   return (
     <form onSubmit={handleSubmit}>
       <PaymentElement />
-      <button type="submit" disabled={!stripe}>Bezahlen</button>
+      <button type="submit" disabled={!stripe}>
+        Bezahlen
+      </button>
     </form>
-  );
+  )
 }
 
 function CheckoutPage() {
-  const { clientSecret } = useCheckout(); // Fetch from API
-  
+  const { clientSecret } = useCheckout() // Fetch from API
+
   return (
     <Elements stripe={stripePromise} options={{ clientSecret }}>
       <CheckoutForm clientSecret={clientSecret} />
     </Elements>
-  );
+  )
 }
 ```
 
 ### 10.2 SendGrid (E-Mail)
 
 **Installation:**
+
 ```bash
 npm install @sendgrid/mail
 ```
@@ -2112,29 +2166,29 @@ npm install @sendgrid/mail
 
 ```typescript
 // services/email.service.ts
-import sgMail from '@sendgrid/mail';
+import sgMail from "@sendgrid/mail"
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+sgMail.setApiKey(process.env.SENDGRID_API_KEY!)
 
 export class EmailService {
   async sendOrderConfirmation(orderId: string) {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
-      include: { buyer: true, items: { include: { product: true } } }
-    });
-    
-    if (!order) return;
-    
+      include: { buyer: true, items: { include: { product: true } } },
+    })
+
+    if (!order) return
+
     const msg = {
       to: order.buyer.email,
-      from: 'noreply@yourplatform.com',
+      from: "noreply@yourplatform.com",
       subject: `Bestellbestätigung #${order.number}`,
-      html: this.renderOrderConfirmationTemplate(order)
-    };
-    
-    await sgMail.send(msg);
+      html: this.renderOrderConfirmationTemplate(order),
+    }
+
+    await sgMail.send(msg)
   }
-  
+
   private renderOrderConfirmationTemplate(order: Order) {
     return `
       <!DOCTYPE html>
@@ -2144,14 +2198,18 @@ export class EmailService {
           <p>Bestellnummer: ${order.number}</p>
           <h2>Artikel:</h2>
           <ul>
-            ${order.items.map(item => `
+            ${order.items
+              .map(
+                (item) => `
               <li>${item.name} - ${item.quantity}x - ${item.price} EUR</li>
-            `).join('')}
+            `
+              )
+              .join("")}
           </ul>
           <p><strong>Gesamtsumme: ${order.total} EUR</strong></p>
         </body>
       </html>
-    `;
+    `
   }
 }
 ```
@@ -2159,6 +2217,7 @@ export class EmailService {
 ### 10.3 Elasticsearch (Suche)
 
 **Installation:**
+
 ```bash
 npm install @elastic/elasticsearch
 ```
@@ -2167,11 +2226,11 @@ npm install @elastic/elasticsearch
 
 ```typescript
 // config/elasticsearch.ts
-import { Client } from '@elastic/elasticsearch';
+import { Client } from "@elastic/elasticsearch"
 
 export const esClient = new Client({
-  node: process.env.ELASTICSEARCH_URL || 'http://localhost:9200'
-});
+  node: process.env.ELASTICSEARCH_URL || "http://localhost:9200",
+})
 ```
 
 **Indexing:**
@@ -2179,8 +2238,8 @@ export const esClient = new Client({
 ```typescript
 // services/search.service.ts
 export class SearchService {
-  private index = 'products';
-  
+  private index = "products"
+
   async indexProduct(product: Product) {
     await esClient.index({
       index: this.index,
@@ -2191,13 +2250,13 @@ export class SearchService {
         price: product.price,
         categoryId: product.categoryId,
         sellerId: product.sellerId,
-        certificateIds: product.certificates.map(c => c.certificateId),
+        certificateIds: product.certificates.map((c) => c.certificateId),
         status: product.status,
-        createdAt: product.createdAt
-      }
-    });
+        createdAt: product.createdAt,
+      },
+    })
   }
-  
+
   async search(query: string, filters: SearchFilters) {
     const response = await esClient.search({
       index: this.index,
@@ -2207,24 +2266,24 @@ export class SearchService {
             {
               multi_match: {
                 query,
-                fields: ['name^3', 'description'],
-                fuzziness: 'AUTO'
-              }
-            }
+                fields: ["name^3", "description"],
+                fuzziness: "AUTO",
+              },
+            },
           ],
           filter: [
-            { term: { status: 'ACTIVE' } },
+            { term: { status: "ACTIVE" } },
             ...(filters.category ? [{ term: { categoryId: filters.category } }] : []),
             ...(filters.minPrice ? [{ range: { price: { gte: filters.minPrice } } }] : []),
-            ...(filters.maxPrice ? [{ range: { price: { lte: filters.maxPrice } } }] : [])
-          ]
-        }
+            ...(filters.maxPrice ? [{ range: { price: { lte: filters.maxPrice } } }] : []),
+          ],
+        },
       },
       size: filters.limit || 20,
-      from: filters.offset || 0
-    });
-    
-    return response.hits.hits.map(hit => hit._source);
+      from: filters.offset || 0,
+    })
+
+    return response.hits.hits.map((hit) => hit._source)
   }
 }
 ```
@@ -2236,6 +2295,7 @@ export class SearchService {
 ### 11.1 Cloud Provider: AWS
 
 **Dienste:**
+
 - **EC2 / ECS (Fargate):** Backend API Container
 - **RDS PostgreSQL:** Managed Database
 - **ElastiCache Redis:** Managed Redis
@@ -2246,6 +2306,7 @@ export class SearchService {
 - **ACM:** SSL/TLS Zertifikate
 
 **Architektur-Diagramm:**
+
 ```
 Internet
    │
@@ -2302,7 +2363,7 @@ CMD ["npm", "run", "start:prod"]
 **docker-compose.yml (Development):**
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   api:
@@ -2370,20 +2431,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
-      
+          node-version: "20"
+
       - name: Install dependencies
         run: npm ci
         working-directory: ./backend
-      
+
       - name: Run tests
         run: npm test
         working-directory: ./backend
-      
+
       - name: Run linter
         run: npm run lint
         working-directory: ./backend
@@ -2393,18 +2454,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-central-1
-      
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-      
+
       - name: Build and push Docker image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -2415,7 +2476,7 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-      
+
       - name: Update ECS Service
         run: |
           aws ecs update-service \
@@ -2471,61 +2532,63 @@ FRONTEND_URL="https://yourplatform.com"
 
 ```typescript
 // utils/logger.ts
-import winston from 'winston';
+import winston from "winston"
 
 const logger = winston.createLogger({
-  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+  level: process.env.NODE_ENV === "production" ? "info" : "debug",
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.errors({ stack: true }),
     winston.format.json()
   ),
   transports: [
-    new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-    new winston.transports.File({ filename: 'logs/combined.log' })
-  ]
-});
+    new winston.transports.File({ filename: "logs/error.log", level: "error" }),
+    new winston.transports.File({ filename: "logs/combined.log" }),
+  ],
+})
 
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: winston.format.combine(
-      winston.format.colorize(),
-      winston.format.simple()
-    )
-  }));
+if (process.env.NODE_ENV !== "production") {
+  logger.add(
+    new winston.transports.Console({
+      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
+    })
+  )
 }
 
-export default logger;
+export default logger
 ```
 
 **Usage:**
+
 ```typescript
-logger.info('User logged in', { userId: user.id });
-logger.error('Payment failed', { orderId, error: err.message });
+logger.info("User logged in", { userId: user.id })
+logger.error("Payment failed", { orderId, error: err.message })
 ```
 
 ### 12.2 Error Tracking (Sentry)
 
 ```typescript
-import * as Sentry from '@sentry/node';
+import * as Sentry from "@sentry/node"
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   environment: process.env.NODE_ENV,
-  tracesSampleRate: 1.0
-});
+  tracesSampleRate: 1.0,
+})
 
 // In error middleware:
-Sentry.captureException(err);
+Sentry.captureException(err)
 ```
 
 ### 12.3 Performance Monitoring
 
 **Prometheus + Grafana (Optional, Phase 2/3):**
+
 - Metriken: Request Rate, Response Time, Error Rate
 - Dashboards für Visualisierung
 
 **CloudWatch (AWS):**
+
 - Automatisch für ECS/RDS/Redis
 - Custom Metrics via SDK
 

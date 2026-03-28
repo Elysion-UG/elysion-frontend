@@ -51,10 +51,7 @@ export const CertificateService = {
     })
   },
 
-  async linkToProduct(
-    certificateId: string,
-    productId: string
-  ): Promise<CertificateLinkResponse> {
+  async linkToProduct(certificateId: string, productId: string): Promise<CertificateLinkResponse> {
     return apiRequest(`/api/v1/certificates/${certificateId}/products/${productId}`, {
       method: "POST",
     })
@@ -72,10 +69,7 @@ export const CertificateService = {
     })
   },
 
-  async reject(
-    certificateId: string,
-    reason: string
-  ): Promise<CertificateAdminActionResponse> {
+  async reject(certificateId: string, reason: string): Promise<CertificateAdminActionResponse> {
     return apiRequest(`/api/v1/admin/certificates/${certificateId}/reject`, {
       method: "PATCH",
       body: JSON.stringify({ reason }),

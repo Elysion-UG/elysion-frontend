@@ -1,4 +1,5 @@
 # Code-Standards & Best Practices
+
 ## Nachhaltigkeits-Zertifikat-Plattform
 
 **Zweck:** Einheitlicher Code-Stil und Best Practices für das gesamte Team
@@ -8,6 +9,7 @@
 ## 1. Allgemeine Prinzipien
 
 ### 1.1 Clean Code
+
 - Verständliche Variablen- und Funktionsnamen — kein Kommentar nötig
 - Keine Magic Numbers/Strings → Konstanten verwenden
 - Funktionen tun genau eine Sache
@@ -16,17 +18,18 @@
 
 ### 1.2 Naming-Konventionen
 
-| Was | Stil | Beispiel |
-|-----|------|---------|
-| Variablen & Funktionen | camelCase | `getUserById`, `totalPrice` |
-| Klassen & Interfaces | PascalCase | `ProductService`, `UserProfile` |
-| Konstanten | UPPER_SNAKE_CASE | `MAX_FILE_SIZE`, `API_BASE_URL` |
-| Datenbank-Tabellen | snake_case | `order_items`, `user_profiles` |
-| Dateinamen (Backend) | kebab-case | `auth.service.ts`, `cart.routes.ts` |
-| Dateinamen (Frontend) | PascalCase | `ProductCard.tsx`, `CartContext.tsx` |
-| Enum-Werte | UPPER_SNAKE_CASE | `ORDER_STATUS.PENDING` |
+| Was                    | Stil             | Beispiel                             |
+| ---------------------- | ---------------- | ------------------------------------ |
+| Variablen & Funktionen | camelCase        | `getUserById`, `totalPrice`          |
+| Klassen & Interfaces   | PascalCase       | `ProductService`, `UserProfile`      |
+| Konstanten             | UPPER_SNAKE_CASE | `MAX_FILE_SIZE`, `API_BASE_URL`      |
+| Datenbank-Tabellen     | snake_case       | `order_items`, `user_profiles`       |
+| Dateinamen (Backend)   | kebab-case       | `auth.service.ts`, `cart.routes.ts`  |
+| Dateinamen (Frontend)  | PascalCase       | `ProductCard.tsx`, `CartContext.tsx` |
+| Enum-Werte             | UPPER_SNAKE_CASE | `ORDER_STATUS.PENDING`               |
 
 ### 1.3 Kein Code ohne Tests
+
 - Business-Logik → Unit-Tests
 - API-Endpunkte → Integration-Tests
 - Kritische Flows (Checkout, Payment) → E2E-Tests
@@ -125,17 +128,18 @@ if (!user) return { error: 'not found' };
 
 ### 4.1 REST-Konventionen
 
-| Operation | Methode | Beispiel |
-|-----------|---------|---------|
-| Liste abrufen | GET | `GET /products` |
-| Einzeln abrufen | GET | `GET /products/:id` |
-| Erstellen | POST | `POST /products` |
-| Aktualisieren (partial) | PATCH | `PATCH /products/:id` |
-| Löschen | DELETE | `DELETE /products/:id` |
+| Operation               | Methode | Beispiel               |
+| ----------------------- | ------- | ---------------------- |
+| Liste abrufen           | GET     | `GET /products`        |
+| Einzeln abrufen         | GET     | `GET /products/:id`    |
+| Erstellen               | POST    | `POST /products`       |
+| Aktualisieren (partial) | PATCH   | `PATCH /products/:id`  |
+| Löschen                 | DELETE  | `DELETE /products/:id` |
 
 ### 4.2 Response-Format
 
 **Erfolg:**
+
 ```json
 {
   "status": "success",
@@ -144,6 +148,7 @@ if (!user) return { error: 'not found' };
 ```
 
 **Fehler:**
+
 ```json
 {
   "status": "error",
@@ -152,13 +157,12 @@ if (!user) return { error: 'not found' };
 ```
 
 **Validierungsfehler:**
+
 ```json
 {
   "status": "error",
   "message": "Validation failed",
-  "errors": [
-    { "field": "email", "message": "Ungültige E-Mail-Adresse" }
-  ]
+  "errors": [{ "field": "email", "message": "Ungültige E-Mail-Adresse" }]
 }
 ```
 
@@ -172,21 +176,25 @@ if (!user) return { error: 'not found' };
 ## 5. Sicherheits-Richtlinien
 
 ### 5.1 Authentifizierung & Autorisierung
+
 - Jeder geschützte Endpoint überprüft das JWT
 - Rollen-Check **vor** dem Datenbankzugriff
 - Nie sensible Daten im Token speichern
 
 ### 5.2 Datenzugriff
+
 - Nutzer dürfen nur **eigene Daten** lesen/schreiben
 - Verkäufer dürfen nur **eigene Produkte** bearbeiten
 - Admin-Endpunkte sind durch eine separate Middleware geschützt
 
 ### 5.3 Sensible Daten
+
 - Passwörter werden nie zurückgegeben
 - IBAN/Zahlungsdaten: nur maskiert anzeigen
 - Keine Secrets/Credentials im Code oder Git
 
 ### 5.4 Allgemein
+
 - Input immer validieren und sanitisieren
 - Parameterized Queries (kein String-Concatenation bei DB-Abfragen)
 - Datei-Uploads: Typ und Größe prüfen
@@ -216,11 +224,11 @@ Beispiele:
 
 ### 6.3 Was zu testen ist
 
-| Ebene | Was | Wann |
-|-------|-----|------|
-| Unit | Service-Methoden, Algorithmen | Immer |
-| Integration | API-Endpunkte mit echter DB | Immer |
-| E2E | Checkout, Zahlung, Registrierung | Kritische Flows |
+| Ebene       | Was                              | Wann            |
+| ----------- | -------------------------------- | --------------- |
+| Unit        | Service-Methoden, Algorithmen    | Immer           |
+| Integration | API-Endpunkte mit echter DB      | Immer           |
+| E2E         | Checkout, Zahlung, Registrierung | Kritische Flows |
 
 ### 6.4 Mocking
 
@@ -252,6 +260,7 @@ Beispiele:
 ```
 
 ### 7.2 Vor jedem Commit prüfen
+
 - [ ] Code funktioniert lokal
 - [ ] Tests grün
 - [ ] Kein Debug-Output
@@ -261,20 +270,24 @@ Beispiele:
 ### 7.3 Code-Review-Checkliste
 
 **Allgemein**
+
 - [ ] Logik ist klar und nachvollziehbar
 - [ ] Keine unnötige Komplexität
 - [ ] Fehlerbehandlung vorhanden
 
 **Sicherheit**
+
 - [ ] Input-Validierung vorhanden
 - [ ] Keine sensiblen Daten exponiert
 - [ ] Autorisierung korrekt
 
 **Performance**
+
 - [ ] Keine N+1-Queries
 - [ ] Nur benötigte Felder aus DB geladen
 
 **Tests**
+
 - [ ] Business-Logik getestet
 - [ ] Edge-Cases berücksichtigt
 
@@ -283,6 +296,7 @@ Beispiele:
 ## 8. Dokumentations-Standards
 
 ### 8.1 Wann JSDoc schreiben
+
 - Öffentliche Service-Methoden
 - Komplexe Algorithmen
 - Nicht-offensichtliche Business-Logik
@@ -290,6 +304,7 @@ Beispiele:
 ### 8.2 README in jedem Modul
 
 Jedes Modul enthält eine kurze `README.md` mit:
+
 - Verantwortlichkeiten
 - API-Endpunkte
 - Abhängigkeiten zu anderen Modulen

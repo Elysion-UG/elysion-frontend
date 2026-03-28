@@ -1,4 +1,5 @@
 # Modul 05: Shopping Cart & Checkout
+
 ## Spezifikation & Requirements
 
 **Verantwortlichkeit:** Warenkorb, Checkout-Prozess, Bestellabschluss  
@@ -25,23 +26,25 @@ Dieses Modul verwaltet den Warenkorb und den Checkout-Prozess. User (eingeloggt 
 
 **Gast vs. Eingeloggter User:**
 
-| Feature | Gast | Eingeloggter User |
-|---------|------|-------------------|
-| Warenkorb hinzufügen | ✅ Ja (Session/Cookie) | ✅ Ja (Datenbank) |
-| Warenkorb persistiert | ❌ Nein (24h Session) | ✅ Ja (permanent) |
-| Checkout möglich | ✅ Ja (mit E-Mail) | ✅ Ja |
-| Adresse speichern | ❌ Nein | ✅ Ja |
-| Bestellhistorie | ❌ Nein | ✅ Ja |
+| Feature               | Gast                   | Eingeloggter User |
+| --------------------- | ---------------------- | ----------------- |
+| Warenkorb hinzufügen  | ✅ Ja (Session/Cookie) | ✅ Ja (Datenbank) |
+| Warenkorb persistiert | ❌ Nein (24h Session)  | ✅ Ja (permanent) |
+| Checkout möglich      | ✅ Ja (mit E-Mail)     | ✅ Ja             |
+| Adresse speichern     | ❌ Nein                | ✅ Ja             |
+| Bestellhistorie       | ❌ Nein                | ✅ Ja             |
 
 ### Schnittstellen zu anderen Modulen:
 
 **Benötigt:**
+
 - Modul 01: User-Daten, Adressen
 - Modul 02: Produkte, Varianten, Lagerbestand (atomare Reservierung!)
 - Modul 06: Order erstellen (nach Checkout)
 - Modul 07: Payment initiieren
 
 **Beeinflusst:**
+
 - Modul 02: Aktualisiert `variant.reserved` (atomare Reservierung)
 
 ---
@@ -52,13 +55,13 @@ Dieses Modul verwaltet den Warenkorb und den Checkout-Prozess. User (eingeloggt 
 
 Ein Warenkorb gehört entweder einem User ODER einem Gast (Session).
 
-| Feld | Typ | Pflicht | Bedeutung |
-|------|-----|---------|-----------|
-| **id** | UUID | Ja | Primärschlüssel |
-| **userId** | UUID | Nein | Wenn eingeloggt: User-ID (aus Modul 01) |
-| **sessionId** | String | Nein | Wenn Gast: Session-ID (UUID in Cookie) |
-| **createdAt** | Timestamp | Ja | Wann erstellt |
-| **updatedAt** | Timestamp | Ja | Letzte Änderung |
+| Feld          | Typ       | Pflicht | Bedeutung                               |
+| ------------- | --------- | ------- | --------------------------------------- |
+| **id**        | UUID      | Ja      | Primärschlüssel                         |
+| **userId**    | UUID      | Nein    | Wenn eingeloggt: User-ID (aus Modul 01) |
+| **sessionId** | String    | Nein    | Wenn Gast: Session-ID (UUID in Cookie)  |
+| **createdAt** | Timestamp | Ja      | Wann erstellt                           |
+| **updatedAt** | Timestamp | Ja      | Letzte Änderung                         |
 
 **Constraint:** Entweder `userId` ODER `sessionId` muss gesetzt sein (nicht beide, nicht keins).
 
@@ -83,14 +86,14 @@ CREATE INDEX idx_cart_updated ON cart(updatedAt);
 
 Ein Artikel im Warenkorb.
 
-| Feld | Typ | Pflicht | Bedeutung |
-|------|-----|---------|-----------|
-| **id** | UUID | Ja | Primärschlüssel |
-| **cartId** | UUID | Ja | Zu welchem Warenkorb |
-| **variantId** | UUID | Ja | **Variante** (nicht Produkt!) aus Modul 02 |
-| **quantity** | Integer | Ja | Anzahl (min. 1) |
-| **priceSnapshot** | Decimal (10,2) | Ja | Preis bei Hinzufügen (für Validierung) |
-| **addedAt** | Timestamp | Ja | Wann hinzugefügt |
+| Feld              | Typ            | Pflicht | Bedeutung                                  |
+| ----------------- | -------------- | ------- | ------------------------------------------ |
+| **id**            | UUID           | Ja      | Primärschlüssel                            |
+| **cartId**        | UUID           | Ja      | Zu welchem Warenkorb                       |
+| **variantId**     | UUID           | Ja      | **Variante** (nicht Produkt!) aus Modul 02 |
+| **quantity**      | Integer        | Ja      | Anzahl (min. 1)                            |
+| **priceSnapshot** | Decimal (10,2) | Ja      | Preis bei Hinzufügen (für Validierung)     |
+| **addedAt**       | Timestamp      | Ja      | Wann hinzugefügt                           |
 
 **Wichtig:**
 
@@ -131,11 +134,11 @@ Wenn User eingeloggt:
 
 Wenn Gast:
   sessionId = Cookie "cart_session_id"
-  
+
   if (!sessionId):
     sessionId = generateUUID()
     Set-Cookie: cart_session_id = sessionId (24h)
-  
+
   cart = SELECT * FROM cart WHERE sessionId = sessionId
 ```
 
@@ -174,8 +177,8 @@ Wenn Gast:
     ],
     "summary": {
       "subtotal": 59.98,
-      "tax": 11.40,
-      "shipping": 4.90,
+      "tax": 11.4,
+      "shipping": 4.9,
       "total": 76.28,
       "itemCount": 2
     }
@@ -205,19 +208,19 @@ Fügt einen Artikel zum Warenkorb hinzu.
 ```
 1. Variante existiert:
    variant = SELECT * FROM variant WHERE id = :variantId
-   
+
    if (!variant):
      throw Error("Variante nicht gefunden")
 
 2. Produkt ist aktiv:
    product = SELECT * FROM products WHERE id = variant.productId
-   
+
    if (product.status != 'ACTIVE'):
      throw Error("Produkt nicht verfügbar")
 
 3. Genug Lagerbestand:
    available = variant.stock - variant.reserved
-   
+
    if (available < :quantity):
      throw Error("Nur noch {available} verfügbar")
 ```
@@ -229,37 +232,37 @@ Fügt einen Artikel zum Warenkorb hinzu.
    cart = getOrCreateCart(userId oder sessionId)
 
 2. Prüfen ob Variante bereits im Warenkorb:
-   existing = SELECT * FROM cart_item 
+   existing = SELECT * FROM cart_item
               WHERE cartId = cart.id AND variantId = :variantId
-   
+
    if (existing):
      # Quantity erhöhen
      newQuantity = existing.quantity + :quantity
-     
+
      # Verfügbarkeit prüfen
      if (variant.available < newQuantity):
        throw Error("Nur noch X verfügbar")
-     
+
      UPDATE cart_item SET quantity = newQuantity WHERE id = existing.id
-   
+
    else:
      # Neu hinzufügen
      INSERT INTO cart_item (cartId, variantId, quantity, priceSnapshot)
      VALUES (cart.id, :variantId, :quantity, variant.price)
 
 3. Lagerbestand ATOMAR reservieren (aus Modul 02):
-   
+
    BEGIN TRANSACTION;
-   
+
    UPDATE variant
    SET reserved = reserved + :quantity
    WHERE id = :variantId
    AND (stock - reserved) >= :quantity;
-   
+
    IF (rowsAffected == 0):
      ROLLBACK;
      throw Error("Nicht genug verfügbar");
-   
+
    COMMIT;
 ```
 
@@ -297,7 +300,7 @@ Fügt einen Artikel zum Warenkorb hinzu.
 ```
 1. CartItem holen:
    item = SELECT * FROM cart_item WHERE id = :id
-   
+
    # Prüfen ob User Zugriff hat
    cart = SELECT * FROM cart WHERE id = item.cartId
    if (cart.userId != req.user.userId AND cart.sessionId != req.session.id):
@@ -305,26 +308,26 @@ Fügt einen Artikel zum Warenkorb hinzu.
 
 2. Quantity-Differenz berechnen:
    diff = newQuantity - item.quantity
-   
+
    if (diff > 0):
      # Mehr bestellen → Reservierung erhöhen
-     
+
      BEGIN TRANSACTION;
-     
+
      UPDATE variant
      SET reserved = reserved + diff
      WHERE id = item.variantId
      AND (stock - reserved) >= diff;
-     
+
      IF (rowsAffected == 0):
        ROLLBACK;
        throw Error("Nicht genug verfügbar");
-     
+
      COMMIT;
-     
+
    else if (diff < 0):
      # Weniger bestellen → Reservierung reduzieren
-     
+
      UPDATE variant
      SET reserved = reserved + diff  # (diff ist negativ!)
      WHERE id = item.variantId;
@@ -388,40 +391,40 @@ Wenn User einloggt und vorher als Gast Artikel im Warenkorb hatte:
 
 2. Prüfe ob Gast-Warenkorb existiert:
    guestSessionId = Cookie "cart_session_id"
-   
+
    guestCart = SELECT * FROM cart WHERE sessionId = guestSessionId
-   
+
    if (!guestCart):
      return  # Kein Gast-Warenkorb, nichts zu mergen
 
 3. Hole User-Warenkorb:
    userCart = SELECT * FROM cart WHERE userId = user.id
-   
+
    if (!userCart):
      # User hatte noch keinen Warenkorb
      # → Gast-Warenkorb zu User umwandeln
-     
+
      UPDATE cart
      SET userId = user.id, sessionId = NULL
      WHERE id = guestCart.id
-     
+
      return
 
 4. Beide Warenkörbe mergen:
-   
+
    guestItems = SELECT * FROM cart_item WHERE cartId = guestCart.id
-   
+
    for item in guestItems:
-     
+
      # Prüfe ob gleiche Variante im User-Warenkorb
      existing = SELECT * FROM cart_item
                 WHERE cartId = userCart.id
                 AND variantId = item.variantId
-     
+
      if (existing):
        # Quantities addieren
        newQuantity = existing.quantity + item.quantity
-       
+
        # Validieren
        variant = SELECT * FROM variant WHERE id = item.variantId
        if (variant.available >= newQuantity):
@@ -432,7 +435,7 @@ Wenn User einloggt und vorher als Gast Artikel im Warenkorb hatte:
          maxQuantity = variant.available
          UPDATE cart_item SET quantity = maxQuantity WHERE id = existing.id
          # User benachrichtigen
-     
+
      else:
        # Item verschieben
        UPDATE cart_item SET cartId = userCart.id WHERE id = item.id
@@ -456,9 +459,10 @@ Startet den Checkout-Prozess.
 
 ```json
 {
-  "email": "kunde@example.com",  // Wenn Gast
+  "email": "kunde@example.com", // Wenn Gast
   "shippingAddressId": "addr-1", // Wenn User (gespeicherte Adresse)
-  "shippingAddress": {           // Wenn Gast (neue Adresse)
+  "shippingAddress": {
+    // Wenn Gast (neue Adresse)
     "firstName": "Max",
     "lastName": "Mustermann",
     "street": "Hauptstraße",
@@ -475,23 +479,23 @@ Startet den Checkout-Prozess.
 ```
 1. Warenkorb nicht leer:
    items = SELECT * FROM cart_item WHERE cartId = cart.id
-   
+
    if (items.length == 0):
      throw Error("Warenkorb ist leer")
 
 2. Alle Artikel verfügbar:
    for item in items:
      variant = SELECT * FROM variant WHERE id = item.variantId
-     
+
      if (variant.available < item.quantity):
        throw Error("Artikel {product.name} nicht mehr verfügbar")
 
 3. Preise validieren:
    for item in items:
      variant = SELECT * FROM variant WHERE id = item.variantId
-     
+
      currentPrice = variant.price ? variant.price : product.basePrice
-     
+
      if (currentPrice != item.priceSnapshot):
        # Preis hat sich geändert
        # → User informieren, nicht automatisch updaten
@@ -542,6 +546,7 @@ Startet den Checkout-Prozess.
 ```
 
 **Frontend macht dann:**
+
 - Zeigt Stripe/PayPal Payment-Form
 - User zahlt
 - Bei Erfolg: POST /checkout/complete
@@ -568,13 +573,13 @@ Nach erfolgreicher Zahlung.
 ```
 1. Zahlung verifizieren (Modul 07):
    payment = PaymentService.verify(paymentIntentId)
-   
+
    if (payment.status != 'succeeded'):
      throw Error("Zahlung nicht erfolgreich")
 
 2. Order finalisieren (Modul 06):
    OrderService.complete(orderId)
-   
+
    # Modul 06 macht dann:
    # - Status: PENDING → CONFIRMED
    # - Lagerbestand abziehen (stock -= quantity)
@@ -620,15 +625,15 @@ Nach erfolgreicher Zahlung.
    AND updatedAt < NOW() - INTERVAL '24 hours'
 
 2. Für jeden:
-   
+
    a) Reservierungen freigeben:
       items = SELECT * FROM cart_item WHERE cartId = cart.id
-      
+
       for item in items:
         UPDATE variant
         SET reserved = reserved - item.quantity
         WHERE id = item.variantId
-   
+
    b) Warenkorb löschen:
       DELETE FROM cart_item WHERE cartId = cart.id
       DELETE FROM cart WHERE id = cart.id
@@ -638,21 +643,21 @@ Nach erfolgreicher Zahlung.
 
 ```
 function cleanupAbandonedCarts():
-  
+
   oldCarts = SELECT * FROM cart
              WHERE sessionId IS NOT NULL
              AND updatedAt < NOW() - INTERVAL '24 hours'
-  
+
   for cart in oldCarts:
-    
+
     # Reservierungen freigeben
     items = SELECT * FROM cart_item WHERE cartId = cart.id
-    
+
     for item in items:
       UPDATE variant
       SET reserved = reserved - item.quantity
       WHERE id = item.variantId
-    
+
     # Löschen
     DELETE FROM cart_item WHERE cartId = cart.id
     DELETE FROM cart WHERE id = cart.id
@@ -710,7 +715,7 @@ User geht zu Checkout
 User A und B legen gleichzeitig Produkt in Warenkorb
   stock = 10, beide reservieren je 8
   → reserved = 16 (überschreitet stock!)
-  
+
 Atomare Reservierung verhindert das:
   User A: UPDATE ... WHERE (stock - reserved) >= 8 → OK
   User B: UPDATE ... WHERE (stock - reserved) >= 8 → FAIL (nur noch 2 verfügbar)
@@ -831,6 +836,7 @@ Frontend:
 ---
 
 **Der Entwickler entscheidet:**
+
 - Backend-Technologie & Framework
 - Session-Management (Cookie, Redis, JWT)
 - Datenbank (PostgreSQL empfohlen)

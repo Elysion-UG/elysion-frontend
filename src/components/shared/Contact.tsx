@@ -14,7 +14,9 @@ export default function Contact() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -42,46 +44,47 @@ export default function Contact() {
   return (
     <div className="min-h-screen bg-green-50">
       <div className="container mx-auto px-4 py-12">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-green-800 mb-4">Get in Touch</h1>
-          <p className="text-xl text-green-600 max-w-2xl mx-auto">
-            Have questions about sustainable shopping or need help with your order? We're here to help!
+        <div className="mb-12 text-center">
+          <h1 className="mb-4 text-4xl font-bold text-green-800">Get in Touch</h1>
+          <p className="mx-auto max-w-2xl text-xl text-green-600">
+            Have questions about sustainable shopping or need help with your order? We're here to
+            help!
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12">
+        <div className="grid gap-12 lg:grid-cols-2">
           <div className="space-y-8">
             <div>
-              <h2 className="text-2xl font-bold text-green-800 mb-6">Contact Information</h2>
+              <h2 className="mb-6 text-2xl font-bold text-green-800">Contact Information</h2>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Mail className="w-6 h-6 text-green-600" />
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-green-100">
+                    <Mail className="h-6 w-6 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-green-800 mb-1">Email Us</h3>
+                    <h3 className="mb-1 font-semibold text-green-800">Email Us</h3>
                     <p className="text-green-600">support@ecoshop.com</p>
                     <p className="text-green-600">hello@ecoshop.com</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Phone className="w-6 h-6 text-green-600" />
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-green-100">
+                    <Phone className="h-6 w-6 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-green-800 mb-1">Call Us</h3>
+                    <h3 className="mb-1 font-semibold text-green-800">Call Us</h3>
                     <p className="text-green-600">+1 (555) 123-4567</p>
-                    <p className="text-green-600 text-sm">Mon-Fri, 9AM-6PM EST</p>
+                    <p className="text-sm text-green-600">Mon-Fri, 9AM-6PM EST</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-6 h-6 text-green-600" />
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-green-100">
+                    <MapPin className="h-6 w-6 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-green-800 mb-1">Visit Us</h3>
+                    <h3 className="mb-1 font-semibold text-green-800">Visit Us</h3>
                     <p className="text-green-600">123 Sustainable Street</p>
                     <p className="text-green-600">Green City, GC 12345</p>
                   </div>
@@ -89,9 +92,9 @@ export default function Contact() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg p-6 shadow-sm border border-green-200">
-              <div className="flex items-center gap-3 mb-4">
-                <Clock className="w-6 h-6 text-green-600" />
+            <div className="rounded-lg border border-green-200 bg-white p-6 shadow-sm">
+              <div className="mb-4 flex items-center gap-3">
+                <Clock className="h-6 w-6 text-green-600" />
                 <h3 className="text-lg font-semibold text-green-800">Business Hours</h3>
               </div>
               <div className="space-y-2 text-green-700">
@@ -110,26 +113,27 @@ export default function Contact() {
               </div>
             </div>
 
-            <div className="bg-green-100 rounded-lg p-6">
-              <div className="flex items-center gap-3 mb-3">
-                <MessageCircle className="w-6 h-6 text-green-600" />
+            <div className="rounded-lg bg-green-100 p-6">
+              <div className="mb-3 flex items-center gap-3">
+                <MessageCircle className="h-6 w-6 text-green-600" />
                 <h3 className="text-lg font-semibold text-green-800">Quick Answers</h3>
               </div>
-              <p className="text-green-700 mb-4">
-                Looking for quick answers? Check out our frequently asked questions for instant help.
+              <p className="mb-4 text-green-700">
+                Looking for quick answers? Check out our frequently asked questions for instant
+                help.
               </p>
-              <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+              <button className="rounded-lg bg-green-600 px-4 py-2 text-white transition-colors hover:bg-green-700">
                 View FAQ
               </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm border border-green-200 p-8">
-            <h2 className="text-2xl font-bold text-green-800 mb-6">Send us a Message</h2>
+          <div className="rounded-lg border border-green-200 bg-white p-8 shadow-sm">
+            <h2 className="mb-6 text-2xl font-bold text-green-800">Send us a Message</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid gap-6 md:grid-cols-2">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-green-700 mb-2">
+                  <label htmlFor="name" className="mb-2 block text-sm font-medium text-green-700">
                     Full Name *
                   </label>
                   <input
@@ -139,12 +143,12 @@ export default function Contact() {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                    className="w-full rounded-lg border border-green-300 px-4 py-3 transition-colors focus:border-green-500 focus:ring-2 focus:ring-green-500"
                     placeholder="Your full name"
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-green-700 mb-2">
+                  <label htmlFor="email" className="mb-2 block text-sm font-medium text-green-700">
                     Email Address *
                   </label>
                   <input
@@ -154,14 +158,14 @@ export default function Contact() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                    className="w-full rounded-lg border border-green-300 px-4 py-3 transition-colors focus:border-green-500 focus:ring-2 focus:ring-green-500"
                     placeholder="your.email@example.com"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="subject" className="block text-sm font-medium text-green-700 mb-2">
+                <label htmlFor="subject" className="mb-2 block text-sm font-medium text-green-700">
                   Subject *
                 </label>
                 <select
@@ -170,7 +174,7 @@ export default function Contact() {
                   value={formData.subject}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+                  className="w-full rounded-lg border border-green-300 px-4 py-3 transition-colors focus:border-green-500 focus:ring-2 focus:ring-green-500"
                 >
                   <option value="">Select a subject</option>
                   <option value="general">General Inquiry</option>
@@ -183,7 +187,7 @@ export default function Contact() {
               </div>
 
               <div>
-                <label htmlFor="message" className="block text-sm font-medium text-green-700 mb-2">
+                <label htmlFor="message" className="mb-2 block text-sm font-medium text-green-700">
                   Message *
                 </label>
                 <textarea
@@ -193,7 +197,7 @@ export default function Contact() {
                   onChange={handleInputChange}
                   required
                   rows={6}
-                  className="w-full px-4 py-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors resize-vertical"
+                  className="resize-vertical w-full rounded-lg border border-green-300 px-4 py-3 transition-colors focus:border-green-500 focus:ring-2 focus:ring-green-500"
                   placeholder="Tell us how we can help you..."
                 />
               </div>
@@ -201,16 +205,16 @@ export default function Contact() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-3 font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-green-400"
               >
                 {isSubmitting ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                     Sending...
                   </>
                 ) : (
                   <>
-                    <Send className="w-4 h-4" />
+                    <Send className="h-4 w-4" />
                     Send Message
                   </>
                 )}

@@ -1,4 +1,5 @@
 # Deployment-Guide
+
 ## AWS Infrastructure Setup
 
 **Version:** 1.0  
@@ -85,6 +86,7 @@ aws ec2 create-vpc \
 ### 1.2 Subnets erstellen
 
 **Public Subnet (für ALB):**
+
 ```bash
 aws ec2 create-subnet \
   --vpc-id vpc-12345678 \
@@ -100,6 +102,7 @@ aws ec2 create-subnet \
 ```
 
 **Private Subnet (für ECS, RDS):**
+
 ```bash
 aws ec2 create-subnet \
   --vpc-id vpc-12345678 \
@@ -128,6 +131,7 @@ aws ec2 attach-internet-gateway \
 ### 1.4 Route Tables
 
 **Public Route Table:**
+
 ```bash
 aws ec2 create-route-table \
   --vpc-id vpc-12345678 \
@@ -583,6 +587,7 @@ aws cloudfront create-distribution \
 ```
 
 **cloudfront-config.json:**
+
 ```json
 {
   "CallerReference": "sustainability-frontend-2026",
@@ -775,19 +780,19 @@ aws sns subscribe \
 
 ## Kosten-Übersicht (Production)
 
-| Service | Typ | Kosten/Monat |
-|---------|-----|--------------|
-| **RDS PostgreSQL** | db.t3.small | ~50 EUR |
-| **ElastiCache Redis** | cache.t3.micro | ~15 EUR |
-| **ECS Fargate** | 2 Tasks (0.5 vCPU, 1GB) | ~60 EUR |
-| **ALB** | Application Load Balancer | ~20 EUR |
-| **S3** | Storage + Transfer | ~10 EUR |
-| **CloudFront** | CDN | ~10 EUR |
-| **Route 53** | Hosted Zone + Queries | ~1 EUR |
-| **Secrets Manager** | 3 Secrets | ~1 EUR |
-| **CloudWatch** | Logs + Metrics | ~5 EUR |
-| **NAT Gateway** | Data Transfer | ~35 EUR |
-| **Gesamt** | | **~207 EUR/Monat** |
+| Service               | Typ                       | Kosten/Monat       |
+| --------------------- | ------------------------- | ------------------ |
+| **RDS PostgreSQL**    | db.t3.small               | ~50 EUR            |
+| **ElastiCache Redis** | cache.t3.micro            | ~15 EUR            |
+| **ECS Fargate**       | 2 Tasks (0.5 vCPU, 1GB)   | ~60 EUR            |
+| **ALB**               | Application Load Balancer | ~20 EUR            |
+| **S3**                | Storage + Transfer        | ~10 EUR            |
+| **CloudFront**        | CDN                       | ~10 EUR            |
+| **Route 53**          | Hosted Zone + Queries     | ~1 EUR             |
+| **Secrets Manager**   | 3 Secrets                 | ~1 EUR             |
+| **CloudWatch**        | Logs + Metrics            | ~5 EUR             |
+| **NAT Gateway**       | Data Transfer             | ~35 EUR            |
+| **Gesamt**            |                           | **~207 EUR/Monat** |
 
 **Hinweis:** Preise sind Schätzungen für eu-central-1 (Frankfurt) und können variieren.
 
@@ -816,6 +821,7 @@ aws application-autoscaling put-scaling-policy \
 ```
 
 **scaling-policy.json:**
+
 ```json
 {
   "TargetValue": 75.0,
@@ -848,6 +854,7 @@ aws application-autoscaling put-scaling-policy \
 **RPO (Recovery Point Objective):** 24 Stunden
 
 **Recovery-Schritte:**
+
 1. RDS Snapshot wiederherstellen (30 Min)
 2. ECS Service neu deployen (10 Min)
 3. DNS umschalten (propagation: 1-2h)
@@ -860,10 +867,12 @@ aws application-autoscaling put-scaling-policy \
 Siehe GitHub Actions Workflow in Repository (`.github/workflows/deploy.yml`)
 
 **Trigger:**
+
 - Push to `main` → Deploy to Staging
 - Manual Trigger → Deploy to Production
 
 **Schritte:**
+
 1. Build Docker Image
 2. Push to ECR
 3. Update ECS Task Definition

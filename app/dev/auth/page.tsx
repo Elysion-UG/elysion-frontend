@@ -8,7 +8,13 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import Link from "next/link"
 import { apiRequest, setAccessToken, getAccessToken } from "@/src/lib/api-client"
 
@@ -59,27 +65,34 @@ function EndpointCard({
   return (
     <Card className="mb-4">
       <CardHeader className="pb-3">
-        <CardTitle className="flex flex-wrap items-center gap-2 text-sm font-mono">
-          <span className={`px-2 py-0.5 rounded text-xs font-bold ${METHOD_COLORS[method] ?? "bg-gray-100"}`}>
+        <CardTitle className="flex flex-wrap items-center gap-2 font-mono text-sm">
+          <span
+            className={`rounded px-2 py-0.5 text-xs font-bold ${METHOD_COLORS[method] ?? "bg-gray-100"}`}
+          >
             {method}
           </span>
           <span className="text-slate-700">{path}</span>
-          <span className="ml-auto text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{auth}</span>
+          <span className="ml-auto rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-400">
+            {auth}
+          </span>
         </CardTitle>
         <CardDescription className="text-xs">{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {children}
-        <Button size="sm" onClick={execute} disabled={loading} className="bg-teal-600 hover:bg-teal-700">
-          {loading ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+        <Button
+          size="sm"
+          onClick={execute}
+          disabled={loading}
+          className="bg-teal-600 hover:bg-teal-700"
+        >
+          {loading ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null}
           Execute
         </Button>
         {response !== null && (
           <pre
-            className={`mt-2 p-3 rounded text-xs overflow-auto max-h-60 whitespace-pre-wrap border ${
-              isError
-                ? "bg-red-50 border-red-200 text-red-800"
-                : "bg-slate-50 border-slate-200"
+            className={`mt-2 max-h-60 overflow-auto whitespace-pre-wrap rounded border p-3 text-xs ${
+              isError ? "border-red-200 bg-red-50 text-red-800" : "border-slate-200 bg-slate-50"
             }`}
           >
             {JSON.stringify(response, null, 2)}
@@ -115,32 +128,37 @@ export default function DevAuthPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <Toaster position="bottom-right" richColors />
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <Link href="/dev" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-6">
-          <ArrowLeft className="w-4 h-4" /> Back to Dev Index
+      <div className="mx-auto max-w-3xl px-4 py-8">
+        <Link
+          href="/dev"
+          className="mb-6 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Dev Index
         </Link>
 
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-800 mb-1">Auth Endpoints</h1>
+          <h1 className="mb-1 text-2xl font-bold text-slate-800">Auth Endpoints</h1>
           <div className="flex items-center gap-2">
             <p className="text-sm text-slate-500">All authentication endpoints</p>
-            <Badge variant="outline" className="text-xs">9 endpoints</Badge>
+            <Badge variant="outline" className="text-xs">
+              9 endpoints
+            </Badge>
           </div>
         </div>
 
         <Card className="mb-6 border-teal-200 bg-teal-50">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
               {currentToken ? (
-                <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                <CheckCircle2 className="h-4 w-4 text-teal-600" />
               ) : (
-                <XCircle className="w-4 h-4 text-slate-400" />
+                <XCircle className="h-4 w-4 text-slate-400" />
               )}
               Token Status
               {currentToken ? (
-                <span className="text-xs font-normal text-teal-700 ml-1">Active</span>
+                <span className="ml-1 text-xs font-normal text-teal-700">Active</span>
               ) : (
-                <span className="text-xs font-normal text-slate-400 ml-1">No token set</span>
+                <span className="ml-1 text-xs font-normal text-slate-400">No token set</span>
               )}
             </CardTitle>
           </CardHeader>
@@ -149,7 +167,7 @@ export default function DevAuthPage() {
               readOnly
               value={currentToken ? `${currentToken.slice(0, 40)}...` : ""}
               placeholder="No token — log in first"
-              className="font-mono text-xs bg-white"
+              className="bg-white font-mono text-xs"
             />
             <Button
               size="sm"
@@ -162,7 +180,7 @@ export default function DevAuthPage() {
                 }
               }}
             >
-              <Copy className="w-3 h-3" />
+              <Copy className="h-3 w-3" />
             </Button>
           </CardContent>
         </Card>
@@ -191,19 +209,36 @@ export default function DevAuthPage() {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Email</Label>
-              <Input value={regEmail} onChange={e => setRegEmail(e.target.value)} className="h-8 text-xs" />
+              <Input
+                value={regEmail}
+                onChange={(e) => setRegEmail(e.target.value)}
+                className="h-8 text-xs"
+              />
             </div>
             <div>
               <Label className="text-xs">Password</Label>
-              <Input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} className="h-8 text-xs" />
+              <Input
+                type="password"
+                value={regPassword}
+                onChange={(e) => setRegPassword(e.target.value)}
+                className="h-8 text-xs"
+              />
             </div>
             <div>
               <Label className="text-xs">First Name</Label>
-              <Input value={regFirst} onChange={e => setRegFirst(e.target.value)} className="h-8 text-xs" />
+              <Input
+                value={regFirst}
+                onChange={(e) => setRegFirst(e.target.value)}
+                className="h-8 text-xs"
+              />
             </div>
             <div>
               <Label className="text-xs">Last Name</Label>
-              <Input value={regLast} onChange={e => setRegLast(e.target.value)} className="h-8 text-xs" />
+              <Input
+                value={regLast}
+                onChange={(e) => setRegLast(e.target.value)}
+                className="h-8 text-xs"
+              />
             </div>
             <div>
               <Label className="text-xs">Role</Label>
@@ -220,7 +255,11 @@ export default function DevAuthPage() {
             {regRole === "SELLER" && (
               <div>
                 <Label className="text-xs">Company Name</Label>
-                <Input value={regCompany} onChange={e => setRegCompany(e.target.value)} className="h-8 text-xs" />
+                <Input
+                  value={regCompany}
+                  onChange={(e) => setRegCompany(e.target.value)}
+                  className="h-8 text-xs"
+                />
               </div>
             )}
           </div>
@@ -233,10 +272,14 @@ export default function DevAuthPage() {
           auth="PUBLIC"
           description="Login and receive an access token (stored in-memory via setAccessToken)"
           onExecute={async () => {
-            const data = await apiRequest<{ accessToken: string; expiresIn: number; user: { id: string; email: string; role: string } }>(
-              "/api/v1/auth/login",
-              { method: "POST", body: JSON.stringify({ email: loginEmail, password: loginPassword }) }
-            )
+            const data = await apiRequest<{
+              accessToken: string
+              expiresIn: number
+              user: { id: string; email: string; role: string }
+            }>("/api/v1/auth/login", {
+              method: "POST",
+              body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+            })
             if (data?.accessToken) {
               setAccessToken(data.accessToken)
               refreshTokenDisplay()
@@ -247,11 +290,20 @@ export default function DevAuthPage() {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Email</Label>
-              <Input value={loginEmail} onChange={e => setLoginEmail(e.target.value)} className="h-8 text-xs" />
+              <Input
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                className="h-8 text-xs"
+              />
             </div>
             <div>
               <Label className="text-xs">Password</Label>
-              <Input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="h-8 text-xs" />
+              <Input
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                className="h-8 text-xs"
+              />
             </div>
           </div>
         </EndpointCard>
@@ -307,7 +359,7 @@ export default function DevAuthPage() {
             <Label className="text-xs">Verification Token</Label>
             <Input
               value={verifyToken}
-              onChange={e => setVerifyToken(e.target.value)}
+              onChange={(e) => setVerifyToken(e.target.value)}
               placeholder="Token from verification email"
               className="h-8 text-xs"
             />
@@ -331,7 +383,7 @@ export default function DevAuthPage() {
             <Label className="text-xs">Email</Label>
             <Input
               value={resendEmail}
-              onChange={e => setResendEmail(e.target.value)}
+              onChange={(e) => setResendEmail(e.target.value)}
               placeholder="user@example.com"
               className="h-8 text-xs"
             />
@@ -355,7 +407,7 @@ export default function DevAuthPage() {
             <Label className="text-xs">Email</Label>
             <Input
               value={forgotEmail}
-              onChange={e => setForgotEmail(e.target.value)}
+              onChange={(e) => setForgotEmail(e.target.value)}
               placeholder="user@example.com"
               className="h-8 text-xs"
             />
@@ -380,7 +432,7 @@ export default function DevAuthPage() {
               <Label className="text-xs">Reset Token</Label>
               <Input
                 value={resetToken}
-                onChange={e => setResetToken(e.target.value)}
+                onChange={(e) => setResetToken(e.target.value)}
                 placeholder="Token from reset email"
                 className="h-8 text-xs"
               />
@@ -390,7 +442,7 @@ export default function DevAuthPage() {
               <Input
                 type="password"
                 value={resetPassword}
-                onChange={e => setResetPassword(e.target.value)}
+                onChange={(e) => setResetPassword(e.target.value)}
                 className="h-8 text-xs"
               />
             </div>
@@ -403,9 +455,7 @@ export default function DevAuthPage() {
           path="/api/v1/auth/me"
           auth="AUTH"
           description="Get the currently authenticated user's profile (requires Bearer token)"
-          onExecute={() =>
-            apiRequest("/api/v1/auth/me", { method: "GET" })
-          }
+          onExecute={() => apiRequest("/api/v1/auth/me", { method: "GET" })}
         />
       </div>
     </div>

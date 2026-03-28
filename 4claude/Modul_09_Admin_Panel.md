@@ -1,4 +1,5 @@
 # Modul 09: Admin Panel
+
 ## Spezifikation & Requirements
 
 **Verantwortlichkeit:** Admin-Dashboard, Verwaltung, Moderation  
@@ -28,6 +29,7 @@ Dieses Modul stellt Admin-Funktionen bereit. Admins können die Plattform verwal
 **Dieses Modul definiert nur Backend-Endpoints!**
 
 Frontend-Design ist Entwickler-Entscheidung:
+
 - React Admin
 - Vue Admin
 - Custom Dashboard
@@ -86,8 +88,8 @@ CREATE INDEX idx_audit_entity ON admin_audit_log(entity_type, entity_id);
       },
       "orders": {
         "total": 892,
-        "todayRevenue": 12450.50,
-        "thisMonthRevenue": 345678.90,
+        "todayRevenue": 12450.5,
+        "thisMonthRevenue": 345678.9,
         "pending": 23,
         "processing": 45
       },
@@ -167,7 +169,7 @@ CREATE INDEX idx_audit_entity ON admin_audit_log(entity_type, entity_id);
         "stats": {
           "productsCount": 23,
           "ordersCount": 145,
-          "revenue": 12450.50
+          "revenue": 12450.5
         }
       }
     ],
@@ -191,7 +193,7 @@ CREATE INDEX idx_audit_entity ON admin_audit_log(entity_type, entity_id);
 ```json
 {
   "reason": "Verstoß gegen Nutzungsbedingungen",
-  "duration": 30  // Tage (optional, permanent wenn leer)
+  "duration": 30 // Tage (optional, permanent wenn leer)
 }
 ```
 
@@ -400,19 +402,19 @@ Neue Verkäufer, die auf Freigabe warten.
       {
         "date": "2024-01-01",
         "orders": 23,
-        "totalRevenue": 1845.50,
+        "totalRevenue": 1845.5,
         "platformCommission": 184.55
       },
       {
         "date": "2024-01-02",
         "orders": 31,
-        "totalRevenue": 2567.30,
+        "totalRevenue": 2567.3,
         "platformCommission": 256.73
       }
     ],
     "summary": {
       "totalOrders": 892,
-      "totalRevenue": 67890.50,
+      "totalRevenue": 67890.5,
       "totalCommission": 6789.05,
       "avgOrderValue": 76.12
     }
@@ -517,7 +519,7 @@ Neue Verkäufer, die auf Freigabe warten.
 ```
 SUPER_ADMIN:
   - Alles
-  
+
 MODERATOR:
   - Zertifikate verifizieren
   - Produkte moderieren
@@ -584,7 +586,7 @@ Dashboard-Statistiken ändern sich nicht sekündlich.
 Cache:
   Key: "admin:dashboard"
   TTL: 5 Minuten
-  
+
 Invalidierung:
   - Manuell (Button "Refresh")
   - Bei wichtigen Events (neue Bestellung)
@@ -648,7 +650,7 @@ Alert wenn:
   - > 10 User pro Stunde gesperrt
   - > 50 Produkte pro Stunde abgelehnt
   - Konfiguration mehrfach geändert
-  
+
 → Könnte kompromittierter Admin-Account sein
 ```
 
@@ -670,6 +672,7 @@ Zertifikate > 24h PENDING:
 **Nicht vorgegeben!**
 
 Empfehlungen:
+
 - **React Admin:** Schnell, viele Features out-of-the-box
 - **Vue Admin:** Ähnlich wie React Admin
 - **Custom Dashboard:** Volle Kontrolle
@@ -719,11 +722,11 @@ Filter:
 CSV:
   - Einfachste Option
   - Excel-kompatibel
-  
+
 XLSX:
   - Bessere Formatierung
   - Formeln möglich
-  
+
 PDF:
   - Nicht editierbar
   - Für Berichte
@@ -732,6 +735,7 @@ PDF:
 ---
 
 **Der Entwickler entscheidet:**
+
 - Frontend-Framework (React Admin, Vue Admin, Custom)
 - Dashboard-Design
 - Chart-Library (Chart.js, Recharts, D3)

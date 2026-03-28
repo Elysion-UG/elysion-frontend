@@ -56,29 +56,38 @@ function EC({
   return (
     <Card className="mb-4">
       <CardHeader className="pb-3">
-        <CardTitle className="flex flex-wrap items-center gap-2 text-sm font-mono">
-          <span className={`px-2 py-0.5 rounded text-xs font-bold ${MC[method] ?? "bg-gray-100 text-gray-800"}`}>
+        <CardTitle className="flex flex-wrap items-center gap-2 font-mono text-sm">
+          <span
+            className={`rounded px-2 py-0.5 text-xs font-bold ${MC[method] ?? "bg-gray-100 text-gray-800"}`}
+          >
             {method}
           </span>
           <span className="text-slate-700">{path}</span>
-          <span className="ml-auto text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{auth}</span>
+          <span className="ml-auto rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-400">
+            {auth}
+          </span>
         </CardTitle>
         <CardDescription className="text-xs">{description}</CardDescription>
         {warning && (
-          <div className="mt-2 text-xs bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-1.5 rounded">
+          <div className="mt-2 rounded border border-yellow-200 bg-yellow-50 px-3 py-1.5 text-xs text-yellow-800">
             {warning}
           </div>
         )}
       </CardHeader>
       <CardContent className="space-y-3">
         {children}
-        <Button size="sm" onClick={execute} disabled={loading} className="bg-teal-600 hover:bg-teal-700">
-          {loading && <Loader2 className="w-3 h-3 animate-spin mr-1" />} Execute
+        <Button
+          size="sm"
+          onClick={execute}
+          disabled={loading}
+          className="bg-teal-600 hover:bg-teal-700"
+        >
+          {loading && <Loader2 className="mr-1 h-3 w-3 animate-spin" />} Execute
         </Button>
         {response !== null && (
           <pre
-            className={`mt-2 p-3 border rounded text-xs overflow-auto max-h-60 whitespace-pre-wrap ${
-              isError ? "bg-red-50 border-red-200 text-red-800" : "bg-slate-50"
+            className={`mt-2 max-h-60 overflow-auto whitespace-pre-wrap rounded border p-3 text-xs ${
+              isError ? "border-red-200 bg-red-50 text-red-800" : "bg-slate-50"
             }`}
           >
             {JSON.stringify(response, null, 2)}
@@ -107,12 +116,17 @@ export default function DevPaymentsPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <Toaster position="bottom-right" richColors />
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <Link href="/dev" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-6">
-          <ArrowLeft className="w-4 h-4" /> Back to Dev Index
+      <div className="mx-auto max-w-3xl px-4 py-8">
+        <Link
+          href="/dev"
+          className="mb-6 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Dev Index
         </Link>
-        <h1 className="text-2xl font-bold text-slate-800 mb-1">Payment Endpoints</h1>
-        <p className="text-sm text-slate-500 mb-6">Create payment intent, get status, simulate Stripe webhook</p>
+        <h1 className="mb-1 text-2xl font-bold text-slate-800">Payment Endpoints</h1>
+        <p className="mb-6 text-sm text-slate-500">
+          Create payment intent, get status, simulate Stripe webhook
+        </p>
 
         <Card className="mb-6 border-teal-200 bg-teal-50">
           <CardHeader className="pb-2">
@@ -123,7 +137,7 @@ export default function DevPaymentsPage() {
               value={token}
               onChange={(e) => setToken(e.target.value)}
               placeholder="eyJhbGci..."
-              className="font-mono text-xs bg-white"
+              className="bg-white font-mono text-xs"
             />
           </CardContent>
         </Card>
@@ -184,7 +198,7 @@ export default function DevPaymentsPage() {
               value={paymentId}
               onChange={(e) => setPaymentId(e.target.value)}
               placeholder="UUID of the payment"
-              className="h-8 text-xs mt-1"
+              className="mt-1 h-8 text-xs"
             />
           </CardContent>
         </Card>

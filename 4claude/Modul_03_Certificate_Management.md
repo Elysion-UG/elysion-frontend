@@ -1,4 +1,5 @@
 # Modul 03: Certificate Management
+
 ## Spezifikation & Requirements
 
 **Verantwortlichkeit:** Zertifikatsverwaltung, Verifizierung, Ablauf-Management  
@@ -32,11 +33,13 @@ Dieses Modul verwaltet Nachhaltigkeits-Zertifikate. Verkäufer laden Zertifikate
 ### Schnittstellen zu anderen Modulen:
 
 **Benötigt:**
+
 - Modul 01: Authentifizierung (Verkäufer, Admin)
 - Modul 02: Produkt-Informationen
 - Modul 08: File-Upload für Zertifikatsdokumente
 
 **Beeinflusst:**
+
 - Modul 02: Aktualisiert `product.verifiedCertificateCount`
 - Modul 02: Triggert Status-Änderung (REVIEW → ACTIVE, ACTIVE → INACTIVE)
 - Modul 10: Sendet E-Mails (Verifizierung, Ablauf-Warnung)
@@ -49,23 +52,23 @@ Dieses Modul verwaltet Nachhaltigkeits-Zertifikate. Verkäufer laden Zertifikate
 
 Ein Zertifikat ist ein hochgeladenes Nachhaltigkeits-Zertifikat eines Verkäufers.
 
-| Feld | Typ | Pflicht | Einzigartig | Bedeutung |
-|------|-----|---------|-------------|-----------|
-| **id** | UUID | Ja | Ja | Primärschlüssel |
-| **sellerId** | UUID | Ja | Nein | Welcher Verkäufer hat es hochgeladen |
-| **certificateType** | Enum | Ja | Nein | IVN_BEST / GOTS / FAIR_TRADE / EU_ECOLABEL / BLUESIGN / CUSTOM |
-| **customTypeName** | String | Nein | Nein | Wenn CUSTOM: Name des Zertifikats |
-| **issuer** | String | Ja | Nein | Zertifizierungs-Stelle (z.B. "Ecocert") |
-| **certificateNumber** | String | Ja | Nein | Zertifikats-Nummer |
-| **issueDate** | Date | Ja | Nein | Ausstellungsdatum |
-| **expiryDate** | Date | Ja | Nein | Ablaufdatum |
-| **status** | Enum | Ja | Nein | PENDING / VERIFIED / REJECTED / EXPIRED |
-| **documentUrl** | String | Ja | Nein | URL zum PDF/Bild (hochgeladen via Modul 08) |
-| **verifiedBy** | UUID | Nein | Nein | Welcher Admin hat verifiziert (User.id) |
-| **verifiedAt** | Timestamp | Nein | Nein | Wann wurde verifiziert |
-| **rejectionReason** | Text | Nein | Nein | Warum abgelehnt (bei REJECTED) |
-| **createdAt** | Timestamp | Ja | Nein | Wann hochgeladen |
-| **updatedAt** | Timestamp | Ja | Nein | Letzte Änderung |
+| Feld                  | Typ       | Pflicht | Einzigartig | Bedeutung                                                      |
+| --------------------- | --------- | ------- | ----------- | -------------------------------------------------------------- |
+| **id**                | UUID      | Ja      | Ja          | Primärschlüssel                                                |
+| **sellerId**          | UUID      | Ja      | Nein        | Welcher Verkäufer hat es hochgeladen                           |
+| **certificateType**   | Enum      | Ja      | Nein        | IVN_BEST / GOTS / FAIR_TRADE / EU_ECOLABEL / BLUESIGN / CUSTOM |
+| **customTypeName**    | String    | Nein    | Nein        | Wenn CUSTOM: Name des Zertifikats                              |
+| **issuer**            | String    | Ja      | Nein        | Zertifizierungs-Stelle (z.B. "Ecocert")                        |
+| **certificateNumber** | String    | Ja      | Nein        | Zertifikats-Nummer                                             |
+| **issueDate**         | Date      | Ja      | Nein        | Ausstellungsdatum                                              |
+| **expiryDate**        | Date      | Ja      | Nein        | Ablaufdatum                                                    |
+| **status**            | Enum      | Ja      | Nein        | PENDING / VERIFIED / REJECTED / EXPIRED                        |
+| **documentUrl**       | String    | Ja      | Nein        | URL zum PDF/Bild (hochgeladen via Modul 08)                    |
+| **verifiedBy**        | UUID      | Nein    | Nein        | Welcher Admin hat verifiziert (User.id)                        |
+| **verifiedAt**        | Timestamp | Nein    | Nein        | Wann wurde verifiziert                                         |
+| **rejectionReason**   | Text      | Nein    | Nein        | Warum abgelehnt (bei REJECTED)                                 |
+| **createdAt**         | Timestamp | Ja      | Nein        | Wann hochgeladen                                               |
+| **updatedAt**         | Timestamp | Ja      | Nein        | Letzte Änderung                                                |
 
 **Status-Bedeutung:**
 
@@ -102,17 +105,17 @@ CREATE INDEX idx_certificate_status ON certificate(status);
 
 Verknüpft Produkte mit Zertifikaten (n:m Beziehung).
 
-| Feld | Typ | Pflicht | Bedeutung |
-|------|-----|---------|-----------|
-| **id** | UUID | Ja | Primärschlüssel |
-| **productId** | UUID | Ja | Produkt (aus Modul 02) |
-| **certificateId** | UUID | Ja | Zertifikat |
-| **addedAt** | Timestamp | Ja | Wann verknüpft |
+| Feld              | Typ       | Pflicht | Bedeutung              |
+| ----------------- | --------- | ------- | ---------------------- |
+| **id**            | UUID      | Ja      | Primärschlüssel        |
+| **productId**     | UUID      | Ja      | Produkt (aus Modul 02) |
+| **certificateId** | UUID      | Ja      | Zertifikat             |
+| **addedAt**       | Timestamp | Ja      | Wann verknüpft         |
 
 **Unique Constraint:**
 
 ```sql
-CREATE UNIQUE INDEX idx_product_certificate_unique 
+CREATE UNIQUE INDEX idx_product_certificate_unique
 ON product_certificate(productId, certificateId);
 ```
 
@@ -167,7 +170,7 @@ expiryDate: "2026-12-31"
    status = PENDING
    sellerId = req.user.userId
    documentUrl = <von Modul 08>
-   
+
 3. Benachrichtigung an Admins (Modul 10):
    "Neues Zertifikat zur Prüfung"
 ```
@@ -303,7 +306,7 @@ Verkäufer verknüpft ein verifiziertes Zertifikat mit einem Produkt.
 3. Status-Prüfung:
    IF product.status == 'REVIEW' AND product.verifiedCertificateCount >= 1:
      UPDATE products SET status = 'ACTIVE' WHERE id = :productId
-     
+
 4. E-Mail an Verkäufer (Modul 10):
    "Produkt wurde aktiviert"
 ```
@@ -345,7 +348,7 @@ Verkäufer entfernt Zertifikat von Produkt.
 3. Status-Prüfung:
    IF product.verifiedCertificateCount < 1:
      UPDATE products SET status = 'INACTIVE' WHERE id = :productId
-     
+
 4. E-Mail an Verkäufer (Modul 10):
    "Produkt wurde deaktiviert (kein Zertifikat mehr)"
 ```
@@ -535,24 +538,24 @@ Admin lehnt Zertifikat ab.
    AND expiryDate < TODAY
 
 2. Für jedes abgelaufene Zertifikat:
-   
+
    a) Update Certificate:
       UPDATE certificate SET status = 'EXPIRED' WHERE id = :id
-   
+
    b) Für alle verknüpften Produkte:
       UPDATE products
       SET verifiedCertificateCount = verifiedCertificateCount - 1
       WHERE id IN (
         SELECT productId FROM product_certificate WHERE certificateId = :id
       )
-   
+
    c) Deaktiviere Produkte ohne Zertifikat:
       UPDATE products
       SET status = 'INACTIVE'
       WHERE status = 'ACTIVE'
       AND id IN (...)
       AND verifiedCertificateCount < 1
-   
+
    d) E-Mail an Verkäufer (Modul 10):
       "Zertifikat {number} ist abgelaufen. Produkte wurden deaktiviert."
 ```
@@ -561,31 +564,31 @@ Admin lehnt Zertifikat ab.
 
 ```
 function checkExpiredCertificates():
-  
+
   expiredCerts = SELECT * FROM certificate
                  WHERE status = 'VERIFIED'
                  AND expiryDate < TODAY
-  
+
   for cert in expiredCerts:
-    
+
     # Certificate expiren
     UPDATE certificate SET status = 'EXPIRED' WHERE id = cert.id
-    
+
     # Produkte finden
     products = SELECT productId FROM product_certificate WHERE certificateId = cert.id
-    
+
     # Zähler dekrementieren
     UPDATE products
     SET verifiedCertificateCount = verifiedCertificateCount - 1
     WHERE id IN (products)
-    
+
     # Produkte deaktivieren
     UPDATE products
     SET status = 'INACTIVE'
     WHERE status = 'ACTIVE'
     AND id IN (products)
     AND verifiedCertificateCount < 1
-    
+
     # E-Mail senden
     sendEmail(cert.sellerId, "certificate_expired", { certificate: cert })
 ```
@@ -603,14 +606,14 @@ function checkExpiredCertificates():
    SELECT * FROM certificate
    WHERE status = 'VERIFIED'
    AND expiryDate = TODAY + 30 DAYS
-   
+
    → E-Mail: "Zertifikat läuft in 30 Tagen ab"
 
 2. 7 Tage vor Ablauf:
    SELECT * FROM certificate
    WHERE status = 'VERIFIED'
    AND expiryDate = TODAY + 7 DAYS
-   
+
    → E-Mail: "DRINGEND: Zertifikat läuft in 7 Tagen ab"
 ```
 
@@ -672,10 +675,10 @@ BEGIN TRANSACTION;
 
   # 1. Certificate updaten
   UPDATE certificate SET status = 'VERIFIED' ...
-  
+
   # 2. Produkte updaten
   UPDATE products SET verifiedCertificateCount = ...
-  
+
   # 3. Status-Änderung
   UPDATE products SET status = 'ACTIVE' WHERE ...
 
@@ -732,7 +735,7 @@ CREATE INDEX idx_certificate_expiry ON certificate(expiryDate, status);
 CREATE INDEX idx_certificate_status ON certificate(status);
 
 -- ProductCertificate
-CREATE UNIQUE INDEX idx_product_certificate_unique 
+CREATE UNIQUE INDEX idx_product_certificate_unique
 ON product_certificate(productId, certificateId);
 
 CREATE INDEX idx_product_certificate_product ON product_certificate(productId);
@@ -800,14 +803,17 @@ Niemals alle Zertifikate auf einmal laden.
 ### 7.1 Zugriffskontrolle
 
 **Verkäufer:**
+
 - Darf nur eigene Zertifikate sehen (`certificate.sellerId == req.user.userId`)
 - Darf nur eigene Produkte verknüpfen
 
 **Admin:**
+
 - Sieht alle Zertifikate
 - Darf verifizieren/ablehnen
 
 **Käufer:**
+
 - Sieht nur verifizierte Zertifikate (öffentlich bei Produkten)
 
 ### 7.2 Dokument-Zugriff
@@ -824,6 +830,7 @@ Niemals alle Zertifikate auf einmal laden.
 ---
 
 **Der Entwickler entscheidet:**
+
 - Backend-Technologie & Framework
 - Datenbank (PostgreSQL empfohlen)
 - Cronjob-System (Cron, Node-Cron, oder Task-Scheduler)

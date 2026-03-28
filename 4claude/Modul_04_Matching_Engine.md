@@ -1,4 +1,5 @@
 # Modul 04: Matching Engine
+
 ## Spezifikation & Requirements
 
 **Verantwortlichkeit:** Match-Score-Berechnung zwischen User-Profil und Produkten  
@@ -43,11 +44,13 @@ Match-Score: 87/100
 ### Schnittstellen zu anderen Modulen:
 
 **Benötigt:**
+
 - Modul 01: User-Profil (simple/extended)
 - Modul 02: Produktdaten
 - Modul 03: Zertifikatsdaten
 
 **Wird genutzt von:**
+
 - Modul 02: Produktliste zeigt Match-Score an
 - Frontend: "Für dich empfohlen" Widget
 
@@ -58,6 +61,7 @@ Match-Score: 87/100
 **Keine eigenen Tabellen!**
 
 Dieses Modul nutzt nur bestehende Daten:
+
 - `user_profile` (aus Modul 01)
 - `products` (aus Modul 02)
 - `product_certificate` (aus Modul 03)
@@ -78,6 +82,7 @@ CREATE INDEX idx_match_score_user ON match_score_cache(userId, score DESC);
 ```
 
 **Wann invalidieren:**
+
 - User ändert Profil → Alle Scores für diesen User löschen
 - Produkt ändert Zertifikate → Alle Scores für dieses Produkt löschen
 
@@ -87,13 +92,13 @@ CREATE INDEX idx_match_score_user ON match_score_cache(userId, score DESC);
 
 ### 3.1 Die 5 Haupt-Kategorien
 
-| Kategorie | Bedeutung | Beispiel-Zertifikate |
-|-----------|-----------|----------------------|
-| **Faire Arbeit** | Faire Löhne, sichere Arbeitsbedingungen | Fair Trade, SA8000, BSCI |
-| **Umwelt** | Umweltschutz, nachhaltige Materialien | GOTS, EU Ecolabel, Bluesign |
-| **Tierwohl** | Tierschutz, keine Tierversuche | Leaping Bunny, PETA, Responsible Down |
-| **Soziales** | Gemeinwohl, lokale Gemeinschaften | B Corp, Fairtrade, Social Accountability |
-| **Kreislauf** | Recycling, Kreislaufwirtschaft | Cradle to Cradle, GRS (Recycled Standard) |
+| Kategorie        | Bedeutung                               | Beispiel-Zertifikate                      |
+| ---------------- | --------------------------------------- | ----------------------------------------- |
+| **Faire Arbeit** | Faire Löhne, sichere Arbeitsbedingungen | Fair Trade, SA8000, BSCI                  |
+| **Umwelt**       | Umweltschutz, nachhaltige Materialien   | GOTS, EU Ecolabel, Bluesign               |
+| **Tierwohl**     | Tierschutz, keine Tierversuche          | Leaping Bunny, PETA, Responsible Down     |
+| **Soziales**     | Gemeinwohl, lokale Gemeinschaften       | B Corp, Fairtrade, Social Accountability  |
+| **Kreislauf**    | Recycling, Kreislaufwirtschaft          | Cradle to Cradle, GRS (Recycled Standard) |
 
 ### 3.2 Zertifikats-Kategorien-Mapping
 
@@ -152,7 +157,7 @@ CREATE INDEX idx_match_score_user ON match_score_cache(userId, score DESC);
 ```
 1. Für jede Kategorie prüfen:
    Hat Produkt ein Zertifikat, das diese Kategorie abdeckt?
-   
+
    Faire Arbeit (90):
      GOTS deckt ab → Match!
      Fair Trade deckt ab → Match!
@@ -246,20 +251,20 @@ Dies muss ebenfalls konfigurierbar sein. Beispiel:
 
 ```
 function calculateMatchScore(userId, productId):
-  
+
   # 1. User-Profil holen
   user = SELECT * FROM user_profile WHERE userId = :userId
-  
+
   if (user.activeProfileType == 'none'):
     return null  # Kein Profil, kein Score
-  
+
   # 2. Produkt-Zertifikate holen
   certificates = SELECT c.certificateType
                  FROM product_certificate pc
                  JOIN certificate c ON pc.certificateId = c.id
                  WHERE pc.productId = :productId
                  AND c.status = 'VERIFIED'
-  
+
   # 3. Match-Score berechnen
   if (user.activeProfileType == 'simple'):
     return calculateSimpleMatch(user.simpleProfile, certificates)
@@ -268,32 +273,32 @@ function calculateMatchScore(userId, productId):
 
 
 function calculateSimpleMatch(profile, certificates):
-  
+
   totalWeightedScore = 0
   totalWeight = 0
-  
+
   for (category, userValue) in profile:
-    
+
     # Prüfe ob ein Zertifikat diese Kategorie abdeckt
     hasMatch = false
     for cert in certificates:
       if (CERT_MAPPING[cert].includes(category)):
         hasMatch = true
         break
-    
+
     if (hasMatch):
       totalWeightedScore += userValue * userValue
     else:
       # Kein Match, Score = 0
       totalWeightedScore += 0
-    
+
     totalWeight += userValue
-  
+
   return round(totalWeightedScore / totalWeight)
 
 
 function calculateExtendedMatch(profile, certificates):
-  
+
   # Ähnlich, aber mit Sub-Kategorien
   # Erst Sub-Kategorien durchschnitt, dann Haupt-Kategorien
   ...
@@ -398,11 +403,11 @@ Wenn User eingeloggt ist UND Profil hat:
 
 ```
 if (user.isLoggedIn && user.hasProfile):
-  
+
   if (sort == 'match_score'):
     # Bulk-Berechnung für alle Produkte
     scores = calculateBulkMatchScores(user.id, productIds)
-    
+
     # Sortiere nach Score
     products.sort(by: score, desc: true)
 ```
@@ -485,7 +490,7 @@ else if (score >= 60):
 **Lösung:** Eine Query für alle:
 
 ```sql
-SELECT 
+SELECT
   p.id,
   p.name,
   -- Alle Zertifikate des Produkts (aggregiert)
@@ -529,7 +534,7 @@ Invalidierung:
 
 ```sql
 CREATE MATERIALIZED VIEW user_product_match AS
-SELECT 
+SELECT
   up.userId,
   p.id AS productId,
   calculate_match_score(up.simpleProfile, p.certificates) AS score
@@ -565,6 +570,7 @@ Option 3: Admin-Panel
 ```
 
 **Warum wichtig?**
+
 - Neue Zertifikate kommen hinzu
 - Kategorien können sich ändern
 - Mapping muss flexibel sein
@@ -592,11 +598,11 @@ matchBreakdown = { alle Kategorien: hasMatch = false }
 
 ### 7.3 Performance-Ziele
 
-| Operation | Ziel | Maximum |
-|-----------|------|---------|
-| Einzelner Score | < 10ms | 50ms |
-| Bulk (100 Produkte) | < 200ms | 1s |
-| Empfehlungen | < 500ms | 2s |
+| Operation           | Ziel    | Maximum |
+| ------------------- | ------- | ------- |
+| Einzelner Score     | < 10ms  | 50ms    |
+| Bulk (100 Produkte) | < 200ms | 1s      |
+| Empfehlungen        | < 500ms | 2s      |
 
 **Monitoring:**
 
@@ -677,6 +683,7 @@ Ausverkaufte Produkte → Lower Score
 ---
 
 **Der Entwickler entscheidet:**
+
 - Programmiersprache & Framework
 - Datenbank (PostgreSQL empfohlen)
 - Caching-System (Redis empfohlen)

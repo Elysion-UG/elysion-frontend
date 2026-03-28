@@ -4,8 +4,18 @@ import Link from "next/link"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import {
-  Lock, User, Package, Tag, Award, ShoppingCart,
-  ClipboardList, CreditCard, FileUp, Shield, BarChart3, AlertTriangle
+  Lock,
+  User,
+  Package,
+  Tag,
+  Award,
+  ShoppingCart,
+  ClipboardList,
+  CreditCard,
+  FileUp,
+  Shield,
+  BarChart3,
+  AlertTriangle,
 } from "lucide-react"
 
 const domains = [
@@ -124,48 +134,55 @@ const domains = [
 export default function DevIndexPage() {
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="max-w-5xl mx-auto px-4 py-12">
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-slate-800 mb-2">API Test Playground</h1>
+      <div className="mx-auto max-w-5xl px-4 py-12">
+        <div className="mb-10 text-center">
+          <h1 className="mb-2 text-4xl font-bold text-slate-800">API Test Playground</h1>
           <p className="text-lg text-slate-500">Direkter Test aller Backend-Endpunkte</p>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="mt-1 text-sm text-slate-400">
             Backend:{" "}
-            <code className="bg-slate-100 px-2 py-0.5 rounded text-xs">
+            <code className="rounded bg-slate-100 px-2 py-0.5 text-xs">
               {process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/api/v1
             </code>
           </p>
         </div>
 
-        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 mb-8 text-sm text-amber-800">
-          <AlertTriangle className="w-4 h-4 shrink-0" />
+        <div className="mb-8 flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <AlertTriangle className="h-4 w-4 shrink-0" />
           <span>
             <strong>Nur für Entwicklung</strong> — Diese Seiten verbinden direkt gegen das Backend.
-            Für Production-Backend: <code className="bg-amber-100 px-1 rounded">npm run dev:stage</code>
+            Für Production-Backend:{" "}
+            <code className="rounded bg-amber-100 px-1">npm run dev:stage</code>
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {domains.map((d) => {
             const Icon = d.icon
             return (
               <Link key={d.href} href={d.href}>
-                <Card className={`border ${d.color} hover:shadow-md transition-shadow cursor-pointer h-full`}>
+                <Card
+                  className={`border ${d.color} h-full cursor-pointer transition-shadow hover:shadow-md`}
+                >
                   <CardHeader className="pb-2">
                     <CardTitle className="flex items-center gap-3 text-base">
-                      <div className="p-2 rounded-lg bg-white">
-                        <Icon className={`w-5 h-5 ${d.iconColor}`} />
+                      <div className="rounded-lg bg-white p-2">
+                        <Icon className={`h-5 w-5 ${d.iconColor}`} />
                       </div>
                       <div>
                         <div className="font-semibold text-slate-800">{d.title}</div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <Badge variant="outline" className="text-xs font-normal">{d.count} Endpunkte</Badge>
+                        <div className="mt-0.5 flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs font-normal">
+                            {d.count} Endpunkte
+                          </Badge>
                           <span className="text-xs text-slate-400">{d.auth}</span>
                         </div>
                       </div>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <CardDescription className="text-xs text-slate-500">{d.description}</CardDescription>
+                    <CardDescription className="text-xs text-slate-500">
+                      {d.description}
+                    </CardDescription>
                   </CardContent>
                 </Card>
               </Link>
@@ -173,7 +190,7 @@ export default function DevIndexPage() {
           })}
         </div>
 
-        <p className="text-center text-xs text-slate-400 mt-10">
+        <p className="mt-10 text-center text-xs text-slate-400">
           Marketplace Platform · API v1 · {new Date().getFullYear()}
         </p>
       </div>

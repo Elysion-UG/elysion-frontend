@@ -1,4 +1,5 @@
 # User Stories & Use Cases
+
 ## Nachhaltigkeits-Zertifikat-Plattform
 
 **Version:** 1.0  
@@ -7,6 +8,7 @@
 ---
 
 ## Inhaltsverzeichnis
+
 1. [User Stories - Käufer](#1-user-stories---käufer)
 2. [User Stories - Verkäufer](#2-user-stories---verkäufer)
 3. [User Stories - Admin](#3-user-stories---admin)
@@ -20,6 +22,7 @@
 ### 1.1 Registrierung & Profil
 
 **US-B-001: Als neuer Nutzer möchte ich mich registrieren**
+
 - **Akzeptanzkriterien:**
   - Ich kann E-Mail und Passwort eingeben
   - Ich erhalte eine Bestätigungs-E-Mail
@@ -28,6 +31,7 @@
 - **Story Points:** 3
 
 **US-B-002: Als Käufer möchte ich mein Werteprofil erstellen**
+
 - **Akzeptanzkriterien:**
   - Ich kann zwischen einfachem und erweitertem Profil wählen
   - Einfach: 7 Kategorien mit Schiebereglern
@@ -38,6 +42,7 @@
 - **Story Points:** 8
 
 **US-B-003: Als Käufer möchte ich zwischen Profil-Stufen wechseln**
+
 - **Akzeptanzkriterien:**
   - Ich kann jederzeit von einfach zu erweitert wechseln
   - Meine Einstellungen bleiben erhalten
@@ -48,6 +53,7 @@
 ### 1.2 Produktsuche & Filter
 
 **US-B-004: Als Käufer möchte ich nach Produkten suchen**
+
 - **Akzeptanzkriterien:**
   - Suchfeld ist prominent platziert
   - Auto-Complete zeigt Vorschläge
@@ -57,6 +63,7 @@
 - **Story Points:** 5
 
 **US-B-005: Als Käufer möchte ich Produkte filtern**
+
 - **Akzeptanzkriterien:**
   - Filter: Kategorie, Preis, Zertifikate, Marke, Verfügbarkeit
   - Mehrfach-Auswahl möglich
@@ -66,6 +73,7 @@
 - **Story Points:** 5
 
 **US-B-006: Als Käufer mit Profil möchte ich Produkte nach Matching-Score filtern**
+
 - **Akzeptanzkriterien:**
   - Schieberegler für Min. Match-Score
   - Produkte zeigen Match-Prozent
@@ -74,6 +82,7 @@
 - **Story Points:** 5
 
 **US-B-007: Als Käufer möchte ich verstehen, warum ein Produkt zu mir passt**
+
 - **Akzeptanzkriterien:**
   - "Warum passt das?" Link auf Produktseite
   - Aufschlüsselung pro Kategorie (✓ erfüllt, ✗ nicht erfüllt)
@@ -84,6 +93,7 @@
 ### 1.3 Warenkorb & Checkout
 
 **US-B-008: Als Käufer möchte ich Produkte in den Warenkorb legen**
+
 - **Akzeptanzkriterien:**
   - "In den Warenkorb" Button klar sichtbar
   - Varianten-Auswahl (Größe, Farbe) vor dem Hinzufügen
@@ -93,6 +103,7 @@
 - **Story Points:** 3
 
 **US-B-009: Als Gast möchte ich ohne Registrierung bestellen**
+
 - **Akzeptanzkriterien:**
   - "Als Gast fortfahren" Option im Checkout
   - Nur E-Mail und Lieferadresse erforderlich
@@ -102,6 +113,7 @@
 - **Story Points:** 5
 
 **US-B-010: Als registrierter Käufer möchte ich schnell bestellen**
+
 - **Akzeptanzkriterien:**
   - Gespeicherte Adressen auswählbar
   - Gespeicherte Zahlungsmethoden (optional)
@@ -110,6 +122,7 @@
 - **Story Points:** 5
 
 **US-B-011: Als Käufer möchte ich sicher bezahlen**
+
 - **Akzeptanzkriterien:**
   - Mehrere Zahlungsmethoden (Kreditkarte, PayPal, SEPA)
   - SSL-verschlüsselt (Schloss-Symbol im Browser)
@@ -120,6 +133,7 @@
 ### 1.4 Bestellverwaltung
 
 **US-B-012: Als Käufer möchte ich meine Bestellhistorie sehen**
+
 - **Akzeptanzkriterien:**
   - Übersicht aller vergangenen Bestellungen
   - Filter nach Status, Zeitraum
@@ -128,6 +142,7 @@
 - **Story Points:** 3
 
 **US-B-013: Als Käufer möchte ich eine Bestellung verfolgen**
+
 - **Akzeptanzkriterien:**
   - Tracking-Nummer sichtbar
   - Link zur Sendungsverfolgung
@@ -136,6 +151,7 @@
 - **Story Points:** 3
 
 **US-B-014: Als Käufer möchte ich eine Bestellung stornieren**
+
 - **Akzeptanzkriterien:**
   - Stornierung möglich, solange nicht versendet
   - Bestätigungs-Dialog mit Warnung
@@ -145,6 +161,7 @@
 - **Story Points:** 5
 
 **US-B-015: Als Käufer möchte ich ein Produkt zurücksenden**
+
 - **Akzeptanzkriterien:**
   - "Rücksendung anfordern" Button (14 Tage nach Zustellung)
   - Grund auswählen
@@ -156,6 +173,7 @@
 ### 1.5 Wunschliste
 
 **US-B-016: Als Käufer möchte ich eine Wunschliste haben**
+
 - **Akzeptanzkriterien:**
   - Herz-Icon auf Produktkarte
   - Wunschliste-Seite mit allen gespeicherten Produkten
@@ -171,6 +189,7 @@
 ### 2.1 Registrierung & Onboarding
 
 **US-S-001: Als Verkäufer möchte ich mich registrieren**
+
 - **Akzeptanzkriterien:**
   - Erweitertes Formular mit Geschäftsdaten
   - USt-ID wird validiert
@@ -180,6 +199,7 @@
 - **Story Points:** 5
 
 **US-S-002: Als Verkäufer möchte ich mehrere Shops verwalten**
+
 - **Akzeptanzkriterien:**
   - Kann beliebig viele Shops anlegen
   - Jeder Shop hat eigenen Namen, Logo, Beschreibung
@@ -191,6 +211,7 @@
 ### 2.2 Produktverwaltung
 
 **US-S-003: Als Verkäufer möchte ich ein Produkt anlegen**
+
 - **Akzeptanzkriterien:**
   - Formular mit allen Pflicht- und optionalen Feldern
   - Bis zu 10 Bilder hochladen (Drag & Drop)
@@ -201,6 +222,7 @@
 - **Story Points:** 8
 
 **US-S-004: Als Verkäufer möchte ich Produkte in Masse bearbeiten**
+
 - **Akzeptanzkriterien:**
   - Mehrfach-Auswahl von Produkten
   - Bulk-Aktionen: Preis ändern, Kategorie ändern, Shop wechseln
@@ -209,6 +231,7 @@
 - **Story Points:** 5
 
 **US-S-005: Als Verkäufer möchte ich Lagerbestände verwalten**
+
 - **Akzeptanzkriterien:**
   - Lagerbestand pro Variante einsehbar/editierbar
   - Warnung bei Nachbestellschwelle
@@ -220,6 +243,7 @@
 ### 2.3 Zertifikatsverwaltung
 
 **US-S-006: Als Verkäufer möchte ich ein Zertifikat hochladen**
+
 - **Akzeptanzkriterien:**
   - Formular mit Zertifikatstyp, Nummer, Datum
   - PDF-Upload (max. 10MB)
@@ -230,6 +254,7 @@
 - **Story Points:** 5
 
 **US-S-007: Als Verkäufer möchte ich über ablaufende Zertifikate informiert werden**
+
 - **Akzeptanzkriterien:**
   - E-Mail 30/14/7 Tage vor Ablauf
   - Dashboard-Warnung bei kritischen Zertifikaten
@@ -240,6 +265,7 @@
 ### 2.4 Bestellverwaltung
 
 **US-S-008: Als Verkäufer möchte ich neue Bestellungen sehen**
+
 - **Akzeptanzkriterien:**
   - Dashboard zeigt "Neue Bestellungen" prominent
   - E-Mail-Benachrichtigung bei neuer Bestellung
@@ -248,6 +274,7 @@
 - **Story Points:** 3
 
 **US-S-009: Als Verkäufer möchte ich eine Bestellung als versendet markieren**
+
 - **Akzeptanzkriterien:**
   - Formular: Versanddienstleister, Tracking-Nummer
   - Kunde erhält E-Mail mit Tracking-Info
@@ -257,6 +284,7 @@
 - **Story Points:** 5
 
 **US-S-010: Als Verkäufer möchte ich Rücksendungen bearbeiten**
+
 - **Akzeptanzkriterien:**
   - Übersicht offener Rücksendeanfragen
   - Kann genehmigen oder ablehnen (mit Begründung)
@@ -268,6 +296,7 @@
 ### 2.5 Analytics & Reporting
 
 **US-S-011: Als Verkäufer möchte ich meine Verkaufszahlen sehen**
+
 - **Akzeptanzkriterien:**
   - Dashboard mit KPIs: Umsatz, Bestellungen, Conversion
   - Zeitraum-Filter (7/30 Tage, Monat, Jahr)
@@ -277,6 +306,7 @@
 - **Story Points:** 8
 
 **US-S-012: Als Verkäufer möchte ich Matching-Insights sehen**
+
 - **Akzeptanzkriterien:**
   - Durchschnittlicher Match-Score pro Produkt
   - Verteilung: Wie viele Nutzer sehen welchen Score?
@@ -287,6 +317,7 @@
 ### 2.6 Auszahlungen
 
 **US-S-013: Als Verkäufer möchte ich meine Auszahlungen nachvollziehen**
+
 - **Akzeptanzkriterien:**
   - Übersicht aller Auszahlungen (wöchentlich/monatlich)
   - Details: Zeitraum, Anzahl Bestellungen, Provision, Netto
@@ -302,6 +333,7 @@
 ### 3.1 Nutzer-Verwaltung
 
 **US-A-001: Als Admin möchte ich Verkäufer freigeben**
+
 - **Akzeptanzkriterien:**
   - Übersicht ausstehender Verkäufer-Registrierungen
   - Details: Geschäftsdaten, USt-ID, IBAN
@@ -311,6 +343,7 @@
 - **Story Points:** 5
 
 **US-A-002: Als Admin möchte ich Accounts suspendieren**
+
 - **Akzeptanzkriterien:**
   - Kann Käufer oder Verkäufer suspendieren
   - Grund muss angegeben werden
@@ -324,6 +357,7 @@
 ### 3.2 Zertifikats-Verifizierung
 
 **US-A-003: Als Admin möchte ich Zertifikate verifizieren**
+
 - **Akzeptanzkriterien:**
   - Dashboard mit offenen Zertifikaten (SLA: 24h)
   - PDF inline ansehen
@@ -334,6 +368,7 @@
 - **Story Points:** 8
 
 **US-A-004: Als Admin möchte ich SLA-Verstöße vermeiden**
+
 - **Akzeptanzkriterien:**
   - Farbcodierte Warnung (Rot > 20h, Gelb > 16h)
   - Benachrichtigung wenn Zertifikat > 20h offen
@@ -344,6 +379,7 @@
 ### 3.3 Plattform-Verwaltung
 
 **US-A-005: Als Admin möchte ich Kategorien verwalten**
+
 - **Akzeptanzkriterien:**
   - Kann Kategorien anlegen, bearbeiten, löschen
   - Hierarchie verwalten (Parent-Child)
@@ -352,6 +388,7 @@
 - **Story Points:** 5
 
 **US-A-006: Als Admin möchte ich Plattform-Statistiken sehen**
+
 - **Akzeptanzkriterien:**
   - KPIs: Nutzer, Bestellungen, Umsatz, Provision
   - Wachstums-Diagramme
@@ -371,6 +408,7 @@
 **Nachbedingungen:** Werteprofil ist gespeichert, Produktempfehlungen aktualisiert
 
 **Hauptszenario:**
+
 1. Nutzer navigiert zu "Mein Profil" > "Werteprofil"
 2. System zeigt aktuelles Profil (falls vorhanden) oder leere Vorlage
 3. Nutzer wählt "Erweitertes Profil"
@@ -388,6 +426,7 @@
 12. System zeigt personalisierte Empfehlungen basierend auf Profil
 
 **Alternative Szenarios:**
+
 - **4a:** Nutzer hatte bereits einfaches Profil
   - System übernimmt Hauptkategorie-Gewichtungen
   - Unterpunkte werden auf gleichen Wert initialisiert
@@ -396,6 +435,7 @@
   - Nutzer kann manuell speichern
 
 **Nicht-funktionale Anforderungen:**
+
 - Auto-Save Response-Zeit: < 200ms
 - Match-Score Neuberechnung: < 5s (im Hintergrund)
 
@@ -408,6 +448,7 @@
 **Nachbedingungen:** Zertifikat hochgeladen, Status "Ausstehend", Admin benachrichtigt
 
 **Hauptszenario:**
+
 1. Verkäufer navigiert zu "Zertifikate" > "Neues Zertifikat"
 2. System zeigt Formular
 3. Verkäufer wählt Zertifikatstyp: "IVN BEST"
@@ -432,6 +473,7 @@
 14. Verkäufer sieht Zertifikat in Liste mit Status "Ausstehend"
 
 **Alternative Szenarios:**
+
 - **8a:** PDF größer als 10MB
   - System zeigt Fehler: "Datei zu groß (max. 10MB)"
   - Verkäufer muss Datei komprimieren
@@ -441,6 +483,7 @@
   - System zeigt Fehler: "Bitte mind. 1 Produkt auswählen"
 
 **Nachbedingungen bei Verifizierung:**
+
 1. Admin verifiziert Zertifikat (innerhalb 24h)
 2. System:
    - Setzt Status auf VERIFIED
@@ -457,6 +500,7 @@
 **Nachbedingungen:** Bestellung erstellt, Zahlung erfolgt, E-Mail versendet
 
 **Hauptszenario:**
+
 1. Gast legt 3 Produkte in Warenkorb
 2. Gast klickt "Zur Kasse"
 3. System zeigt Login-Optionen:
@@ -505,6 +549,7 @@
 21. System zeigt CTA: "Jetzt Account erstellen und Bestellung verfolgen"
 
 **Alternative Szenarios:**
+
 - **15a:** 3D Secure erforderlich
   - System öffnet 3D Secure Modal (Stripe)
   - Gast authentifiziert sich bei Bank
@@ -526,6 +571,7 @@
 **Nachbedingungen:** Zertifikat verifiziert ODER abgelehnt, Verkäufer benachrichtigt
 
 **Hauptszenario (Freigabe):**
+
 1. Admin loggt sich ein
 2. System zeigt Dashboard mit Benachrichtigung: "3 Zertifikate ausstehend"
 3. Admin navigiert zu "Zertifikate" > "Ausstehend"
@@ -562,6 +608,7 @@
 12. Admin wird zurück zur Liste geleitet (BioCorp ist verschwunden)
 
 **Alternative Szenarios:**
+
 - **7a:** Zertifikatsnummer auf ivn.de nicht gefunden
   - Admin klickt "Nachfrage"
   - Admin gibt Kommentar ein: "Bitte Zertifikatsnummer prüfen"
@@ -580,6 +627,7 @@
   - Verkäufer kann neues Zertifikat hochladen
 
 **SLA-Tracking:**
+
 - Zeit gemessen: Upload-Zeitpunkt → Entscheidung
 - Wenn > 24h: SLA-Verstoß wird geloggt (für Reporting)
 
@@ -595,24 +643,24 @@
 1. [Landingpage]
    - Nutzer sieht Hero: "Nachhaltige Mode, die zu dir passt"
    - CTA: "Jetzt Werteprofil erstellen" + "Produkte durchstöbern"
-   
+
 2. [Entscheidung: Profil erstellen ODER direkt stöbern]
-   
+
    PATH A: Mit Profil
    ----------------
    3a. [Registrierung]
        - Schnelles Formular (nur E-Mail, Passwort, Name)
        - "Weiter zum Werteprofil"
-   
+
    4a. [Werteprofil - Einfach]
        - 7 Kategorien mit Erklärungen
        - Schieberegler (spielerisch)
        - "Speichern & Produkte entdecken"
-   
+
    5a. [Startseite - Personalisiert]
        - "Diese Produkte passen zu 87% zu Ihnen"
        - Produkte mit Match-Score
-       
+
    PATH B: Ohne Profil
    -------------------
    3b. [Produktübersicht]
@@ -624,35 +672,35 @@
    - Bilder, Beschreibung, Preis
    - Zertifikate prominente
    - (Mit Profil: Match-Breakdown)
-   
+
 4. [In den Warenkorb]
    - Größe/Farbe wählen
    - "In den Warenkorb"
    - Bestätigung: "✓ Zum Warenkorb hinzugefügt"
-   
+
 5. [Weiter einkaufen oder Checkout]
    - Nutzer stöbert weiter, legt 2 weitere Produkte in Warenkorb
-   
+
 6. [Warenkorb]
    - 3 Produkte, Gesamtsumme
    - "Zur Kasse"
-   
+
 7. [Checkout]
    - Login (falls registriert) ODER Gast-Option
    - Lieferadresse
    - Versandart
    - Zahlung
    - Bestellen
-   
+
 8. [Bestellbestätigung]
    - Erfolgsseite mit Bestellnummer
    - E-Mail erhalten
-   
+
 9. [Nachkauf]
    - Tage später: Tracking-E-Mail "Bestellung versendet"
    - Produkt kommt an
    - (Optional) Review hinterlassen
-   
+
 📍 Endpunkt: Zufriedener Kunde, wahrscheinlich wiederkehrend
 
 ⏱️ Dauer: 10-15 Minuten (Erster Kauf)
@@ -668,31 +716,31 @@
    - Separate Landing für Verkäufer
    - "Verkaufen Sie auf unserer Plattform"
    - CTA: "Jetzt registrieren"
-   
+
 2. [Registrierung]
    - Erweitertes Formular
    - Geschäftsdaten, USt-ID, IBAN
    - "Registrierung einreichen"
    - Hinweis: "Freigabe innerhalb 48h"
-   
+
 3. [Warten auf Freigabe]
    - E-Mail: "Registrierung erhalten, wird geprüft"
    - (Admin prüft im Hintergrund)
    - E-Mail nach 24h: "Account freigegeben!"
-   
+
 4. [Erster Login]
    - Dashboard: "Willkommen! Legen Sie Ihr erstes Produkt an"
    - Onboarding-Tour (optional)
-   
+
 5. [Zertifikat hochladen]
    - "Bevor Sie Produkte anlegen, laden Sie Ihr Zertifikat hoch"
    - Formular ausfüllen
    - PDF hochladen
    - "Wird innerhalb 24h geprüft"
-   
+
 6. [Warten auf Zertifikats-Verifizierung]
    - E-Mail nach 8h: "Zertifikat verifiziert!"
-   
+
 7. [Produkt anlegen]
    - Formular: Name, Beschreibung, Preis, Bilder
    - Kategorie wählen
@@ -700,28 +748,28 @@
    - Varianten anlegen (S, M, L, XL)
    - "Produkt veröffentlichen"
    - ✓ Produkt ist sofort live (weil Zertifikat verified)
-   
+
 8. [Weitere Produkte]
    - CSV-Import für Bulk-Upload (optional)
    - Verkäufer legt 50 Produkte an
-   
+
 9. [Erste Bestellung]
    - E-Mail: "Neue Bestellung #2026-000123"
    - Dashboard: Bestellung sichtbar
    - Artikel verpacken & versenden
    - "Als versendet markieren" mit Tracking
-   
+
 10. [Auszahlung]
     - Wöchentliche E-Mail: "Auszahlung über 850 EUR erfolgt"
     - Dashboard: Detaillierte Aufschlüsselung
-    
+
 11. [Optimierung]
     - Analytics nutzen: "Produkt X läuft gut, Produkt Y weniger"
     - Matching-Insights: "85% Match im Schnitt - sehr gut!"
-    
+
 📍 Endpunkt: Etablierter Verkäufer mit regelmäßigen Verkäufen
 
-⏱️ Dauer: 
+⏱️ Dauer:
   - Registrierung → Freigabe: 24-48h
   - Zertifikat → Verifizierung: < 24h
   - Gesamt bis erster Verkauf: 3-7 Tage
@@ -736,29 +784,29 @@
 1. [Dashboard]
    - Übersicht: Heute 5 neue Bestellungen, 2 Verkäufer ausstehend, 3 Zertifikate
    - Priorität: Zertifikate (SLA!)
-   
+
 2. [Zertifikate verifizieren]
    - 3 offene Zertifikate
    - Sortiert nach SLA (ältestes zuerst)
    - Jedes prüfen (15 Min/Zertifikat)
    - 2 freigeben, 1 Nachfrage
-   
+
 3. [Verkäufer freigeben]
    - 2 ausstehende Registrierungen
    - Geschäftsdaten prüfen, USt-ID validieren
    - Beide freigeben
-   
+
 4. [Support-Anfragen] (Phase 2)
    - 3 Tickets: Fragen zu Retouren, technisches Problem
    - Bearbeiten & beantworten
-   
+
 5. [Kategorien verwalten]
    - Neue Kategorie "Schuhe" anlegen (Vendor requested)
-   
+
 6. [Statistiken prüfen]
    - Wöchentlicher Report: Wachstum, GMV, Provisionen
    - Alles im grünen Bereich
-   
+
 📍 Endpunkt: Plattform läuft stabil, alle kritischen Tasks erledigt
 
 ⏱️ Dauer: 1-2 Stunden/Tag (bei 100 Verkäufern)

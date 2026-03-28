@@ -26,6 +26,7 @@ Eine Web-Plattform, die Konsumenten mit nachhaltig zertifizierten Textilprodukte
 Diese Dokumentation ist in mehrere Dokumente unterteilt, die zusammen einen vollständigen Entwicklungsplan bilden:
 
 ### 1. [Produktvision & Geschäftskonzept](01_Produktvision_und_Geschaeftskonzept.md)
+
 **Executive Summary für alle Stakeholder**
 
 - Produktvision & USPs
@@ -44,6 +45,7 @@ Diese Dokumentation ist in mehrere Dokumente unterteilt, die zusammen einen voll
 ---
 
 ### 2. [Funktionale Anforderungen](02_Funktionale_Anforderungen.md)
+
 **Detaillierte Feature-Spezifikationen für Entwickler**
 
 - **Nutzerverwaltung:** Rollen, Registrierung (Käufer/Verkäufer), Authentifizierung, Werteprofil-System (einfach & erweitert), Account-Management
@@ -58,6 +60,7 @@ Diese Dokumentation ist in mehrere Dokumente unterteilt, die zusammen einen voll
 ---
 
 ### 3. [Technische Architektur](03_Technische_Architektur.md)
+
 **System-Design & Technologie-Stack**
 
 - **System-Überblick:** High-Level Architektur, Komponenten-Diagramm
@@ -85,6 +88,7 @@ Diese Dokumentation ist in mehrere Dokumente unterteilt, die zusammen einen voll
 ---
 
 ### 4. [User Stories & Use Cases](04_User_Stories_und_Use_Cases.md)
+
 **Szenarien aus Nutzerperspektive**
 
 - **User Stories - Käufer:** Registrierung, Profil, Suche, Warenkorb, Checkout, Bestellverwaltung, Wunschliste (60+ Stories)
@@ -105,6 +109,7 @@ Diese Dokumentation ist in mehrere Dokumente unterteilt, die zusammen einen voll
 ---
 
 ### 5. [Entwicklungs-Roadmap](05_Entwicklungs_Roadmap.md)
+
 **Sprint-Planung & Meilensteine**
 
 - **Entwicklungsphasen-Überblick:** Phase 1 (MVP, 4 Monate) → Phase 2 (Erweiterung, 3 Monate) → Phase 3 (Skalierung, 3 Monate)
@@ -184,17 +189,17 @@ docker-compose up -d
 
 ### Technologie-Entscheidungen
 
-| Bereich | Gewählt | Begründung |
-|---------|---------|------------|
-| **Frontend-Framework** | Next.js 14 | SSR für SEO, File-based Routing, Image-Optimization |
-| **Backend-Framework** | Express.js | Flexibel, große Community, gute TypeScript-Unterstützung |
-| **Datenbank** | PostgreSQL | Relational (passt zu Datenmodell), JSON-Support für Werteprofil |
-| **ORM** | Prisma | Type-Safe, Migrationen, Developer Experience |
-| **Styling** | Tailwind CSS | Utility-First, schnelle Entwicklung, geringe Bundle-Size |
-| **State-Management** | Zustand + SWR | Leichtgewichtig, SWR für Server-State |
-| **Zahlungen** | Stripe | Bewährt, PCI-DSS konform, gute Developer-Experience |
-| **Cloud** | AWS | Skalierbar, alle benötigten Services verfügbar |
-| **Suche** | Algolia (MVP) → Elasticsearch | Algolia: schneller Start, Elasticsearch: langfristig günstiger |
+| Bereich                | Gewählt                       | Begründung                                                      |
+| ---------------------- | ----------------------------- | --------------------------------------------------------------- |
+| **Frontend-Framework** | Next.js 14                    | SSR für SEO, File-based Routing, Image-Optimization             |
+| **Backend-Framework**  | Express.js                    | Flexibel, große Community, gute TypeScript-Unterstützung        |
+| **Datenbank**          | PostgreSQL                    | Relational (passt zu Datenmodell), JSON-Support für Werteprofil |
+| **ORM**                | Prisma                        | Type-Safe, Migrationen, Developer Experience                    |
+| **Styling**            | Tailwind CSS                  | Utility-First, schnelle Entwicklung, geringe Bundle-Size        |
+| **State-Management**   | Zustand + SWR                 | Leichtgewichtig, SWR für Server-State                           |
+| **Zahlungen**          | Stripe                        | Bewährt, PCI-DSS konform, gute Developer-Experience             |
+| **Cloud**              | AWS                           | Skalierbar, alle benötigten Services verfügbar                  |
+| **Suche**              | Algolia (MVP) → Elasticsearch | Algolia: schneller Start, Elasticsearch: langfristig günstiger  |
 
 ### Architektur-Entscheidungen
 
@@ -221,12 +226,12 @@ docker-compose up -d
 
 ### Entwicklungs-Aufwand (Schätzung)
 
-| Phase | Dauer | Aufwand/Entwickler | Features |
-|-------|-------|-------------------|----------|
-| **Phase 1 (MVP)** | 16 Wochen | 75-95 Arbeitstage | Kernfeatures funktionsfähig |
-| **Phase 2** | 12 Wochen | 50-65 Arbeitstage | Erweiterungen, UX |
-| **Phase 3** | 12 Wochen | 60-75 Arbeitstage | Skalierung, Analytics |
-| **Gesamt** | 40 Wochen | 185-235 Tage | Production-Ready Plattform |
+| Phase             | Dauer     | Aufwand/Entwickler | Features                    |
+| ----------------- | --------- | ------------------ | --------------------------- |
+| **Phase 1 (MVP)** | 16 Wochen | 75-95 Arbeitstage  | Kernfeatures funktionsfähig |
+| **Phase 2**       | 12 Wochen | 50-65 Arbeitstage  | Erweiterungen, UX           |
+| **Phase 3**       | 12 Wochen | 60-75 Arbeitstage  | Skalierung, Analytics       |
+| **Gesamt**        | 40 Wochen | 185-235 Tage       | Production-Ready Plattform  |
 
 ---
 
@@ -282,15 +287,18 @@ docker-compose up -d
 ## 🤝 Kontakte & Support
 
 **Team:**
+
 - Entwickler A: [Kontakt]
 - Entwickler B: [Kontakt]
 
 **Externe:**
+
 - Designer: [Kontakt] (falls beauftragt)
 - Rechtsberatung: [Kontakt]
 - Nachhaltigkeits-Experten: [Kontakt] (für Matching-Algorithmus)
 
 **Wichtige Links:**
+
 - GitHub: [Repository-URL]
 - Confluence/Notion: [Dokumentations-URL]
 - Jira/Linear: [Projekt-Management-URL]
@@ -324,8 +332,8 @@ Ihr habt jetzt einen vollständigen Plan für die Entwicklung eurer Plattform. D
 
 ## 📌 Anhang: Dokument-Änderungshistorie
 
-| Version | Datum | Änderungen | Autor |
-|---------|-------|------------|-------|
-| 1.0 | 05.02.2026 | Initial release - Alle 5 Dokumente erstellt | [Name] |
+| Version | Datum      | Änderungen                                  | Autor  |
+| ------- | ---------- | ------------------------------------------- | ------ |
+| 1.0     | 05.02.2026 | Initial release - Alle 5 Dokumente erstellt | [Name] |
 
 Weitere Versionen werden hier dokumentiert, wenn Dokumente aktualisiert werden.

@@ -4,7 +4,12 @@ import { useState, useEffect } from "react"
 import { X, Loader2 } from "lucide-react"
 import { ProductService } from "@/src/services/product.service"
 import { CategoryService } from "@/src/services/category.service"
-import type { ProductCreateDTO, ProductUpdateDTO, ProductCommandResponse, Category } from "@/src/types"
+import type {
+  ProductCreateDTO,
+  ProductUpdateDTO,
+  ProductCommandResponse,
+  Category,
+} from "@/src/types"
 import { toast } from "sonner"
 
 interface ProductFormProps {
@@ -24,7 +29,12 @@ interface ProductFormProps {
   onSaved: (result: ProductCommandResponse) => void
 }
 
-export default function ProductForm({ productId, initialValues, onClose, onSaved }: ProductFormProps) {
+export default function ProductForm({
+  productId,
+  initialValues,
+  onClose,
+  onSaved,
+}: ProductFormProps) {
   const isEdit = !!productId
 
   const [name, setName] = useState(initialValues?.name ?? "")
@@ -38,17 +48,28 @@ export default function ProductForm({ productId, initialValues, onClose, onSaved
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    CategoryService.list().then(setCategories).catch(() => {})
+    CategoryService.list()
+      .then(setCategories)
+      .catch(() => {})
   }, [])
 
   const handleSubmit = async () => {
-    if (!name.trim()) { toast.error("Bitte Produktname eingeben."); return }
-    if (!description.trim()) { toast.error("Bitte Beschreibung eingeben."); return }
+    if (!name.trim()) {
+      toast.error("Bitte Produktname eingeben.")
+      return
+    }
+    if (!description.trim()) {
+      toast.error("Bitte Beschreibung eingeben.")
+      return
+    }
     if (!basePrice || isNaN(parseFloat(basePrice)) || parseFloat(basePrice) <= 0) {
       toast.error("Bitte gültigen Preis eingeben.")
       return
     }
-    if (!categoryId) { toast.error("Bitte Kategorie auswählen."); return }
+    if (!categoryId) {
+      toast.error("Bitte Kategorie auswählen.")
+      return
+    }
 
     setIsSaving(true)
     try {
@@ -88,72 +109,77 @@ export default function ProductForm({ productId, initialValues, onClose, onSaved
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg my-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
+      <div className="my-4 w-full max-w-lg rounded-xl bg-white shadow-xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200">
+        <div className="flex items-center justify-between border-b border-slate-200 p-6">
           <h3 className="text-lg font-semibold text-slate-800">
             {isEdit ? "Produkt bearbeiten" : "Neues Produkt erstellen"}
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
-            <X className="w-5 h-5" />
+          <button
+            onClick={onClose}
+            className="text-slate-400 transition-colors hover:text-slate-600"
+          >
+            <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Form */}
-        <div className="p-6 space-y-4">
+        <div className="space-y-4 p-6">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Produktname *</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Produktname *</label>
             <input
               type="text"
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
               placeholder="z.B. Bio-Baumwoll-T-Shirt"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Kurzbeschreibung</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">
+              Kurzbeschreibung
+            </label>
             <input
               type="text"
               value={shortDesc}
-              onChange={e => setShortDesc(e.target.value)}
+              onChange={(e) => setShortDesc(e.target.value)}
               placeholder="1–2 Sätze für die Produktliste"
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Beschreibung *</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Beschreibung *</label>
             <textarea
               value={description}
-              onChange={e => setDescription(e.target.value)}
+              onChange={(e) => setDescription(e.target.value)}
               rows={4}
               placeholder="Detaillierte Produktbeschreibung..."
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+              className="w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Preis (EUR) *</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Preis (EUR) *</label>
               <input
                 type="number"
                 min="0.01"
                 step="0.01"
                 value={basePrice}
-                onChange={e => setBasePrice(e.target.value)}
+                onChange={(e) => setBasePrice(e.target.value)}
                 placeholder="29.99"
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">MwSt. (%)</label>
+              <label className="mb-1 block text-sm font-medium text-slate-700">MwSt. (%)</label>
               <select
                 value={taxRate}
-                onChange={e => setTaxRate(e.target.value)}
-                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+                onChange={(e) => setTaxRate(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               >
                 <option value="7">7%</option>
                 <option value="19">19%</option>
@@ -163,40 +189,43 @@ export default function ProductForm({ productId, initialValues, onClose, onSaved
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Kategorie *</label>
+            <label className="mb-1 block text-sm font-medium text-slate-700">Kategorie *</label>
             <select
               value={categoryId}
-              onChange={e => setCategoryId(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
               <option value="">Kategorie auswählen...</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
               ))}
             </select>
           </div>
 
           {!isEdit && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
-              Das Produkt wird als <strong>Entwurf</strong> erstellt. Nach dem Erstellen können Sie Bilder hinzufügen und das Produkt zur Prüfung einreichen.
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-700">
+              Das Produkt wird als <strong>Entwurf</strong> erstellt. Nach dem Erstellen können Sie
+              Bilder hinzufügen und das Produkt zur Prüfung einreichen.
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 p-6 border-t border-slate-200">
+        <div className="flex gap-3 border-t border-slate-200 p-6">
           <button
             onClick={onClose}
-            className="flex-1 border border-slate-300 text-slate-700 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors"
+            className="flex-1 rounded-lg border border-slate-300 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
           >
             Abbrechen
           </button>
           <button
             onClick={handleSubmit}
             disabled={isSaving}
-            className="flex-1 bg-teal-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-teal-700 disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:opacity-60"
           >
-            {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+            {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
             {isEdit ? "Speichern" : "Produkt erstellen"}
           </button>
         </div>

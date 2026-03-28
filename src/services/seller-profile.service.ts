@@ -13,7 +13,9 @@ export const SellerProfileService = {
     return apiRequest("/api/v1/users/me/seller-profile")
   },
 
-  async update(dto: Partial<{ companyName: string; vatId: string; iban: string }>): Promise<SellerProfile> {
+  async update(
+    dto: Partial<{ companyName: string; vatId: string; iban: string }>
+  ): Promise<SellerProfile> {
     return apiRequest("/api/v1/users/me/seller-profile", {
       method: "PATCH",
       body: JSON.stringify(dto),

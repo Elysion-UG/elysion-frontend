@@ -1,4 +1,5 @@
 # INKONSISTENZ-CHECK: Module 01-10
+
 ## Systematische Prüfung aller Schnittstellen & Datenmodelle
 
 **Datum:** 02.03.2026  
@@ -12,6 +13,7 @@
 ### 1. Modul 01 (Auth) ↔ Modul 02 (Products)
 
 **Geprüft:**
+
 - ✅ `products.sellerId` referenziert `users.id` (Modul 01)
 - ✅ User-Rollen: BUYER, SELLER, ADMIN konsistent
 - ✅ Seller-Status: PENDING, APPROVED, SUSPENDED konsistent
@@ -23,6 +25,7 @@
 ### 2. Modul 02 (Products) ↔ Modul 03 (Certificates)
 
 **Geprüft:**
+
 - ✅ `product.verifiedCertificateCount` wird von Modul 03 aktualisiert
 - ✅ Status-Logik konsistent:
   - Modul 02: "ACTIVE nur wenn verifiedCertificateCount >= 1"
@@ -37,6 +40,7 @@
 ### 3. Modul 02 (Products) ↔ Modul 05 (Cart)
 
 **Geprüft:**
+
 - ✅ Varianten-Struktur identisch:
   - Modul 02: `variant` + `variant_option`
   - Modul 05: Nutzt `variantId` (nicht productId!)
@@ -56,6 +60,7 @@
 ### 4. Modul 05 (Cart) ↔ Modul 06 (Orders)
 
 **Geprüft:**
+
 - ✅ Checkout-Workflow konsistent:
   - Modul 05: "POST /checkout/complete"
   - Modul 06: "Order erstellen aus Cart"
@@ -72,6 +77,7 @@
 ### 5. Modul 06 (Orders) ↔ Modul 07 (Payment)
 
 **Geprüft:**
+
 - ✅ Payment-Status synchron:
   - Modul 06: `order.paymentStatus`
   - Modul 07: `payment.status` → aktualisiert Order
@@ -89,6 +95,7 @@
 ### 6. Modul 02 (Products) ↔ Modul 08 (Files)
 
 **Geprüft:**
+
 - ✅ Produktbilder-Upload konsistent:
   - Modul 02: "Upload via Modul 08"
   - Modul 08: Kategorie "product_image"
@@ -103,6 +110,7 @@
 ### 7. Modul 03 (Certificates) ↔ Modul 08 (Files)
 
 **Geprüft:**
+
 - ✅ Zertifikats-Upload konsistent:
   - Modul 03: "Upload via Modul 08"
   - Modul 08: Kategorie "certificate"
@@ -117,6 +125,7 @@
 ### 8. Modul 04 (Matching) ↔ Modul 01, 02, 03
 
 **Geprüft:**
+
 - ✅ Nutzt `user_profile` aus Modul 01
 - ✅ Nutzt `products` aus Modul 02
 - ✅ Nutzt `product_certificate` + `certificate` aus Modul 03
@@ -130,6 +139,7 @@
 ### 9. Modul 10 (Email) ↔ Alle Module
 
 **Geprüft:**
+
 - ✅ E-Mail-Templates für alle wichtigen Events definiert:
   - Modul 01: `email_verification`, `password_reset`
   - Modul 03: `certificate_verified`, `certificate_rejected`, `certificate_expiring`
@@ -145,6 +155,7 @@
 ### 10. Modul 09 (Admin) ↔ Alle Module
 
 **Geprüft:**
+
 - ✅ Admin-Endpoints greifen auf alle Module zu
 - ✅ Audit-Log für kritische Actions definiert
 - ✅ Admin-Rolle konsistent (Modul 01: ADMIN)
@@ -164,11 +175,13 @@
 **Problem:** Nicht kritisch, aber Inkonsistenz im Naming
 
 **Modul 06 verwendet:**
+
 ```sql
 order_item.productSnapshot JSONB
 ```
 
 **Aber speichert:**
+
 ```json
 {
   "productId": "...",
@@ -189,12 +202,14 @@ order_item.productSnapshot JSONB
 **Beide Module erwähnen Gast-Bestellungen:**
 
 **Modul 05 (Cart):**
+
 ```sql
 cart.userId (NULL wenn Gast)
 cart.sessionId (UUID wenn Gast)
 ```
 
 **Modul 06 (Orders):**
+
 ```sql
 order.userId (NULL wenn Gast)
 order.guestEmail (E-Mail wenn Gast)
@@ -203,6 +218,7 @@ order.guestEmail (E-Mail wenn Gast)
 **Frage:** Wird `guestEmail` aus Cart übergeben?
 
 **Prüfung in Modul 05:**
+
 ```
 POST /checkout:
   Request: {
@@ -217,11 +233,13 @@ POST /checkout:
 ### 3. Modul 02: Slug-Historie vs. Slug-Einzigartigkeit
 
 **Modul 02 definiert:**
+
 ```sql
 products.slug VARCHAR(255) UNIQUE NOT NULL
 ```
 
 **Aber auch:**
+
 ```sql
 product_slug_history.slug VARCHAR(255) NOT NULL
 ```
@@ -229,6 +247,7 @@ product_slug_history.slug VARCHAR(255) NOT NULL
 **Frage:** Kann ein alter Slug wieder als neuer Slug verwendet werden?
 
 **Beispiel:**
+
 ```
 1. Produkt A: slug = "bio-tshirt"
 2. Umbenennen: slug = "premium-bio-tshirt"
@@ -241,12 +260,14 @@ product_slug_history.slug VARCHAR(255) NOT NULL
 **Aber:** `product_slug_history` hat keinen UNIQUE constraint!
 
 **Empfehlung:** Entweder:
+
 - **Option A:** `product_slug_history.slug` UNIQUE machen (alter Slug kann nie wieder verwendet werden)
 - **Option B:** Beim Slug-Generieren AUCH in history prüfen
 
 **Status:** MINOR (Randfall, aber sollte geklärt werden)
 
 **Vorschlag:**
+
 ```sql
 -- Option A (empfohlen)
 CREATE UNIQUE INDEX idx_product_slug_history_slug ON product_slug_history(slug);
@@ -254,11 +275,11 @@ CREATE UNIQUE INDEX idx_product_slug_history_slug ON product_slug_history(slug);
 -- Option B (in Code)
 function generateSlug(name):
   slug = slugify(name)
-  
+
   # Prüfe BEIDE Tabellen
   existsInProducts = SELECT 1 FROM products WHERE slug = :slug
   existsInHistory = SELECT 1 FROM product_slug_history WHERE slug = :slug
-  
+
   if (existsInProducts OR existsInHistory):
     slug += "-2"  # Suffix
 ```
@@ -270,11 +291,13 @@ function generateSlug(name):
 ### 4. Modul 07: Payout-Scheduling Klarheit
 
 **Modul 06 sagt:**
+
 ```
 "Nach Versand → Auszahlung planen"
 ```
 
 **Modul 07 sagt:**
+
 ```
 payout.scheduledFor = TODAY + 7 DAYS
 ```
@@ -282,6 +305,7 @@ payout.scheduledFor = TODAY + 7 DAYS
 **Frage:** Wird Payout bei `orderGroup.status = SHIPPED` erstellt?
 
 **Prüfung in Modul 06:**
+
 ```
 PATCH /order-groups/:id/status:
   "Bei newStatus == 'SHIPPED': ..."
@@ -289,6 +313,7 @@ PATCH /order-groups/:id/status:
 ```
 
 **Prüfung in Modul 07:**
+
 ```
 "Auszahlungs-Erstellung (nach Versand)"
 ```
@@ -310,11 +335,13 @@ PATCH /order-groups/:id/status:
 ### 5. Modul 08: File-Tabelle Optional oder Pflicht?
 
 **Modul 08 sagt:**
+
 ```
 "Hinweis: Nicht zwingend erforderlich. URLs können direkt in anderen Modulen gespeichert werden."
 ```
 
 **Aber andere Module (02, 03) speichern URLs direkt:**
+
 ```sql
 product_images.url VARCHAR(500)
 certificate.documentUrl VARCHAR(500)
@@ -394,6 +421,7 @@ order_item.product_snapshot JSONB
 - Nur 3 minor Issues (nicht kritisch)
 
 **Empfehlung:**
+
 1. Slug-Historie UNIQUE constraint hinzufügen (5 Min)
 2. Payout-Erstellung in Modul 06 explizit machen (2 Min)
 3. Naming-Anpassung optional
@@ -404,17 +432,17 @@ order_item.product_snapshot JSONB
 
 ## 📊 GEPRÜFTE SCHNITTSTELLEN
 
-| Schnittstelle | Module | Status |
-|---------------|--------|--------|
-| User → Product (sellerId) | 01 ↔ 02 | ✅ |
-| Product → Certificate | 02 ↔ 03 | ✅ |
-| Product → Cart (Varianten) | 02 ↔ 05 | ✅ |
-| Cart → Order | 05 ↔ 06 | ✅ |
-| Order → Payment | 06 ↔ 07 | ✅ |
-| Product → Files | 02 ↔ 08 | ✅ |
-| Certificate → Files | 03 ↔ 08 | ✅ |
-| Matching → All | 04 ↔ 01,02,03 | ✅ |
-| Email → All | 10 ↔ All | ✅ |
-| Admin → All | 09 ↔ All | ✅ |
+| Schnittstelle              | Module        | Status |
+| -------------------------- | ------------- | ------ |
+| User → Product (sellerId)  | 01 ↔ 02       | ✅     |
+| Product → Certificate      | 02 ↔ 03       | ✅     |
+| Product → Cart (Varianten) | 02 ↔ 05       | ✅     |
+| Cart → Order               | 05 ↔ 06       | ✅     |
+| Order → Payment            | 06 ↔ 07       | ✅     |
+| Product → Files            | 02 ↔ 08       | ✅     |
+| Certificate → Files        | 03 ↔ 08       | ✅     |
+| Matching → All             | 04 ↔ 01,02,03 | ✅     |
+| Email → All                | 10 ↔ All      | ✅     |
+| Admin → All                | 09 ↔ All      | ✅     |
 
 **Alle 10 Schnittstellen: KONSISTENT** ✅

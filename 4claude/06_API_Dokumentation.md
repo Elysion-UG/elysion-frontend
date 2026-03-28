@@ -1,4 +1,5 @@
 # API-Dokumentation (OpenAPI 3.0)
+
 ## Nachhaltigkeits-Zertifikat-Plattform
 
 **Version:** 1.0  
@@ -93,11 +94,11 @@ components:
         images:
           type: array
           items:
-            $ref: '#/components/schemas/ProductImage'
+            $ref: "#/components/schemas/ProductImage"
         certificates:
           type: array
           items:
-            $ref: '#/components/schemas/Certificate'
+            $ref: "#/components/schemas/Certificate"
 
     ProductImage:
       type: object
@@ -164,7 +165,7 @@ components:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/OrderItem'
+            $ref: "#/components/schemas/OrderItem"
 
     OrderItem:
       type: object
@@ -202,7 +203,7 @@ components:
 
 paths:
   # ========== AUTHENTICATION ==========
-  
+
   /auth/register:
     post:
       tags:
@@ -242,7 +243,7 @@ paths:
                 iban:
                   type: string
       responses:
-        '201':
+        "201":
           description: Registrierung erfolgreich
           content:
             application/json:
@@ -255,12 +256,12 @@ paths:
                   message:
                     type: string
                     example: "Bitte E-Mail bestätigen"
-        '400':
+        "400":
           description: Validierungsfehler
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /auth/login:
     post:
@@ -283,7 +284,7 @@ paths:
                 password:
                   type: string
       responses:
-        '200':
+        "200":
           description: Login erfolgreich
           content:
             application/json:
@@ -297,13 +298,13 @@ paths:
                   refreshToken:
                     type: string
                   user:
-                    $ref: '#/components/schemas/User'
-        '401':
+                    $ref: "#/components/schemas/User"
+        "401":
           description: Ungültige Credentials
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /auth/refresh:
     post:
@@ -320,7 +321,7 @@ paths:
                 refreshToken:
                   type: string
       responses:
-        '200':
+        "200":
           description: Token erneuert
           content:
             application/json:
@@ -379,7 +380,7 @@ paths:
             default: 20
             maximum: 50
       responses:
-        '200':
+        "200":
           description: Produktliste
           content:
             application/json:
@@ -391,7 +392,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Product'
+                      $ref: "#/components/schemas/Product"
                   meta:
                     type: object
                     properties:
@@ -448,7 +449,7 @@ paths:
                 weight:
                   type: number
       responses:
-        '201':
+        "201":
           description: Produkt erstellt
           content:
             application/json:
@@ -458,10 +459,10 @@ paths:
                   status:
                     type: string
                   data:
-                    $ref: '#/components/schemas/Product'
-        '401':
+                    $ref: "#/components/schemas/Product"
+        "401":
           description: Unauthorized
-        '403':
+        "403":
           description: Forbidden (not a seller)
 
   /products/{id}:
@@ -477,7 +478,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Produkt gefunden
           content:
             application/json:
@@ -487,8 +488,8 @@ paths:
                   status:
                     type: string
                   data:
-                    $ref: '#/components/schemas/Product'
-        '404':
+                    $ref: "#/components/schemas/Product"
+        "404":
           description: Produkt nicht gefunden
 
     patch:
@@ -518,7 +519,7 @@ paths:
                   type: number
                 # ... weitere Felder
       responses:
-        '200':
+        "200":
           description: Produkt aktualisiert
 
   # ========== CERTIFICATES ==========
@@ -531,7 +532,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Zertifikatsliste (Seller sieht nur eigene, Admin alle)
 
     post:
@@ -568,7 +569,7 @@ paths:
                     type: string
                     format: uuid
       responses:
-        '201':
+        "201":
           description: Zertifikat hochgeladen, Status PENDING
 
   /certificates/{id}/verify:
@@ -586,7 +587,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Zertifikat verifiziert, Produkte aktiviert
 
   # ========== ORDERS ==========
@@ -599,7 +600,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Bestellliste
 
     post:
@@ -636,7 +637,7 @@ paths:
                   type: string
                   description: "Stripe Payment Method ID"
       responses:
-        '201':
+        "201":
           description: Bestellung erstellt, Payment Intent returned
 
   # ========== PAYMENTS ==========
@@ -658,7 +659,7 @@ paths:
                   type: string
                   format: uuid
       responses:
-        '200':
+        "200":
           description: Payment Intent erstellt
           content:
             application/json:
@@ -678,7 +679,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Bestellliste (nur Bestellungen mit eigenen Produkten)
 
   /seller/analytics:
@@ -696,7 +697,7 @@ paths:
             enum: [7d, 30d, 90d, 1y]
             default: 30d
       responses:
-        '200':
+        "200":
           description: Analytics-Daten
 
   # ========== ADMIN ENDPOINTS ==========
@@ -709,7 +710,7 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '200':
+        "200":
           description: Nutzerliste (Admin only)
 
   /admin/users/{id}/suspend:
@@ -735,7 +736,7 @@ paths:
                 reason:
                   type: string
       responses:
-        '200':
+        "200":
           description: Nutzer suspendiert
 ```
 
@@ -747,12 +748,12 @@ paths:
 
 ```javascript
 // backend/src/app.ts
-import swaggerUi from 'swagger-ui-express';
-import YAML from 'yamljs';
+import swaggerUi from "swagger-ui-express"
+import YAML from "yamljs"
 
-const swaggerDocument = YAML.load('./docs/api-spec.yaml');
+const swaggerDocument = YAML.load("./docs/api-spec.yaml")
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument))
 ```
 
 **Zugriff:** `http://localhost:3000/api-docs`
@@ -784,6 +785,7 @@ npx tsoa spec-and-routes
 ### 3. Testing mit Postman
 
 **Collection exportieren:**
+
 - Swagger → Postman Collection
 - Importieren in Postman
 - Umgebungsvariablen setzen (BASE_URL, TOKEN)
@@ -797,7 +799,9 @@ npx tsoa spec-and-routes
 ```json
 {
   "status": "success",
-  "data": { /* ... */ }
+  "data": {
+    /* ... */
+  }
 }
 ```
 
@@ -821,7 +825,9 @@ npx tsoa spec-and-routes
 ```json
 {
   "status": "success",
-  "data": [ /* items */ ],
+  "data": [
+    /* items */
+  ],
   "meta": {
     "total": 150,
     "page": 1,
@@ -835,28 +841,30 @@ npx tsoa spec-and-routes
 
 ## HTTP Status Codes
 
-| Code | Bedeutung | Verwendung |
-|------|-----------|------------|
-| 200 | OK | Erfolgreiche GET, PATCH, DELETE Requests |
-| 201 | Created | Erfolgreiche POST Requests (Ressource erstellt) |
-| 204 | No Content | Erfolgreiche DELETE Requests (keine Rückgabe) |
-| 400 | Bad Request | Validierungsfehler, ungültige Eingabe |
-| 401 | Unauthorized | Fehlende oder ungültige Authentifizierung |
-| 403 | Forbidden | Authentifiziert, aber keine Berechtigung |
-| 404 | Not Found | Ressource nicht gefunden |
-| 409 | Conflict | Konflikt (z.B. E-Mail bereits registriert) |
-| 429 | Too Many Requests | Rate Limit überschritten |
-| 500 | Internal Server Error | Unerwarteter Server-Fehler |
+| Code | Bedeutung             | Verwendung                                      |
+| ---- | --------------------- | ----------------------------------------------- |
+| 200  | OK                    | Erfolgreiche GET, PATCH, DELETE Requests        |
+| 201  | Created               | Erfolgreiche POST Requests (Ressource erstellt) |
+| 204  | No Content            | Erfolgreiche DELETE Requests (keine Rückgabe)   |
+| 400  | Bad Request           | Validierungsfehler, ungültige Eingabe           |
+| 401  | Unauthorized          | Fehlende oder ungültige Authentifizierung       |
+| 403  | Forbidden             | Authentifiziert, aber keine Berechtigung        |
+| 404  | Not Found             | Ressource nicht gefunden                        |
+| 409  | Conflict              | Konflikt (z.B. E-Mail bereits registriert)      |
+| 429  | Too Many Requests     | Rate Limit überschritten                        |
+| 500  | Internal Server Error | Unerwarteter Server-Fehler                      |
 
 ---
 
 ## Rate Limiting
 
 **Limits:**
+
 - Anonymous: 100 Requests / 15 Min
 - Authenticated: 1000 Requests / 15 Min
 
 **Header:**
+
 ```
 X-RateLimit-Limit: 1000
 X-RateLimit-Remaining: 987
@@ -870,11 +878,13 @@ X-RateLimit-Reset: 1643731200
 **URL-basiert:** `/v1/products`, `/v2/products`
 
 **Breaking Changes:**
+
 - Neue Major-Version erstellen
 - Alte Version mind. 6 Monate unterstützen
 - Deprecation-Warnung in Responses
 
 **Header:**
+
 ```
 X-API-Version: 1.0.0
 X-API-Deprecated: false
@@ -883,6 +893,7 @@ X-API-Deprecated: false
 ---
 
 **Nächste Schritte:**
+
 1. Vollständige OpenAPI-Spec in `api-spec.yaml` erstellen
 2. Swagger UI integrieren
 3. Postman-Collection generieren

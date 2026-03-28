@@ -1,4 +1,5 @@
 # Funktionale Anforderungen
+
 ## Nachhaltigkeits-Zertifikat-Plattform
 
 **Version:** 1.0  
@@ -23,12 +24,12 @@ Die Plattform besteht aus 6 Hauptmodulen:
 
 ### 1.1 Rollen & Berechtigungen
 
-| Rolle | Beschreibung | Kern-Rechte |
-|-------|--------------|-------------|
-| **Gast** | Nicht registriert | Produkte ansehen, eingeschränkter Kauf |
-| **Käufer** | Registrierter Endkunde | + Werteprofil, Wunschliste, Bestellhistorie |
-| **Verkäufer** | Produzent/Händler | Produkte/Zertifikate verwalten, Analytics |
-| **Admin** | Plattformbetreiber | Verifizierung, Account-Management |
+| Rolle         | Beschreibung           | Kern-Rechte                                 |
+| ------------- | ---------------------- | ------------------------------------------- |
+| **Gast**      | Nicht registriert      | Produkte ansehen, eingeschränkter Kauf      |
+| **Käufer**    | Registrierter Endkunde | + Werteprofil, Wunschliste, Bestellhistorie |
+| **Verkäufer** | Produzent/Händler      | Produkte/Zertifikate verwalten, Analytics   |
+| **Admin**     | Plattformbetreiber     | Verifizierung, Account-Management           |
 
 ### 1.2 Authentifizierung
 
@@ -40,10 +41,12 @@ Die Plattform besteht aus 6 Hauptmodulen:
 ### 1.3 Werteprofil-System ⭐ (Kernfeature)
 
 **Stufe 0: Kein Profil**
+
 - Alle Produkte unsortiert
 - Keine Personalisierung
 
 **Stufe 1: Einfaches Profil (MVP)**
+
 - 7 Hauptkategorien:
   1. Faire Arbeitsbedingungen
   2. Umweltfreundliche Produktion
@@ -56,6 +59,7 @@ Die Plattform besteht aus 6 Hauptmodulen:
 - Auto-Save, Match-Scores werden berechnet
 
 **Stufe 2: Erweitertes Profil (Phase 2)**
+
 - Jede Hauptkategorie hat 2-3 Unterpunkte
 - Beispiel „Faire Arbeitsbedingungen":
   - Existenzsichernder Lohn
@@ -69,6 +73,7 @@ Die Plattform besteht aus 6 Hauptmodulen:
 ### 2.1 Produkt-CRUD (Verkäufer)
 
 **Pflichtfelder:**
+
 - Name, Beschreibung (50–2000 Zeichen)
 - Kategorie (hierarchisch: Kleidung → Damen → Oberteile)
 - Preis, MwSt-Satz
@@ -77,13 +82,16 @@ Die Plattform besteht aus 6 Hauptmodulen:
 - Shop-Zuordnung
 
 **Optionale Felder:**
+
 - SKU, Gewicht, Lieferzeit, Material, Pflegehinweise
 
 **Varianten:**
+
 - Größe (XS–XXL), Farbe, Custom
 - Pro Variante: eigener Lagerbestand, optional eigener Preis
 
 **Status:**
+
 - `DRAFT` — Zertifikat nicht verifiziert → nicht öffentlich
 - `ACTIVE` — Zertifikat verifiziert → öffentlich sichtbar
 - `PAUSED` — Vom Verkäufer manuell pausiert → nicht öffentlich
@@ -98,15 +106,18 @@ Die Plattform besteht aus 6 Hauptmodulen:
 ### 2.3 Suche & Filter (Käufer)
 
 **Volltextsuche:**
+
 - Felder: Produktname, Beschreibung, Marke, Material
 - Auto-Complete, Fuzzy-Matching
 
 **Filter:**
+
 - Kategorie, Preis (Min–Max), Marke/Shop
 - Zertifikate, Verfügbarkeit, Größe, Farbe, Material
 - **Mit Profil:** Min. Match-Score
 
 **Sortierung:**
+
 - Beste Übereinstimmung (Match-Score)
 - Neueste, Preis ↑↓, Beliebtheit
 
@@ -122,20 +133,22 @@ Die Plattform besteht aus 6 Hauptmodulen:
 
 ### 3.1 Zertifikatstypen
 
-| Phase | Zertifikate |
-|-------|-------------|
-| Phase 1 | IVN BEST, IVN Naturleder |
-| Phase 2 | GOTS |
+| Phase   | Zertifikate                      |
+| ------- | -------------------------------- |
+| Phase 1 | IVN BEST, IVN Naturleder         |
+| Phase 2 | GOTS                             |
 | Phase 3 | Fair Trade, EU Ecolabel, weitere |
 
 ### 3.2 Upload-Prozess (Verkäufer)
 
 **Formular:**
+
 - Typ, Nummer, Ausstellungs-/Ablaufdatum
 - PDF-Upload (max. 10 MB)
 - Gültig für: Einzelprodukt / Produktserie / Alle Produkte
 
 **Nach Upload:**
+
 - Status: `PENDING` → Admin wird benachrichtigt
 
 ### 3.3 Verifizierung (Admin)
@@ -143,19 +156,23 @@ Die Plattform besteht aus 6 Hauptmodulen:
 **SLA: 24 Stunden**
 
 **Aktionen:**
+
 - **Freigeben:** Status → `VERIFIED`, Produkte → `ACTIVE`
 - **Ablehnen:** Status → `REJECTED`, Grund angeben
 - **Nachfrage:** Kommentar an Verkäufer
 
 **Cascade-Aktivierung ⭐:**
+
 - Bei Verifizierung werden alle zugeordneten Produkte automatisch aktiviert
 
 ### 3.4 Ablauf-Management
 
 **E-Mail-Erinnerungen:**
+
 - 30 / 14 / 7 Tage vor Ablauf
 
 **Bei Ablauf:**
+
 - Status → `EXPIRED`
 - Alle verknüpften Produkte → `DRAFT`
 
@@ -180,20 +197,24 @@ Die Plattform besteht aus 6 Hauptmodulen:
 ### 4.3 Bestellverwaltung (Käufer)
 
 **Bestellhistorie:**
+
 - Alle Bestellungen, Filter nach Status/Zeitraum
 - Details: Artikel, Adresse, Tracking, Rechnung (PDF)
 
 **Aktionen:**
+
 - **Stornieren:** Nur wenn Status = `PAID` (noch nicht versendet)
 - **Rücksendung:** Innerhalb 14 Tage nach Zustellung
 
 ### 4.4 Bestellverwaltung (Verkäufer)
 
 **Dashboard:**
+
 - Neue Bestellungen (Status: `PAID`)
 - In Bearbeitung / Versendet / Abgeschlossen
 
 **Aktionen:**
+
 - **Als versendet markieren:** Tracking-Nummer eingeben → Status → `SHIPPED`
 - **Rücksendungen bearbeiten:** Genehmigen/Ablehnen
 
@@ -222,6 +243,7 @@ Auszahlung         = Verkaufs-Brutto − Provision-Brutto
 ```
 
 **Beispiel:**
+
 ```
 Netto:         100 EUR
 MwSt (19 %):    19 EUR
@@ -236,6 +258,7 @@ Auszahlung:    119 − 17,85 = 101,15 EUR
 **Rhythmus:** Wöchentlich (montags)
 
 **Bedingungen:**
+
 - Mindestbetrag: 10 EUR
 - Nur Bestellungen mit Status „Zugestellt"
 - Keine offenen Rücksendungen
@@ -262,6 +285,7 @@ Erfüllungsgrad:
 ```
 
 **Beispiel:**
+
 ```
 Profil:       Faire Arbeit 90 % | Umwelt 80 % | Lokal 50 %
 Zertifikat:   deckt Faire Arbeit + Umwelt ab
@@ -270,11 +294,13 @@ Score = (90 + 80 + 0) / (90 + 80 + 50) = 170/220 = 77 %
 ```
 
 **Phase 2 — Komplexer Algorithmus:**
+
 - Von Nachhaltigkeitsexperten definiert
 - Unterpunkte & Teilerfüllungen berücksichtigt
 - Modularer Austausch ohne Frontend-Änderungen
 
 **Technisch:**
+
 - Interface: `calculateMatch(userId, productId) → score`
 - Caching für Performance
 
@@ -294,11 +320,13 @@ Score = (90 + 80 + 0) / (90 + 80 + 50) = 170/220 = 77 %
 ## Nicht-funktionale Anforderungen
 
 ### Performance
+
 - Seitenladezeit: < 2 s (Desktop), < 3 s (Mobile)
 - API-Response: < 500 ms (95. Perzentil)
 - Matching: < 100 ms pro Produkt (gecacht)
 
 ### Sicherheit
+
 - HTTPS erzwungen
 - DSGVO-konform, Privacy by Design
 - Input-Validierung serverseitig
@@ -306,16 +334,17 @@ Score = (90 + 80 + 0) / (90 + 80 + 50) = 170/220 = 77 %
 
 ### Skalierbarkeit
 
-| Phase | Produkte | Verkäufer | Bestellungen/Monat |
-|-------|----------|-----------|-------------------|
-| MVP   | 10.000   | 100       | 1.000             |
-| Phase 2–3 | 100.000 | 1.000  | 10.000            |
+| Phase     | Produkte | Verkäufer | Bestellungen/Monat |
+| --------- | -------- | --------- | ------------------ |
+| MVP       | 10.000   | 100       | 1.000              |
+| Phase 2–3 | 100.000  | 1.000     | 10.000             |
 
 ---
 
 ## Priorisierung (MoSCoW)
 
 ### MUST — Phase 1 (MVP)
+
 - Authentifizierung & Rollen
 - Produkt-CRUD
 - Einfaches Werteprofil (7 Kategorien)
@@ -328,6 +357,7 @@ Score = (90 + 80 + 0) / (90 + 80 + 50) = 170/220 = 77 %
 - Basis-Auszahlungen
 
 ### SHOULD — Phase 2
+
 - Erweitertes Werteprofil
 - Gast-Checkout
 - Wunschliste
@@ -335,12 +365,14 @@ Score = (90 + 80 + 0) / (90 + 80 + 50) = 170/220 = 77 %
 - GOTS-Zertifikat
 
 ### COULD — Phase 3
+
 - Admin-Dashboard
 - Review-System
 - Weitere Zertifikate
 - Mobile App
 
 ### WON'T (initial)
+
 - Mehrsprachigkeit
 - Multi-Currency
 - B2B-Funktionen

@@ -7,20 +7,21 @@
 ---
 
 ## Phase 1 — Foundations (Fix Broken Contracts)
+
 > **~3–4h | No new UI — fix what silently breaks at runtime**
 
 ### P1-1 · Fix `src/types/index.ts` — Type Mismatches
 
-| Type | Problem | Fix |
-|------|---------|-----|
-| `CheckoutDTO` | Missing required `paymentMethod: string` — backend rejects every checkout request | Add `paymentMethod: string`, `billingSameAsShipping?: boolean`, `billingAddress?: CheckoutAddressDTO`. Remove `note?: string` (no such backend field). |
-| `CheckoutPreview` | Fields `subtotalCents/shippingCents/totalCents` don't match backend which returns euro decimals `subtotal/shippingCost/total` | Rename fields, add `readyToProceed: boolean`, `cartId: string`, `ownershipType: string`, `totalQuantity: number`. Rename type to `CheckoutStartResponse`. |
-| `CheckoutPreviewItem` | `unitPriceCents/totalPriceCents` — confirm cents vs euros with backend DTO | Likely rename to `unitPrice: number`, `totalPrice: number`. Add `variantOptions?: CartItemOption[]`. |
-| `CheckoutCompleteResponse` | Shape mismatch: frontend expects `{totalAmountCents, paymentIntentClientSecret}` but backend returns `{completionId, status, paymentStatus, paymentMethod, completedAt, checkout}` | Replace with: `{ completionId, orderId, orderNumber, status, paymentStatus, paymentMethod, completedAt, checkout: CheckoutStartResponse }` |
-| `Order` | `totalAmountCents: number` — backend returns `total: number` (euros). `orderGroups` field may differ | Change to `total: number`, add `subtotal: number`, `shippingCost: number`. Remove `orderGroups` — list endpoint doesn't include groups. |
-| `OrderDetail` | Has `items: OrderItemSnapshot[]` at root — backend nests items inside `groups[].items` | Remove root `items`. Add `groups: OrderGroupDetail[]`, `subtotal`, `shippingCost`, `tax`, `total`, `billingAddress?`. |
-| `OrdersPage` | Typed as Spring `Page<>` but `GET /api/v1/orders` returns `Order[]` (plain array) | Change `OrderService.list()` return type to `Order[]`. Delete or repurpose `OrdersPage`. |
-| `Recommendation` | `basePriceCents: number` — backend likely uses euros | Verify against backend `RecommendationItemDto`; likely rename to `basePrice: number`. |
+| Type                       | Problem                                                                                                                                                                            | Fix                                                                                                                                                       |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CheckoutDTO`              | Missing required `paymentMethod: string` — backend rejects every checkout request                                                                                                  | Add `paymentMethod: string`, `billingSameAsShipping?: boolean`, `billingAddress?: CheckoutAddressDTO`. Remove `note?: string` (no such backend field).    |
+| `CheckoutPreview`          | Fields `subtotalCents/shippingCents/totalCents` don't match backend which returns euro decimals `subtotal/shippingCost/total`                                                      | Rename fields, add `readyToProceed: boolean`, `cartId: string`, `ownershipType: string`, `totalQuantity: number`. Rename type to `CheckoutStartResponse`. |
+| `CheckoutPreviewItem`      | `unitPriceCents/totalPriceCents` — confirm cents vs euros with backend DTO                                                                                                         | Likely rename to `unitPrice: number`, `totalPrice: number`. Add `variantOptions?: CartItemOption[]`.                                                      |
+| `CheckoutCompleteResponse` | Shape mismatch: frontend expects `{totalAmountCents, paymentIntentClientSecret}` but backend returns `{completionId, status, paymentStatus, paymentMethod, completedAt, checkout}` | Replace with: `{ completionId, orderId, orderNumber, status, paymentStatus, paymentMethod, completedAt, checkout: CheckoutStartResponse }`                |
+| `Order`                    | `totalAmountCents: number` — backend returns `total: number` (euros). `orderGroups` field may differ                                                                               | Change to `total: number`, add `subtotal: number`, `shippingCost: number`. Remove `orderGroups` — list endpoint doesn't include groups.                   |
+| `OrderDetail`              | Has `items: OrderItemSnapshot[]` at root — backend nests items inside `groups[].items`                                                                                             | Remove root `items`. Add `groups: OrderGroupDetail[]`, `subtotal`, `shippingCost`, `tax`, `total`, `billingAddress?`.                                     |
+| `OrdersPage`               | Typed as Spring `Page<>` but `GET /api/v1/orders` returns `Order[]` (plain array)                                                                                                  | Change `OrderService.list()` return type to `Order[]`. Delete or repurpose `OrdersPage`.                                                                  |
+| `Recommendation`           | `basePriceCents: number` — backend likely uses euros                                                                                                                               | Verify against backend `RecommendationItemDto`; likely rename to `basePrice: number`.                                                                     |
 
 ### P1-2 · Fix `src/services/user.service.ts` — Remove Dead Stubs
 
@@ -31,6 +32,7 @@
 ### P1-3 · Fix `src/services/index.ts` — Add Missing Exports
 
 These services exist but are not exported:
+
 ```ts
 export { CartService } from "./cart.service"
 export { CheckoutService } from "./checkout.service"
@@ -47,11 +49,13 @@ export { SellerOrderService } from "./seller-order.service"
 ### P1-5 · Fix `src/services/checkout.service.ts` — Update Type References
 
 After P1-1 renames `CheckoutPreview` → `CheckoutStartResponse`:
+
 - Update import and return type of `preview()`
 
 ---
 
 ## Phase 2 — Wire Existing Services to UI
+
 > **~12–16h | Services exist — need pages and context**
 
 ### P2-1 · Create `src/context/CartContext.tsx`
@@ -61,6 +65,7 @@ Global cart state (needed by header, product pages, cart page, checkout).
 **Exposes:** `cart`, `itemCount`, `addItem(dto)`, `updateItem(id, dto)`, `removeItem(id)`, `refetch()`, `isLoading`
 
 **Behavior:**
+
 - On mount: call `CartService.get()` (works for both auth + guest via cookie)
 - After each mutation: refetch cart
 - Re-fetch when auth state changes (login/logout merge)
@@ -68,6 +73,7 @@ Global cart state (needed by header, product pages, cart page, checkout).
 ### P2-2 · Wrap App with `CartProvider`
 
 **File:** `src/App.tsx`
+
 - Add `<CartProvider>` inside `<AuthProvider>` (needs auth state to react to login/logout)
 
 ### P2-3 · Add Cart Icon to `src/components/PageLayout.tsx`
@@ -144,12 +150,14 @@ if (currentPage.startsWith("/orders/"))
 ### P2-12 · Add Nav Links to `src/components/PageLayout.tsx`
 
 Add to authenticated user dropdown:
+
 - "Meine Bestellungen" → `/orders`
 - Verify "Präferenzen" → `/praeferenzen` is present
 
 ---
 
 ## Phase 3 — Missing Services
+
 > **~6–8h | Create FileService + RecommendationService**
 
 ### P3-1 · Create `src/services/file.service.ts`
@@ -213,6 +221,7 @@ export { RecommendationService } from "./recommendation.service"
 ---
 
 ## Phase 4 — Real Shop + Seller Dashboard Overhaul
+
 > **~16–24h | Replace all mock data**
 
 ### P4-1 · Replace Mock Products in `src/components/SustainableShop.tsx`
@@ -229,11 +238,11 @@ export { RecommendationService } from "./recommendation.service"
 ### P4-2 · Create `src/lib/currency.ts` — Price Utilities
 
 ```ts
-export function formatEuro(amount: number): string   // 29.99 → "€ 29,99"
-export function centsToEuro(cents: number): number   // 2999 → 29.99
-export function euroToCents(euro: number): number    // 29.99 → 2999
-export function bpsToPercent(bps: number): number    // 1900 → 19
-export function percentToBps(pct: number): number    // 19 → 1900
+export function formatEuro(amount: number): string // 29.99 → "€ 29,99"
+export function centsToEuro(cents: number): number // 2999 → 29.99
+export function euroToCents(euro: number): number // 29.99 → 2999
+export function bpsToPercent(bps: number): number // 1900 → 19
+export function percentToBps(pct: number): number // 19 → 1900
 ```
 
 Use everywhere prices are displayed — no inline `/ 100` in components.
@@ -249,6 +258,7 @@ Reusable create/edit form (used inside SellerDashboard dialog):
 **Images section:** file picker → `FileService.uploadAndLink(file, "PRODUCT_IMAGE", "PRODUCT", productId)` → show preview grid → drag-reorder → delete
 
 **Submit:**
+
 - Create: `ProductService.create(dto)`
 - Edit: `ProductService.update(id, dto)`
 
@@ -288,6 +298,7 @@ New tab "Auszahlungen":
 ---
 
 ## Phase 5 — Polish & Hardening
+
 > **~6–8h | Error handling, auth flow, UX completeness**
 
 ### P5-1 · Global 401 Retry in `src/lib/api-client.ts`
@@ -298,6 +309,7 @@ New tab "Auszahlungen":
 ### P5-2 · Toast Notifications for All Mutations
 
 Use `sonner` toast for:
+
 - Add to cart → "Zum Warenkorb hinzugefügt"
 - Remove from cart → "Artikel entfernt"
 - Checkout complete → "Bestellung aufgegeben! 🎉"
@@ -308,6 +320,7 @@ Use `sonner` toast for:
 ### P5-3 · Loading States for All New Components
 
 Every component calling an API must have:
+
 - `Skeleton` placeholder while loading (shadcn/ui)
 - Buttons disabled while mutation in progress (`isLoading` state)
 - Error state with retry option
@@ -326,6 +339,7 @@ Applies to: `Cart`, `Checkout`, `Orders`, `OrderDetail`, `ProductDetail`, `Susta
 ### P5-5 · Confirm Cart Price Field Format
 
 Before building cart UI: read Java `CartItemResponse` DTO in backend to confirm if `unitPriceCents`/`totalPriceCents` are:
+
 - Integer cents → use `centsToEuro()` from P4-2
 - Euro decimals → rename types to `unitPrice`/`totalPrice` and remove "Cents" suffix
 
@@ -335,34 +349,34 @@ Same for `Settlement` amount fields.
 
 ## New Files to Create
 
-| File | Phase |
-|------|-------|
-| `src/context/CartContext.tsx` | P2-1 |
-| `src/components/Cart.tsx` | P2-4 |
-| `src/components/Checkout.tsx` | P2-7 |
-| `src/components/Orders.tsx` | P2-9 |
-| `src/components/OrderDetail.tsx` | P2-10 |
-| `src/services/file.service.ts` | P3-1 |
-| `src/services/recommendation.service.ts` | P3-2 |
-| `src/components/RecommendationsWidget.tsx` | P3-4 |
-| `src/components/ProductForm.tsx` | P4-3 |
-| `src/lib/currency.ts` | P4-2 |
+| File                                       | Phase |
+| ------------------------------------------ | ----- |
+| `src/context/CartContext.tsx`              | P2-1  |
+| `src/components/Cart.tsx`                  | P2-4  |
+| `src/components/Checkout.tsx`              | P2-7  |
+| `src/components/Orders.tsx`                | P2-9  |
+| `src/components/OrderDetail.tsx`           | P2-10 |
+| `src/services/file.service.ts`             | P3-1  |
+| `src/services/recommendation.service.ts`   | P3-2  |
+| `src/components/RecommendationsWidget.tsx` | P3-4  |
+| `src/components/ProductForm.tsx`           | P4-3  |
+| `src/lib/currency.ts`                      | P4-2  |
 
 ## Files to Modify
 
-| File | Phase | Change |
-|------|-------|--------|
-| `src/types/index.ts` | P1-1 | Fix 8 type mismatches |
-| `src/services/user.service.ts` | P1-2 | Remove 2 dead stubs |
-| `src/services/index.ts` | P1-3 + P3-3 | Add 7 missing exports |
-| `src/lib/api-client.ts` | P1-4 + P5-1 | `apiUpload()`, global 401 retry |
-| `src/services/checkout.service.ts` | P1-5 | Update type references |
-| `src/App.tsx` | P2-2 + P2-5 + P2-8 + P2-11 | CartProvider, 4 new routes |
-| `src/components/PageLayout.tsx` | P2-3 + P2-12 | Cart icon, nav links |
-| `src/components/ProductDetail.tsx` | P2-6 | Replace mock with real API |
-| `src/components/SustainableShop.tsx` | P3-5 + P4-1 | Recommendations widget, real products |
-| `src/components/SellerDashboard.tsx` | P4-4 + P4-5 + P4-6 | Replace mock, add 2 tabs |
-| `src/components/Praeferenzen.tsx` | P5-4 | Verify BuyerValueProfile calls |
+| File                                 | Phase                      | Change                                |
+| ------------------------------------ | -------------------------- | ------------------------------------- |
+| `src/types/index.ts`                 | P1-1                       | Fix 8 type mismatches                 |
+| `src/services/user.service.ts`       | P1-2                       | Remove 2 dead stubs                   |
+| `src/services/index.ts`              | P1-3 + P3-3                | Add 7 missing exports                 |
+| `src/lib/api-client.ts`              | P1-4 + P5-1                | `apiUpload()`, global 401 retry       |
+| `src/services/checkout.service.ts`   | P1-5                       | Update type references                |
+| `src/App.tsx`                        | P2-2 + P2-5 + P2-8 + P2-11 | CartProvider, 4 new routes            |
+| `src/components/PageLayout.tsx`      | P2-3 + P2-12               | Cart icon, nav links                  |
+| `src/components/ProductDetail.tsx`   | P2-6                       | Replace mock with real API            |
+| `src/components/SustainableShop.tsx` | P3-5 + P4-1                | Recommendations widget, real products |
+| `src/components/SellerDashboard.tsx` | P4-4 + P4-5 + P4-6         | Replace mock, add 2 tabs              |
+| `src/components/Praeferenzen.tsx`    | P5-4                       | Verify BuyerValueProfile calls        |
 
 ---
 

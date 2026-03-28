@@ -1,4 +1,5 @@
 # Modul 07: Payment Processing
+
 ## Spezifikation & Requirements
 
 **Verantwortlichkeit:** Zahlungsabwicklung, Auszahlungen an Verkäufer, Refunds  
@@ -38,7 +39,7 @@ Beispiel:
   OrderGroup A: 59.98 EUR (Verkäufer A)
   Provision: 10% = 5.99 EUR
   Auszahlung: 53.99 EUR → Verkäufer A
-  
+
   OrderGroup B: 16.30 EUR (Verkäufer B)
   Provision: 10% = 1.63 EUR
   Auszahlung: 14.67 EUR → Verkäufer B
@@ -47,13 +48,16 @@ Beispiel:
 ### Schnittstellen zu anderen Modulen:
 
 **Benötigt:**
+
 - Modul 01: User-Daten, Verkäufer-Bankdaten
 - Modul 06: Order-Daten, OrderGroup-Status
 
 **Beeinflusst:**
+
 - Modul 06: Aktualisiert Order.paymentStatus
 
 **Wird aufgerufen von:**
+
 - Modul 05: Checkout erstellt Payment-Intent
 - Modul 06: Order-Stornierung triggert Refund
 
@@ -65,22 +69,22 @@ Beispiel:
 
 Ein Payment repräsentiert eine Zahlung eines Kunden.
 
-| Feld | Typ | Pflicht | Bedeutung |
-|------|-----|---------|-----------|
-| **id** | UUID | Ja | Primärschlüssel |
-| **orderId** | UUID | Ja | Zu welcher Bestellung |
-| **userId** | UUID | Nein | Käufer (NULL wenn Gast) |
-| **provider** | Enum | Ja | STRIPE / PAYPAL / KLARNA / SOFORT |
-| **providerPaymentId** | String | Ja | Payment-ID vom Provider (z.B. Stripe Payment Intent ID) |
-| **amount** | Decimal (10,2) | Ja | Betrag |
-| **currency** | String (3) | Ja | "EUR" |
-| **status** | Enum | Ja | PENDING / SUCCEEDED / FAILED / REFUNDED / PARTIALLY_REFUNDED |
-| **paymentMethod** | String | Nein | "card", "paypal", "sepa_debit", etc. |
-| **receiptUrl** | String | Nein | Link zur Quittung (vom Provider) |
-| **failureReason** | Text | Nein | Grund bei Fehler |
-| **refundedAmount** | Decimal (10,2) | Ja | Erstatteter Betrag (default: 0) |
-| **createdAt** | Timestamp | Ja | Wann erstellt |
-| **succeededAt** | Timestamp | Nein | Wann erfolgreich |
+| Feld                  | Typ            | Pflicht | Bedeutung                                                    |
+| --------------------- | -------------- | ------- | ------------------------------------------------------------ |
+| **id**                | UUID           | Ja      | Primärschlüssel                                              |
+| **orderId**           | UUID           | Ja      | Zu welcher Bestellung                                        |
+| **userId**            | UUID           | Nein    | Käufer (NULL wenn Gast)                                      |
+| **provider**          | Enum           | Ja      | STRIPE / PAYPAL / KLARNA / SOFORT                            |
+| **providerPaymentId** | String         | Ja      | Payment-ID vom Provider (z.B. Stripe Payment Intent ID)      |
+| **amount**            | Decimal (10,2) | Ja      | Betrag                                                       |
+| **currency**          | String (3)     | Ja      | "EUR"                                                        |
+| **status**            | Enum           | Ja      | PENDING / SUCCEEDED / FAILED / REFUNDED / PARTIALLY_REFUNDED |
+| **paymentMethod**     | String         | Nein    | "card", "paypal", "sepa_debit", etc.                         |
+| **receiptUrl**        | String         | Nein    | Link zur Quittung (vom Provider)                             |
+| **failureReason**     | Text           | Nein    | Grund bei Fehler                                             |
+| **refundedAmount**    | Decimal (10,2) | Ja      | Erstatteter Betrag (default: 0)                              |
+| **createdAt**         | Timestamp      | Ja      | Wann erstellt                                                |
+| **succeededAt**       | Timestamp      | Nein    | Wann erfolgreich                                             |
 
 **Status-Bedeutung:**
 
@@ -107,22 +111,22 @@ CREATE INDEX idx_payment_status ON payment(status);
 
 Eine Payout ist eine Auszahlung an einen Verkäufer.
 
-| Feld | Typ | Pflicht | Bedeutung |
-|------|-----|---------|-----------|
-| **id** | UUID | Ja | Primärschlüssel |
-| **sellerId** | UUID | Ja | Welcher Verkäufer |
-| **orderGroupId** | UUID | Ja | Für welche OrderGroup |
-| **amount** | Decimal (10,2) | Ja | Auszahlungsbetrag (nach Abzug Provision) |
-| **commission** | Decimal (10,2) | Ja | Plattform-Provision |
-| **grossAmount** | Decimal (10,2) | Ja | Brutto (amount + commission) |
-| **status** | Enum | Ja | PENDING / PROCESSING / COMPLETED / FAILED |
-| **provider** | Enum | Ja | STRIPE_CONNECT / PAYPAL / BANK_TRANSFER |
-| **providerPayoutId** | String | Nein | Payout-ID vom Provider |
-| **recipientAccount** | String | Ja | IBAN oder PayPal-E-Mail (verschlüsselt!) |
-| **scheduledFor** | Date | Ja | Geplante Auszahlung (z.B. +7 Tage nach Versand) |
-| **completedAt** | Timestamp | Nein | Wann ausgezahlt |
-| **failureReason** | Text | Nein | Grund bei Fehler |
-| **createdAt** | Timestamp | Ja | |
+| Feld                 | Typ            | Pflicht | Bedeutung                                       |
+| -------------------- | -------------- | ------- | ----------------------------------------------- |
+| **id**               | UUID           | Ja      | Primärschlüssel                                 |
+| **sellerId**         | UUID           | Ja      | Welcher Verkäufer                               |
+| **orderGroupId**     | UUID           | Ja      | Für welche OrderGroup                           |
+| **amount**           | Decimal (10,2) | Ja      | Auszahlungsbetrag (nach Abzug Provision)        |
+| **commission**       | Decimal (10,2) | Ja      | Plattform-Provision                             |
+| **grossAmount**      | Decimal (10,2) | Ja      | Brutto (amount + commission)                    |
+| **status**           | Enum           | Ja      | PENDING / PROCESSING / COMPLETED / FAILED       |
+| **provider**         | Enum           | Ja      | STRIPE_CONNECT / PAYPAL / BANK_TRANSFER         |
+| **providerPayoutId** | String         | Nein    | Payout-ID vom Provider                          |
+| **recipientAccount** | String         | Ja      | IBAN oder PayPal-E-Mail (verschlüsselt!)        |
+| **scheduledFor**     | Date           | Ja      | Geplante Auszahlung (z.B. +7 Tage nach Versand) |
+| **completedAt**      | Timestamp      | Nein    | Wann ausgezahlt                                 |
+| **failureReason**    | Text           | Nein    | Grund bei Fehler                                |
+| **createdAt**        | Timestamp      | Ja      |                                                 |
 
 **Status-Bedeutung:**
 
@@ -159,20 +163,20 @@ CREATE INDEX idx_payout_status ON payout(status);
 
 ### 2.3 Refund (Rückerstattungen)
 
-| Feld | Typ | Pflicht | Bedeutung |
-|------|-----|---------|-----------|
-| **id** | UUID | Ja | Primärschlüssel |
-| **paymentId** | UUID | Ja | Ursprüngliche Zahlung |
-| **orderId** | UUID | Ja | Bestellung |
-| **returnId** | UUID | Nein | Wenn wegen Rücksendung (Modul 06) |
-| **amount** | Decimal (10,2) | Ja | Erstattungsbetrag |
-| **reason** | Text | Ja | Grund ("Rücksendung", "Stornierung", etc.) |
-| **status** | Enum | Ja | PENDING / SUCCEEDED / FAILED |
-| **provider** | String | Ja | "stripe", "paypal", etc. |
-| **providerRefundId** | String | Nein | Refund-ID vom Provider |
-| **initiatedBy** | UUID | Nein | User (Admin, Verkäufer, System) |
-| **createdAt** | Timestamp | Ja | |
-| **succeededAt** | Timestamp | Nein | |
+| Feld                 | Typ            | Pflicht | Bedeutung                                  |
+| -------------------- | -------------- | ------- | ------------------------------------------ |
+| **id**               | UUID           | Ja      | Primärschlüssel                            |
+| **paymentId**        | UUID           | Ja      | Ursprüngliche Zahlung                      |
+| **orderId**          | UUID           | Ja      | Bestellung                                 |
+| **returnId**         | UUID           | Nein    | Wenn wegen Rücksendung (Modul 06)          |
+| **amount**           | Decimal (10,2) | Ja      | Erstattungsbetrag                          |
+| **reason**           | Text           | Ja      | Grund ("Rücksendung", "Stornierung", etc.) |
+| **status**           | Enum           | Ja      | PENDING / SUCCEEDED / FAILED               |
+| **provider**         | String         | Ja      | "stripe", "paypal", etc.                   |
+| **providerRefundId** | String         | Nein    | Refund-ID vom Provider                     |
+| **initiatedBy**      | UUID           | Nein    | User (Admin, Verkäufer, System)            |
+| **createdAt**        | Timestamp      | Ja      |                                            |
+| **succeededAt**      | Timestamp      | Nein    |                                            |
 
 **Indizes:**
 
@@ -188,15 +192,15 @@ CREATE INDEX idx_refund_return ON refund(returnId);
 
 Konfigurierbare Provision pro Verkäufer oder Kategorie.
 
-| Feld | Typ | Pflicht | Bedeutung |
-|------|-----|---------|-----------|
-| **id** | UUID | Ja | Primärschlüssel |
-| **sellerId** | UUID | Nein | Spezifisch für Verkäufer (NULL = Default) |
-| **categoryId** | UUID | Nein | Spezifisch für Kategorie |
-| **rate** | Decimal (5,2) | Ja | Provisionssatz in % (z.B. 10.00 = 10%) |
-| **isActive** | Boolean | Ja | Aktiv? |
-| **validFrom** | Date | Ja | Gültig ab |
-| **validUntil** | Date | Nein | Gültig bis (NULL = unbegrenzt) |
+| Feld           | Typ           | Pflicht | Bedeutung                                 |
+| -------------- | ------------- | ------- | ----------------------------------------- |
+| **id**         | UUID          | Ja      | Primärschlüssel                           |
+| **sellerId**   | UUID          | Nein    | Spezifisch für Verkäufer (NULL = Default) |
+| **categoryId** | UUID          | Nein    | Spezifisch für Kategorie                  |
+| **rate**       | Decimal (5,2) | Ja      | Provisionssatz in % (z.B. 10.00 = 10%)    |
+| **isActive**   | Boolean       | Ja      | Aktiv?                                    |
+| **validFrom**  | Date          | Ja      | Gültig ab                                 |
+| **validUntil** | Date          | Nein    | Gültig bis (NULL = unbegrenzt)            |
 
 **Priorität:**
 
@@ -236,7 +240,7 @@ Beispiel:
 
 ```
 1. Payment-Provider-API aufrufen:
-   
+
    Stripe-Beispiel:
    paymentIntent = stripe.paymentIntents.create({
      amount: 7628,  # in Cent!
@@ -272,16 +276,16 @@ Beispiel:
 
 ```javascript
 // Stripe-Beispiel
-const stripe = Stripe('pk_xxx');
+const stripe = Stripe("pk_xxx")
 const { error } = await stripe.confirmCardPayment(clientSecret, {
   payment_method: {
-    card: cardElement
-  }
-});
+    card: cardElement,
+  },
+})
 
 if (!error) {
   // Zahlung erfolgreich
-  POST /checkout/complete
+  POST / checkout / complete
 }
 ```
 
@@ -320,34 +324,34 @@ if (!error) {
    event = stripe.webhooks.constructEvent(
      req.body, signature, webhookSecret
    )
-   
+
    if (!event):
      throw 401 Unauthorized
 
 2. Event-Type prüfen:
-   
+
    if (event.type == 'payment_intent.succeeded'):
-     
+
      a) Payment aktualisieren:
         UPDATE payment
         SET status = 'SUCCEEDED', succeededAt = NOW()
         WHERE providerPaymentId = event.data.object.id
-     
+
      b) Order aktualisieren:
         UPDATE orders
         SET paymentStatus = 'PAID', status = 'CONFIRMED'
         WHERE id = event.data.object.metadata.orderId
-     
+
      c) Auszahlungen planen (für jede OrderGroup):
         for orderGroup in order.orderGroups:
           createPayout(orderGroup)
-   
+
    else if (event.type == 'payment_intent.payment_failed'):
-     
+
      UPDATE payment
      SET status = 'FAILED', failureReason = event.data.object.last_payment_error.message
      WHERE providerPaymentId = event.data.object.id
-     
+
      UPDATE orders
      SET paymentStatus = 'FAILED', status = 'CANCELLED'
      WHERE id = ...
@@ -393,13 +397,13 @@ Verkäufer sieht seine Auszahlungen.
         "orderNumber": "ORD-2024-00124",
         "grossAmount": 39.99,
         "commission": 3.99,
-        "amount": 35.00,
+        "amount": 35.0,
         "status": "PENDING",
         "scheduledFor": "2024-03-05"
       }
     ],
     "summary": {
-      "pending": 35.00,
+      "pending": 35.0,
       "completed": 53.99,
       "total": 88.99
     }
@@ -428,15 +432,15 @@ Verkäufer sieht seine Auszahlungen.
 ```
 1. Payment holen & validieren:
    payment = SELECT * FROM payment WHERE id = :paymentId
-   
+
    if (payment.status != 'SUCCEEDED'):
      throw Error("Zahlung nicht erfolgreich")
-   
+
    if (payment.refundedAmount + :amount > payment.amount):
      throw Error("Betrag überschreitet Zahlung")
 
 2. Provider-API aufrufen:
-   
+
    # Stripe-Beispiel
    refund = stripe.refunds.create({
      payment_intent: payment.providerPaymentId,
@@ -479,32 +483,32 @@ Verkäufer sieht seine Auszahlungen.
              AND scheduledFor <= TODAY
 
 2. Für jede Auszahlung:
-   
+
    a) Verkäufer-Bankdaten holen:
       seller = SELECT * FROM seller_profiles WHERE id = payout.sellerId
-   
+
    b) Provider-API aufrufen:
-      
+
       # Stripe Connect Beispiel
       transfer = stripe.transfers.create({
         amount: payout.amount * 100,
         currency: 'eur',
         destination: seller.stripeAccountId
       })
-      
+
       # Oder: SEPA-Überweisung initiieren
-   
+
    c) Payout aktualisieren:
       UPDATE payout
       SET status = 'PROCESSING',
           providerPayoutId = transfer.id
       WHERE id = payout.id
-   
+
    d) Bei Erfolg (später via Webhook):
       UPDATE payout
       SET status = 'COMPLETED', completedAt = NOW()
       WHERE id = payout.id
-   
+
    e) E-Mail an Verkäufer:
       "Auszahlung von {amount} EUR wurde veranlasst"
 ```
@@ -517,16 +521,16 @@ Verkäufer sieht seine Auszahlungen.
 
 ```
 Funktion: calculateCommission(orderGroup):
-  
+
   1. Rate holen (Priorität):
-     
+
      # Verkäufer-spezifisch?
      rate = SELECT rate FROM commission_rate
             WHERE sellerId = orderGroup.sellerId
             AND isActive = true
             ORDER BY validFrom DESC
             LIMIT 1
-     
+
      if (!rate):
        # Kategorie-spezifisch?
        rate = SELECT rate FROM commission_rate
@@ -534,18 +538,18 @@ Funktion: calculateCommission(orderGroup):
               AND isActive = true
               ORDER BY validFrom DESC
               LIMIT 1
-     
+
      if (!rate):
        # Default
        rate = SELECT rate FROM commission_rate
               WHERE sellerId IS NULL AND categoryId IS NULL
               AND isActive = true
               LIMIT 1
-  
+
   2. Berechnen:
      commission = orderGroup.total * (rate / 100)
      netAmount = orderGroup.total - commission
-     
+
      return { commission, netAmount }
 ```
 
@@ -568,10 +572,10 @@ netAmount = 59.98 - 5.99 = 53.99 EUR
 
 ```
 Wenn OrderGroup.status → SHIPPED:
-  
+
   1. Provision berechnen:
      { commission, netAmount } = calculateCommission(orderGroup)
-  
+
   2. Payout erstellen:
      INSERT INTO payout (
        sellerId, orderGroupId,
@@ -598,17 +602,17 @@ Bestellung: 76.28 EUR (2 OrderGroups)
   - Group B: 16.30 EUR
 
 Kunde sendet nur Group A zurück:
-  
+
   1. Refund erstellen: 59.98 EUR
-  
+
   2. Payment aktualisieren:
      refundedAmount = 59.98
      status = 'PARTIALLY_REFUNDED'
-  
+
   3. Payout stornieren (falls noch PENDING):
      if (payout.status == 'PENDING'):
        DELETE FROM payout WHERE orderGroupId = groupA.id
-  
+
   4. Payout reduzieren (falls PROCESSING):
      # Nicht möglich → Manueller Prozess
 ```
@@ -619,14 +623,14 @@ Kunde sendet nur Group A zurück:
 
 ```
 Order wird storniert BEVOR Auszahlung:
-  
+
   1. Refund erstellen (komplett)
-  
+
   2. Alle Payouts löschen:
      DELETE FROM payout
      WHERE orderGroupId IN (SELECT id FROM order_group WHERE orderId = :orderId)
      AND status = 'PENDING'
-  
+
   3. Bei PROCESSING/COMPLETED:
      → Manuelle Rückforderung vom Verkäufer
 ```
@@ -638,6 +642,7 @@ Order wird storniert BEVOR Auszahlung:
 ### 5.1 Stripe (empfohlen)
 
 **Vorteile:**
+
 - Payment Intents API (SCA-konform)
 - Stripe Connect für Auszahlungen
 - Webhooks
@@ -681,10 +686,12 @@ refund = stripe.refunds.create({
 ### 5.2 PayPal (alternative)
 
 **Vorteile:**
+
 - Weit verbreitet
 - Käuferschutz
 
 **Nachteile:**
+
 - Höhere Gebühren
 - Komplexere Integration
 
@@ -708,7 +715,7 @@ Stripe-Beispiel:
   event = stripe.webhooks.constructEvent(
     req.body, signature, webhookSecret
   )
-  
+
   if (!event):
     throw 401 Unauthorized
 
@@ -725,7 +732,7 @@ Webhooks können mehrfach gesendet werden!
 Lösung:
   1. Provider-Event-ID speichern
   2. Bei erneutem Event: Ignorieren
-  
+
 CREATE TABLE webhook_events (
   providerEventId VARCHAR UNIQUE,
   processedAt TIMESTAMP
@@ -848,6 +855,7 @@ Warum?
 ---
 
 **Der Entwickler entscheidet:**
+
 - Payment-Provider (Stripe, PayPal, Klarna)
 - Auszahlungs-Strategie (Stripe Connect, Manuell, API)
 - Webhook-Framework

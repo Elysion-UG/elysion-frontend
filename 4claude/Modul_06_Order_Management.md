@@ -1,4 +1,5 @@
 # Modul 06: Order Management
+
 ## Spezifikation & Requirements
 
 **Verantwortlichkeit:** Bestellverwaltung, Status-Tracking, Versand  
@@ -31,11 +32,11 @@ Kunde bestellt:
 
 → System erstellt 1 Order (für Kunde)
 → Aber 2 OrderGroups (eine pro Verkäufer)
-  
+
 OrderGroup A:
   - 2× T-Shirt
   - 1× Schuhe
-  
+
 OrderGroup B:
   - 1× Hose
 
@@ -48,6 +49,7 @@ Warum?
 ### Schnittstellen zu anderen Modulen:
 
 **Benötigt:**
+
 - Modul 01: User-Daten
 - Modul 02: Produkt-/Varianten-Daten, Lagerbestand
 - Modul 05: Cart-Daten (beim Erstellen)
@@ -55,6 +57,7 @@ Warum?
 - Modul 10: E-Mails (Bestätigung, Versand, etc.)
 
 **Beeinflusst:**
+
 - Modul 02: Aktualisiert `variant.stock` & `variant.reserved`
 - Modul 07: Triggert Auszahlung an Verkäufer
 
@@ -66,25 +69,25 @@ Warum?
 
 Eine Order repräsentiert eine Bestellung eines Käufers.
 
-| Feld | Typ | Pflicht | Bedeutung |
-|------|-----|---------|-----------|
-| **id** | UUID | Ja | Primärschlüssel |
-| **orderNumber** | String | Ja | Menschenlesbar: "ORD-2024-00123" |
-| **userId** | UUID | Nein | Käufer (NULL wenn Gast) |
-| **guestEmail** | String | Nein | E-Mail (wenn Gast-Bestellung) |
-| **status** | Enum | Ja | PENDING / CONFIRMED / PROCESSING / SHIPPED / DELIVERED / CANCELLED |
-| **paymentStatus** | Enum | Ja | PENDING / PAID / FAILED / REFUNDED |
-| **paymentIntentId** | String | Nein | Payment-ID aus Modul 07 |
-| **subtotal** | Decimal (10,2) | Ja | Summe aller Items |
-| **shippingCost** | Decimal (10,2) | Ja | Versandkosten |
-| **tax** | Decimal (10,2) | Ja | Mehrwertsteuer |
-| **total** | Decimal (10,2) | Ja | Gesamtbetrag |
-| **currency** | String (3) | Ja | "EUR" |
-| **shippingAddress** | JSONB | Ja | Lieferadresse (gespeichert als JSON) |
-| **billingAddress** | JSONB | Nein | Rechnungsadresse (optional, sonst = shippingAddress) |
-| **notes** | Text | Nein | Kundennotiz |
-| **createdAt** | Timestamp | Ja | Bestellzeitpunkt |
-| **updatedAt** | Timestamp | Ja | Letzte Änderung |
+| Feld                | Typ            | Pflicht | Bedeutung                                                          |
+| ------------------- | -------------- | ------- | ------------------------------------------------------------------ |
+| **id**              | UUID           | Ja      | Primärschlüssel                                                    |
+| **orderNumber**     | String         | Ja      | Menschenlesbar: "ORD-2024-00123"                                   |
+| **userId**          | UUID           | Nein    | Käufer (NULL wenn Gast)                                            |
+| **guestEmail**      | String         | Nein    | E-Mail (wenn Gast-Bestellung)                                      |
+| **status**          | Enum           | Ja      | PENDING / CONFIRMED / PROCESSING / SHIPPED / DELIVERED / CANCELLED |
+| **paymentStatus**   | Enum           | Ja      | PENDING / PAID / FAILED / REFUNDED                                 |
+| **paymentIntentId** | String         | Nein    | Payment-ID aus Modul 07                                            |
+| **subtotal**        | Decimal (10,2) | Ja      | Summe aller Items                                                  |
+| **shippingCost**    | Decimal (10,2) | Ja      | Versandkosten                                                      |
+| **tax**             | Decimal (10,2) | Ja      | Mehrwertsteuer                                                     |
+| **total**           | Decimal (10,2) | Ja      | Gesamtbetrag                                                       |
+| **currency**        | String (3)     | Ja      | "EUR"                                                              |
+| **shippingAddress** | JSONB          | Ja      | Lieferadresse (gespeichert als JSON)                               |
+| **billingAddress**  | JSONB          | Nein    | Rechnungsadresse (optional, sonst = shippingAddress)               |
+| **notes**           | Text           | Nein    | Kundennotiz                                                        |
+| **createdAt**       | Timestamp      | Ja      | Bestellzeitpunkt                                                   |
+| **updatedAt**       | Timestamp      | Ja      | Letzte Änderung                                                    |
 
 **Status-Bedeutung:**
 
@@ -134,22 +137,22 @@ CREATE INDEX idx_order_created ON orders(createdAt DESC);
 
 Eine OrderGroup enthält alle Items einer Bestellung, die von einem Verkäufer kommen.
 
-| Feld | Typ | Pflicht | Bedeutung |
-|------|-----|---------|-----------|
-| **id** | UUID | Ja | Primärschlüssel |
-| **orderId** | UUID | Ja | Zu welcher Order gehört diese Group |
-| **sellerId** | UUID | Ja | Welcher Verkäufer |
-| **status** | Enum | Ja | PENDING / CONFIRMED / PROCESSING / SHIPPED / DELIVERED / CANCELLED |
-| **subtotal** | Decimal (10,2) | Ja | Summe dieser Group |
-| **shippingCost** | Decimal (10,2) | Ja | Anteilige Versandkosten |
-| **tax** | Decimal (10,2) | Ja | Anteilige MwSt |
-| **total** | Decimal (10,2) | Ja | Summe dieser Group |
-| **trackingNumber** | String | Nein | Versand-Tracking-Nummer |
-| **carrier** | String | Nein | Versanddienstleister (DHL, UPS, etc.) |
-| **shippedAt** | Timestamp | Nein | Wann versendet |
-| **deliveredAt** | Timestamp | Nein | Wann zugestellt |
-| **createdAt** | Timestamp | Ja | |
-| **updatedAt** | Timestamp | Ja | |
+| Feld               | Typ            | Pflicht | Bedeutung                                                          |
+| ------------------ | -------------- | ------- | ------------------------------------------------------------------ |
+| **id**             | UUID           | Ja      | Primärschlüssel                                                    |
+| **orderId**        | UUID           | Ja      | Zu welcher Order gehört diese Group                                |
+| **sellerId**       | UUID           | Ja      | Welcher Verkäufer                                                  |
+| **status**         | Enum           | Ja      | PENDING / CONFIRMED / PROCESSING / SHIPPED / DELIVERED / CANCELLED |
+| **subtotal**       | Decimal (10,2) | Ja      | Summe dieser Group                                                 |
+| **shippingCost**   | Decimal (10,2) | Ja      | Anteilige Versandkosten                                            |
+| **tax**            | Decimal (10,2) | Ja      | Anteilige MwSt                                                     |
+| **total**          | Decimal (10,2) | Ja      | Summe dieser Group                                                 |
+| **trackingNumber** | String         | Nein    | Versand-Tracking-Nummer                                            |
+| **carrier**        | String         | Nein    | Versanddienstleister (DHL, UPS, etc.)                              |
+| **shippedAt**      | Timestamp      | Nein    | Wann versendet                                                     |
+| **deliveredAt**    | Timestamp      | Nein    | Wann zugestellt                                                    |
+| **createdAt**      | Timestamp      | Ja      |                                                                    |
+| **updatedAt**      | Timestamp      | Ja      |                                                                    |
 
 **Status-Bedeutung:**
 
@@ -183,15 +186,15 @@ CREATE INDEX idx_order_group_seller ON order_group(sellerId, status);
 
 ### 2.3 OrderItem (Einzelne Artikel in Bestellung)
 
-| Feld | Typ | Pflicht | Bedeutung |
-|------|-----|---------|-----------|
-| **id** | UUID | Ja | Primärschlüssel |
-| **orderGroupId** | UUID | Ja | Zu welcher OrderGroup |
-| **variantId** | UUID | Ja | Welche Variante (aus Modul 02) |
-| **quantity** | Integer | Ja | Anzahl |
-| **pricePerUnit** | Decimal (10,2) | Ja | Preis zum Zeitpunkt der Bestellung |
-| **subtotal** | Decimal (10,2) | Ja | quantity × pricePerUnit |
-| **product_snapshot** | JSONB | Ja | Produkt-Daten (Name, Bild, etc.) als Backup |
+| Feld                 | Typ            | Pflicht | Bedeutung                                   |
+| -------------------- | -------------- | ------- | ------------------------------------------- |
+| **id**               | UUID           | Ja      | Primärschlüssel                             |
+| **orderGroupId**     | UUID           | Ja      | Zu welcher OrderGroup                       |
+| **variantId**        | UUID           | Ja      | Welche Variante (aus Modul 02)              |
+| **quantity**         | Integer        | Ja      | Anzahl                                      |
+| **pricePerUnit**     | Decimal (10,2) | Ja      | Preis zum Zeitpunkt der Bestellung          |
+| **subtotal**         | Decimal (10,2) | Ja      | quantity × pricePerUnit                     |
+| **product_snapshot** | JSONB          | Ja      | Produkt-Daten (Name, Bild, etc.) als Backup |
 
 **Warum product_snapshot?**
 
@@ -234,16 +237,16 @@ CREATE INDEX idx_order_item_variant ON order_item(variantId);
 
 Protokolliert alle Status-Änderungen.
 
-| Feld | Typ | Pflicht | Bedeutung |
-|------|-----|---------|-----------|
-| **id** | UUID | Ja | Primärschlüssel |
-| **orderId** | UUID | Nein | Wenn Order-Status |
-| **orderGroupId** | UUID | Nein | Wenn OrderGroup-Status |
-| **oldStatus** | String | Nein | Vorheriger Status |
-| **newStatus** | String | Ja | Neuer Status |
-| **changedBy** | UUID | Nein | User-ID (Verkäufer, Admin, System) |
-| **reason** | Text | Nein | Optional: Begründung |
-| **createdAt** | Timestamp | Ja | Wann geändert |
+| Feld             | Typ       | Pflicht | Bedeutung                          |
+| ---------------- | --------- | ------- | ---------------------------------- |
+| **id**           | UUID      | Ja      | Primärschlüssel                    |
+| **orderId**      | UUID      | Nein    | Wenn Order-Status                  |
+| **orderGroupId** | UUID      | Nein    | Wenn OrderGroup-Status             |
+| **oldStatus**    | String    | Nein    | Vorheriger Status                  |
+| **newStatus**    | String    | Ja      | Neuer Status                       |
+| **changedBy**    | UUID      | Nein    | User-ID (Verkäufer, Admin, System) |
+| **reason**       | Text      | Nein    | Optional: Begründung               |
+| **createdAt**    | Timestamp | Ja      | Wann geändert                      |
 
 **Beispiel:**
 
@@ -262,18 +265,18 @@ Protokolliert alle Status-Änderungen.
 
 ### 2.5 Return (Rücksendungen)
 
-| Feld | Typ | Pflicht | Bedeutung |
-|------|-----|---------|-----------|
-| **id** | UUID | Ja | Primärschlüssel |
-| **orderGroupId** | UUID | Ja | Welche OrderGroup |
-| **requestedBy** | UUID | Ja | Käufer |
-| **status** | Enum | Ja | REQUESTED / APPROVED / REJECTED / RECEIVED / REFUNDED |
-| **reason** | Text | Ja | Grund für Rücksendung |
-| **items** | JSONB | Ja | Welche Items (kann Teil-Rücksendung sein) |
-| **refundAmount** | Decimal (10,2) | Ja | Rückerstattungsbetrag |
-| **adminNotes** | Text | Nein | Interne Notizen |
-| **createdAt** | Timestamp | Ja | |
-| **updatedAt** | Timestamp | Ja | |
+| Feld             | Typ            | Pflicht | Bedeutung                                             |
+| ---------------- | -------------- | ------- | ----------------------------------------------------- |
+| **id**           | UUID           | Ja      | Primärschlüssel                                       |
+| **orderGroupId** | UUID           | Ja      | Welche OrderGroup                                     |
+| **requestedBy**  | UUID           | Ja      | Käufer                                                |
+| **status**       | Enum           | Ja      | REQUESTED / APPROVED / REJECTED / RECEIVED / REFUNDED |
+| **reason**       | Text           | Ja      | Grund für Rücksendung                                 |
+| **items**        | JSONB          | Ja      | Welche Items (kann Teil-Rücksendung sein)             |
+| **refundAmount** | Decimal (10,2) | Ja      | Rückerstattungsbetrag                                 |
+| **adminNotes**   | Text           | Nein    | Interne Notizen                                       |
+| **createdAt**    | Timestamp      | Ja      |                                                       |
+| **updatedAt**    | Timestamp      | Ja      |                                                       |
 
 **Status-Flow:**
 
@@ -320,49 +323,49 @@ REFUNDED   → Geld wurde erstattet
 
 4. Order erstellen:
    BEGIN TRANSACTION;
-   
+
    a) Erstelle Order:
       INSERT INTO orders (
         userId, orderNumber, status, paymentStatus,
         subtotal, shippingCost, tax, total,
         shippingAddress, ...
       ) VALUES (...)
-   
+
    b) Für jeden Verkäufer → OrderGroup erstellen:
       for (sellerId, sellerItems) in itemsBySeller:
-        
+
         INSERT INTO order_group (
           orderId, sellerId, status, subtotal, ...
         ) VALUES (...)
-        
+
         c) OrderItems erstellen:
            for item in sellerItems:
-             
+
              # Produkt-Snapshot erstellen
              snapshot = {
                productId: item.variant.product.id,
                productName: item.variant.product.name,
                ...
              }
-             
+
              INSERT INTO order_item (
                orderGroupId, variantId, quantity,
                pricePerUnit, subtotal, product_snapshot
              ) VALUES (...)
-   
+
    d) Lagerbestand finalisieren:
       for item in items:
-        
+
         # Stock abziehen, Reservierung aufheben
         UPDATE variant
         SET stock = stock - item.quantity,
             reserved = reserved - item.quantity
         WHERE id = item.variantId
-   
+
    e) Warenkorb leeren:
       DELETE FROM cart_item WHERE cartId = :cartId
       DELETE FROM cart WHERE id = :cartId
-   
+
    COMMIT;
 
 5. E-Mail senden (Modul 10):
@@ -479,8 +482,8 @@ REFUNDED   → Geld wurde erstattet
     "status": "SHIPPED",
     "paymentStatus": "PAID",
     "subtotal": 59.98,
-    "shippingCost": 4.90,
-    "tax": 11.40,
+    "shippingCost": 4.9,
+    "tax": 11.4,
     "total": 76.28,
     "shippingAddress": {
       "firstName": "Max",
@@ -590,10 +593,10 @@ Erlaubte Übergänge:
 
 3. Order-Status aktualisieren:
    allGroups = SELECT * FROM order_group WHERE orderId = orderGroup.orderId
-   
+
    if (all groups have status SHIPPED):
      UPDATE orders SET status = 'SHIPPED' WHERE id = orderGroup.orderId
-   
+
    if (all groups have status DELIVERED):
      UPDATE orders SET status = 'DELIVERED' WHERE id = orderGroup.orderId
 
@@ -602,7 +605,7 @@ Erlaubte Übergänge:
      # Berechne Provision
      commission = calculateCommission(orderGroup.total)
      netAmount = orderGroup.total - commission
-     
+
      # Erstelle Payout
      INSERT INTO payout (
        sellerId, orderGroupId,
@@ -795,7 +798,7 @@ STATTDESSEN:
      UPDATE variant
      SET stock = stock + item.quantity
      WHERE id = item.variantId
-  
+
   3. Zahlung erstatten (Modul 07)
   4. E-Mail an Kunde & Verkäufer
 ```
@@ -889,6 +892,7 @@ Immer über OrderGroup-Updates.
 ---
 
 **Der Entwickler entscheidet:**
+
 - Backend-Technologie & Framework
 - Datenbank (PostgreSQL empfohlen)
 - Sequence-Strategie für Order-Number

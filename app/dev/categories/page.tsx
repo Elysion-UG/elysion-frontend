@@ -22,17 +22,33 @@ async function call(method: string, path: string, body?: unknown, token?: string
   const headers: Record<string, string> = { "Content-Type": "application/json" }
   if (token) headers["Authorization"] = `Bearer ${token}`
   const res = await fetch(`${API}${path}`, {
-    method, headers, credentials: "include",
+    method,
+    headers,
+    credentials: "include",
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
   const text = await res.text()
-  try { return { status: res.status, data: JSON.parse(text) } }
-  catch { return { status: res.status, data: text } }
+  try {
+    return { status: res.status, data: JSON.parse(text) }
+  } catch {
+    return { status: res.status, data: text }
+  }
 }
 
-function EndpointCard({ method, path, auth, description, children, onExecute }: {
-  method: string; path: string; auth: string; description: string
-  children?: React.ReactNode; onExecute: () => Promise<unknown>
+function EndpointCard({
+  method,
+  path,
+  auth,
+  description,
+  children,
+  onExecute,
+}: {
+  method: string
+  path: string
+  auth: string
+  description: string
+  children?: React.ReactNode
+  onExecute: () => Promise<unknown>
 }) {
   const [loading, setLoading] = useState(false)
   const [response, setResponse] = useState<unknown>(null)
@@ -55,20 +71,31 @@ function EndpointCard({ method, path, auth, description, children, onExecute }: 
   return (
     <Card className="mb-4">
       <CardHeader className="pb-3">
-        <CardTitle className="flex flex-wrap items-center gap-2 text-sm font-mono">
-          <span className={`px-2 py-0.5 rounded text-xs font-bold ${METHOD_COLORS[method] ?? "bg-gray-100"}`}>{method}</span>
+        <CardTitle className="flex flex-wrap items-center gap-2 font-mono text-sm">
+          <span
+            className={`rounded px-2 py-0.5 text-xs font-bold ${METHOD_COLORS[method] ?? "bg-gray-100"}`}
+          >
+            {method}
+          </span>
           <span className="text-slate-700">{path}</span>
-          <span className="ml-auto text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">{auth}</span>
+          <span className="ml-auto rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-400">
+            {auth}
+          </span>
         </CardTitle>
         <CardDescription className="text-xs">{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {children}
-        <Button size="sm" onClick={execute} disabled={loading} className="bg-teal-600 hover:bg-teal-700">
-          {loading && <Loader2 className="w-3 h-3 animate-spin mr-1" />} Execute
+        <Button
+          size="sm"
+          onClick={execute}
+          disabled={loading}
+          className="bg-teal-600 hover:bg-teal-700"
+        >
+          {loading && <Loader2 className="mr-1 h-3 w-3 animate-spin" />} Execute
         </Button>
         {response !== null && (
-          <pre className="mt-3 p-3 bg-slate-50 rounded text-xs overflow-auto max-h-60 whitespace-pre-wrap">
+          <pre className="mt-3 max-h-60 overflow-auto whitespace-pre-wrap rounded bg-slate-50 p-3 text-xs">
             {JSON.stringify(response, null, 2)}
           </pre>
         )}
@@ -99,12 +126,15 @@ export default function DevCategoriesPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <Toaster position="bottom-right" richColors />
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <Link href="/dev" className="inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700 mb-6">
-          <ArrowLeft className="w-4 h-4" /> Back to Dev Index
+      <div className="mx-auto max-w-3xl px-4 py-8">
+        <Link
+          href="/dev"
+          className="mb-6 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Dev Index
         </Link>
-        <h1 className="text-2xl font-bold text-slate-800 mb-1">Categories Endpoints</h1>
-        <p className="text-sm text-slate-500 mb-6">6 endpoints — category management</p>
+        <h1 className="mb-1 text-2xl font-bold text-slate-800">Categories Endpoints</h1>
+        <p className="mb-6 text-sm text-slate-500">6 endpoints — category management</p>
 
         <Card className="mb-6 border-teal-200 bg-teal-50">
           <CardHeader className="pb-2">
@@ -113,33 +143,43 @@ export default function DevCategoriesPage() {
           <CardContent>
             <Input
               value={token}
-              onChange={e => setToken(e.target.value)}
+              onChange={(e) => setToken(e.target.value)}
               placeholder="eyJhbGci... (paste admin token)"
-              className="font-mono text-xs bg-white"
+              className="bg-white font-mono text-xs"
             />
           </CardContent>
         </Card>
 
         {/* ── Public Endpoints ────────────────────────────────────────────── */}
-        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">Public</h2>
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Public
+        </h2>
 
         <EndpointCard
-          method="GET" path="/api/v1/categories" auth="PUBLIC"
+          method="GET"
+          path="/api/v1/categories"
+          auth="PUBLIC"
           description="List all categories as a flat array with id, name, slug, parentId, and isActive."
           onExecute={() => call("GET", "/api/v1/categories")}
         />
 
         <EndpointCard
-          method="GET" path="/api/v1/categories/tree" auth="PUBLIC"
+          method="GET"
+          path="/api/v1/categories/tree"
+          auth="PUBLIC"
           description="Get category hierarchy as a nested tree structure."
           onExecute={() => call("GET", "/api/v1/categories/tree")}
         />
 
         {/* ── Admin Endpoints ──────────────────────────────────────────────── */}
-        <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mt-6 mb-3">Admin</h2>
+        <h2 className="mb-3 mt-6 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Admin
+        </h2>
 
         <EndpointCard
-          method="POST" path="/api/v1/admin/categories" auth="ADMIN"
+          method="POST"
+          path="/api/v1/admin/categories"
+          auth="ADMIN"
           description="Create a new category. name and slug are required; parentId and description are optional."
           onExecute={() => {
             const body: Record<string, string> = { name: createName, slug: createSlug }
@@ -151,25 +191,47 @@ export default function DevCategoriesPage() {
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-xs">Name *</Label>
-              <Input value={createName} onChange={e => setCreateName(e.target.value)} placeholder="Electronics" className="h-8 text-xs" />
+              <Input
+                value={createName}
+                onChange={(e) => setCreateName(e.target.value)}
+                placeholder="Electronics"
+                className="h-8 text-xs"
+              />
             </div>
             <div>
               <Label className="text-xs">Slug *</Label>
-              <Input value={createSlug} onChange={e => setCreateSlug(e.target.value)} placeholder="electronics" className="h-8 text-xs" />
+              <Input
+                value={createSlug}
+                onChange={(e) => setCreateSlug(e.target.value)}
+                placeholder="electronics"
+                className="h-8 text-xs"
+              />
             </div>
             <div>
               <Label className="text-xs">Parent ID (optional)</Label>
-              <Input value={createParentId} onChange={e => setCreateParentId(e.target.value)} placeholder="uuid of parent" className="h-8 text-xs" />
+              <Input
+                value={createParentId}
+                onChange={(e) => setCreateParentId(e.target.value)}
+                placeholder="uuid of parent"
+                className="h-8 text-xs"
+              />
             </div>
             <div>
               <Label className="text-xs">Description (optional)</Label>
-              <Input value={createDesc} onChange={e => setCreateDesc(e.target.value)} placeholder="Category description" className="h-8 text-xs" />
+              <Input
+                value={createDesc}
+                onChange={(e) => setCreateDesc(e.target.value)}
+                placeholder="Category description"
+                className="h-8 text-xs"
+              />
             </div>
           </div>
         </EndpointCard>
 
         <EndpointCard
-          method="PATCH" path="/api/v1/admin/categories/{id}" auth="ADMIN"
+          method="PATCH"
+          path="/api/v1/admin/categories/{id}"
+          auth="ADMIN"
           description="Update an existing category. All body fields are optional."
           onExecute={() => {
             const body: Record<string, string> = {}
@@ -182,42 +244,80 @@ export default function DevCategoriesPage() {
           <div className="grid grid-cols-2 gap-2">
             <div className="col-span-2">
               <Label className="text-xs">Category ID *</Label>
-              <Input value={updateId} onChange={e => setUpdateId(e.target.value)} placeholder="uuid" className="h-8 text-xs font-mono" />
+              <Input
+                value={updateId}
+                onChange={(e) => setUpdateId(e.target.value)}
+                placeholder="uuid"
+                className="h-8 font-mono text-xs"
+              />
             </div>
             <div>
               <Label className="text-xs">Name (optional)</Label>
-              <Input value={updateName} onChange={e => setUpdateName(e.target.value)} placeholder="New name" className="h-8 text-xs" />
+              <Input
+                value={updateName}
+                onChange={(e) => setUpdateName(e.target.value)}
+                placeholder="New name"
+                className="h-8 text-xs"
+              />
             </div>
             <div>
               <Label className="text-xs">Slug (optional)</Label>
-              <Input value={updateSlug} onChange={e => setUpdateSlug(e.target.value)} placeholder="new-slug" className="h-8 text-xs" />
+              <Input
+                value={updateSlug}
+                onChange={(e) => setUpdateSlug(e.target.value)}
+                placeholder="new-slug"
+                className="h-8 text-xs"
+              />
             </div>
             <div className="col-span-2">
               <Label className="text-xs">Description (optional)</Label>
-              <Input value={updateDesc} onChange={e => setUpdateDesc(e.target.value)} placeholder="Updated description" className="h-8 text-xs" />
+              <Input
+                value={updateDesc}
+                onChange={(e) => setUpdateDesc(e.target.value)}
+                placeholder="Updated description"
+                className="h-8 text-xs"
+              />
             </div>
           </div>
         </EndpointCard>
 
         <EndpointCard
-          method="PATCH" path="/api/v1/admin/categories/{id}/deactivate" auth="ADMIN"
+          method="PATCH"
+          path="/api/v1/admin/categories/{id}/deactivate"
+          auth="ADMIN"
           description="Deactivate a category by ID. No request body required."
-          onExecute={() => call("PATCH", `/api/v1/admin/categories/${deactivateId}/deactivate`, undefined, token)}
+          onExecute={() =>
+            call("PATCH", `/api/v1/admin/categories/${deactivateId}/deactivate`, undefined, token)
+          }
         >
           <div>
             <Label className="text-xs">Category ID *</Label>
-            <Input value={deactivateId} onChange={e => setDeactivateId(e.target.value)} placeholder="uuid" className="h-8 text-xs font-mono" />
+            <Input
+              value={deactivateId}
+              onChange={(e) => setDeactivateId(e.target.value)}
+              placeholder="uuid"
+              className="h-8 font-mono text-xs"
+            />
           </div>
         </EndpointCard>
 
         <EndpointCard
-          method="PATCH" path="/api/v1/admin/categories/{id}/activate" auth="ADMIN"
+          method="PATCH"
+          path="/api/v1/admin/categories/{id}/activate"
+          auth="ADMIN"
           description="Activate a category by ID. No request body required."
-          onExecute={() => call("PATCH", `/api/v1/admin/categories/${activateId}/activate`, undefined, token)}
+          onExecute={() =>
+            call("PATCH", `/api/v1/admin/categories/${activateId}/activate`, undefined, token)
+          }
         >
           <div>
             <Label className="text-xs">Category ID *</Label>
-            <Input value={activateId} onChange={e => setActivateId(e.target.value)} placeholder="uuid" className="h-8 text-xs font-mono" />
+            <Input
+              value={activateId}
+              onChange={(e) => setActivateId(e.target.value)}
+              placeholder="uuid"
+              className="h-8 font-mono text-xs"
+            />
           </div>
         </EndpointCard>
       </div>

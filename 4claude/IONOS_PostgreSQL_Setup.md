@@ -1,4 +1,5 @@
 # IONOS Managed PostgreSQL Setup
+
 ## Stage & Production Datenbanken
 
 **Datum:** 09.02.2026  
@@ -38,24 +39,25 @@ Du brauchst einen **separaten IONOS Cloud Account** für DBaaS!
 ### 3.1 Über DCD (Web-Interface)
 
 **Schritt 1: DBaaS-Bereich öffnen**
+
 1. Im DCD: Linkes Menü → "Database as a Service"
 2. "PostgreSQL" auswählen
 3. "+ Create Cluster" klicken
 
 **Schritt 2: Konfiguration**
 
-| Parameter | Wert (Stage) | Beschreibung |
-|-----------|--------------|--------------|
-| **Cluster Name** | `sustainability-stage-db` | Eindeutiger Name |
-| **PostgreSQL Version** | `16` (neueste) | Aktuelle stabile Version |
-| **Location** | `de/fra` (Frankfurt) | Nähe zu Deutschland |
-| **Number of Instances** | `1` | Single-Node (günstiger) |
-| **CPU Cores** | `2` | Für Stage ausreichend |
-| **RAM** | `4 GB` | Für Stage ausreichend |
-| **Storage** | `20 GB` | SSD-Storage |
-| **Connections** | `100` | Max. gleichzeitige Verbindungen |
-| **Backup Time** | `03:00 UTC` | Nachts (wenig Last) |
-| **Maintenance Window** | `Sunday 03:00-05:00 UTC` | Sonntag nachts |
+| Parameter               | Wert (Stage)              | Beschreibung                    |
+| ----------------------- | ------------------------- | ------------------------------- |
+| **Cluster Name**        | `sustainability-stage-db` | Eindeutiger Name                |
+| **PostgreSQL Version**  | `16` (neueste)            | Aktuelle stabile Version        |
+| **Location**            | `de/fra` (Frankfurt)      | Nähe zu Deutschland             |
+| **Number of Instances** | `1`                       | Single-Node (günstiger)         |
+| **CPU Cores**           | `2`                       | Für Stage ausreichend           |
+| **RAM**                 | `4 GB`                    | Für Stage ausreichend           |
+| **Storage**             | `20 GB`                   | SSD-Storage                     |
+| **Connections**         | `100`                     | Max. gleichzeitige Verbindungen |
+| **Backup Time**         | `03:00 UTC`               | Nachts (wenig Last)             |
+| **Maintenance Window**  | `Sunday 03:00-05:00 UTC`  | Sonntag nachts                  |
 
 **Schritt 3: Credentials festlegen**
 
@@ -66,6 +68,7 @@ Database Password: [SICHERES PASSWORT GENERIEREN]
 ```
 
 **Passwort-Anforderungen:**
+
 - Min. 10 Zeichen
 - Groß- & Kleinbuchstaben
 - Zahlen & Sonderzeichen
@@ -80,6 +83,7 @@ Database Password: [SICHERES PASSWORT GENERIEREN]
 **Schritt 5: Connection Details notieren**
 
 Nach Erstellung:
+
 ```
 Host:     <cluster-id>.db.ionos.com
 Port:     5432
@@ -125,17 +129,18 @@ curl -X POST https://api.ionos.com/databases/postgresql/clusters \
 
 **Wiederhole Schritt 3 mit folgenden Unterschieden:**
 
-| Parameter | Wert (Production) |
-|-----------|-------------------|
-| **Cluster Name** | `sustainability-prod-db` |
-| **Number of Instances** | `2-3` (Multi-Node für HA) |
-| **CPU Cores** | `4` |
-| **RAM** | `8 GB` |
-| **Storage** | `50 GB` (wächst mit Bedarf) |
-| **Database Name** | `sustainability_prod` |
-| **Database User** | `prod_admin` |
+| Parameter               | Wert (Production)           |
+| ----------------------- | --------------------------- |
+| **Cluster Name**        | `sustainability-prod-db`    |
+| **Number of Instances** | `2-3` (Multi-Node für HA)   |
+| **CPU Cores**           | `4`                         |
+| **RAM**                 | `8 GB`                      |
+| **Storage**             | `50 GB` (wächst mit Bedarf) |
+| **Database Name**       | `sustainability_prod`       |
+| **Database User**       | `prod_admin`                |
 
 **Wichtig für Production:**
+
 - ✅ Multi-Node aktivieren (Failover!)
 - ✅ Größere Ressourcen
 - ✅ Separates Passwort (nicht gleich wie Stage!)
@@ -147,6 +152,7 @@ curl -X POST https://api.ionos.com/databases/postgresql/clusters \
 ### 5.1 Automatische Backups
 
 **Bereits konfiguriert:**
+
 - Täglich um 03:00 UTC
 - Aufbewahrung: 7 Tage
 - Point-in-Time Recovery: Ja
@@ -154,11 +160,13 @@ curl -X POST https://api.ionos.com/databases/postgresql/clusters \
 ### 5.2 Manuelles Backup erstellen
 
 **Über DCD:**
+
 1. Cluster auswählen
 2. "Backups" Tab
 3. "Create Backup Now"
 
 **Über API:**
+
 ```bash
 curl -X POST https://api.ionos.com/databases/postgresql/clusters/{clusterId}/backups \
   -H "Authorization: Bearer $IONOS_TOKEN"
@@ -167,6 +175,7 @@ curl -X POST https://api.ionos.com/databases/postgresql/clusters/{clusterId}/bac
 ### 5.3 Restore durchführen
 
 **Über DCD:**
+
 1. Cluster auswählen
 2. "Backups" → Backup auswählen
 3. "Restore" klicken
@@ -177,6 +186,7 @@ curl -X POST https://api.ionos.com/databases/postgresql/clusters/{clusterId}/bac
 ### 5.4 Backup-Download (Export)
 
 **Für lokale Sicherung:**
+
 ```bash
 # Mit pg_dump über Netzwerk
 pg_dump -h <cluster-id>.db.ionos.com \
@@ -206,6 +216,7 @@ brew install postgresql
 ```
 
 **Verbindung testen:**
+
 ```bash
 psql "postgresql://stage_admin:PASSWORD@cluster-id.db.ionos.com:5432/sustainability_stage?sslmode=require"
 ```
@@ -242,6 +253,7 @@ CREATE INDEX idx_users_email ON users(email);
 ```
 
 **Schema laden:**
+
 ```bash
 psql "postgresql://..." < schema.sql
 ```
@@ -271,6 +283,7 @@ DATABASE_URL="postgresql://prod_admin:PASSWORD@cluster-id-prod.db.ionos.com:5432
 ### 7.3 Sicherheit
 
 **NIEMALS committen!**
+
 - `.env*` in `.gitignore`
 - Secrets in CI/CD-Umgebungsvariablen
 - Entwickler erhalten Connection Strings separat
@@ -282,6 +295,7 @@ DATABASE_URL="postgresql://prod_admin:PASSWORD@cluster-id-prod.db.ionos.com:5432
 ### 8.1 Monitoring aktivieren
 
 **Im DCD:**
+
 1. Cluster auswählen
 2. "Metrics" Tab
 3. Überwache:
@@ -294,6 +308,7 @@ DATABASE_URL="postgresql://prod_admin:PASSWORD@cluster-id-prod.db.ionos.com:5432
 ### 8.2 Alerts einrichten
 
 **Empfohlene Alerts:**
+
 - CPU > 80% für 5 Min
 - RAM > 90% für 5 Min
 - Storage > 85%
@@ -302,6 +317,7 @@ DATABASE_URL="postgresql://prod_admin:PASSWORD@cluster-id-prod.db.ionos.com:5432
 ### 8.3 Maintenance Windows
 
 **Bereits konfiguriert:**
+
 - Sonntag 03:00-05:00 UTC
 - Automatische Updates & Patches
 - Downtime: ~wenige Sekunden (Failover bei Multi-Node)
@@ -313,6 +329,7 @@ DATABASE_URL="postgresql://prod_admin:PASSWORD@cluster-id-prod.db.ionos.com:5432
 ### 9.1 Vertikal skalieren (mehr Ressourcen)
 
 **Im DCD:**
+
 1. Cluster auswählen
 2. "Edit" klicken
 3. CPU/RAM/Storage erhöhen
@@ -323,6 +340,7 @@ DATABASE_URL="postgresql://prod_admin:PASSWORD@cluster-id-prod.db.ionos.com:5432
 ### 9.2 Horizontal skalieren (mehr Nodes)
 
 **Für Production:**
+
 1. Von 1 → 2-3 Nodes
 2. Automatisches Failover aktiviert
 3. Read-Replicas für Lastenverteilung
@@ -400,6 +418,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO analytics_readonly;
 ### Problem: Verbindung schlägt fehl
 
 **Lösung:**
+
 1. SSL-Mode prüfen: `?sslmode=require`
 2. IP-Whitelist prüfen (Firewall)
 3. Port 5432 offen?
@@ -408,6 +427,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO analytics_readonly;
 ### Problem: Langsame Queries
 
 **Lösung:**
+
 1. Query-Analyse: `EXPLAIN ANALYZE SELECT ...`
 2. Indizes fehlen?
 3. Mehr RAM/CPU nötig? (skalieren)
@@ -416,6 +436,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO analytics_readonly;
 ### Problem: Out of Storage
 
 **Lösung:**
+
 1. Storage erhöhen (DCD)
 2. Alte Daten archivieren
 3. Backups extern speichern
@@ -425,11 +446,13 @@ GRANT SELECT ON ALL TABLES IN SCHEMA public TO analytics_readonly;
 ## 13. Support
 
 **IONOS Support:**
+
 - Cloud Panel: "Support" → Ticket erstellen
 - Telefon: +49 721 170 5436
 - Dokumentation: https://docs.ionos.com/cloud/databases/postgresql
 
 **PostgreSQL Community:**
+
 - Forum: https://www.postgresql.org/community/
 - Stack Overflow: Tag `postgresql`
 

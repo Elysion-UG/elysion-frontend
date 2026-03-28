@@ -1,4 +1,5 @@
 # Modul 08: File Upload & Storage
+
 ## Spezifikation & Requirements
 
 **Verantwortlichkeit:** Datei-Upload, Speicherung, CDN-Verwaltung  
@@ -23,21 +24,23 @@ Dieses Modul verwaltet alle Datei-Uploads der Plattform: Produktbilder, Zertifik
 
 ### Unterstützte Dateitypen:
 
-| Kategorie | Formate | Max. Größe | Verwendung |
-|-----------|---------|------------|------------|
-| **Produktbilder** | JPEG, PNG, WEBP | 5 MB | Modul 02 |
-| **Zertifikate** | PDF, JPEG, PNG | 10 MB | Modul 03 |
-| **Profilbilder** | JPEG, PNG | 2 MB | Modul 01 |
-| **Shop-Logos** | JPEG, PNG, SVG | 1 MB | Modul 02 |
+| Kategorie         | Formate         | Max. Größe | Verwendung |
+| ----------------- | --------------- | ---------- | ---------- |
+| **Produktbilder** | JPEG, PNG, WEBP | 5 MB       | Modul 02   |
+| **Zertifikate**   | PDF, JPEG, PNG  | 10 MB      | Modul 03   |
+| **Profilbilder**  | JPEG, PNG       | 2 MB       | Modul 01   |
+| **Shop-Logos**    | JPEG, PNG, SVG  | 1 MB       | Modul 02   |
 
 ### Schnittstellen zu anderen Modulen:
 
 **Wird genutzt von:**
+
 - Modul 01: Profilbilder
 - Modul 02: Produktbilder, Shop-Logos
 - Modul 03: Zertifikats-Dokumente
 
 **Bereitstellt:**
+
 - `uploadFile(file, options)` → URL
 - `deleteFile(url)` → Boolean
 - `getPublicUrl(filename)` → URL
@@ -52,21 +55,21 @@ Dieses Modul verwaltet alle Datei-Uploads der Plattform: Produktbilder, Zertifik
 
 Wenn Tracking gewünscht:
 
-| Feld | Typ | Pflicht | Bedeutung |
-|------|-----|---------|-----------|
-| **id** | UUID | Ja | Primärschlüssel |
-| **filename** | String | Ja | Original-Dateiname |
-| **storedFilename** | String | Ja | Tatsächlicher Dateiname (UUID-basiert) |
-| **mimeType** | String | Ja | "image/jpeg", "application/pdf", etc. |
-| **size** | Integer | Ja | Dateigröße in Bytes |
-| **url** | String | Ja | Öffentliche URL |
-| **storageProvider** | Enum | Ja | LOCAL / S3 / CLOUDINARY / GCS |
-| **category** | String | Ja | "product_image", "certificate", "profile", etc. |
-| **uploadedBy** | UUID | Nein | Welcher User (falls relevant) |
-| **relatedEntityType** | String | Nein | "product", "certificate", etc. |
-| **relatedEntityId** | UUID | Nein | ID der zugehörigen Entität |
-| **isDeleted** | Boolean | Ja | Soft-Delete |
-| **createdAt** | Timestamp | Ja | |
+| Feld                  | Typ       | Pflicht | Bedeutung                                       |
+| --------------------- | --------- | ------- | ----------------------------------------------- |
+| **id**                | UUID      | Ja      | Primärschlüssel                                 |
+| **filename**          | String    | Ja      | Original-Dateiname                              |
+| **storedFilename**    | String    | Ja      | Tatsächlicher Dateiname (UUID-basiert)          |
+| **mimeType**          | String    | Ja      | "image/jpeg", "application/pdf", etc.           |
+| **size**              | Integer   | Ja      | Dateigröße in Bytes                             |
+| **url**               | String    | Ja      | Öffentliche URL                                 |
+| **storageProvider**   | Enum      | Ja      | LOCAL / S3 / CLOUDINARY / GCS                   |
+| **category**          | String    | Ja      | "product_image", "certificate", "profile", etc. |
+| **uploadedBy**        | UUID      | Nein    | Welcher User (falls relevant)                   |
+| **relatedEntityType** | String    | Nein    | "product", "certificate", etc.                  |
+| **relatedEntityId**   | UUID      | Nein    | ID der zugehörigen Entität                      |
+| **isDeleted**         | Boolean   | Ja      | Soft-Delete                                     |
+| **createdAt**         | Timestamp | Ja      |                                                 |
 
 **Indizes:**
 
@@ -102,7 +105,7 @@ relatedEntityId: "uuid" (optional)
    if (category == 'product_image' || category == 'shop_logo'):
      if (req.user.role != 'SELLER'):
        throw 403 Forbidden
-   
+
    if (category == 'certificate'):
      if (req.user.role != 'SELLER'):
        throw 403 Forbidden
@@ -114,7 +117,7 @@ relatedEntityId: "uuid" (optional)
      'profile': ['image/jpeg', 'image/png'],
      'shop_logo': ['image/jpeg', 'image/png', 'image/svg+xml']
    }
-   
+
    if (file.mimeType not in allowedTypes[category]):
      throw 400 Bad Request "Dateityp nicht erlaubt"
 
@@ -125,7 +128,7 @@ relatedEntityId: "uuid" (optional)
      'profile': 2 * 1024 * 1024,          # 2 MB
      'shop_logo': 1 * 1024 * 1024         # 1 MB
    }
-   
+
    if (file.size > maxSizes[category]):
      throw 400 Bad Request "Datei zu groß"
 
@@ -143,17 +146,17 @@ relatedEntityId: "uuid" (optional)
    # Beispiel: "a3f7c9e1-4b2d-4e8f-9a1c-7f3e5d8b2c4f.jpg"
 
 2. Datei speichern (je nach Provider):
-   
+
    if (STORAGE_PROVIDER == 'LOCAL'):
      filepath = `/uploads/${category}/${storedFilename}`
      saveToFilesystem(file, filepath)
      url = `${BASE_URL}/uploads/${category}/${storedFilename}`
-   
+
    else if (STORAGE_PROVIDER == 'S3'):
      key = `${category}/${storedFilename}`
      s3.upload(bucket, key, file)
      url = `https://${bucket}.s3.amazonaws.com/${key}`
-   
+
    else if (STORAGE_PROVIDER == 'CLOUDINARY'):
      result = cloudinary.uploader.upload(file, {
        folder: category,
@@ -163,12 +166,12 @@ relatedEntityId: "uuid" (optional)
 
 3. Bild optimieren (wenn Bild):
    if (file.mimeType.startsWith('image/')):
-     
+
      # Thumbnails generieren
      if (category == 'product_image'):
        generateThumbnail(file, 200, 200)  # Klein
        generateThumbnail(file, 800, 800)  # Mittel
-     
+
      # WebP-Variante erstellen (bessere Kompression)
      convertToWebP(file)
 
@@ -212,21 +215,21 @@ relatedEntityId: "uuid" (optional)
 ```
 1. File holen & validieren:
    file = SELECT * FROM file WHERE id = :id
-   
+
    if (!file):
      throw 404 Not Found
-   
+
    if (file.uploadedBy != req.user.userId && req.user.role != 'ADMIN'):
      throw 403 Forbidden
 
 2. Aus Storage löschen:
-   
+
    if (file.storageProvider == 'LOCAL'):
      deleteFromFilesystem(file.url)
-   
+
    else if (file.storageProvider == 'S3'):
      s3.deleteObject(bucket, key)
-   
+
    else if (file.storageProvider == 'CLOUDINARY'):
      cloudinary.uploader.destroy(file.storedFilename)
 
@@ -274,11 +277,13 @@ relatedEntityId: "uuid" (optional)
 ### 4.1 Local Filesystem (Entwicklung)
 
 **Vorteile:**
+
 - Einfach
 - Keine Kosten
 - Kein Setup
 
 **Nachteile:**
+
 - Nicht skalierbar
 - Kein CDN
 - Backup manuell
@@ -302,6 +307,7 @@ Nginx-Konfiguration:
 ### 4.2 AWS S3 (Production - empfohlen)
 
 **Vorteile:**
+
 - Unbegrenzt skalierbar
 - Günstig (~0.023 USD/GB)
 - Hoch verfügbar
@@ -352,12 +358,14 @@ url = `https://d123abc.cloudfront.net/product_image/a3f7c9e1.jpg`
 ### 4.3 Cloudinary (Alternative)
 
 **Vorteile:**
+
 - Automatische Bild-Optimierung
 - On-the-fly Transformationen
 - CDN inklusive
 - Einfache API
 
 **Nachteile:**
+
 - Teurer als S3
 - Vendor Lock-in
 
@@ -459,12 +467,7 @@ await sharp(inputFile)
 **Frontend-Optimierung:**
 
 ```html
-<img 
-  src="placeholder.jpg" 
-  data-src="a3f7c9e1.jpg" 
-  loading="lazy"
-  alt="Produkt"
->
+<img src="placeholder.jpg" data-src="a3f7c9e1.jpg" loading="lazy" alt="Produkt" />
 ```
 
 ---
@@ -484,7 +487,7 @@ RICHTIG:
   # MIME-Type prüfen (aus Header)
   if (file.mimeType != 'image/jpeg'):
     throw Error
-  
+
   # Magic Bytes prüfen (Datei-Inhalt)
   if (readFirstBytes(file) != JPEG_MAGIC_BYTES):
     throw Error
@@ -565,7 +568,7 @@ S3 + CloudFront:
   1. S3-Bucket: myplatform-uploads
   2. CloudFront Distribution: d123abc.cloudfront.net
   3. Custom Domain: cdn.myplatform.com
-  
+
 URLs:
   Statt: https://s3.../product_image/a3f7c9e1.jpg
   Nutze: https://cdn.myplatform.com/product_image/a3f7c9e1.jpg
@@ -627,7 +630,7 @@ Lösung: Cleanup-Job (wöchentlich)
    productImageUrls = SELECT url FROM product_images
    certificateUrls = SELECT document_url FROM certificate
    allReferencedUrls = UNION(productImageUrls, certificateUrls, ...)
-   
+
    orphanedFiles = SELECT * FROM file
                    WHERE url NOT IN (allReferencedUrls)
                    AND createdAt < NOW() - INTERVAL '7 days'
@@ -674,7 +677,7 @@ Wenn:
   - Upload-Fehlerrate > 5%
   - Storage > 80% voll
   - Bandbreite > Budget
-  
+
 → Alert an Admin
 ```
 
@@ -754,6 +757,7 @@ except DatabaseError:
 ---
 
 **Der Entwickler entscheidet:**
+
 - Storage-Provider (Local, S3, Cloudinary, GCS)
 - Bild-Processing-Library (Sharp, ImageMagick, Pillow)
 - CDN-Strategie

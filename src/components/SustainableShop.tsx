@@ -3,7 +3,17 @@
 import type React from "react"
 
 import { useState, useMemo } from "react"
-import { Leaf, Heart, Recycle, ArrowUpDown, Star, ChevronDown, ChevronRight, Settings, User } from "lucide-react"
+import {
+  Leaf,
+  Heart,
+  Recycle,
+  ArrowUpDown,
+  Star,
+  ChevronDown,
+  ChevronRight,
+  Settings,
+  User,
+} from "lucide-react"
 
 type Product = {
   id: number
@@ -70,7 +80,10 @@ const sustainabilityFilters: Record<string, SustainabilityFilter> = {
   politisch: {
     label: "Politische Nachhaltigkeit",
     icon: Leaf,
-    subpoints: ["Demokratische Strukturen, Rechtsstaatlichkeit, Mitbestimmung", "Firmensitz und Produktionsstandorte"],
+    subpoints: [
+      "Demokratische Strukturen, Rechtsstaatlichkeit, Mitbestimmung",
+      "Firmensitz und Produktionsstandorte",
+    ],
   },
   technologisch: {
     label: "Technologische Nachhaltigkeit",
@@ -101,7 +114,14 @@ const products: Product[] = [
     price: 29.99,
     category: "T-Shirts",
     images: ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=500&h=500&fit=crop"],
-    attributes: ["produktqualitaet", "oekologisch", "sozial", "oekonomisch", "technologisch", "institutionell"],
+    attributes: [
+      "produktqualitaet",
+      "oekologisch",
+      "sozial",
+      "oekonomisch",
+      "technologisch",
+      "institutionell",
+    ],
     rating: 4.8,
     reviews: 124,
     inStock: true,
@@ -448,7 +468,10 @@ export default function SustainableShop() {
   })
 
   const [sortBy, setSortBy] = useState("relevance")
-  const [expandedSections, setExpandedSections] = useState({ sustainability: false, categories: true })
+  const [expandedSections, setExpandedSections] = useState({
+    sustainability: false,
+    categories: true,
+  })
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false)
   const [expandedFilters, setExpandedFilters] = useState<Record<string, boolean>>({})
 
@@ -493,10 +516,16 @@ export default function SustainableShop() {
         if (priceRange.min > product.price || priceRange.max < product.price) {
           return false
         }
-        if (selectedColors.length > 0 && !selectedColors.some((color) => product.colors.includes(color))) {
+        if (
+          selectedColors.length > 0 &&
+          !selectedColors.some((color) => product.colors.includes(color))
+        ) {
           return false
         }
-        if (selectedSizes.length > 0 && !selectedSizes.some((size) => product.sizes.includes(size))) {
+        if (
+          selectedSizes.length > 0 &&
+          !selectedSizes.some((size) => product.sizes.includes(size))
+        ) {
           return false
         }
         if (selectedProducers.length > 0 && !selectedProducers.includes(product.brand)) {
@@ -523,7 +552,8 @@ export default function SustainableShop() {
           }
         })
 
-        const baseMatchPercentage = totalPossibleScore > 0 ? (matchScore / totalPossibleScore) * 100 : 0
+        const baseMatchPercentage =
+          totalPossibleScore > 0 ? (matchScore / totalPossibleScore) * 100 : 0
         // Add a pseudo-random offset based on product ID for consistent variation
         const randomOffset = ((product.id * 7) % 8) - 4 // Range: -4 to +3
         const matchPercentage = Math.min(100, Math.max(0, baseMatchPercentage + 30 + randomOffset))
@@ -568,13 +598,15 @@ export default function SustainableShop() {
     const filter = sustainabilityFilters[attribute as keyof typeof sustainabilityFilters]
     if (filter) {
       const Icon = filter.icon
-      return <Icon className="w-3 h-3" />
+      return <Icon className="h-3 w-3" />
     }
     return null
   }
 
   const getAttributeLabel = (attribute: string) => {
-    return sustainabilityFilters[attribute as keyof typeof sustainabilityFilters]?.label || attribute
+    return (
+      sustainabilityFilters[attribute as keyof typeof sustainabilityFilters]?.label || attribute
+    )
   }
 
   const getMatchColor = (percentage: number) => {
@@ -600,425 +632,440 @@ export default function SustainableShop() {
 
   return (
     <div>
-      <div className="grid md:grid-cols-[320px_1fr] gap-8">
-          {/* Filters Sidebar */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-            <div className="p-4 bg-slate-100 border-b border-slate-200">
-              <h2 className="text-lg font-semibold text-slate-800">Filter</h2>
-            </div>
+      <div className="grid gap-8 md:grid-cols-[320px_1fr]">
+        {/* Filters Sidebar */}
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 bg-slate-100 p-4">
+            <h2 className="text-lg font-semibold text-slate-800">Filter</h2>
+          </div>
 
-            {/* Nachhaltigkeitspräferenzen Section */}
-            <div className="border-b border-slate-200">
-              <button
-                onClick={() => toggleSection("sustainability")}
-                className="flex items-center justify-between w-full text-left p-4 hover:bg-slate-50 transition-colors"
-              >
-                <span className="font-medium text-slate-700">Nachhaltigkeitspräferenzen</span>
-                {expandedSections.sustainability ? (
-                  <ChevronDown className="w-5 h-5 text-slate-500" />
-                ) : (
-                  <ChevronRight className="w-5 h-5 text-slate-500" />
-                )}
-              </button>
-              {expandedSections.sustainability && (
-                <div className="px-4 pb-4 space-y-4">
-                  <p className="text-sm text-slate-500">
-                    Bewerten Sie, wie wichtig Ihnen jeder Nachhaltigkeitsaspekt ist.
-                  </p>
-                  {Object.entries(sustainabilityFilters).map(([key, filter]) => {
-                    const Icon = filter.icon
-                    return (
-                      <div key={key} className="space-y-2">
-                        <button
-                          onClick={() => toggleFilterExpansion(key)}
-                          className="flex items-center justify-between w-full text-left"
-                        >
-                          <div className="flex items-center gap-2">
-                            <Icon className="w-4 h-4 text-teal-600" />
-                            <span className="text-sm font-medium text-slate-700">{filter.label}</span>
-                          </div>
-                          {expandedFilters[key] ? (
-                            <ChevronDown className="w-4 h-4 text-slate-400" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4 text-slate-400" />
-                          )}
-                        </button>
-
-                        {expandedFilters[key] && (
-                          <div className="ml-6 p-2 bg-slate-50 rounded text-xs text-slate-600">
-                            <ul className="list-disc list-inside space-y-1">
-                              {filter.subpoints.map((subpoint, idx) => (
-                                <li key={idx}>{subpoint}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-2 ml-6">
-                          <input
-                            type="range"
-                            min="1"
-                            max="4"
-                            value={sustainabilityImportance[key]}
-                            onChange={(e) => handleImportanceChange(key, e.target.value)}
-                            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
-                          />
-                          <span className="text-xs text-slate-500 w-24 text-right">
-                            {getImportanceLabel(sustainabilityImportance[key])}
-                          </span>
+          {/* Nachhaltigkeitspräferenzen Section */}
+          <div className="border-b border-slate-200">
+            <button
+              onClick={() => toggleSection("sustainability")}
+              className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
+            >
+              <span className="font-medium text-slate-700">Nachhaltigkeitspräferenzen</span>
+              {expandedSections.sustainability ? (
+                <ChevronDown className="h-5 w-5 text-slate-500" />
+              ) : (
+                <ChevronRight className="h-5 w-5 text-slate-500" />
+              )}
+            </button>
+            {expandedSections.sustainability && (
+              <div className="space-y-4 px-4 pb-4">
+                <p className="text-sm text-slate-500">
+                  Bewerten Sie, wie wichtig Ihnen jeder Nachhaltigkeitsaspekt ist.
+                </p>
+                {Object.entries(sustainabilityFilters).map(([key, filter]) => {
+                  const Icon = filter.icon
+                  return (
+                    <div key={key} className="space-y-2">
+                      <button
+                        onClick={() => toggleFilterExpansion(key)}
+                        className="flex w-full items-center justify-between text-left"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-4 w-4 text-teal-600" />
+                          <span className="text-sm font-medium text-slate-700">{filter.label}</span>
                         </div>
+                        {expandedFilters[key] ? (
+                          <ChevronDown className="h-4 w-4 text-slate-400" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-slate-400" />
+                        )}
+                      </button>
+
+                      {expandedFilters[key] && (
+                        <div className="ml-6 rounded bg-slate-50 p-2 text-xs text-slate-600">
+                          <ul className="list-inside list-disc space-y-1">
+                            {filter.subpoints.map((subpoint, idx) => (
+                              <li key={idx}>{subpoint}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      <div className="ml-6 flex items-center gap-2">
+                        <input
+                          type="range"
+                          min="1"
+                          max="4"
+                          value={sustainabilityImportance[key]}
+                          onChange={(e) => handleImportanceChange(key, e.target.value)}
+                          className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-teal-600"
+                        />
+                        <span className="w-24 text-right text-xs text-slate-500">
+                          {getImportanceLabel(sustainabilityImportance[key])}
+                        </span>
                       </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
 
-            {/* Kategorien Section */}
-            <div>
-              <button
-                onClick={() => toggleSection("categories")}
-                className="flex items-center justify-between w-full text-left p-4 hover:bg-slate-50 transition-colors"
-              >
-                <span className="font-medium text-slate-700">Kategorien</span>
-                {expandedSections.categories ? (
-                  <ChevronDown className="w-5 h-5 text-slate-500" />
-                ) : (
-                  <ChevronRight className="w-5 h-5 text-slate-500" />
-                )}
-              </button>
-              {expandedSections.categories && (
-                <div className="px-4 pb-4">
-                  <div className="flex flex-col gap-1">
-                    {categories.map((category) => (
-                      <button
-                        key={category}
-                        onClick={() => setSelectedCategory(category)}
-                        className={`text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                          selectedCategory === category ? "bg-teal-600 text-white" : "text-slate-600 hover:bg-slate-100"
-                        }`}
-                      >
-                        {category}
-                      </button>
-                    ))}
+          {/* Kategorien Section */}
+          <div>
+            <button
+              onClick={() => toggleSection("categories")}
+              className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
+            >
+              <span className="font-medium text-slate-700">Kategorien</span>
+              {expandedSections.categories ? (
+                <ChevronDown className="h-5 w-5 text-slate-500" />
+              ) : (
+                <ChevronRight className="h-5 w-5 text-slate-500" />
+              )}
+            </button>
+            {expandedSections.categories && (
+              <div className="px-4 pb-4">
+                <div className="flex flex-col gap-1">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      className={`rounded-md px-3 py-2 text-left text-sm transition-colors ${
+                        selectedCategory === category
+                          ? "bg-teal-600 text-white"
+                          : "text-slate-600 hover:bg-slate-100"
+                      }`}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Price Range Section */}
+          <div className="border-t border-slate-200">
+            <button
+              onClick={() => toggleFilterSection("price")}
+              className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
+            >
+              <span className="font-medium text-slate-700">Preisspanne</span>
+              {expandedFilterSections.price ? (
+                <ChevronDown className="h-5 w-5 text-slate-500" />
+              ) : (
+                <ChevronRight className="h-5 w-5 text-slate-500" />
+              )}
+            </button>
+            {expandedFilterSections.price && (
+              <div className="space-y-4 px-4 pb-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <label className="mb-1 block text-xs text-slate-500">Min (€)</label>
+                    <input
+                      type="number"
+                      value={priceRange.min}
+                      onChange={(e) =>
+                        setPriceRange((prev) => ({ ...prev, min: Number(e.target.value) }))
+                      }
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                      placeholder="0"
+                    />
+                  </div>
+                  <span className="mt-5 text-slate-400">–</span>
+                  <div className="flex-1">
+                    <label className="mb-1 block text-xs text-slate-500">Max (€)</label>
+                    <input
+                      type="number"
+                      value={priceRange.max}
+                      onChange={(e) =>
+                        setPriceRange((prev) => ({ ...prev, max: Number(e.target.value) }))
+                      }
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                      placeholder="200"
+                    />
                   </div>
                 </div>
-              )}
-            </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="300"
+                  value={priceRange.max}
+                  onChange={(e) =>
+                    setPriceRange((prev) => ({ ...prev, max: Number(e.target.value) }))
+                  }
+                  className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-teal-600"
+                />
+              </div>
+            )}
+          </div>
 
-            {/* Price Range Section */}
-            <div className="border-t border-slate-200">
-              <button
-                onClick={() => toggleFilterSection("price")}
-                className="flex items-center justify-between w-full text-left p-4 hover:bg-slate-50 transition-colors"
-              >
-                <span className="font-medium text-slate-700">Preisspanne</span>
-                {expandedFilterSections.price ? (
-                  <ChevronDown className="w-5 h-5 text-slate-500" />
-                ) : (
-                  <ChevronRight className="w-5 h-5 text-slate-500" />
-                )}
-              </button>
-              {expandedFilterSections.price && (
-                <div className="px-4 pb-4 space-y-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex-1">
-                      <label className="text-xs text-slate-500 block mb-1">Min (€)</label>
-                      <input
-                        type="number"
-                        value={priceRange.min}
-                        onChange={(e) => setPriceRange((prev) => ({ ...prev, min: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"
-                        placeholder="0"
-                      />
-                    </div>
-                    <span className="text-slate-400 mt-5">–</span>
-                    <div className="flex-1">
-                      <label className="text-xs text-slate-500 block mb-1">Max (€)</label>
-                      <input
-                        type="number"
-                        value={priceRange.max}
-                        onChange={(e) => setPriceRange((prev) => ({ ...prev, max: Number(e.target.value) }))}
-                        className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm"
-                        placeholder="200"
-                      />
-                    </div>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="300"
-                    value={priceRange.max}
-                    onChange={(e) => setPriceRange((prev) => ({ ...prev, max: Number(e.target.value) }))}
-                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
-                  />
+          {/* Colors Section */}
+          <div className="border-t border-slate-200">
+            <button
+              onClick={() => toggleFilterSection("colors")}
+              className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
+            >
+              <span className="font-medium text-slate-700">Farben</span>
+              {expandedFilterSections.colors ? (
+                <ChevronDown className="h-5 w-5 text-slate-500" />
+              ) : (
+                <ChevronRight className="h-5 w-5 text-slate-500" />
+              )}
+            </button>
+            {expandedFilterSections.colors && (
+              <div className="px-4 pb-4">
+                <div className="flex flex-wrap gap-2">
+                  {colorOptions.map((color) => (
+                    <button
+                      key={color.name}
+                      onClick={() =>
+                        setSelectedColors((prev) =>
+                          prev.includes(color.name)
+                            ? prev.filter((c) => c !== color.name)
+                            : [...prev, color.name]
+                        )
+                      }
+                      className={`h-8 w-8 rounded-full border-2 transition-all ${
+                        selectedColors.includes(color.name)
+                          ? "border-teal-600 ring-2 ring-teal-200"
+                          : "border-slate-300"
+                      }`}
+                      style={{ backgroundColor: color.color }}
+                      title={color.name}
+                    />
+                  ))}
                 </div>
-              )}
-            </div>
-
-            {/* Colors Section */}
-            <div className="border-t border-slate-200">
-              <button
-                onClick={() => toggleFilterSection("colors")}
-                className="flex items-center justify-between w-full text-left p-4 hover:bg-slate-50 transition-colors"
-              >
-                <span className="font-medium text-slate-700">Farben</span>
-                {expandedFilterSections.colors ? (
-                  <ChevronDown className="w-5 h-5 text-slate-500" />
-                ) : (
-                  <ChevronRight className="w-5 h-5 text-slate-500" />
+                {selectedColors.length > 0 && (
+                  <p className="mt-2 text-xs text-slate-500">{selectedColors.join(", ")}</p>
                 )}
-              </button>
-              {expandedFilterSections.colors && (
-                <div className="px-4 pb-4">
-                  <div className="flex flex-wrap gap-2">
-                    {colorOptions.map((color) => (
-                      <button
-                        key={color.name}
-                        onClick={() =>
-                          setSelectedColors((prev) =>
-                            prev.includes(color.name) ? prev.filter((c) => c !== color.name) : [...prev, color.name],
+              </div>
+            )}
+          </div>
+
+          {/* Sizes Section */}
+          <div className="border-t border-slate-200">
+            <button
+              onClick={() => toggleFilterSection("sizes")}
+              className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
+            >
+              <span className="font-medium text-slate-700">Größen</span>
+              {expandedFilterSections.sizes ? (
+                <ChevronDown className="h-5 w-5 text-slate-500" />
+              ) : (
+                <ChevronRight className="h-5 w-5 text-slate-500" />
+              )}
+            </button>
+            {expandedFilterSections.sizes && (
+              <div className="px-4 pb-4">
+                <div className="flex flex-wrap gap-2">
+                  {sizeOptions.map((size) => (
+                    <button
+                      key={size}
+                      onClick={() =>
+                        setSelectedSizes((prev) =>
+                          prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size]
+                        )
+                      }
+                      className={`rounded-md border px-3 py-1 text-sm transition-colors ${
+                        selectedSizes.includes(size)
+                          ? "border-teal-600 bg-teal-600 text-white"
+                          : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Producers Section */}
+          <div className="border-t border-slate-200">
+            <button
+              onClick={() => toggleFilterSection("producers")}
+              className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
+            >
+              <span className="font-medium text-slate-700">Hersteller</span>
+              {expandedFilterSections.producers ? (
+                <ChevronDown className="h-5 w-5 text-slate-500" />
+              ) : (
+                <ChevronRight className="h-5 w-5 text-slate-500" />
+              )}
+            </button>
+            {expandedFilterSections.producers && (
+              <div className="px-4 pb-4">
+                <div className="flex max-h-48 flex-col gap-2 overflow-y-auto">
+                  {producerOptions.map((producer) => (
+                    <label key={producer} className="flex cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedProducers.includes(producer)}
+                        onChange={() =>
+                          setSelectedProducers((prev) =>
+                            prev.includes(producer)
+                              ? prev.filter((p) => p !== producer)
+                              : [...prev, producer]
                           )
                         }
-                        className={`w-8 h-8 rounded-full border-2 transition-all ${
-                          selectedColors.includes(color.name)
-                            ? "border-teal-600 ring-2 ring-teal-200"
-                            : "border-slate-300"
-                        }`}
-                        style={{ backgroundColor: color.color }}
-                        title={color.name}
+                        className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
                       />
-                    ))}
-                  </div>
-                  {selectedColors.length > 0 && (
-                    <p className="text-xs text-slate-500 mt-2">{selectedColors.join(", ")}</p>
-                  )}
+                      <span className="text-sm text-slate-600">{producer}</span>
+                    </label>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+          </div>
 
-            {/* Sizes Section */}
-            <div className="border-t border-slate-200">
-              <button
-                onClick={() => toggleFilterSection("sizes")}
-                className="flex items-center justify-between w-full text-left p-4 hover:bg-slate-50 transition-colors"
-              >
-                <span className="font-medium text-slate-700">Größen</span>
-                {expandedFilterSections.sizes ? (
-                  <ChevronDown className="w-5 h-5 text-slate-500" />
-                ) : (
-                  <ChevronRight className="w-5 h-5 text-slate-500" />
-                )}
-              </button>
-              {expandedFilterSections.sizes && (
-                <div className="px-4 pb-4">
-                  <div className="flex flex-wrap gap-2">
-                    {sizeOptions.map((size) => (
-                      <button
-                        key={size}
-                        onClick={() =>
-                          setSelectedSizes((prev) =>
-                            prev.includes(size) ? prev.filter((s) => s !== size) : [...prev, size],
+          {/* Materials Section */}
+          <div className="border-t border-slate-200">
+            <button
+              onClick={() => toggleFilterSection("materials")}
+              className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
+            >
+              <span className="font-medium text-slate-700">Materialien</span>
+              {expandedFilterSections.materials ? (
+                <ChevronDown className="h-5 w-5 text-slate-500" />
+              ) : (
+                <ChevronRight className="h-5 w-5 text-slate-500" />
+              )}
+            </button>
+            {expandedFilterSections.materials && (
+              <div className="px-4 pb-4">
+                <div className="flex max-h-48 flex-col gap-2 overflow-y-auto">
+                  {materialOptions.map((material) => (
+                    <label key={material} className="flex cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedMaterials.includes(material)}
+                        onChange={() =>
+                          setSelectedMaterials((prev) =>
+                            prev.includes(material)
+                              ? prev.filter((m) => m !== material)
+                              : [...prev, material]
                           )
                         }
-                        className={`px-3 py-1 text-sm rounded-md border transition-colors ${
-                          selectedSizes.includes(size)
-                            ? "bg-teal-600 text-white border-teal-600"
-                            : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
-                  </div>
+                        className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                      />
+                      <span className="text-sm text-slate-600">{material}</span>
+                    </label>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+          </div>
+        </div>
 
-            {/* Producers Section */}
-            <div className="border-t border-slate-200">
-              <button
-                onClick={() => toggleFilterSection("producers")}
-                className="flex items-center justify-between w-full text-left p-4 hover:bg-slate-50 transition-colors"
-              >
-                <span className="font-medium text-slate-700">Hersteller</span>
-                {expandedFilterSections.producers ? (
-                  <ChevronDown className="w-5 h-5 text-slate-500" />
-                ) : (
-                  <ChevronRight className="w-5 h-5 text-slate-500" />
-                )}
-              </button>
-              {expandedFilterSections.producers && (
-                <div className="px-4 pb-4">
-                  <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
-                    {producerOptions.map((producer) => (
-                      <label key={producer} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedProducers.includes(producer)}
-                          onChange={() =>
-                            setSelectedProducers((prev) =>
-                              prev.includes(producer) ? prev.filter((p) => p !== producer) : [...prev, producer],
-                            )
-                          }
-                          className="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
-                        />
-                        <span className="text-sm text-slate-600">{producer}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+        {/* Products Section */}
+        <div className="space-y-6">
+          {/* Products Header */}
+          <div className="flex items-center justify-between">
+            <p className="text-slate-600">
+              <span className="font-medium">{filteredProducts.length}</span> Produkte gefunden
+            </p>
 
-            {/* Materials Section */}
-            <div className="border-t border-slate-200">
+            {/* Sort Dropdown */}
+            <div className="relative">
               <button
-                onClick={() => toggleFilterSection("materials")}
-                className="flex items-center justify-between w-full text-left p-4 hover:bg-slate-50 transition-colors"
+                onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+                className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 transition-colors hover:bg-slate-50"
               >
-                <span className="font-medium text-slate-700">Materialien</span>
-                {expandedFilterSections.materials ? (
-                  <ChevronDown className="w-5 h-5 text-slate-500" />
-                ) : (
-                  <ChevronRight className="w-5 h-5 text-slate-500" />
-                )}
+                <ArrowUpDown className="h-4 w-4" />
+                <span className="text-sm">Sortieren</span>
               </button>
-              {expandedFilterSections.materials && (
-                <div className="px-4 pb-4">
-                  <div className="flex flex-col gap-2 max-h-48 overflow-y-auto">
-                    {materialOptions.map((material) => (
-                      <label key={material} className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={selectedMaterials.includes(material)}
-                          onChange={() =>
-                            setSelectedMaterials((prev) =>
-                              prev.includes(material) ? prev.filter((m) => m !== material) : [...prev, material],
-                            )
-                          }
-                          className="w-4 h-4 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
-                        />
-                        <span className="text-sm text-slate-600">{material}</span>
-                      </label>
-                    ))}
-                  </div>
+              {isSortDropdownOpen && (
+                <div className="absolute right-0 z-10 mt-2 w-48 rounded-lg border border-slate-200 bg-white shadow-lg">
+                  {[
+                    { value: "relevance", label: "Relevanz" },
+                    { value: "price-low", label: "Preis: Niedrig → Hoch" },
+                    { value: "price-high", label: "Preis: Hoch → Niedrig" },
+                    { value: "rating", label: "Bewertung" },
+                    { value: "newest", label: "Neueste" },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        setSortBy(option.value)
+                        setIsSortDropdownOpen(false)
+                      }}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-50 ${
+                        sortBy === option.value ? "bg-slate-100 font-medium" : ""
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Products Section */}
-          <div className="space-y-6">
-            {/* Products Header */}
-            <div className="flex items-center justify-between">
-              <p className="text-slate-600">
-                <span className="font-medium">{filteredProducts.length}</span> Produkte gefunden
-              </p>
+          {/* Products Grid */}
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredProducts.map((product) => (
+              <div
+                key={product.id}
+                onClick={() => handleProductClick(product.id)}
+                className="group cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md"
+              >
+                <div className="relative aspect-square overflow-hidden bg-slate-100">
+                  <span
+                    className={`absolute right-2 top-2 rounded-full border px-2 py-1 text-xs ${getMatchColor(product.matchPercentage)}`}
+                  >
+                    {Math.round(product.matchPercentage)}% Match
+                  </span>
+                  <img
+                    src={product.images[0] || "/placeholder.svg"}
+                    alt={product.name}
+                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  />
+                </div>
+                <div className="space-y-2 p-4">
+                  <button
+                    onClick={(e) => handleBrandClick(e, product.brand)}
+                    className="text-xs font-medium uppercase tracking-wide text-teal-600 hover:text-teal-700 hover:underline"
+                  >
+                    {product.brand}
+                  </button>
+                  <h3 className="line-clamp-1 font-medium text-slate-800">{product.name}</h3>
+                  <p className="line-clamp-2 text-sm text-slate-500">{product.description}</p>
 
-              {/* Sort Dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                  className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-lg bg-white hover:bg-slate-50 transition-colors"
-                >
-                  <ArrowUpDown className="w-4 h-4" />
-                  <span className="text-sm">Sortieren</span>
-                </button>
-                {isSortDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 z-10">
-                    {[
-                      { value: "relevance", label: "Relevanz" },
-                      { value: "price-low", label: "Preis: Niedrig → Hoch" },
-                      { value: "price-high", label: "Preis: Hoch → Niedrig" },
-                      { value: "rating", label: "Bewertung" },
-                      { value: "newest", label: "Neueste" },
-                    ].map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => {
-                          setSortBy(option.value)
-                          setIsSortDropdownOpen(false)
-                        }}
-                        className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 ${
-                          sortBy === option.value ? "bg-slate-100 font-medium" : ""
-                        }`}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                    <span className="text-sm text-slate-600">{product.rating}</span>
+                    <span className="text-xs text-slate-400">({product.reviews})</span>
                   </div>
-                )}
-              </div>
-            </div>
 
-            {/* Products Grid */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredProducts.map((product) => (
-                <div
-                  key={product.id}
-                  onClick={() => handleProductClick(product.id)}
-                  className="bg-white rounded-lg overflow-hidden shadow-sm border border-slate-200 hover:shadow-md transition-all cursor-pointer group"
-                >
-                  <div className="aspect-square overflow-hidden bg-slate-100 relative">
-                    <span
-                      className={`absolute top-2 right-2 text-xs px-2 py-1 rounded-full border ${getMatchColor(product.matchPercentage)}`}
-                    >
-                      {Math.round(product.matchPercentage)}% Match
-                    </span>
-                    <img
-                      src={product.images[0] || "/placeholder.svg"}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="p-4 space-y-2">
-                    <button
-                      onClick={(e) => handleBrandClick(e, product.brand)}
-                      className="text-xs text-teal-600 hover:text-teal-700 font-medium uppercase tracking-wide hover:underline"
-                    >
-                      {product.brand}
-                    </button>
-                    <h3 className="font-medium text-slate-800 line-clamp-1">{product.name}</h3>
-                    <p className="text-sm text-slate-500 line-clamp-2">{product.description}</p>
-
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                      <span className="text-sm text-slate-600">{product.rating}</span>
-                      <span className="text-xs text-slate-400">({product.reviews})</span>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2">
-                      <span className="font-bold text-slate-800">€{product.price.toFixed(2)}</span>
-                    </div>
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="font-bold text-slate-800">€{product.price.toFixed(2)}</span>
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
+          </div>
 
-            {/* Pagination */}
-            <div className="flex items-center justify-center gap-2 pt-6">
-              <button className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-400 cursor-not-allowed">
-                Vorherige
-              </button>
-              <button className="px-4 py-2 border border-teal-600 rounded-lg bg-teal-600 text-white">1</button>
-              <button className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-600 hover:bg-slate-50">
-                2
-              </button>
-              <button className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-600 hover:bg-slate-50">
-                3
-              </button>
-              <span className="px-2 text-slate-400">...</span>
-              <button className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-600 hover:bg-slate-50">
-                89
-              </button>
-              <button className="px-4 py-2 border border-slate-300 rounded-lg bg-white text-slate-600 hover:bg-slate-50">
-                Nächste
-              </button>
-            </div>
+          {/* Pagination */}
+          <div className="flex items-center justify-center gap-2 pt-6">
+            <button className="cursor-not-allowed rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-400">
+              Vorherige
+            </button>
+            <button className="rounded-lg border border-teal-600 bg-teal-600 px-4 py-2 text-white">
+              1
+            </button>
+            <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-600 hover:bg-slate-50">
+              2
+            </button>
+            <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-600 hover:bg-slate-50">
+              3
+            </button>
+            <span className="px-2 text-slate-400">...</span>
+            <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-600 hover:bg-slate-50">
+              89
+            </button>
+            <button className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-600 hover:bg-slate-50">
+              Nächste
+            </button>
           </div>
         </div>
       </div>
+    </div>
   )
 }
-

@@ -2,8 +2,18 @@
 
 import { useState, useEffect } from "react"
 import {
-  ArrowLeft, Loader2, User, Mail, Phone, Calendar, Building2,
-  ShieldCheck, ShieldAlert, CheckCircle, XCircle, AlertTriangle,
+  ArrowLeft,
+  Loader2,
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  Building2,
+  ShieldCheck,
+  ShieldAlert,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
 } from "lucide-react"
 import type { User as UserType } from "@/src/types"
 import { UserService } from "@/src/services/user.service"
@@ -66,98 +76,128 @@ export default function AdminUserDetail() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 text-teal-600 animate-spin" />
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
       </div>
     )
   }
 
   if (!user) {
     return (
-      <div className="text-center py-12">
-        <AlertTriangle className="w-12 h-12 text-slate-400 mx-auto mb-4" />
+      <div className="py-12 text-center">
+        <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-slate-400" />
         <p className="text-slate-600">Benutzer nicht gefunden.</p>
       </div>
     )
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="mx-auto max-w-3xl">
       <button
-        onClick={() => { window.location.href = "/admin/users" }}
-        className="flex items-center gap-2 text-slate-600 hover:text-teal-600 mb-6 transition-colors text-sm"
+        onClick={() => {
+          window.location.href = "/admin/users"
+        }}
+        className="mb-6 flex items-center gap-2 text-sm text-slate-600 transition-colors hover:text-teal-600"
       >
-        <ArrowLeft className="w-4 h-4" /> Zurück zur Übersicht
+        <ArrowLeft className="h-4 w-4" /> Zurück zur Übersicht
       </button>
 
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         {/* Header */}
-        <div className="p-6 border-b border-slate-200">
+        <div className="border-b border-slate-200 p-6">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center">
-              <User className="w-8 h-8 text-teal-600" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-teal-100">
+              <User className="h-8 w-8 text-teal-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">{user.firstName} {user.lastName}</h1>
-              <div className="flex items-center gap-3 mt-1">
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                  user.role === "ADMIN" ? "bg-indigo-100 text-indigo-700"
-                  : user.role === "SELLER" ? "bg-teal-100 text-teal-700"
-                  : "bg-slate-100 text-slate-700"
-                }`}>{user.role}</span>
-                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                  user.status === "ACTIVE" ? "bg-emerald-100 text-emerald-700"
-                  : user.status === "SUSPENDED" ? "bg-red-100 text-red-700"
-                  : "bg-amber-100 text-amber-700"
-                }`}>{user.status === "ACTIVE" ? "Aktiv" : user.status === "SUSPENDED" ? "Gesperrt" : "Ausstehend"}</span>
+              <h1 className="text-2xl font-bold text-slate-800">
+                {user.firstName} {user.lastName}
+              </h1>
+              <div className="mt-1 flex items-center gap-3">
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    user.role === "ADMIN"
+                      ? "bg-indigo-100 text-indigo-700"
+                      : user.role === "SELLER"
+                        ? "bg-teal-100 text-teal-700"
+                        : "bg-slate-100 text-slate-700"
+                  }`}
+                >
+                  {user.role}
+                </span>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    user.status === "ACTIVE"
+                      ? "bg-emerald-100 text-emerald-700"
+                      : user.status === "SUSPENDED"
+                        ? "bg-red-100 text-red-700"
+                        : "bg-amber-100 text-amber-700"
+                  }`}
+                >
+                  {user.status === "ACTIVE"
+                    ? "Aktiv"
+                    : user.status === "SUSPENDED"
+                      ? "Gesperrt"
+                      : "Ausstehend"}
+                </span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Details */}
-        <div className="p-6 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-4 p-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="flex items-center gap-3 text-sm">
-              <Mail className="w-4 h-4 text-slate-400" />
+              <Mail className="h-4 w-4 text-slate-400" />
               <span className="text-slate-700">{user.email}</span>
             </div>
             <div className="flex items-center gap-3 text-sm">
-              <Phone className="w-4 h-4 text-slate-400" />
+              <Phone className="h-4 w-4 text-slate-400" />
               <span className="text-slate-700">{user.phone ?? "Nicht angegeben"}</span>
             </div>
             <div className="flex items-center gap-3 text-sm">
-              <Calendar className="w-4 h-4 text-slate-400" />
-              <span className="text-slate-700">Registriert: {new Date(user.createdAt).toLocaleDateString("de-DE")}</span>
+              <Calendar className="h-4 w-4 text-slate-400" />
+              <span className="text-slate-700">
+                Registriert: {new Date(user.createdAt).toLocaleDateString("de-DE")}
+              </span>
             </div>
           </div>
 
           {/* Seller profile info */}
           {user.sellerProfile && (
-            <div className="mt-6 p-4 bg-slate-50 rounded-lg border border-slate-200 space-y-3">
-              <h3 className="font-semibold text-slate-800 flex items-center gap-2">
-                <Building2 className="w-4 h-4" /> Verkäuferprofil
+            <div className="mt-6 space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <h3 className="flex items-center gap-2 font-semibold text-slate-800">
+                <Building2 className="h-4 w-4" /> Verkäuferprofil
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
                 <div>
                   <span className="text-slate-500">Firma:</span>{" "}
-                  <span className="text-slate-700 font-medium">{user.sellerProfile.companyName}</span>
+                  <span className="font-medium text-slate-700">
+                    {user.sellerProfile.companyName}
+                  </span>
                 </div>
                 <div>
                   <span className="text-slate-500">USt-IdNr.:</span>{" "}
-                  <span className="text-slate-700 font-medium">{user.sellerProfile.vatId}</span>
+                  <span className="font-medium text-slate-700">{user.sellerProfile.vatId}</span>
                 </div>
                 <div>
                   <span className="text-slate-500">IBAN:</span>{" "}
-                  <span className="text-slate-700 font-medium">{user.sellerProfile.iban}</span>
+                  <span className="font-medium text-slate-700">{user.sellerProfile.iban}</span>
                 </div>
                 <div>
                   <span className="text-slate-500">Status:</span>{" "}
-                  <span className={`font-medium ${
-                    user.sellerProfile.status === "APPROVED" ? "text-emerald-700"
-                    : user.sellerProfile.status === "PENDING" ? "text-amber-700"
-                    : "text-red-700"
-                  }`}>{user.sellerProfile.status}</span>
+                  <span
+                    className={`font-medium ${
+                      user.sellerProfile.status === "APPROVED"
+                        ? "text-emerald-700"
+                        : user.sellerProfile.status === "PENDING"
+                          ? "text-amber-700"
+                          : "text-red-700"
+                    }`}
+                  >
+                    {user.sellerProfile.status}
+                  </span>
                 </div>
               </div>
             </div>
@@ -165,18 +205,24 @@ export default function AdminUserDetail() {
         </div>
 
         {/* Actions */}
-        <div className="p-6 border-t border-slate-200 flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 border-t border-slate-200 p-6">
           {/* Suspend / Activate */}
           <button
             onClick={handleSuspend}
             disabled={isUpdating}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 ${
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
               user.status === "SUSPENDED"
                 ? "bg-emerald-600 text-white hover:bg-emerald-700"
                 : "bg-red-600 text-white hover:bg-red-700"
             }`}
           >
-            {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : user.status === "SUSPENDED" ? <ShieldCheck className="w-4 h-4" /> : <ShieldAlert className="w-4 h-4" />}
+            {isUpdating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : user.status === "SUSPENDED" ? (
+              <ShieldCheck className="h-4 w-4" />
+            ) : (
+              <ShieldAlert className="h-4 w-4" />
+            )}
             {user.status === "SUSPENDED" ? "Aktivieren" : "Sperren"}
           </button>
 
@@ -186,16 +232,16 @@ export default function AdminUserDetail() {
               <button
                 onClick={() => handleSellerAction("APPROVED")}
                 disabled={isUpdating}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
               >
-                <CheckCircle className="w-4 h-4" /> Verkäufer genehmigen
+                <CheckCircle className="h-4 w-4" /> Verkäufer genehmigen
               </button>
               <button
                 onClick={() => handleSellerAction("REJECTED")}
                 disabled={isUpdating}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors"
+                className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
               >
-                <XCircle className="w-4 h-4" /> Verkäufer ablehnen
+                <XCircle className="h-4 w-4" /> Verkäufer ablehnen
               </button>
             </>
           )}

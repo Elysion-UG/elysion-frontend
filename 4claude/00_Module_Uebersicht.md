@@ -1,4 +1,5 @@
 # Module-Übersicht
+
 ## Nachhaltigkeits-Zertifikat-Plattform
 
 **Zweck:** Strukturvorlage und Übersicht für alle Module
@@ -7,18 +8,18 @@
 
 ## Modul-Liste
 
-| Nr | Modul | Priorität | Zeit (h) | Abhängigkeiten | Dokument |
-|----|-------|-----------|----------|----------------|----------|
-| 01 | Authentication & User Management | CRITICAL | 40–50 | — | Modul_01_Authentication.md |
-| 02 | Product Management | CRITICAL | 50–60 | 01 | Modul_02_Product_Management.md |
-| 03 | Certificate Management | CRITICAL | 40–50 | 01, 02 | Modul_03_Certificate_Management.md |
-| 04 | Matching Engine | HIGH | 30–40 | 01, 02, 03 | Modul_04_Matching_Engine.md |
-| 05 | Shopping Cart & Checkout | CRITICAL | 35–45 | 01, 02 | Modul_05_Shopping_Cart_Checkout.md |
-| 06 | Order Management | CRITICAL | 45–55 | 01, 02, 05 | Module_04-10_Komplett.md |
-| 07 | Payment Processing | CRITICAL | 40–50 | 01, 05, 06 | Module_04-10_Komplett.md |
-| 08 | File Upload & Storage | HIGH | 25–35 | 01 | Module_04-10_Komplett.md |
-| 09 | Admin Panel | MEDIUM | 35–45 | 01, 02, 03, 06 | Module_04-10_Komplett.md |
-| 10 | Email Service | HIGH | 20–30 | 01 | Module_04-10_Komplett.md |
+| Nr  | Modul                            | Priorität | Zeit (h) | Abhängigkeiten | Dokument                           |
+| --- | -------------------------------- | --------- | -------- | -------------- | ---------------------------------- |
+| 01  | Authentication & User Management | CRITICAL  | 40–50    | —              | Modul_01_Authentication.md         |
+| 02  | Product Management               | CRITICAL  | 50–60    | 01             | Modul_02_Product_Management.md     |
+| 03  | Certificate Management           | CRITICAL  | 40–50    | 01, 02         | Modul_03_Certificate_Management.md |
+| 04  | Matching Engine                  | HIGH      | 30–40    | 01, 02, 03     | Modul_04_Matching_Engine.md        |
+| 05  | Shopping Cart & Checkout         | CRITICAL  | 35–45    | 01, 02         | Modul_05_Shopping_Cart_Checkout.md |
+| 06  | Order Management                 | CRITICAL  | 45–55    | 01, 02, 05     | Module_04-10_Komplett.md           |
+| 07  | Payment Processing               | CRITICAL  | 40–50    | 01, 05, 06     | Module_04-10_Komplett.md           |
+| 08  | File Upload & Storage            | HIGH      | 25–35    | 01             | Module_04-10_Komplett.md           |
+| 09  | Admin Panel                      | MEDIUM    | 35–45    | 01, 02, 03, 06 | Module_04-10_Komplett.md           |
+| 10  | Email Service                    | HIGH      | 20–30    | 01             | Module_04-10_Komplett.md           |
 
 **Gesamt:** 360–460 Stunden
 
@@ -66,6 +67,7 @@ Modul 10 → ALLE:   EmailService wird von allen Modulen bei Events aufgerufen
 ## Modul 01: Authentication & User Management
 
 ### Verantwortlichkeiten
+
 - Registrierung & Login (Käufer, Verkäufer)
 - JWT-Token-Management (Access + Refresh)
 - Passwort-Hashing und -Reset
@@ -120,32 +122,33 @@ enum SellerStatus { PENDING APPROVED SUSPENDED }
 
 ### API-Endpoints
 
-| Methode | Pfad | Auth | Beschreibung |
-|---------|------|------|--------------|
-| POST | `/auth/register` | — | Registrierung |
-| POST | `/auth/login` | — | Login |
-| POST | `/auth/logout` | Ja | Logout |
-| POST | `/auth/refresh` | — | Token erneuern |
-| POST | `/auth/verify-email` | — | E-Mail bestätigen |
-| POST | `/auth/forgot-password` | — | Passwort-Reset anfordern |
-| POST | `/auth/reset-password` | — | Passwort zurücksetzen |
-| GET | `/users/me` | Ja | Eigenes Profil |
-| PATCH | `/users/me` | Ja | Profil aktualisieren |
-| DELETE | `/users/me` | Ja | Account löschen |
-| GET | `/users/me/profile` | Ja | Werteprofil abrufen |
-| PUT | `/users/me/profile` | Ja | Werteprofil speichern |
-| GET | `/users/me/addresses` | Ja | Adressen abrufen |
-| POST | `/users/me/addresses` | Ja | Adresse hinzufügen |
-| DELETE | `/users/me/addresses/:id` | Ja | Adresse löschen |
-| GET | `/admin/users` | Admin | Alle Nutzer |
-| PATCH | `/admin/users/:id/suspend` | Admin | Nutzer sperren |
-| PATCH | `/admin/sellers/:id/approve` | Admin | Verkäufer freigeben |
+| Methode | Pfad                         | Auth  | Beschreibung             |
+| ------- | ---------------------------- | ----- | ------------------------ |
+| POST    | `/auth/register`             | —     | Registrierung            |
+| POST    | `/auth/login`                | —     | Login                    |
+| POST    | `/auth/logout`               | Ja    | Logout                   |
+| POST    | `/auth/refresh`              | —     | Token erneuern           |
+| POST    | `/auth/verify-email`         | —     | E-Mail bestätigen        |
+| POST    | `/auth/forgot-password`      | —     | Passwort-Reset anfordern |
+| POST    | `/auth/reset-password`       | —     | Passwort zurücksetzen    |
+| GET     | `/users/me`                  | Ja    | Eigenes Profil           |
+| PATCH   | `/users/me`                  | Ja    | Profil aktualisieren     |
+| DELETE  | `/users/me`                  | Ja    | Account löschen          |
+| GET     | `/users/me/profile`          | Ja    | Werteprofil abrufen      |
+| PUT     | `/users/me/profile`          | Ja    | Werteprofil speichern    |
+| GET     | `/users/me/addresses`        | Ja    | Adressen abrufen         |
+| POST    | `/users/me/addresses`        | Ja    | Adresse hinzufügen       |
+| DELETE  | `/users/me/addresses/:id`    | Ja    | Adresse löschen          |
+| GET     | `/admin/users`               | Admin | Alle Nutzer              |
+| PATCH   | `/admin/users/:id/suspend`   | Admin | Nutzer sperren           |
+| PATCH   | `/admin/sellers/:id/approve` | Admin | Verkäufer freigeben      |
 
 ### Schnittstellen
 
 **Exportiert (für andere Module):**
+
 ```typescript
-authenticate    // Middleware: JWT prüfen, req.user setzen
+authenticate // Middleware: JWT prüfen, req.user setzen
 authorize(roles) // Middleware: Rollen prüfen
 ```
 
@@ -156,6 +159,7 @@ authorize(roles) // Middleware: Rollen prüfen
 ## Modul 02: Product Management
 
 ### Verantwortlichkeiten
+
 - Produkt-CRUD für Verkäufer
 - Kategorien-Verwaltung (3 Ebenen)
 - Varianten (Größe, Farbe, Custom)
@@ -184,6 +188,7 @@ GET    /shops/:slug           Shop-Seite
 ## Modul 03: Certificate Management
 
 ### Verantwortlichkeiten
+
 - Zertifikats-Upload (Verkäufer)
 - Verifizierung (Admin, 24h SLA)
 - Ablauf-Management & Erinnerungen
@@ -197,6 +202,7 @@ GET    /shops/:slug           Shop-Seite
 ## Modul 04: Matching Engine
 
 ### Verantwortlichkeiten
+
 - Match-Score-Berechnung
 - Bulk-Berechnung für Produktlisten
 - Persönliche Empfehlungen
@@ -209,6 +215,7 @@ GET    /shops/:slug           Shop-Seite
 ## Modul 05: Shopping Cart & Checkout
 
 ### Verantwortlichkeiten
+
 - Warenkorb (Gast + User)
 - Gast-Cart-Merge bei Login
 - Multi-Step Checkout
@@ -222,12 +229,12 @@ GET    /shops/:slug           Shop-Seite
 
 Alle weiteren Module sind in `Module_04-10_Komplett.md` vollständig dokumentiert:
 
-| Modul | Inhalt |
-|-------|--------|
-| **06** | Order Management — Bestellverwaltung, Status-Tracking |
-| **07** | Payment Processing — Zahlungsabwicklung, Auszahlungen |
-| **08** | File Upload & Storage — Bilder, Zertifikatsdokumente |
-| **09** | Admin Panel — Dashboard, Nutzerverwaltung |
+| Modul  | Inhalt                                                   |
+| ------ | -------------------------------------------------------- |
+| **06** | Order Management — Bestellverwaltung, Status-Tracking    |
+| **07** | Payment Processing — Zahlungsabwicklung, Auszahlungen    |
+| **08** | File Upload & Storage — Bilder, Zertifikatsdokumente     |
+| **09** | Admin Panel — Dashboard, Nutzerverwaltung                |
 | **10** | Email Service — Transaktions-E-Mails, Benachrichtigungen |
 
 ---

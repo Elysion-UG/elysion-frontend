@@ -61,7 +61,9 @@ export default function Onboarding() {
 
   const handlePreferenceToggle = (preferenceId: string) => {
     setSelectedPreferences((prev) =>
-      prev.includes(preferenceId) ? prev.filter((id) => id !== preferenceId) : [...prev, preferenceId],
+      prev.includes(preferenceId)
+        ? prev.filter((id) => id !== preferenceId)
+        : [...prev, preferenceId]
     )
   }
 
@@ -98,19 +100,21 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-green-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-8">
+    <div className="flex min-h-screen items-center justify-center bg-green-50 p-4">
+      <div className="w-full max-w-2xl rounded-lg bg-white p-8 shadow-xl">
         {/* Progress Bar */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
+          <div className="mb-2 flex items-center justify-between">
             <span className="text-sm font-medium text-green-700">
               Step {currentStep} of {totalSteps}
             </span>
-            <span className="text-sm text-green-600">{Math.round((currentStep / totalSteps) * 100)}% Complete</span>
+            <span className="text-sm text-green-600">
+              {Math.round((currentStep / totalSteps) * 100)}% Complete
+            </span>
           </div>
-          <div className="w-full bg-green-200 rounded-full h-2">
+          <div className="h-2 w-full rounded-full bg-green-200">
             <div
-              className="bg-green-600 h-2 rounded-full transition-all duration-300"
+              className="h-2 rounded-full bg-green-600 transition-all duration-300"
               style={{ width: `${(currentStep / totalSteps) * 100}%` }}
             />
           </div>
@@ -120,11 +124,12 @@ export default function Onboarding() {
         <div className="mb-8">
           {currentStep === 1 && (
             <div>
-              <h2 className="text-2xl font-bold text-green-800 mb-2">What matters most to you?</h2>
-              <p className="text-green-600 mb-6">
-                Select the sustainability aspects that are important to you. This helps us recommend the best products.
+              <h2 className="mb-2 text-2xl font-bold text-green-800">What matters most to you?</h2>
+              <p className="mb-6 text-green-600">
+                Select the sustainability aspects that are important to you. This helps us recommend
+                the best products.
               </p>
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 {sustainabilityOptions.map((option) => {
                   const Icon = option.icon
                   const isSelected = selectedPreferences.includes(option.id)
@@ -132,7 +137,7 @@ export default function Onboarding() {
                     <button
                       key={option.id}
                       onClick={() => handlePreferenceToggle(option.id)}
-                      className={`p-4 rounded-lg border-2 text-left transition-all hover:shadow-md ${
+                      className={`rounded-lg border-2 p-4 text-left transition-all hover:shadow-md ${
                         isSelected
                           ? "border-green-600 bg-green-50 shadow-md"
                           : "border-green-200 hover:border-green-400"
@@ -140,19 +145,23 @@ export default function Onboarding() {
                     >
                       <div className="flex items-start gap-3">
                         <div
-                          className={`p-2 rounded-lg ${isSelected ? "bg-green-600 text-white" : "bg-green-100 text-green-600"}`}
+                          className={`rounded-lg p-2 ${isSelected ? "bg-green-600 text-white" : "bg-green-100 text-green-600"}`}
                         >
-                          <Icon className="w-5 h-5" />
+                          <Icon className="h-5 w-5" />
                         </div>
                         <div className="flex-1">
-                          <h3 className={`font-semibold mb-1 ${isSelected ? "text-green-800" : "text-green-700"}`}>
+                          <h3
+                            className={`mb-1 font-semibold ${isSelected ? "text-green-800" : "text-green-700"}`}
+                          >
                             {option.label}
                           </h3>
-                          <p className={`text-sm ${isSelected ? "text-green-700" : "text-green-600"}`}>
+                          <p
+                            className={`text-sm ${isSelected ? "text-green-700" : "text-green-600"}`}
+                          >
                             {option.description}
                           </p>
                         </div>
-                        {isSelected && <Check className="w-5 h-5 text-green-600 mt-1" />}
+                        {isSelected && <Check className="mt-1 h-5 w-5 text-green-600" />}
                       </div>
                     </button>
                   )
@@ -163,13 +172,14 @@ export default function Onboarding() {
 
           {currentStep === 2 && (
             <div>
-              <h2 className="text-2xl font-bold text-green-800 mb-2">What's your budget range?</h2>
-              <p className="text-green-600 mb-6">
-                Help us show you products within your preferred price range for better recommendations.
+              <h2 className="mb-2 text-2xl font-bold text-green-800">What's your budget range?</h2>
+              <p className="mb-6 text-green-600">
+                Help us show you products within your preferred price range for better
+                recommendations.
               </p>
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-green-700 mb-2">
+                  <label className="mb-2 block text-sm font-medium text-green-700">
                     Monthly Budget: ${budgetRange[0]} - ${budgetRange[1]}
                   </label>
                   <div className="px-4">
@@ -179,27 +189,29 @@ export default function Onboarding() {
                       max="500"
                       step="25"
                       value={budgetRange[1]}
-                      onChange={(e) => setBudgetRange([budgetRange[0], Number.parseInt(e.target.value)])}
-                      className="w-full h-2 bg-green-200 rounded-lg appearance-none cursor-pointer accent-green-600"
+                      onChange={(e) =>
+                        setBudgetRange([budgetRange[0], Number.parseInt(e.target.value)])
+                      }
+                      className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-green-200 accent-green-600"
                     />
-                    <div className="flex justify-between text-sm text-green-600 mt-1">
+                    <div className="mt-1 flex justify-between text-sm text-green-600">
                       <span>$25</span>
                       <span>$500+</span>
                     </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-green-50 rounded-lg p-4 text-center">
+                  <div className="rounded-lg bg-green-50 p-4 text-center">
                     <h4 className="font-semibold text-green-800">Budget-Friendly</h4>
-                    <p className="text-green-600 text-sm">$25 - $75</p>
+                    <p className="text-sm text-green-600">$25 - $75</p>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-4 text-center">
+                  <div className="rounded-lg bg-green-50 p-4 text-center">
                     <h4 className="font-semibold text-green-800">Mid-Range</h4>
-                    <p className="text-green-600 text-sm">$75 - $200</p>
+                    <p className="text-sm text-green-600">$75 - $200</p>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-4 text-center">
+                  <div className="rounded-lg bg-green-50 p-4 text-center">
                     <h4 className="font-semibold text-green-800">Premium</h4>
-                    <p className="text-green-600 text-sm">$200+</p>
+                    <p className="text-sm text-green-600">$200+</p>
                   </div>
                 </div>
               </div>
@@ -208,25 +220,38 @@ export default function Onboarding() {
 
           {currentStep === 3 && (
             <div>
-              <h2 className="text-2xl font-bold text-green-800 mb-2">How often do you shop?</h2>
-              <p className="text-green-600 mb-6">
-                This helps us understand your shopping habits and provide personalized recommendations.
+              <h2 className="mb-2 text-2xl font-bold text-green-800">How often do you shop?</h2>
+              <p className="mb-6 text-green-600">
+                This helps us understand your shopping habits and provide personalized
+                recommendations.
               </p>
               <div className="space-y-3">
                 {[
-                  { value: "weekly", label: "Weekly", description: "I shop for sustainable products regularly" },
-                  { value: "monthly", label: "Monthly", description: "I make sustainable purchases monthly" },
+                  {
+                    value: "weekly",
+                    label: "Weekly",
+                    description: "I shop for sustainable products regularly",
+                  },
+                  {
+                    value: "monthly",
+                    label: "Monthly",
+                    description: "I make sustainable purchases monthly",
+                  },
                   {
                     value: "occasionally",
                     label: "Occasionally",
                     description: "I buy sustainable products when needed",
                   },
-                  { value: "rarely", label: "Rarely", description: "I'm just starting my sustainable journey" },
+                  {
+                    value: "rarely",
+                    label: "Rarely",
+                    description: "I'm just starting my sustainable journey",
+                  },
                 ].map((option) => (
                   <button
                     key={option.value}
                     onClick={() => setShoppingFrequency(option.value)}
-                    className={`w-full p-4 rounded-lg border-2 text-left transition-all hover:shadow-md ${
+                    className={`w-full rounded-lg border-2 p-4 text-left transition-all hover:shadow-md ${
                       shoppingFrequency === option.value
                         ? "border-green-600 bg-green-50 shadow-md"
                         : "border-green-200 hover:border-green-400"
@@ -235,7 +260,7 @@ export default function Onboarding() {
                     <div className="flex items-center justify-between">
                       <div>
                         <h3
-                          className={`font-semibold mb-1 ${shoppingFrequency === option.value ? "text-green-800" : "text-green-700"}`}
+                          className={`mb-1 font-semibold ${shoppingFrequency === option.value ? "text-green-800" : "text-green-700"}`}
                         >
                           {option.label}
                         </h3>
@@ -245,7 +270,9 @@ export default function Onboarding() {
                           {option.description}
                         </p>
                       </div>
-                      {shoppingFrequency === option.value && <Check className="w-5 h-5 text-green-600" />}
+                      {shoppingFrequency === option.value && (
+                        <Check className="h-5 w-5 text-green-600" />
+                      )}
                     </div>
                   </button>
                 ))}
@@ -259,19 +286,19 @@ export default function Onboarding() {
           <button
             onClick={handlePrevious}
             disabled={currentStep === 1}
-            className="flex items-center gap-2 px-4 py-2 text-green-700 hover:text-green-900 disabled:text-green-400 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-4 py-2 text-green-700 transition-colors hover:text-green-900 disabled:cursor-not-allowed disabled:text-green-400"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="h-4 w-4" />
             Previous
           </button>
 
           <button
             onClick={handleNext}
             disabled={!canProceed()}
-            className="flex items-center gap-2 bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 disabled:bg-green-400 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 rounded-lg bg-green-600 px-6 py-2 font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-green-400"
           >
             {currentStep === totalSteps ? "Complete Setup" : "Next"}
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </div>

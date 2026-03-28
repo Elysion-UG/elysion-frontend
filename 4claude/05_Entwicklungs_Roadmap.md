@@ -1,4 +1,5 @@
 # Entwicklungs-Roadmap & Sprint-Planung
+
 ## Nachhaltigkeits-Zertifikat-Plattform
 
 **Version:** 1.0  
@@ -8,6 +9,7 @@
 ---
 
 ## Inhaltsverzeichnis
+
 1. [Entwicklungsphasen-Überblick](#1-entwicklungsphasen-überblick)
 2. [Phase 1 - MVP (Sprints 1-8)](#2-phase-1---mvp-sprints-1-8)
 3. [Phase 2 - Feature-Erweiterung (Sprints 9-14)](#3-phase-2---feature-erweiterung-sprints-9-14)
@@ -39,30 +41,30 @@
 
 ### 1.2 Meilensteine
 
-| Meilenstein | Datum (geschätzt) | Beschreibung |
-|-------------|-------------------|--------------|
-| **M1: Dev-Setup** | Woche 1 | Repository, CI/CD, Infrastruktur |
-| **M2: Authentifizierung** | Woche 3 | Login, Registrierung, JWT |
-| **M3: Produkt-CRUD** | Woche 5 | Verkäufer können Produkte anlegen |
-| **M4: Werteprofil** | Woche 7 | Einfaches Profil implementiert |
-| **M5: Checkout** | Woche 10 | Bestellprozess funktioniert |
-| **M6: Stripe-Integration** | Woche 11 | Zahlungen möglich |
-| **M7: Zertifikate** | Woche 13 | Upload & Verifizierung |
-| **M8: MVP-Launch** | Woche 16 | Soft-Launch mit ersten Verkäufern |
-| **M9: Erweitertes Profil** | Woche 20 | 21 Unterpunkte implementiert |
-| **M10: Gast-Checkout** | Woche 22 | Gäste können bestellen |
-| **M11: Analytics** | Woche 26 | Verkäufer-Dashboard mit Daten |
-| **M12: Public Launch** | Woche 28 | Marketing-Start |
+| Meilenstein                | Datum (geschätzt) | Beschreibung                      |
+| -------------------------- | ----------------- | --------------------------------- |
+| **M1: Dev-Setup**          | Woche 1           | Repository, CI/CD, Infrastruktur  |
+| **M2: Authentifizierung**  | Woche 3           | Login, Registrierung, JWT         |
+| **M3: Produkt-CRUD**       | Woche 5           | Verkäufer können Produkte anlegen |
+| **M4: Werteprofil**        | Woche 7           | Einfaches Profil implementiert    |
+| **M5: Checkout**           | Woche 10          | Bestellprozess funktioniert       |
+| **M6: Stripe-Integration** | Woche 11          | Zahlungen möglich                 |
+| **M7: Zertifikate**        | Woche 13          | Upload & Verifizierung            |
+| **M8: MVP-Launch**         | Woche 16          | Soft-Launch mit ersten Verkäufern |
+| **M9: Erweitertes Profil** | Woche 20          | 21 Unterpunkte implementiert      |
+| **M10: Gast-Checkout**     | Woche 22          | Gäste können bestellen            |
+| **M11: Analytics**         | Woche 26          | Verkäufer-Dashboard mit Daten     |
+| **M12: Public Launch**     | Woche 28          | Marketing-Start                   |
 
 ### 1.3 Risikoanalyse
 
-| Risiko | Wahrscheinlichkeit | Impact | Mitigation |
-|--------|-------------------|--------|------------|
-| Matching-Algorithmus zu komplex | Hoch | Mittel | Placeholder in MVP, Experten-Algorithmus später |
-| Stripe-Integration Probleme | Mittel | Hoch | Früh testen, Sandbox nutzen, Support kontaktieren |
-| Zu wenig Verkäufer bei Launch | Mittel | Hoch | Pre-Launch Akquise, 40-100 Partner sichern |
-| Performance-Probleme | Niedrig | Mittel | Load-Testing, Caching, DB-Optimierung |
-| DSGVO-Verstöße | Niedrig | Hoch | Rechtliche Beratung, Privacy by Design |
+| Risiko                          | Wahrscheinlichkeit | Impact | Mitigation                                        |
+| ------------------------------- | ------------------ | ------ | ------------------------------------------------- |
+| Matching-Algorithmus zu komplex | Hoch               | Mittel | Placeholder in MVP, Experten-Algorithmus später   |
+| Stripe-Integration Probleme     | Mittel             | Hoch   | Früh testen, Sandbox nutzen, Support kontaktieren |
+| Zu wenig Verkäufer bei Launch   | Mittel             | Hoch   | Pre-Launch Akquise, 40-100 Partner sichern        |
+| Performance-Probleme            | Niedrig            | Mittel | Load-Testing, Caching, DB-Optimierung             |
+| DSGVO-Verstöße                  | Niedrig            | Hoch   | Rechtliche Beratung, Privacy by Design            |
 
 ---
 
@@ -77,6 +79,7 @@
 **Ziel:** Fundament legen, Dev-Umgebung funktionsfähig
 
 **Tasks:**
+
 - [ ] Repository Setup (GitHub/GitLab)
   - Monorepo-Struktur: `/frontend`, `/backend`
   - Branch-Strategie: `main`, `develop`, `feature/*`
@@ -107,6 +110,7 @@
   - SSL-Zertifikat (ACM)
 
 **Deliverables:**
+
 - ✓ Lokale Dev-Umgebung läuft (docker-compose up)
 - ✓ CI/CD deployed automatisch zu dev.yourplatform.com
 - ✓ Healthcheck-Endpoint: `GET /health` → 200 OK
@@ -120,6 +124,7 @@
 **Ziel:** User können sich registrieren, einloggen, Profile verwalten
 
 **Tasks:**
+
 - [ ] **Backend:**
   - User-Model (Prisma Schema)
   - Registrierung (POST /auth/register)
@@ -146,6 +151,7 @@
   - Integration-Tests für Auth-Endpoints
 
 **Deliverables:**
+
 - ✓ Nutzer kann sich registrieren und einloggen
 - ✓ E-Mail-Verifizierung funktioniert
 - ✓ JWT-basierte Authentifizierung
@@ -159,6 +165,7 @@
 **Ziel:** Verkäufer können Produkte anlegen, bearbeiten, löschen
 
 **Tasks:**
+
 - [ ] **Backend:**
   - Product, Category, Shop Models (Prisma)
   - CRUD-Endpoints für Produkte
@@ -186,6 +193,7 @@
   - Kategorie-Management (einfaches CRUD)
 
 **Deliverables:**
+
 - ✓ Verkäufer kann Produkte mit Bildern und Varianten anlegen
 - ✓ Produkte sind öffentlich sichtbar (Detailseite)
 - ✓ Image-Upload funktioniert (S3)
@@ -199,6 +207,7 @@
 **Ziel:** Käufer können einfaches Profil erstellen, Match-Scores werden berechnet
 
 **Tasks:**
+
 - [ ] **Backend:**
   - UserProfile Model (JSON-Felder)
   - CRUD für Profil
@@ -224,6 +233,7 @@
   - E2E-Test: Profil erstellen → Produkte sehen Match
 
 **Deliverables:**
+
 - ✓ Käufer kann einfaches Werteprofil erstellen
 - ✓ Produkte zeigen Match-Score (Placeholder-Algorithmus)
 - ✓ Sortierung/Filter nach Match funktioniert
@@ -237,6 +247,7 @@
 **Ziel:** Käufer können Bestellung abschließen (ohne Zahlung noch)
 
 **Tasks:**
+
 - [ ] **Backend:**
   - Cart-Logik
     - Session-basiert (Redis) oder DB
@@ -270,6 +281,7 @@
   - Frontend: Adressbuch, neue Adresse anlegen
 
 **Deliverables:**
+
 - ✓ Warenkorb funktioniert (Artikel hinzufügen/entfernen)
 - ✓ Checkout bis Schritt 3 (vor Zahlung) funktioniert
 - ✓ Bestellung kann erstellt werden (Status: PENDING)
@@ -283,6 +295,7 @@
 **Ziel:** Zahlungen funktionieren, Bestellungen werden abgeschlossen
 
 **Tasks:**
+
 - [ ] **Backend:**
   - Stripe-Account erstellen (Test-Modus)
   - Payment Model (Prisma)
@@ -309,6 +322,7 @@
   - E2E: Gesamter Checkout-Flow
 
 **Deliverables:**
+
 - ✓ Käufer können mit Stripe bezahlen
 - ✓ Bestellungen werden korrekt abgeschlossen
 - ✓ E-Mails werden versendet
@@ -322,6 +336,7 @@
 **Ziel:** Verkäufer können Zertifikate hochladen, Admin kann verifizieren
 
 **Tasks:**
+
 - [ ] **Backend:**
   - Certificate, ProductCertificate Models (Prisma)
   - Certificate-Endpoints
@@ -353,6 +368,7 @@
     - Zertifikat-Auswahl (Dropdown)
 
 **Deliverables:**
+
 - ✓ Verkäufer können Zertifikate hochladen
 - ✓ Admin kann Zertifikate verifizieren/ablehnen
 - ✓ Produkte werden automatisch aktiviert bei Verifizierung
@@ -367,6 +383,7 @@
 **Ziel:** Verkäufer können Bestellungen verwalten, MVP ist produktionsbereit
 
 **Tasks:**
+
 - [ ] **Backend:**
   - Seller-Order-Endpoints
     - GET /seller/orders (nur eigene Produkte)
@@ -406,6 +423,7 @@
   - User-Guides (Verkäufer-Onboarding)
 
 **Deliverables:**
+
 - ✓ Verkäufer können Bestellungen verwalten
 - ✓ MVP ist vollständig funktionsfähig
 - ✓ Production-Deployment erfolgreich
@@ -421,6 +439,7 @@
 **Dauer:** 16 Wochen (bei 2 Entwicklern parallel)
 
 **MVP-Features:**
+
 - ✅ Authentifizierung (Käufer, Verkäufer, Admin)
 - ✅ Produktverwaltung (CRUD, Bilder, Varianten)
 - ✅ Einfaches Werteprofil (7 Kategorien)
@@ -433,6 +452,7 @@
 - ✅ Basis-Auszahlungen (wöchentlich)
 
 **Nicht in MVP:**
+
 - ❌ Erweitertes Werteprofil (21 Unterpunkte)
 - ❌ Gast-Checkout
 - ❌ Wunschliste
@@ -452,6 +472,7 @@
 ### Sprint 9 (Wochen 17-18): Erweitertes Werteprofil
 
 **Tasks:**
+
 - [ ] Backend: UserProfile erweitern (21 Unterpunkte)
 - [ ] Matching-Algorithmus erweitern
   - Unterpunkt-Gewichtung berücksichtigen
@@ -469,6 +490,7 @@
 ### Sprint 10 (Wochen 19-20): Gast-Checkout & Wunschliste
 
 **Tasks:**
+
 - [ ] Gast-Checkout implementieren
   - Backend: Temporäre Order ohne User-ID
   - Frontend: "Als Gast fortfahren" Flow
@@ -485,6 +507,7 @@
 ### Sprint 11 (Wochen 21-22): Verkäufer-Analytics
 
 **Tasks:**
+
 - [ ] Analytics-Service
   - Aggregierte Daten: Umsatz, Bestellungen, Conversion
   - GET /seller/analytics?period=30d
@@ -501,6 +524,7 @@
 ### Sprint 12 (Wochen 23-24): GOTS-Zertifikat & Multi-Cert
 
 **Tasks:**
+
 - [ ] Backend: GOTS-Zertifikatstyp hinzufügen
 - [ ] Produkte können mehrere Zertifikate haben
 - [ ] Matching-Algorithmus: Multiple Certs berücksichtigen
@@ -513,6 +537,7 @@
 ### Sprint 13 (Wochen 25-26): Rücksendungs-Management
 
 **Tasks:**
+
 - [ ] Return Model & Flow (Prisma)
 - [ ] Backend-Endpoints
   - POST /orders/:id/return (Käufer)
@@ -530,6 +555,7 @@
 ### Sprint 14 (Wochen 27-28): UX-Optimierung & Bugfixing
 
 **Tasks:**
+
 - [ ] Performance-Optimierung
   - Elasticsearch-Integration (Produktsuche)
   - Caching (Redis für Match-Scores)
@@ -553,6 +579,7 @@
 
 **Gesamt-Aufwand:** 400-520h (50-65 Arbeitstage pro Entwickler)  
 **Neue Features:**
+
 - ✅ Erweitertes Werteprofil (21 Unterpunkte)
 - ✅ Gast-Checkout
 - ✅ Wunschliste
@@ -572,6 +599,7 @@
 ### Sprint 15-16: Admin-Dashboard
 
 **Tasks:**
+
 - [ ] Admin-Dashboard (KPIs, Statistiken)
 - [ ] User-Management-Interface
 - [ ] Plattform-Metriken (Prometheus + Grafana)
@@ -583,6 +611,7 @@
 ### Sprint 17-18: Erweiterte Analytics
 
 **Tasks:**
+
 - [ ] Matching-Score-Korrelation mit Verkäufen
 - [ ] Conversion-Trichter
 - [ ] Kohortenanalyse
@@ -595,6 +624,7 @@
 ### Sprint 19-20: Weitere Zertifikate & Automatisierung
 
 **Tasks:**
+
 - [ ] 5+ weitere Zertifikate (Fair Trade, EU Ecolabel, etc.)
 - [ ] Teilautomatisierung der Verifizierung
   - OCR für Zertifikatsnummer-Extraktion
@@ -607,6 +637,7 @@
 ### Sprint 21-22: Review-System & Community
 
 **Tasks:**
+
 - [ ] Review Model & Endpoints
 - [ ] Frontend: Bewertungen auf Produktseite
 - [ ] Moderation (Admin kann Reviews löschen)
@@ -619,6 +650,7 @@
 ### Sprint 23-24: Mobile App (Optional)
 
 **Tasks:**
+
 - [ ] React Native App (iOS + Android)
 - [ ] Basis-Features: Produktsuche, Checkout, Profil
 - [ ] Push-Notifications
@@ -647,6 +679,7 @@
 ### 5.2 Testing-Coverage
 
 **Ziel: 80%+ Coverage**
+
 - [ ] Sprint 1-8: Unit-Tests für kritische Services
 - [ ] Sprint 9-14: Integration-Tests für alle Endpoints
 - [ ] Sprint 15+: E2E-Tests (Cypress/Playwright)
@@ -663,12 +696,12 @@
 
 ### 6.1 Umgebungen
 
-| Umgebung | URL | Zweck | Auto-Deploy |
-|----------|-----|-------|-------------|
-| **Local** | localhost | Entwicklung | Nein |
-| **Dev** | dev.yourplatform.com | Testen von Features | Ja (bei Push zu `develop`) |
-| **Staging** | staging.yourplatform.com | Pre-Production Testing | Ja (bei Push zu `main`) |
-| **Production** | yourplatform.com | Live-System | Manuell (nach Review) |
+| Umgebung       | URL                      | Zweck                  | Auto-Deploy                |
+| -------------- | ------------------------ | ---------------------- | -------------------------- |
+| **Local**      | localhost                | Entwicklung            | Nein                       |
+| **Dev**        | dev.yourplatform.com     | Testen von Features    | Ja (bei Push zu `develop`) |
+| **Staging**    | staging.yourplatform.com | Pre-Production Testing | Ja (bei Push zu `main`)    |
+| **Production** | yourplatform.com         | Live-System            | Manuell (nach Review)      |
 
 ### 6.2 CI/CD-Pipeline
 
@@ -684,19 +717,19 @@ jobs:
     - Run Linter
     - Run Unit Tests
     - Run Integration Tests
-    
+
   build:
     - Build Docker Image
     - Push to ECR
-    
+
   deploy-dev:
     if: branch == 'develop'
     - Deploy to Dev-Environment
-    
+
   deploy-staging:
     if: branch == 'main'
     - Deploy to Staging
-    
+
   deploy-production:
     if: manual-trigger
     - Deploy to Production
@@ -707,6 +740,7 @@ jobs:
 ### 6.3 Release-Prozess
 
 **Sprint-Ende (jede 2. Woche):**
+
 1. Feature-Branch → `develop` (via Pull Request)
 2. Code-Review (gegenseitig)
 3. Auto-Deploy zu Dev
@@ -717,6 +751,7 @@ jobs:
 8. Manueller Deploy zu Production (Freitag Abend)
 
 **Hotfixes:**
+
 - Separate `hotfix/*` Branches
 - Direkt zu `main` mergen
 - Sofortiger Deploy
@@ -724,6 +759,7 @@ jobs:
 ### 6.4 Database-Migrations
 
 **Bei jedem Deploy:**
+
 ```bash
 # In CI/CD:
 npx prisma migrate deploy
@@ -733,6 +769,7 @@ npx prisma migrate reset --force
 ```
 
 **Backup-Strategie:**
+
 - Automated RDS-Snapshots (täglich)
 - Vor jedem Production-Deploy: Manueller Snapshot
 
@@ -743,18 +780,21 @@ npx prisma migrate reset --force
 ### 7.1 Entwickler-Aufteilung (Vorschlag)
 
 **Entwickler A (Frontend-Fokus):**
+
 - Sprints 1-4: Frontend-Setup, Auth-UI, Produktansicht
 - Sprints 5-8: Checkout-Flow, Zertifikate-UI, Verkäufer-Dashboard
 - Sprints 9-14: Erweitertes Profil, Analytics-Dashboards
 - Sprints 15+: Admin-Dashboard, UX-Optimierung
 
 **Entwickler B (Backend-Fokus):**
+
 - Sprints 1-4: Backend-Setup, Auth-Service, Produkt-API
 - Sprints 5-8: Warenkorb, Stripe, Zertifikats-Logik
 - Sprints 9-14: Matching-Algorithmus, Analytics-Service
 - Sprints 15+: Performance-Optimierung, Microservices (optional)
 
 **Gemeinsam:**
+
 - Sprint-Planning (Montag, 2h)
 - Daily Standups (15 Min)
 - Code-Reviews
@@ -764,14 +804,17 @@ npx prisma migrate reset --force
 ### 7.2 Externe Unterstützung (Optional)
 
 **Designer (Freelance):**
+
 - UI/UX-Design (Wochen 1-4): 40-60h
 - Redesign nach MVP-Feedback (Wochen 17-18): 20-30h
 
 **QA-Tester (Freelance):**
+
 - Pre-Launch Testing (Wochen 15-16): 40h
 - Public-Launch Testing (Wochen 27-28): 40h
 
 **Rechtliche Beratung:**
+
 - AGB, Datenschutz, Impressum (Woche 1): 10-20h
 - DSGVO-Audit (Woche 14): 10-20h
 
@@ -779,23 +822,23 @@ npx prisma migrate reset --force
 
 ## 8. Kosten-Schätzung (Phase 1 - MVP)
 
-| Kategorie | Kosten/Monat | Kosten 4 Monate |
-|-----------|--------------|-----------------|
-| **Cloud (AWS)** | 200-300 EUR | 800-1200 EUR |
-| - EC2/Fargate | 100 EUR | 400 EUR |
-| - RDS PostgreSQL | 50 EUR | 200 EUR |
-| - S3 + CloudFront | 30 EUR | 120 EUR |
-| - ElastiCache | 20 EUR | 80 EUR |
-| **SaaS-Tools** | 150-200 EUR | 600-800 EUR |
-| - Stripe | 0 (Provision) | 0 |
-| - SendGrid | 15 EUR | 60 EUR |
-| - Sentry | 26 EUR | 104 EUR |
-| - GitHub | 0 (Free) | 0 |
-| - Domain + SSL | 10 EUR | 40 EUR |
-| **Externe Hilfe** | 0-500 EUR | 0-2000 EUR |
-| - Designer | - | 1000-1500 EUR |
-| - Rechtlich | - | 500-1000 EUR |
-| **Gesamt** | 350-1000 EUR | 1400-4000 EUR |
+| Kategorie         | Kosten/Monat  | Kosten 4 Monate |
+| ----------------- | ------------- | --------------- |
+| **Cloud (AWS)**   | 200-300 EUR   | 800-1200 EUR    |
+| - EC2/Fargate     | 100 EUR       | 400 EUR         |
+| - RDS PostgreSQL  | 50 EUR        | 200 EUR         |
+| - S3 + CloudFront | 30 EUR        | 120 EUR         |
+| - ElastiCache     | 20 EUR        | 80 EUR          |
+| **SaaS-Tools**    | 150-200 EUR   | 600-800 EUR     |
+| - Stripe          | 0 (Provision) | 0               |
+| - SendGrid        | 15 EUR        | 60 EUR          |
+| - Sentry          | 26 EUR        | 104 EUR         |
+| - GitHub          | 0 (Free)      | 0               |
+| - Domain + SSL    | 10 EUR        | 40 EUR          |
+| **Externe Hilfe** | 0-500 EUR     | 0-2000 EUR      |
+| - Designer        | -             | 1000-1500 EUR   |
+| - Rechtlich       | -             | 500-1000 EUR    |
+| **Gesamt**        | 350-1000 EUR  | 1400-4000 EUR   |
 
 **Hinweis:** Entwickler-Kosten nicht eingerechnet (da Gründer selbst entwickeln)
 

@@ -25,7 +25,11 @@ function fromApiProfileType(t: string): ValuesProfileType {
 function parseProfileField<T>(value: unknown): T | null {
   if (value == null) return null
   if (typeof value === "string") {
-    try { return JSON.parse(value) as T } catch { return null }
+    try {
+      return JSON.parse(value) as T
+    } catch {
+      return null
+    }
   }
   return value as T
 }
@@ -37,7 +41,9 @@ export const BuyerValueProfileService = {
       ...raw,
       activeProfileType: fromApiProfileType(raw.activeProfileType as unknown as string),
       simpleProfile: parseProfileField<Record<string, number>>(raw.simpleProfile),
-      extendedProfile: parseProfileField<Record<string, Record<string, number>>>(raw.extendedProfile),
+      extendedProfile: parseProfileField<Record<string, Record<string, number>>>(
+        raw.extendedProfile
+      ),
     }
   },
 
@@ -55,7 +61,9 @@ export const BuyerValueProfileService = {
       ...raw,
       activeProfileType: fromApiProfileType(raw.activeProfileType as unknown as string),
       simpleProfile: parseProfileField<Record<string, number>>(raw.simpleProfile),
-      extendedProfile: parseProfileField<Record<string, Record<string, number>>>(raw.extendedProfile),
+      extendedProfile: parseProfileField<Record<string, Record<string, number>>>(
+        raw.extendedProfile
+      ),
     }
   },
 }

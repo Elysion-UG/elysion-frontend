@@ -1,4 +1,5 @@
 # PostgreSQL auf IONOS VPS einrichten
+
 ## Stage-Datenbank Self-Hosted
 
 **Zweck:** PostgreSQL selbst auf IONOS VPS installieren für Stage-Environment  
@@ -28,6 +29,7 @@ ssh username@deine-server-ip
 ```
 
 **IONOS VPS-Details findest du:**
+
 - IONOS Cloud Panel → Server → Details
 - E-Mail nach VPS-Erstellung (IP-Adresse, Root-Passwort)
 
@@ -199,6 +201,7 @@ host    sustainability_stage    stage_app    0.0.0.0/0    md5
 ```
 
 **Sicherheits-Hinweise:**
+
 - `0.0.0.0/0` = **ALLE IPs** (nur für Stage ok, nicht für Production!)
 - `123.45.67.89/32` = nur **eine spezifische IP**
 - Für Production: Whitelisting mit spezifischen IPs!
@@ -254,6 +257,7 @@ DATABASE_URL="postgresql://stage_app:MySecurePass123!@45.67.89.123:5432/sustaina
 ```
 
 **Für .env.stage:**
+
 ```env
 DATABASE_URL="postgresql://stage_app:PASSWORT@SERVER_IP:5432/sustainability_stage"
 DB_HOST="SERVER_IP"
@@ -377,6 +381,7 @@ sudo nano /usr/local/bin/pg-backup-stage.sh
 ```
 
 **Script-Inhalt:**
+
 ```bash
 #!/bin/bash
 
@@ -399,6 +404,7 @@ echo "Backup erstellt: $BACKUP_FILE"
 ```
 
 **Script ausführbar machen:**
+
 ```bash
 sudo chmod +x /usr/local/bin/pg-backup-stage.sh
 
@@ -452,7 +458,7 @@ psql "postgresql://stage_app:PASSWORT@SERVER_IP:5432/sustainability_stage"
 SELECT pg_size_pretty(pg_database_size('sustainability_stage'));
 
 -- Tabellen-Größen
-SELECT 
+SELECT
     schemaname,
     tablename,
     pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS size
@@ -468,7 +474,7 @@ ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 SELECT count(*) FROM pg_stat_activity;
 
 -- Langsame Queries (über 500ms)
-SELECT 
+SELECT
     pid,
     now() - query_start AS duration,
     query
@@ -493,6 +499,7 @@ sudo -u postgres vacuumdb -z -d sustainability_stage
 ## 10. Sicherheits-Best-Practices
 
 ### 10.1 ✅ Bereits umgesetzt
+
 - ✅ Separater App-User (nicht "postgres")
 - ✅ Starkes Passwort
 - ✅ Firewall (UFW)
@@ -501,6 +508,7 @@ sudo -u postgres vacuumdb -z -d sustainability_stage
 ### 10.2 Zusätzliche Empfehlungen
 
 **A) Fail2Ban installieren (Brute-Force-Schutz)**
+
 ```bash
 sudo apt install fail2ban -y
 
@@ -521,12 +529,14 @@ sudo systemctl restart fail2ban
 ```
 
 **B) Passwort-Policy verschärfen**
+
 ```bash
 # pgAudit installieren (Audit-Logging)
 sudo apt install postgresql-16-pgaudit -y
 ```
 
 **C) Regelmäßige Updates**
+
 ```bash
 # Wöchentlich prüfen
 sudo apt update && sudo apt upgrade postgresql-16 -y
@@ -539,6 +549,7 @@ sudo apt update && sudo apt upgrade postgresql-16 -y
 ### Problem: Verbindung schlägt fehl
 
 **Lösung:**
+
 ```bash
 # 1. Firewall prüfen
 sudo ufw status
@@ -556,6 +567,7 @@ sudo tail -100 /var/log/postgresql/postgresql-16-main.log
 ### Problem: "Peer authentication failed"
 
 **Lösung:**
+
 - pg_hba.conf prüfen
 - Methode "md5" statt "peer" verwenden
 - PostgreSQL neu starten
@@ -563,6 +575,7 @@ sudo tail -100 /var/log/postgresql/postgresql-16-main.log
 ### Problem: Zu viele Verbindungen
 
 **Lösung:**
+
 ```bash
 # max_connections erhöhen
 sudo nano /etc/postgresql/16/main/postgresql.conf
@@ -580,11 +593,11 @@ sudo systemctl restart postgresql
 
 ### VPS-Kosten (IONOS)
 
-| VPS | CPU | RAM | Storage | Preis/Monat |
-|-----|-----|-----|---------|-------------|
-| VPS S | 1 | 1 GB | 10 GB | ~5 € |
-| VPS M | 2 | 2 GB | 40 GB | ~10 € |
-| VPS L | 4 | 4 GB | 80 GB | ~20 € |
+| VPS   | CPU | RAM  | Storage | Preis/Monat |
+| ----- | --- | ---- | ------- | ----------- |
+| VPS S | 1   | 1 GB | 10 GB   | ~5 €        |
+| VPS M | 2   | 2 GB | 40 GB   | ~10 €       |
+| VPS L | 4   | 4 GB | 80 GB   | ~20 €       |
 
 **Empfehlung für Stage:** VPS M (2 CPU, 2 GB RAM) = ~10€/Monat
 
@@ -595,6 +608,7 @@ sudo systemctl restart postgresql
 ## 13. Production vorbereiten
 
 Für Production später:
+
 - [ ] Separater VPS oder größerer VPS
 - [ ] Multi-Node-Setup (Replication)
 - [ ] Connection Pooling (PgBouncer)

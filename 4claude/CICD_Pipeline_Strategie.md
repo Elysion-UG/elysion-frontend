@@ -1,4 +1,5 @@
 # CI/CD Pipeline Strategie
+
 ## Automated Deployment: Development → Test → Stage → Production
 
 **Datum:** 09.02.2026  
@@ -18,7 +19,7 @@ graph LR
     D -->|2. Test| E[Run Tests]
     E -->|3. Deploy| F[Stage Server]
     F -->|Manual Review| G[Production]
-    
+
     E -->|Tests Failed| H[Notify Team]
     F -->|Smoke Tests| I[Health Check]
     I -->|Failed| H
@@ -26,12 +27,12 @@ graph LR
 
 ### 1.2 Stages & Triggers
 
-| Stage | Trigger | Tests | Deploy | Approval |
-|-------|---------|-------|--------|----------|
-| **Development** | Jeder Commit | Lokal (optional) | Lokal | — |
-| **Test** | Push zu `feature/*` | Unit + Integration | — | — |
-| **Stage** | Push zu `develop` | Full Test Suite | Auto | — |
-| **Production** | Tag `v*.*.*` | Full + Smoke | Auto | ✅ Manual |
+| Stage           | Trigger             | Tests              | Deploy | Approval  |
+| --------------- | ------------------- | ------------------ | ------ | --------- |
+| **Development** | Jeder Commit        | Lokal (optional)   | Lokal  | —         |
+| **Test**        | Push zu `feature/*` | Unit + Integration | —      | —         |
+| **Stage**       | Push zu `develop`   | Full Test Suite    | Auto   | —         |
+| **Production**  | Tag `v*.*.*`        | Full + Smoke       | Auto   | ✅ Manual |
 
 ---
 
@@ -50,14 +51,15 @@ main (production)
 
 ### 2.2 Regeln
 
-| Branch | Schutz | Merge via | Deploy to |
-|--------|--------|-----------|-----------|
-| `main` | Protected | Pull Request (1 Approval) | Production |
-| `develop` | Protected | Pull Request | Stage |
-| `feature/*` | — | Pull Request to develop | — |
-| `hotfix/*` | — | Direct to main + develop | Production |
+| Branch      | Schutz    | Merge via                 | Deploy to  |
+| ----------- | --------- | ------------------------- | ---------- |
+| `main`      | Protected | Pull Request (1 Approval) | Production |
+| `develop`   | Protected | Pull Request              | Stage      |
+| `feature/*` | —         | Pull Request to develop   | —          |
+| `hotfix/*`  | —         | Direct to main + develop  | Production |
 
 **Branch Protection (GitHub Settings):**
+
 ```
 Repository → Settings → Branches → Add Rule:
 
@@ -78,42 +80,44 @@ Branch: main
 ### 3.1 Stage 1: Build & Lint
 
 **Was passiert:**
+
 - Code auschecken
 - Dependencies installieren
 - Code kompilieren/bauen
 - Linting & Code-Style-Check
 
 **GitHub Actions Workflow:**
+
 ```yaml
 name: Build & Lint
 
 on:
   push:
-    branches: ['**']
+    branches: ["**"]
   pull_request:
     branches: [develop, main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
+
       - name: Setup Environment
         run: |
           # Entwickler-spezifisch (Node.js Beispiel)
           # node --version
           # npm install
           echo "Setup completed"
-      
+
       - name: Lint Code
         run: |
           # Entwickler wählt Linter
           # npm run lint
           echo "Linting completed"
-      
+
       - name: Build
         run: |
           # Entwickler-spezifisch
@@ -129,24 +133,26 @@ jobs:
 ### 3.2 Stage 2: Tests
 
 **Was passiert:**
+
 - Unit-Tests
 - Integration-Tests
 - Code-Coverage-Report
 
 **Workflow:**
+
 ```yaml
 name: Tests
 
 on:
   push:
-    branches: ['**']
+    branches: ["**"]
   pull_request:
     branches: [develop, main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:16
@@ -161,15 +167,15 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
+
       - name: Setup Environment
         run: |
           echo "Setup test environment"
-      
+
       - name: Run Unit Tests
         env:
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/sustainability_test
@@ -177,19 +183,19 @@ jobs:
           # Entwickler-spezifisch
           # npm run test:unit
           echo "Unit tests passed"
-      
+
       - name: Run Integration Tests
         env:
           DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/sustainability_test
         run: |
           # npm run test:integration
           echo "Integration tests passed"
-      
+
       - name: Coverage Report
         run: |
           # npm run test:coverage
           echo "Coverage: 85%"
-      
+
       - name: Upload Coverage
         uses: codecov/codecov-action@v3
         with:
@@ -198,6 +204,7 @@ jobs:
 ```
 
 **Quality Gates:**
+
 - ✅ Alle Tests grün
 - ✅ Coverage > 60% (konfigurierbar)
 - ❌ Ein Test rot = Pipeline stoppt
@@ -209,6 +216,7 @@ jobs:
 **Trigger:** Push zu `develop` Branch
 
 **Was passiert:**
+
 1. Build Docker Image (optional)
 2. Upload zu Server
 3. Datenbank-Migration
@@ -216,6 +224,7 @@ jobs:
 5. Health-Check
 
 **Workflow:**
+
 ```yaml
 name: Deploy to Stage
 
@@ -226,17 +235,17 @@ on:
 jobs:
   deploy-stage:
     runs-on: ubuntu-latest
-    needs: [build, test]  # Nur wenn Build+Test erfolgreich
-    
+    needs: [build, test] # Nur wenn Build+Test erfolgreich
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
+
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.8.0
         with:
           ssh-private-key: ${{ secrets.STAGE_SSH_KEY }}
-      
+
       - name: Deploy to Stage Server
         env:
           STAGE_HOST: ${{ secrets.STAGE_HOST }}
@@ -247,7 +256,7 @@ jobs:
             --exclude 'node_modules' \
             --exclude '.git' \
             ./ $STAGE_USER@$STAGE_HOST:/var/www/sustainability-stage/
-      
+
       - name: Run Database Migrations
         run: |
           ssh $STAGE_USER@$STAGE_HOST << 'EOF'
@@ -256,24 +265,24 @@ jobs:
             # npm run migrate:deploy
             echo "Migrations completed"
           EOF
-      
+
       - name: Restart Application
         run: |
           ssh $STAGE_USER@$STAGE_HOST << 'EOF'
             sudo systemctl restart sustainability-stage
           EOF
-      
+
       - name: Health Check
         run: |
           sleep 10
           curl --fail https://stage.yourplatform.com/health || exit 1
-      
+
       - name: Notify Team
         if: success()
         run: |
           # Slack/Discord/E-Mail Benachrichtigung
           echo "✅ Stage deployed successfully"
-      
+
       - name: Notify on Failure
         if: failure()
         run: |
@@ -281,6 +290,7 @@ jobs:
 ```
 
 **Secrets in GitHub:**
+
 ```
 Repository → Settings → Secrets → Actions:
 
@@ -295,10 +305,12 @@ STAGE_DB_URL        = postgresql://...
 ### 3.4 Stage 4: Smoke Tests (Stage)
 
 **Was passiert:**
+
 - Automatische Tests gegen deployed Stage
 - Kritische User-Journeys prüfen
 
 **Workflow:**
+
 ```yaml
 name: Smoke Tests (Stage)
 
@@ -310,12 +322,12 @@ on:
 jobs:
   smoke-tests:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Test Health Endpoint
         run: |
           curl --fail https://stage.yourplatform.com/health
-      
+
       - name: Test API Endpoints
         run: |
           # Login
@@ -323,11 +335,11 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{"email":"test@example.com","password":"TestPass123!"}' \
             | jq -r '.data.accessToken')
-          
+
           # Get User Profile
           curl --fail https://stage.yourplatform.com/api/v1/users/me \
             -H "Authorization: Bearer $TOKEN"
-      
+
       - name: Test Database Connection
         run: |
           # Prüfe ob DB erreichbar
@@ -341,13 +353,14 @@ jobs:
 **Trigger:** Git Tag `v1.0.0`, `v1.0.1`, etc.
 
 **Workflow:**
+
 ```yaml
 name: Deploy to Production
 
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
 
 jobs:
   deploy-production:
@@ -355,43 +368,43 @@ jobs:
     environment:
       name: production
       url: https://yourplatform.com
-    
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-      
+
       # Manual Approval erforderlich (GitHub Environment Protection)
-      
+
       - name: Create Backup
         run: |
           ssh $PROD_USER@$PROD_HOST << 'EOF'
             # Backup vor Deployment
             pg_dump sustainability_prod > /backups/pre-deploy-$(date +%Y%m%d-%H%M%S).sql
           EOF
-      
+
       - name: Deploy to Production
         env:
           PROD_HOST: ${{ secrets.PROD_HOST }}
           PROD_USER: ${{ secrets.PROD_USER }}
         run: |
           rsync -avz --delete ./ $PROD_USER@$PROD_HOST:/var/www/sustainability-prod/
-      
+
       - name: Run Migrations
         run: |
           ssh $PROD_USER@$PROD_HOST << 'EOF'
             cd /var/www/sustainability-prod
             npm run migrate:deploy
           EOF
-      
+
       - name: Restart Application
         run: |
           ssh $PROD_USER@$PROD_HOST "sudo systemctl restart sustainability-prod"
-      
+
       - name: Health Check
         run: |
           sleep 15
           curl --fail https://yourplatform.com/health
-      
+
       - name: Rollback on Failure
         if: failure()
         run: |
@@ -400,7 +413,7 @@ jobs:
             git reset --hard HEAD~1
             sudo systemctl restart sustainability-prod
           EOF
-      
+
       - name: Notify Team
         if: always()
         run: |
@@ -409,6 +422,7 @@ jobs:
 ```
 
 **Manual Approval (GitHub Environment):**
+
 ```
 Repository → Settings → Environments → New Environment:
 
@@ -435,6 +449,7 @@ Downtime: ~10-30 Sekunden
 ```
 
 **Umsetzung:**
+
 ```bash
 # Im Deployment-Script
 systemctl stop app
@@ -478,10 +493,10 @@ Alles OK? → 100% zu v1.0.1
   run: |
     # 5 Minuten nach Deployment
     sleep 300
-    
+
     # Error-Rate prüfen (z.B. via Sentry API)
     ERROR_RATE=$(curl https://sentry.io/api/.../stats)
-    
+
     if [ $ERROR_RATE -gt 5 ]; then
       echo "❌ High error rate detected: $ERROR_RATE%"
       exit 1
@@ -555,11 +570,11 @@ sudo systemctl restart sustainability-prod
     from: CI/CD <noreply@yourplatform.com>
     body: |
       Deployment to Stage failed!
-      
+
       Commit: ${{ github.sha }}
       Branch: ${{ github.ref }}
       Author: ${{ github.actor }}
-      
+
       See: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 ```
 
@@ -631,6 +646,7 @@ Secrets:
 ### 8.2 .env-Dateien auf Servern
 
 **Stage-Server:**
+
 ```bash
 # /var/www/sustainability-stage/.env
 NODE_ENV=staging
@@ -640,6 +656,7 @@ FRONTEND_URL=https://stage.yourplatform.com
 ```
 
 **Deployment-Script lädt diese NICHT hoch!**
+
 ```yaml
 rsync ... --exclude '.env' --exclude '.env.*'
 ```
@@ -651,10 +668,12 @@ rsync ... --exclude '.env' --exclude '.env.*'
 ### 9.1 GitHub Actions
 
 **Free Tier:**
+
 - 2.000 Minuten/Monat (Public Repos)
 - 500 MB Storage
 
 **Geschätzt:**
+
 - Build + Test: ~5-10 Min pro Run
 - Deploy: ~2-5 Min
 - Bei 50 Deployments/Monat: ~500 Min
@@ -663,6 +682,7 @@ rsync ... --exclude '.env' --exclude '.env.*'
 ### 9.2 Server-Ressourcen
 
 **Stage-Server (IONOS VPS M):**
+
 - CPU: Minimal (nur bei Deployment)
 - RAM: +100 MB während Deployment
 - Disk: +50 MB pro Release
@@ -673,6 +693,7 @@ rsync ... --exclude '.env' --exclude '.env.*'
 ## 10. Checkliste Setup
 
 ### Initial Setup
+
 - [ ] GitHub Repository erstellt
 - [ ] Branches: main, develop
 - [ ] Branch Protection aktiviert
@@ -681,18 +702,21 @@ rsync ... --exclude '.env' --exclude '.env.*'
 - [ ] Deploy-User auf Server erstellt
 
 ### Pipeline-Files
+
 - [ ] `.github/workflows/build.yml`
 - [ ] `.github/workflows/test.yml`
 - [ ] `.github/workflows/deploy-stage.yml`
 - [ ] `.github/workflows/deploy-prod.yml`
 
 ### Server-Setup
+
 - [ ] Stage-Server vorbereitet
 - [ ] Deploy-Scripts auf Server
 - [ ] Systemd-Service eingerichtet
 - [ ] Health-Check-Endpoint implementiert
 
 ### Testing
+
 - [ ] Erster Commit → Build läuft?
 - [ ] Push zu develop → Stage-Deployment?
 - [ ] Tag erstellen → Production (mit Manual Approval)?

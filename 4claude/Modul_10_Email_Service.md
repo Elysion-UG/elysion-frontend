@@ -1,4 +1,5 @@
 # Modul 10: Email Service
+
 ## Spezifikation & Requirements
 
 **Verantwortlichkeit:** E-Mail-Versand, Templates, Benachrichtigungen  
@@ -23,15 +24,16 @@ Dieses Modul verwaltet alle E-Mail-Kommunikation der Plattform. Von Transaktions
 
 ### E-Mail-Typen:
 
-| Kategorie | Beispiele | Abmeldbar? |
-|-----------|-----------|------------|
-| **Transaktional** | Bestellbestätigung, Passwort-Reset | ❌ Nein |
-| **Benachrichtigung** | Neue Nachricht, Zertifikat verifiziert | ✅ Ja |
-| **Marketing** | Newsletter, Angebote | ✅ Ja |
+| Kategorie            | Beispiele                              | Abmeldbar? |
+| -------------------- | -------------------------------------- | ---------- |
+| **Transaktional**    | Bestellbestätigung, Passwort-Reset     | ❌ Nein    |
+| **Benachrichtigung** | Neue Nachricht, Zertifikat verifiziert | ✅ Ja      |
+| **Marketing**        | Newsletter, Angebote                   | ✅ Ja      |
 
 ### Schnittstellen zu anderen Modulen:
 
 **Wird aufgerufen von:**
+
 - Modul 01: E-Mail-Verifizierung, Passwort-Reset
 - Modul 02: Produkt aktiviert
 - Modul 03: Zertifikat verifiziert/abgelehnt, Ablauf-Warnung
@@ -54,20 +56,20 @@ sendEmail(recipient, templateId, data)
 
 E-Mail-Vorlagen (editierbar durch Admin).
 
-| Feld | Typ | Pflicht | Bedeutung |
-|------|-----|---------|-----------|
-| **id** | UUID | Ja | Primärschlüssel |
-| **templateId** | String | Ja | Eindeutige ID: "order_confirmation", "password_reset" |
-| **name** | String | Ja | Lesbarer Name: "Bestellbestätigung" |
-| **subject** | String | Ja | E-Mail-Betreff (kann Variablen enthalten) |
-| **htmlBody** | Text | Ja | HTML-Template |
-| **textBody** | Text | Ja | Plain-Text-Fallback |
-| **category** | Enum | Ja | TRANSACTIONAL / NOTIFICATION / MARKETING |
-| **locale** | String (5) | Ja | "de_DE", "en_US" |
-| **isActive** | Boolean | Ja | Aktiv? |
-| **variables** | JSONB | Ja | Liste der verfügbaren Variablen |
-| **createdAt** | Timestamp | Ja | |
-| **updatedAt** | Timestamp | Ja | |
+| Feld           | Typ        | Pflicht | Bedeutung                                             |
+| -------------- | ---------- | ------- | ----------------------------------------------------- |
+| **id**         | UUID       | Ja      | Primärschlüssel                                       |
+| **templateId** | String     | Ja      | Eindeutige ID: "order_confirmation", "password_reset" |
+| **name**       | String     | Ja      | Lesbarer Name: "Bestellbestätigung"                   |
+| **subject**    | String     | Ja      | E-Mail-Betreff (kann Variablen enthalten)             |
+| **htmlBody**   | Text       | Ja      | HTML-Template                                         |
+| **textBody**   | Text       | Ja      | Plain-Text-Fallback                                   |
+| **category**   | Enum       | Ja      | TRANSACTIONAL / NOTIFICATION / MARKETING              |
+| **locale**     | String (5) | Ja      | "de_DE", "en_US"                                      |
+| **isActive**   | Boolean    | Ja      | Aktiv?                                                |
+| **variables**  | JSONB      | Ja      | Liste der verfügbaren Variablen                       |
+| **createdAt**  | Timestamp  | Ja      |                                                       |
+| **updatedAt**  | Timestamp  | Ja      |                                                       |
 
 **Beispiel:**
 
@@ -96,21 +98,21 @@ CREATE UNIQUE INDEX idx_email_template_id_locale ON email_template(templateId, l
 
 Protokolliert alle gesendeten E-Mails.
 
-| Feld | Typ | Pflicht | Bedeutung |
-|------|-----|---------|-----------|
-| **id** | UUID | Ja | Primärschlüssel |
-| **templateId** | String | Ja | Welches Template |
-| **recipient** | String | Ja | E-Mail-Adresse |
-| **userId** | UUID | Nein | Empfänger (falls User) |
-| **subject** | String | Ja | Tatsächlicher Betreff |
-| **status** | Enum | Ja | QUEUED / SENT / FAILED / BOUNCED / OPENED / CLICKED |
-| **provider** | String | Ja | "sendgrid", "aws_ses", "smtp", etc. |
-| **providerId** | String | Nein | Message-ID vom Provider |
-| **errorMessage** | Text | Nein | Bei Fehler |
-| **sentAt** | Timestamp | Nein | Wann versendet |
-| **openedAt** | Timestamp | Nein | Wann geöffnet (Tracking) |
-| **clickedAt** | Timestamp | Nein | Wann geklickt (Tracking) |
-| **createdAt** | Timestamp | Ja | Wann erstellt |
+| Feld             | Typ       | Pflicht | Bedeutung                                           |
+| ---------------- | --------- | ------- | --------------------------------------------------- |
+| **id**           | UUID      | Ja      | Primärschlüssel                                     |
+| **templateId**   | String    | Ja      | Welches Template                                    |
+| **recipient**    | String    | Ja      | E-Mail-Adresse                                      |
+| **userId**       | UUID      | Nein    | Empfänger (falls User)                              |
+| **subject**      | String    | Ja      | Tatsächlicher Betreff                               |
+| **status**       | Enum      | Ja      | QUEUED / SENT / FAILED / BOUNCED / OPENED / CLICKED |
+| **provider**     | String    | Ja      | "sendgrid", "aws_ses", "smtp", etc.                 |
+| **providerId**   | String    | Nein    | Message-ID vom Provider                             |
+| **errorMessage** | Text      | Nein    | Bei Fehler                                          |
+| **sentAt**       | Timestamp | Nein    | Wann versendet                                      |
+| **openedAt**     | Timestamp | Nein    | Wann geöffnet (Tracking)                            |
+| **clickedAt**    | Timestamp | Nein    | Wann geklickt (Tracking)                            |
+| **createdAt**    | Timestamp | Ja      | Wann erstellt                                       |
 
 **Indizes:**
 
@@ -127,16 +129,16 @@ CREATE INDEX idx_email_log_provider_id ON email_log(providerId);
 
 User kann bestimmte E-Mail-Typen abbestellen.
 
-| Feld | Typ | Pflicht | Bedeutung |
-|------|-----|---------|-----------|
-| **id** | UUID | Ja | Primärschlüssel |
-| **userId** | UUID | Nein | User (NULL = Gast via E-Mail) |
-| **email** | String | Nein | E-Mail (bei Gast) |
-| **notificationEmails** | Boolean | Ja | Benachrichtigungen? (default: true) |
-| **marketingEmails** | Boolean | Ja | Marketing? (default: true) |
-| **unsubscribeToken** | String | Ja | Token für Abmelde-Link |
-| **createdAt** | Timestamp | Ja | |
-| **updatedAt** | Timestamp | Ja | |
+| Feld                   | Typ       | Pflicht | Bedeutung                           |
+| ---------------------- | --------- | ------- | ----------------------------------- |
+| **id**                 | UUID      | Ja      | Primärschlüssel                     |
+| **userId**             | UUID      | Nein    | User (NULL = Gast via E-Mail)       |
+| **email**              | String    | Nein    | E-Mail (bei Gast)                   |
+| **notificationEmails** | Boolean   | Ja      | Benachrichtigungen? (default: true) |
+| **marketingEmails**    | Boolean   | Ja      | Marketing? (default: true)          |
+| **unsubscribeToken**   | String    | Ja      | Token für Abmelde-Link              |
+| **createdAt**          | Timestamp | Ja      |                                     |
+| **updatedAt**          | Timestamp | Ja      |                                     |
 
 **Constraint:**
 
@@ -164,6 +166,7 @@ CREATE INDEX idx_email_preference_token ON email_preference(unsubscribeToken);
 **Verfügbare Variablen je Template:**
 
 **order_confirmation:**
+
 ```
 {{userName}}
 {{orderNumber}}
@@ -175,6 +178,7 @@ CREATE INDEX idx_email_preference_token ON email_preference(unsubscribeToken);
 ```
 
 **password_reset:**
+
 ```
 {{userName}}
 {{resetLink}}
@@ -182,6 +186,7 @@ CREATE INDEX idx_email_preference_token ON email_preference(unsubscribeToken);
 ```
 
 **certificate_verified:**
+
 ```
 {{sellerName}}
 {{certificateType}}
@@ -222,21 +227,21 @@ CREATE INDEX idx_email_preference_token ON email_preference(unsubscribeToken);
 
 **Liste aller Templates:**
 
-| Template ID | Kategorie | Trigger |
-|-------------|-----------|---------|
-| `email_verification` | TRANSACTIONAL | User registriert sich |
-| `password_reset` | TRANSACTIONAL | User fordert Reset an |
-| `order_confirmation` | TRANSACTIONAL | Bestellung erfolgreich |
-| `order_shipped` | NOTIFICATION | OrderGroup versendet |
-| `order_delivered` | NOTIFICATION | OrderGroup zugestellt |
-| `certificate_verified` | NOTIFICATION | Zertifikat verifiziert |
-| `certificate_rejected` | NOTIFICATION | Zertifikat abgelehnt |
-| `certificate_expiring` | NOTIFICATION | Zertifikat läuft ab (30d + 7d) |
-| `seller_approved` | NOTIFICATION | Verkäufer freigeschaltet |
-| `payout_completed` | NOTIFICATION | Auszahlung erfolgt |
-| `new_message` | NOTIFICATION | Neue Nachricht (falls Chat-System) |
-| `cart_abandoned` | MARKETING | Warenkorb > 24h |
-| `product_recommendation` | MARKETING | Neue Produkte passend zu Profil |
+| Template ID              | Kategorie     | Trigger                            |
+| ------------------------ | ------------- | ---------------------------------- |
+| `email_verification`     | TRANSACTIONAL | User registriert sich              |
+| `password_reset`         | TRANSACTIONAL | User fordert Reset an              |
+| `order_confirmation`     | TRANSACTIONAL | Bestellung erfolgreich             |
+| `order_shipped`          | NOTIFICATION  | OrderGroup versendet               |
+| `order_delivered`        | NOTIFICATION  | OrderGroup zugestellt              |
+| `certificate_verified`   | NOTIFICATION  | Zertifikat verifiziert             |
+| `certificate_rejected`   | NOTIFICATION  | Zertifikat abgelehnt               |
+| `certificate_expiring`   | NOTIFICATION  | Zertifikat läuft ab (30d + 7d)     |
+| `seller_approved`        | NOTIFICATION  | Verkäufer freigeschaltet           |
+| `payout_completed`       | NOTIFICATION  | Auszahlung erfolgt                 |
+| `new_message`            | NOTIFICATION  | Neue Nachricht (falls Chat-System) |
+| `cart_abandoned`         | MARKETING     | Warenkorb > 24h                    |
+| `product_recommendation` | MARKETING     | Neue Produkte passend zu Profil    |
 
 ---
 
@@ -271,40 +276,40 @@ EmailService.sendEmail(options)
 
 ```
 function sendEmail(options):
-  
+
   1. Template holen:
      template = SELECT * FROM email_template
                 WHERE templateId = :templateId
                 AND locale = :locale
                 AND isActive = true
-  
+
   2. Prüfen ob User abgemeldet (wenn NOTIFICATION/MARKETING):
      if (template.category != 'TRANSACTIONAL'):
        pref = SELECT * FROM email_preference
               WHERE (userId = :userId OR email = :recipient)
-       
+
        if (pref.notificationEmails == false && category == 'NOTIFICATION'):
          return false  # Nicht senden
-       
+
        if (pref.marketingEmails == false && category == 'MARKETING'):
          return false  # Nicht senden
-  
+
   3. Template rendern:
      subject = Handlebars.compile(template.subject)(data)
      htmlBody = Handlebars.compile(template.htmlBody)(data)
      textBody = Handlebars.compile(template.textBody)(data)
-  
+
   4. Unsubscribe-Link hinzufügen (wenn NOTIFICATION/MARKETING):
      if (template.category != 'TRANSACTIONAL'):
        token = getOrCreateUnsubscribeToken(userId, recipient)
        htmlBody += '<p><a href="{{unsubscribeUrl}}">Abmelden</a></p>'
        htmlBody = htmlBody.replace('{{unsubscribeUrl}}', `https://example.com/unsubscribe/${token}`)
-  
+
   5. In Queue stellen:
      INSERT INTO email_queue (
        templateId, recipient, userId, subject, htmlBody, textBody, status
      ) VALUES (...)
-  
+
   6. Worker verarbeitet Queue (siehe 4.2)
 ```
 
@@ -316,18 +321,18 @@ function sendEmail(options):
 
 ```
 while (true):
-  
+
   # Hole nächste E-Mail
   email = SELECT * FROM email_log
           WHERE status = 'QUEUED'
           ORDER BY createdAt ASC
           LIMIT 1
           FOR UPDATE SKIP LOCKED
-  
+
   if (!email):
     sleep(1 second)
     continue
-  
+
   try:
     # Provider-API aufrufen
     if (EMAIL_PROVIDER == 'SENDGRID'):
@@ -337,7 +342,7 @@ while (true):
         html: email.htmlBody,
         text: email.textBody
       })
-    
+
     else if (EMAIL_PROVIDER == 'AWS_SES'):
       result = ses.sendEmail({
         Destination: { ToAddresses: [email.recipient] },
@@ -349,21 +354,21 @@ while (true):
           }
         }
       })
-    
+
     # Erfolg
     UPDATE email_log
     SET status = 'SENT',
         providerId = result.messageId,
         sentAt = NOW()
     WHERE id = email.id
-  
+
   catch (error):
     # Fehler
     UPDATE email_log
     SET status = 'FAILED',
         errorMessage = error.message
     WHERE id = email.id
-    
+
     # Retry (max. 3×)
     if (email.retryCount < 3):
       INSERT INTO email_queue (...)  # Nochmal in Queue
@@ -382,15 +387,15 @@ while (true):
 
 <form method="POST" action="/unsubscribe/{{token}}">
   <label>
-    <input type="checkbox" name="notifications" checked>
+    <input type="checkbox" name="notifications" checked />
     Benachrichtigungen (Bestellstatus, etc.)
   </label>
-  
+
   <label>
-    <input type="checkbox" name="marketing" checked>
+    <input type="checkbox" name="marketing" checked />
     Marketing (Newsletter, Angebote)
   </label>
-  
+
   <button>Abmelden</button>
 </form>
 ```
@@ -411,7 +416,7 @@ marketing: off
 ```
 1. Token validieren:
    pref = SELECT * FROM email_preference WHERE unsubscribeToken = :token
-   
+
    if (!pref):
      throw 404 Not Found
 
@@ -432,6 +437,7 @@ marketing: off
 ### 5.1 SendGrid (empfohlen)
 
 **Vorteile:**
+
 - Günstig (100 E-Mails/Tag kostenlos)
 - Einfache API
 - Tracking (Öffnungsrate, Klickrate)
@@ -449,16 +455,16 @@ marketing: off
 **Code:**
 
 ```javascript
-const sgMail = require('@sendgrid/mail');
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const sgMail = require("@sendgrid/mail")
+sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
 await sgMail.send({
-  to: 'kunde@example.com',
-  from: 'noreply@myplatform.com',
-  subject: 'Bestellung bestätigt',
-  html: '<html>...</html>',
-  text: 'Ihre Bestellung wurde bestätigt...'
-});
+  to: "kunde@example.com",
+  from: "noreply@myplatform.com",
+  subject: "Bestellung bestätigt",
+  html: "<html>...</html>",
+  text: "Ihre Bestellung wurde bestätigt...",
+})
 ```
 
 ---
@@ -466,10 +472,12 @@ await sgMail.send({
 ### 5.2 AWS SES (Alternative)
 
 **Vorteile:**
+
 - Sehr günstig ($0.10 pro 1000 E-Mails)
 - AWS-Integration
 
 **Nachteile:**
+
 - Komplexere Setup (IAM, Sandbox)
 - Kein eingebautes Tracking
 
@@ -487,6 +495,7 @@ Password: ***
 ```
 
 **Nachteile:**
+
 - Langsamer
 - Kein Tracking
 - Rate-Limits
@@ -523,7 +532,7 @@ Links in E-Mail umschreiben:
 Wenn User klickt:
   1. Server registriert Klick:
      UPDATE email_log SET status = 'CLICKED', clickedAt = NOW()
-  
+
   2. Redirect zum Original:
      Response: 302 Redirect → https://myplatform.com/products/bio-tshirt
 ```
@@ -563,6 +572,7 @@ Response:
 ### 7.1 SendGrid Webhooks
 
 **Events:**
+
 - `delivered` - E-Mail zugestellt
 - `bounce` - E-Mail nicht zustellbar
 - `open` - E-Mail geöffnet
@@ -600,12 +610,12 @@ Handler:
 
 ```
 function getLocale(userId):
-  
+
   # 1. User-Profil
   if (userId):
     user = SELECT * FROM users WHERE id = userId
     return user.preferredLocale || 'de_DE'
-  
+
   # 2. Default
   return 'de_DE'
 ```
@@ -616,7 +626,7 @@ function getLocale(userId):
 Template-Suche:
   1. templateId = 'order_confirmation', locale = 'en_US'
      → Nicht gefunden
-  
+
   2. Fallback: locale = 'de_DE'
      → Gefunden
 ```
@@ -671,7 +681,7 @@ RICHTIG:
   POST /checkout/complete
     → emailQueue.add(...)  # In Queue stellen
     → Response (sofort)
-  
+
   Worker (Background):
     → sendEmail(...)
 ```
@@ -741,7 +751,7 @@ Bei fehlgeschlagenem Versand:
   1. Retry nach 1 Minute
   2. Retry nach 10 Minuten
   3. Retry nach 1 Stunde
-  
+
 Nach 3 Versuchen:
   → Status = FAILED
   → Admin-Benachrichtigung
@@ -753,7 +763,7 @@ Nach 3 Versuchen:
 Wenn Admin Template ändert:
   → Neue Version erstellen, alte behalten
   → Emails in Queue nutzen alte Version
-  
+
 Warum?
   - Konsistenz
   - Rollback möglich
@@ -774,6 +784,7 @@ Nach Ablauf:
 ---
 
 **Der Entwickler entscheidet:**
+
 - E-Mail-Provider (SendGrid, AWS SES, SMTP)
 - Template-Engine (Handlebars, Mustache, EJS)
 - Queue-System (Redis, RabbitMQ, Database)

@@ -35,10 +35,7 @@ export class ApiError extends Error {
 }
 
 // ── Core request function ─────────────────────────────────────────────────────
-export async function apiRequest<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
+export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) ?? {}),
@@ -66,6 +63,72 @@ export async function apiRequest<T>(
     throw new ApiError(
       response.status,
       body?.message ?? `Request failed (${response.status})`,
+      body
+    )
+  }
+
+  return body.data as T
+}
+
+// ── Raw request (no ApiResponse unwrapping) ───────────────────────────────────
+export async function apiRequestRaw<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...((options.headers as Record<string, string>) ?? {}),
+  }
+
+  if (_accessToken) {
+    headers["Authorization"] = `Bearer ${_accessToken}`
+  }
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers,
+    credentials: "include",
+  })
+
+  if (response.status === 204) {
+    return null as T
+  }
+
+  const body = await response.json()
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      body?.message ?? `Request failed (${response.status})`,
+      body
+    )
+  }
+
+  return body as T
+}
+
+// ── Multipart upload ──────────────────────────────────────────────────────────
+export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  const headers: Record<string, string> = {}
+
+  if (_accessToken) {
+    headers["Authorization"] = `Bearer ${_accessToken}`
+  }
+
+  const response = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers,
+    body: form,
+    credentials: "include",
+  })
+
+  if (response.status === 204) {
+    return null as T
+  }
+
+  const body = await response.json()
+
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      body?.message ?? `Upload failed (${response.status})`,
       body
     )
   }

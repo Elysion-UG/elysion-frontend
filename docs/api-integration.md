@@ -27,14 +27,15 @@ try {
   await apiRequest("/api/v1/...")
 } catch (e) {
   if (e instanceof ApiError) {
-    console.log(e.status)   // HTTP Status
-    console.log(e.message)  // Backend message
-    console.log(e.body)     // Vollständiger Error-Body inkl. error-Code & fields
+    console.log(e.status) // HTTP Status
+    console.log(e.message) // Backend message
+    console.log(e.body) // Vollständiger Error-Body inkl. error-Code & fields
   }
 }
 ```
 
 **Wichtig:**
+
 - `credentials: 'include'` ist immer gesetzt → Refresh-Token-Cookie wird automatisch mitgesendet
 - Access Token wird automatisch als `Authorization: Bearer ...` angehängt
 - Response-Envelope `{ status, message, data }` wird automatisch ausgepackt → `data` direkt zurückgegeben
@@ -56,33 +57,33 @@ NEXT_PUBLIC_API_URL=https://marketplace-backend-1-1w30.onrender.com
 
 ### `src/services/auth.service.ts`
 
-| Methode | Endpoint | Beschreibung |
-|---------|----------|-------------|
-| `AuthService.register(dto)` | `POST /api/v1/auth/register` | Registrierung (BUYER oder SELLER) |
-| `AuthService.login(dto)` | `POST /api/v1/auth/login` | Login → AccessToken + Cookie |
-| `AuthService.refresh()` | `POST /api/v1/auth/refresh` | Token erneuern via Cookie |
-| `AuthService.logout()` | `POST /api/v1/auth/logout` | Logout + Cookie löschen |
-| `AuthService.verifyEmail(token)` | `POST /api/v1/auth/verify-email` | E-Mail verifizieren |
-| `AuthService.forgotPassword(email)` | `POST /api/v1/auth/forgot-password` | Passwort-Reset anfordern |
-| `AuthService.resetPassword(token, pw)` | `POST /api/v1/auth/reset-password` | Neues Passwort setzen |
+| Methode                                | Endpoint                            | Beschreibung                      |
+| -------------------------------------- | ----------------------------------- | --------------------------------- |
+| `AuthService.register(dto)`            | `POST /api/v1/auth/register`        | Registrierung (BUYER oder SELLER) |
+| `AuthService.login(dto)`               | `POST /api/v1/auth/login`           | Login → AccessToken + Cookie      |
+| `AuthService.refresh()`                | `POST /api/v1/auth/refresh`         | Token erneuern via Cookie         |
+| `AuthService.logout()`                 | `POST /api/v1/auth/logout`          | Logout + Cookie löschen           |
+| `AuthService.verifyEmail(token)`       | `POST /api/v1/auth/verify-email`    | E-Mail verifizieren               |
+| `AuthService.forgotPassword(email)`    | `POST /api/v1/auth/forgot-password` | Passwort-Reset anfordern          |
+| `AuthService.resetPassword(token, pw)` | `POST /api/v1/auth/reset-password`  | Neues Passwort setzen             |
 
 ### `src/services/user.service.ts`
 
-| Methode | Endpoint | Beschreibung |
-|---------|----------|-------------|
-| `UserService.getMe()` | `GET /api/v1/users/me` | Aktuellen User abrufen |
-| `UserService.updateMe(dto)` | `PATCH /api/v1/users/me` | Profil aktualisieren |
-| `UserService.deleteMe()` | `DELETE /api/v1/users/me` | Account soft-delete |
+| Methode                     | Endpoint                  | Beschreibung           |
+| --------------------------- | ------------------------- | ---------------------- |
+| `UserService.getMe()`       | `GET /api/v1/users/me`    | Aktuellen User abrufen |
+| `UserService.updateMe(dto)` | `PATCH /api/v1/users/me`  | Profil aktualisieren   |
+| `UserService.deleteMe()`    | `DELETE /api/v1/users/me` | Account soft-delete    |
 
 ### `src/services/address.service.ts`
 
-| Methode | Endpoint | Beschreibung |
-|---------|----------|-------------|
-| `AddressService.list()` | `GET /api/v1/users/me/addresses` | Alle Adressen |
-| `AddressService.create(dto)` | `POST /api/v1/users/me/addresses` | Neue Adresse |
-| `AddressService.update(id, dto)` | `PATCH /api/v1/users/me/addresses/{id}` | Adresse aktualisieren |
-| `AddressService.setDefault(id)` | `PATCH /api/v1/users/me/addresses/{id}/default` | Als Standard setzen |
-| `AddressService.delete(id)` | `DELETE /api/v1/users/me/addresses/{id}` | Adresse löschen |
+| Methode                          | Endpoint                                        | Beschreibung          |
+| -------------------------------- | ----------------------------------------------- | --------------------- |
+| `AddressService.list()`          | `GET /api/v1/users/me/addresses`                | Alle Adressen         |
+| `AddressService.create(dto)`     | `POST /api/v1/users/me/addresses`               | Neue Adresse          |
+| `AddressService.update(id, dto)` | `PATCH /api/v1/users/me/addresses/{id}`         | Adresse aktualisieren |
+| `AddressService.setDefault(id)`  | `PATCH /api/v1/users/me/addresses/{id}/default` | Als Standard setzen   |
+| `AddressService.delete(id)`      | `DELETE /api/v1/users/me/addresses/{id}`        | Adresse löschen       |
 
 ---
 
@@ -100,7 +101,9 @@ export const SellerProfileService = {
     return apiRequest("/api/v1/users/me/seller-profile")
   },
 
-  async update(dto: Partial<{ companyName: string; vatId: string; iban: string }>): Promise<SellerProfile> {
+  async update(
+    dto: Partial<{ companyName: string; vatId: string; iban: string }>
+  ): Promise<SellerProfile> {
     return apiRequest("/api/v1/users/me/seller-profile", {
       method: "PATCH",
       body: JSON.stringify(dto),
@@ -117,7 +120,11 @@ export const SellerValueProfileService = {
     return apiRequest("/api/v1/users/me/seller/value-profile")
   },
 
-  async upsert(dto: { level: "STANDARD" | "LEVEL_2" | "LEVEL_3"; payload?: string; score?: number }): Promise<SellerValueProfile> {
+  async upsert(dto: {
+    level: "STANDARD" | "LEVEL_2" | "LEVEL_3"
+    payload?: string
+    score?: number
+  }): Promise<SellerValueProfile> {
     return apiRequest("/api/v1/users/me/seller/value-profile", {
       method: "PUT",
       body: JSON.stringify(dto),
@@ -150,7 +157,10 @@ export const AdminService = {
 
   // Seller Profile Verwaltung
   async approveSellerProfile(sellerProfileId: string): Promise<SellerProfile> {
-    return apiRequest(`/api/v1/admin/seller-profiles/${sellerProfileId}/approve`, { method: "POST", body: "{}" })
+    return apiRequest(`/api/v1/admin/seller-profiles/${sellerProfileId}/approve`, {
+      method: "POST",
+      body: "{}",
+    })
   },
 
   async rejectSellerProfile(sellerProfileId: string, reason: string): Promise<SellerProfile> {
@@ -287,7 +297,7 @@ Die Seite `app/verify-email/page.tsx` soll:
 
 ```typescript
 // Relevante Service-Methode ist bereits vorhanden:
-AuthService.verifyEmail(token)  // POST /api/v1/auth/verify-email
+AuthService.verifyEmail(token) // POST /api/v1/auth/verify-email
 
 // Fehlercode bei ungültigem/abgelaufenem Token:
 // HTTP 400 / error: "BAD_REQUEST"
@@ -313,7 +323,7 @@ Die Seite `app/reset-password/page.tsx` soll:
 
 ```typescript
 // Relevante Service-Methode ist bereits vorhanden:
-AuthService.resetPassword(token, newPassword)  // POST /api/v1/auth/reset-password
+AuthService.resetPassword(token, newPassword) // POST /api/v1/auth/reset-password
 
 // Fehlercode bei ungültigem/abgelaufenem Token:
 // HTTP 400 / error: "BAD_REQUEST"

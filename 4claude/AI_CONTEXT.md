@@ -1,4 +1,5 @@
 # AI CONTEXT FILE
+
 ## Nachhaltigkeits-Zertifikat-Plattform - Komplette System-Logik
 
 **Zweck:** Kontext für andere AI-Chat-Sessions  
@@ -12,11 +13,13 @@
 **Plattform:** Marketplace für nachhaltige Produkte mit Zertifikats-Verifizierung und Werte-Matching
 
 **Kern-Konzepte:**
+
 1. Nur Produkte mit verifizierten Nachhaltigkeits-Zertifikaten dürfen verkauft werden
 2. Käufer erstellen Werteprofil → System berechnet Match-Score zu Produkten
 3. Verkäufer laden Zertifikate hoch → Admin verifiziert → Produkte werden freigeschaltet
 
 **Akteure:**
+
 - **Käufer (BUYER):** Erstellt Werteprofil, kauft Produkte
 - **Verkäufer (SELLER):** Lädt Zertifikate hoch, erstellt Produkte
 - **Admin:** Verifiziert Zertifikate, schaltet Verkäufer frei
@@ -196,7 +199,7 @@ CREATE TABLE shops (
 
 -- Materialized View (für Performance)
 CREATE MATERIALIZED VIEW product_search_view AS
-SELECT 
+SELECT
   p.id,
   p.name,
   p.slug,
@@ -210,7 +213,7 @@ SELECT
   s.slug AS shop_slug,
   c.name AS category_name,
   c.slug AS category_slug,
-  CASE 
+  CASE
     WHEN EXISTS(SELECT 1 FROM variant v WHERE v.product_id = p.id AND (v.stock - v.reserved) > 0)
     THEN 'IN_STOCK' ELSE 'OUT_OF_STOCK'
   END AS availability
@@ -353,7 +356,7 @@ IF product.verified_certificate_count < 1:
 ```
 Beim Produkt-Erstellen:
   category = SELECT level FROM categories WHERE id = :categoryId
-  
+
   IF category.level != 3:
     THROW ERROR "Nur Level-3-Kategorien erlaubt"
 ```
@@ -499,10 +502,10 @@ Score = (90*90 + 85*85 + 0*70 + 80*80 + 0*60) / (90+85+70+80+60)
 Wenn User einloggt:
   1. Hole Gast-Warenkorb (via sessionId aus Cookie)
   2. Hole User-Warenkorb (via userId)
-  
+
   3. Wenn User-Warenkorb nicht existiert:
      → Gast-Warenkorb zu User umwandeln
-  
+
   4. Wenn beide existieren:
      → Items mergen (Quantities addieren, Verfügbarkeit prüfen)
      → Gast-Warenkorb löschen
@@ -599,7 +602,7 @@ NICHT: UPDATE products SET views = views + 1 WHERE id = :id
 
 SONDERN:
   Redis: INCR product:views:{productId}
-  
+
 Cronjob (alle 10 Min):
   Flush zu DB:
   UPDATE products SET views = views + :count WHERE id = :id
@@ -675,13 +678,13 @@ Atomare Reservierung:
 
 ## CRON-JOBS
 
-| Job | Frequenz | Modul | Aufgabe |
-|-----|----------|-------|---------|
-| **cleanup_abandoned_carts** | Täglich 3:00 | 05 | Gast-Warenkörbe > 24h löschen, Reservierungen freigeben |
-| **check_expired_certificates** | Täglich 2:00 | 03 | Abgelaufene Zertifikate → EXPIRED, Produkte deaktivieren |
-| **send_expiry_reminders** | Täglich 8:00 | 03 | E-Mail 30d & 7d vor Ablauf |
-| **flush_view_counts** | Alle 10 Min | 02 | Redis → DB (product.views) |
-| **refresh_search_view** | Alle 5 Min | 02 | REFRESH MATERIALIZED VIEW product_search_view |
+| Job                            | Frequenz     | Modul | Aufgabe                                                  |
+| ------------------------------ | ------------ | ----- | -------------------------------------------------------- |
+| **cleanup_abandoned_carts**    | Täglich 3:00 | 05    | Gast-Warenkörbe > 24h löschen, Reservierungen freigeben  |
+| **check_expired_certificates** | Täglich 2:00 | 03    | Abgelaufene Zertifikate → EXPIRED, Produkte deaktivieren |
+| **send_expiry_reminders**      | Täglich 8:00 | 03    | E-Mail 30d & 7d vor Ablauf                               |
+| **flush_view_counts**          | Alle 10 Min  | 02    | Redis → DB (product.views)                               |
+| **refresh_search_view**        | Alle 5 Min   | 02    | REFRESH MATERIALIZED VIEW product_search_view            |
 
 ---
 
@@ -982,16 +985,16 @@ CREATE TABLE email_preference (
 
 ## CRONJOB-ÜBERSICHT (KOMPLETT)
 
-| Job | Frequenz | Modul | Aufgabe |
-|-----|----------|-------|---------|
-| `cleanup_abandoned_carts` | Täglich 3:00 | 05 | Gast-Warenkörbe > 24h löschen, Reservierungen freigeben |
-| `check_expired_certificates` | Täglich 2:00 | 03 | Abgelaufene Zertifikate → EXPIRED, Produkte deaktivieren |
-| `send_expiry_reminders` | Täglich 8:00 | 03 | E-Mail 30d & 7d vor Zertifikats-Ablauf |
-| `flush_view_counts` | Alle 10 Min | 02 | Redis → DB (product.views) |
-| `refresh_search_view` | Alle 5 Min | 02 | REFRESH MATERIALIZED VIEW |
-| `process_payouts` | Täglich 10:00 | 07 | Fällige Auszahlungen ausführen |
-| `cleanup_orphaned_files` | Wöchentlich | 08 | Nicht-referenzierte Dateien löschen |
-| `email_queue_worker` | Permanent | 10 | E-Mail-Queue verarbeiten |
+| Job                          | Frequenz      | Modul | Aufgabe                                                  |
+| ---------------------------- | ------------- | ----- | -------------------------------------------------------- |
+| `cleanup_abandoned_carts`    | Täglich 3:00  | 05    | Gast-Warenkörbe > 24h löschen, Reservierungen freigeben  |
+| `check_expired_certificates` | Täglich 2:00  | 03    | Abgelaufene Zertifikate → EXPIRED, Produkte deaktivieren |
+| `send_expiry_reminders`      | Täglich 8:00  | 03    | E-Mail 30d & 7d vor Zertifikats-Ablauf                   |
+| `flush_view_counts`          | Alle 10 Min   | 02    | Redis → DB (product.views)                               |
+| `refresh_search_view`        | Alle 5 Min    | 02    | REFRESH MATERIALIZED VIEW                                |
+| `process_payouts`            | Täglich 10:00 | 07    | Fällige Auszahlungen ausführen                           |
+| `cleanup_orphaned_files`     | Wöchentlich   | 08    | Nicht-referenzierte Dateien löschen                      |
+| `email_queue_worker`         | Permanent     | 10    | E-Mail-Queue verarbeiten                                 |
 
 ---
 
@@ -1055,6 +1058,7 @@ CREATE TABLE email_preference (
 ---
 
 **Für nächste AI-Session:**
+
 - **ALLE 10 Module sind komplett dokumentiert**
 - Datenmodell vollständig & konsistent
 - Alle Business-Regeln definiert
@@ -1062,4 +1066,3 @@ CREATE TABLE email_preference (
 - Cronjobs definiert
 - Performance-Optimierungen dokumentiert
 - Bereit für Entwicklung!
-
