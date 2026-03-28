@@ -8,6 +8,7 @@ import { formatEuro } from "@/src/lib/currency"
 
 const statusLabel: Record<OrderStatus, string> = {
   PENDING_PAYMENT: "Zahlung ausstehend",
+  PENDING: "Ausstehend",
   PAID: "Bezahlt",
   CONFIRMED: "Bestätigt",
   PROCESSING: "In Bearbeitung",
@@ -19,6 +20,7 @@ const statusLabel: Record<OrderStatus, string> = {
 
 const statusColor: Record<OrderStatus, string> = {
   PENDING_PAYMENT: "bg-yellow-100 text-yellow-800",
+  PENDING: "bg-yellow-100 text-yellow-700",
   PAID: "bg-blue-100 text-blue-800",
   CONFIRMED: "bg-blue-100 text-blue-800",
   PROCESSING: "bg-orange-100 text-orange-800",
@@ -29,7 +31,11 @@ const statusColor: Record<OrderStatus, string> = {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })
+  return new Date(iso).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  })
 }
 
 export default function Orders() {
@@ -46,25 +52,26 @@ export default function Orders() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[40vh]">
-        <Loader2 className="w-8 h-8 text-teal-600 animate-spin" />
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
       </div>
     )
   }
 
   if (error) {
-    return (
-      <div className="text-center py-16 text-red-600">{error}</div>
-    )
+    return <div className="py-16 text-center text-red-600">{error}</div>
   }
 
   if (orders.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center gap-4">
-        <PackageOpen className="w-16 h-16 text-slate-300" />
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 text-center">
+        <PackageOpen className="h-16 w-16 text-slate-300" />
         <h2 className="text-2xl font-bold text-slate-700">Noch keine Bestellungen</h2>
         <p className="text-slate-500">Deine Bestellungen erscheinen hier.</p>
-        <a href="/" className="bg-teal-600 text-white px-6 py-2 rounded-lg hover:bg-teal-700 transition-colors font-medium">
+        <a
+          href="/"
+          className="rounded-lg bg-teal-600 px-6 py-2 font-medium text-white transition-colors hover:bg-teal-700"
+        >
           Zum Shop
         </a>
       </div>
@@ -72,9 +79,9 @@ export default function Orders() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold text-slate-800 mb-8 flex items-center gap-3">
-        <Package className="w-8 h-8 text-teal-600" />
+    <div className="mx-auto max-w-3xl">
+      <h1 className="mb-8 flex items-center gap-3 text-3xl font-bold text-slate-800">
+        <Package className="h-8 w-8 text-teal-600" />
         Meine Bestellungen
       </h1>
 
@@ -83,25 +90,27 @@ export default function Orders() {
           <a
             key={order.id}
             href={`/orders/${order.id}`}
-            className="block bg-white rounded-xl border border-slate-200 p-5 hover:border-teal-300 hover:shadow-sm transition-all"
+            className="block rounded-xl border border-slate-200 bg-white p-5 transition-all hover:border-teal-300 hover:shadow-sm"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="font-semibold text-slate-800 text-lg">#{order.orderNumber}</p>
-                <p className="text-sm text-slate-500 mt-0.5">{formatDate(order.createdAt)}</p>
+                <p className="text-lg font-semibold text-slate-800">#{order.orderNumber}</p>
+                <p className="mt-0.5 text-sm text-slate-500">{formatDate(order.createdAt)}</p>
               </div>
               <div className="flex items-center gap-3">
-                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${statusColor[order.status]}`}>
+                <span
+                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusColor[order.status]}`}
+                >
                   {statusLabel[order.status]}
                 </span>
-                <ChevronRight className="w-5 h-5 text-slate-400" />
+                <ChevronRight className="h-5 w-5 text-slate-400" />
               </div>
             </div>
             <div className="mt-3 flex items-center justify-between text-sm">
               <span className="text-slate-500">
                 {order.itemCount ? `${order.itemCount} Artikel` : ""}
               </span>
-              <span className="font-semibold text-slate-800">{formatEuro(order.total)}</span>
+              <span className="font-semibold text-slate-800">{formatEuro(order.total ?? 0)}</span>
             </div>
           </a>
         ))}

@@ -2,72 +2,89 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useCallback } from "react"
-
-export interface CartItem {
-  productId: string
-  quantity: number
-  price: number
-  name: string
-}
+import type { Cart, CartItem, AddToCartDTO } from "@/src/types"
 
 interface CartContextValue {
-  items: CartItem[]
-  addItem: (item: CartItem) => void
-  removeItem: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => void
+  cart: Cart
+  isLoading: boolean
+  addItem: (dto: AddToCartDTO) => Promise<void>
+  updateItem: (itemId: string, dto: { quantity: number }) => Promise<void>
+  removeItem: (itemId: string) => Promise<void>
   clearCart: () => void
+  refetch: () => Promise<void>
   totalItems: number
   totalPrice: number
 }
 
+const emptyCart: Cart = { items: [] }
+
 export const CartContext = createContext<CartContextValue | null>(null)
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([])
+  const [cart, setCart] = useState<Cart>(emptyCart)
+  const [isLoading] = useState(false)
 
-  const addItem = useCallback((item: CartItem) => {
-    setItems((prev) => {
-      const existing = prev.find((i) => i.productId === item.productId)
-      if (existing) {
-        return prev.map((i) =>
-          i.productId === item.productId
-            ? { ...i, quantity: i.quantity + item.quantity }
-            : i
+  const addItem = useCallback(async (dto: AddToCartDTO) => {
+    setCart((prev) => {
+      const existingIdx = prev.items.findIndex(
+        (i) => i.productId === dto.productId && i.variantId === dto.variantId
+      )
+      if (existingIdx >= 0) {
+        const updated = prev.items.map((item, idx) =>
+          idx === existingIdx ? { ...item, quantity: item.quantity + dto.quantity } : item
         )
+        return { ...prev, items: updated }
       }
-      return [...prev, item]
+      const newItem: CartItem = {
+        id: `${dto.productId}-${dto.variantId ?? "default"}-${Date.now()}`,
+        productId: dto.productId,
+        variantId: dto.variantId,
+        quantity: dto.quantity,
+        variantOptions: [],
+      }
+      return { ...prev, items: [...prev.items, newItem] }
     })
   }, [])
 
-  const removeItem = useCallback((productId: string) => {
-    setItems((prev) => prev.filter((i) => i.productId !== productId))
-  }, [])
-
-  const updateQuantity = useCallback((productId: string, quantity: number) => {
-    if (quantity <= 0) {
-      setItems((prev) => prev.filter((i) => i.productId !== productId))
+  const updateItem = useCallback(async (itemId: string, dto: { quantity: number }) => {
+    if (dto.quantity <= 0) {
+      setCart((prev) => ({ ...prev, items: prev.items.filter((i) => i.id !== itemId) }))
     } else {
-      setItems((prev) =>
-        prev.map((i) => (i.productId === productId ? { ...i, quantity } : i))
-      )
+      setCart((prev) => ({
+        ...prev,
+        items: prev.items.map((i) => (i.id === itemId ? { ...i, quantity: dto.quantity } : i)),
+      }))
     }
   }, [])
 
-  const clearCart = useCallback(() => {
-    setItems([])
+  const removeItem = useCallback(async (itemId: string) => {
+    setCart((prev) => ({ ...prev, items: prev.items.filter((i) => i.id !== itemId) }))
   }, [])
 
-  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0)
-  const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
+  const clearCart = useCallback(() => {
+    setCart(emptyCart)
+  }, [])
+
+  const refetch = useCallback(async () => {
+    // No-op for local cart — will call CartService.getCart() once backend is ready
+  }, [])
+
+  const totalItems = cart.items.reduce((sum, i) => sum + i.quantity, 0)
+  const totalPrice = cart.items.reduce(
+    (sum, i) => sum + (i.unitPriceCents != null ? (i.unitPriceCents * i.quantity) / 100 : 0),
+    0
+  )
 
   return (
     <CartContext.Provider
       value={{
-        items,
+        cart,
+        isLoading,
         addItem,
+        updateItem,
         removeItem,
-        updateQuantity,
         clearCart,
+        refetch,
         totalItems,
         totalPrice,
       }}

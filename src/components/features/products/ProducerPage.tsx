@@ -1,15 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import {
-  ArrowLeft,
-  MapPin,
-  Award,
-  ShoppingCart,
-  Loader2,
-  AlertCircle,
-  Package,
-} from "lucide-react"
+import { ArrowLeft, MapPin, Award, ShoppingCart, Loader2, AlertCircle, Package } from "lucide-react"
 import { ProductService } from "@/src/services/product.service"
 import type { ProductListItem, ProductSeller } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
@@ -46,7 +38,7 @@ export default function ProducerPage() {
         if (page.content.length > 0) {
           try {
             const detail = await ProductService.getBySlug(page.content[0].id)
-            setSeller(detail.seller)
+            setSeller(detail.seller ?? null)
           } catch {
             // fallback: no seller detail available
           }
@@ -62,18 +54,21 @@ export default function ProducerPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
-        <AlertCircle className="w-12 h-12 text-slate-400" />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50">
+        <AlertCircle className="h-12 w-12 text-slate-400" />
         <p className="text-slate-600">{error}</p>
-        <button onClick={() => (window.location.href = "/")} className="text-teal-600 hover:underline">
+        <button
+          onClick={() => (window.location.href = "/")}
+          className="text-teal-600 hover:underline"
+        >
           Zurück zur Startseite
         </button>
       </div>
@@ -86,13 +81,13 @@ export default function ProducerPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Hero */}
-      <div className="relative h-48 md:h-64 bg-gradient-to-br from-teal-600 to-teal-800">
+      <div className="relative h-48 bg-gradient-to-br from-teal-600 to-teal-800 md:h-64">
         <div className="absolute inset-0 bg-black/20" />
         <button
           onClick={() => window.history.back()}
-          className="absolute top-4 left-4 flex items-center gap-2 text-white bg-black/30 hover:bg-black/50 px-3 py-2 rounded-lg transition-colors"
+          className="absolute left-4 top-4 flex items-center gap-2 rounded-lg bg-black/30 px-3 py-2 text-white transition-colors hover:bg-black/50"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="h-4 w-4" />
           Zurück
         </button>
       </div>
@@ -100,25 +95,25 @@ export default function ProducerPage() {
       <div className="container mx-auto px-4">
         {/* Header Card */}
         <div className="relative -mt-16 mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
-            <div className="flex flex-col md:flex-row md:items-start gap-6">
+          <div className="rounded-xl bg-white p-6 shadow-lg md:p-8">
+            <div className="flex flex-col gap-6 md:flex-row md:items-start">
               {/* Logo */}
-              <div className="w-24 h-24 md:w-32 md:h-32 bg-teal-600 rounded-xl flex items-center justify-center flex-shrink-0 -mt-16 md:-mt-20 border-4 border-white shadow-lg">
-                <span className="text-white font-bold text-4xl md:text-5xl">{displayInitial}</span>
+              <div className="-mt-16 flex h-24 w-24 flex-shrink-0 items-center justify-center rounded-xl border-4 border-white bg-teal-600 shadow-lg md:-mt-20 md:h-32 md:w-32">
+                <span className="text-4xl font-bold text-white md:text-5xl">{displayInitial}</span>
               </div>
 
               <div className="flex-1">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
                     <h1 className="text-3xl font-bold text-slate-800">{displayName}</h1>
                     {seller && (
-                      <p className="text-slate-500 mt-1">
+                      <p className="mt-1 text-slate-500">
                         {seller.firstName} {seller.lastName}
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-lg">
-                    <Package className="w-5 h-5 text-slate-600" />
+                  <div className="flex items-center gap-2 rounded-lg bg-slate-100 px-4 py-2">
+                    <Package className="h-5 w-5 text-slate-600" />
                     <div>
                       <span className="text-xl font-bold text-slate-700">{products.length}</span>
                       <p className="text-xs text-slate-500">Produkte</p>
@@ -131,17 +126,17 @@ export default function ProducerPage() {
         </div>
 
         {/* Tabs */}
-        <div className="bg-white rounded-xl shadow-sm mb-8">
+        <div className="mb-8 rounded-xl bg-white shadow-sm">
           <div className="border-b border-slate-200">
             <nav className="flex">
               {(["products", "about"] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-4 px-6 font-medium text-sm transition-colors ${
+                  className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
                     activeTab === tab
-                      ? "border-b-2 border-teal-600 text-teal-600 bg-teal-50"
-                      : "text-slate-700 hover:text-teal-600 hover:bg-slate-50"
+                      ? "border-b-2 border-teal-600 bg-teal-50 text-teal-600"
+                      : "text-slate-700 hover:bg-slate-50 hover:text-teal-600"
                   }`}
                 >
                   {tab === "products" ? `Produkte (${products.length})` : "Über den Verkäufer"}
@@ -154,33 +149,37 @@ export default function ProducerPage() {
             {activeTab === "products" && (
               <div>
                 {products.length === 0 ? (
-                  <div className="text-center py-12 text-slate-500">
-                    <Package className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                  <div className="py-12 text-center text-slate-500">
+                    <Package className="mx-auto mb-3 h-12 w-12 text-slate-300" />
                     <p>Dieser Verkäufer hat noch keine aktiven Produkte.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {products.map((product) => (
                       <div
                         key={product.id}
                         onClick={() => (window.location.href = `/product?id=${product.id}`)}
-                        className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-lg hover:border-teal-400 transition-all cursor-pointer group"
+                        className="group cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-white transition-all hover:border-teal-400 hover:shadow-lg"
                       >
-                        <div className="aspect-square overflow-hidden bg-slate-100 flex items-center justify-center">
-                          <Package className="w-16 h-16 text-slate-300 group-hover:scale-105 transition-transform" />
+                        <div className="flex aspect-square items-center justify-center overflow-hidden bg-slate-100">
+                          <Package className="h-16 w-16 text-slate-300 transition-transform group-hover:scale-105" />
                         </div>
                         <div className="p-4">
-                          <h3 className="font-semibold text-slate-800 mt-1 line-clamp-2">{product.title}</h3>
-                          <div className="flex items-center justify-between mt-3">
-                            <span className="text-lg font-bold text-slate-800">{formatEuro(product.price)}</span>
+                          <h3 className="mt-1 line-clamp-2 font-semibold text-slate-800">
+                            {product.title}
+                          </h3>
+                          <div className="mt-3 flex items-center justify-between">
+                            <span className="text-lg font-bold text-slate-800">
+                              {formatEuro(product.price ?? 0)}
+                            </span>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
                                 window.location.href = `/product?id=${product.id}`
                               }}
-                              className="p-2 text-teal-600 hover:bg-teal-100 rounded-full transition-colors"
+                              className="rounded-full p-2 text-teal-600 transition-colors hover:bg-teal-100"
                             >
-                              <ShoppingCart className="w-5 h-5" />
+                              <ShoppingCart className="h-5 w-5" />
                             </button>
                           </div>
                         </div>
@@ -193,28 +192,30 @@ export default function ProducerPage() {
 
             {activeTab === "about" && (
               <div className="space-y-6">
-                <div className="bg-slate-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-slate-800 mb-4">Verkäufer-Informationen</h3>
+                <div className="rounded-lg bg-slate-50 p-6">
+                  <h3 className="mb-4 text-lg font-semibold text-slate-800">
+                    Verkäufer-Informationen
+                  </h3>
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 text-slate-700">
-                      <Award className="w-5 h-5 text-teal-600" />
+                      <Award className="h-5 w-5 text-teal-600" />
                       <span className="font-medium">{displayName}</span>
                     </div>
                     {seller && (
                       <div className="flex items-center gap-3 text-slate-700">
-                        <MapPin className="w-5 h-5 text-slate-400" />
+                        <MapPin className="h-5 w-5 text-slate-400" />
                         <span>
                           Ansprechpartner: {seller.firstName} {seller.lastName}
                         </span>
                       </div>
                     )}
                     <div className="flex items-center gap-3 text-slate-700">
-                      <Package className="w-5 h-5 text-slate-400" />
+                      <Package className="h-5 w-5 text-slate-400" />
                       <span>{products.length} aktive Produkte</span>
                     </div>
                   </div>
                 </div>
-                <p className="text-slate-500 text-sm">
+                <p className="text-sm text-slate-500">
                   Weitere Informationen über diesen Verkäufer werden in Kürze verfügbar sein.
                 </p>
               </div>

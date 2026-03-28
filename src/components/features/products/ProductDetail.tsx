@@ -73,18 +73,21 @@ export default function ProductDetail() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
       </div>
     )
   }
 
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center gap-4">
-        <AlertCircle className="w-12 h-12 text-slate-400" />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-50">
+        <AlertCircle className="h-12 w-12 text-slate-400" />
         <p className="text-slate-600">{error ?? "Produkt nicht gefunden."}</p>
-        <button onClick={() => (window.location.href = "/")} className="text-teal-600 hover:underline">
+        <button
+          onClick={() => (window.location.href = "/")}
+          className="text-teal-600 hover:underline"
+        >
           Zurück zur Startseite
         </button>
       </div>
@@ -92,17 +95,23 @@ export default function ProductDetail() {
   }
 
   const optionTypes = Array.from(
-    new Set(product.variants.flatMap((v) => v.options.map((o) => o.type)))
+    new Set((product.variants ?? []).flatMap((v) => (v.options ?? []).map((o) => o.type)))
   )
   const optionValues = (type: string) =>
-    Array.from(new Set(product.variants.flatMap((v) => v.options.filter((o) => o.type === type).map((o) => o.value))))
+    Array.from(
+      new Set(
+        (product.variants ?? []).flatMap((v) =>
+          (v.options ?? []).filter((o) => o.type === type).map((o) => o.value)
+        )
+      )
+    )
 
   const findSelectedVariant = (): ProductVariant | undefined => {
     if (optionTypes.length === 0) return undefined
-    return product.variants.find((v) =>
+    return (product.variants ?? []).find((v) =>
       optionTypes.every((type) => {
         const sel = selectedOptions[type]
-        return !sel || v.options.some((o) => o.type === type && o.value === sel)
+        return !sel || (v.options ?? []).some((o) => o.type === type && o.value === sel)
       })
     )
   }
@@ -130,29 +139,30 @@ export default function ProductDetail() {
     }
   }
 
-  const images = product.images.length > 0
-    ? product.images.map((img) => img.url)
-    : ["/placeholder.svg"]
+  const images =
+    (product.images?.length ?? 0) > 0
+      ? (product.images ?? []).map((img) => img.url)
+      : ["/placeholder.svg"]
 
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="container mx-auto px-4 py-8">
         <button
           onClick={() => window.history.back()}
-          className="flex items-center gap-2 text-slate-700 hover:text-teal-600 mb-6 transition-colors"
+          className="mb-6 flex items-center gap-2 text-slate-700 transition-colors hover:text-teal-600"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="h-4 w-4" />
           Zurück
         </button>
 
-        <div className="grid lg:grid-cols-2 gap-12">
+        <div className="grid gap-12 lg:grid-cols-2">
           {/* Images */}
           <div className="space-y-4">
-            <div className="aspect-square bg-white rounded-lg overflow-hidden shadow-sm border border-slate-200">
+            <div className="aspect-square overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
               <img
                 src={images[selectedImageIndex] || "/placeholder.svg"}
                 alt={product.name}
-                className="w-full h-full object-cover"
+                className="h-full w-full object-cover"
               />
             </div>
             {images.length > 1 && (
@@ -161,11 +171,15 @@ export default function ProductDetail() {
                   <button
                     key={i}
                     onClick={() => setSelectedImageIndex(i)}
-                    className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-colors ${
+                    className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-colors ${
                       selectedImageIndex === i ? "border-teal-600" : "border-slate-200"
                     }`}
                   >
-                    <img src={url || "/placeholder.svg"} alt={`${product.name} ${i + 1}`} className="w-full h-full object-cover" />
+                    <img
+                      src={url || "/placeholder.svg"}
+                      alt={`${product.name} ${i + 1}`}
+                      className="h-full w-full object-cover"
+                    />
                   </button>
                 ))}
               </div>
@@ -175,53 +189,58 @@ export default function ProductDetail() {
           {/* Info */}
           <div className="space-y-6">
             <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-slate-100 text-slate-800 border-slate-300">
-                  {product.category.name}
+              <div className="mb-2 flex items-center gap-2">
+                <span className="inline-flex items-center rounded-full border border-slate-300 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-800">
+                  {product.category?.name}
                 </span>
                 {product.status !== "ACTIVE" && (
-                  <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold bg-red-100 text-red-800 border-red-300">
+                  <span className="inline-flex items-center rounded-full border border-red-300 bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800">
                     Nicht verfügbar
                   </span>
                 )}
               </div>
 
               <button
-                onClick={() => (window.location.href = `/producer?sellerId=${product.seller.userId}`)}
-                className="text-sm font-medium text-teal-600 hover:text-teal-700 hover:underline transition-colors flex items-center gap-1 mb-1"
+                onClick={() =>
+                  (window.location.href = `/producer?sellerId=${product.seller?.userId}`)
+                }
+                className="mb-1 flex items-center gap-1 text-sm font-medium text-teal-600 transition-colors hover:text-teal-700 hover:underline"
               >
-                {product.seller.companyName}
-                <ExternalLink className="w-3 h-3" />
+                {product.seller?.companyName}
+                <ExternalLink className="h-3 w-3" />
               </button>
 
-              <h1 className="text-3xl font-bold text-slate-800 mb-2">{product.name}</h1>
-              {product.shortDesc && <p className="text-slate-600 text-lg">{product.shortDesc}</p>}
+              <h1 className="mb-2 text-3xl font-bold text-slate-800">{product.name}</h1>
+              {product.shortDesc && <p className="text-lg text-slate-600">{product.shortDesc}</p>}
             </div>
 
             {/* Seller Card */}
             <div
-              onClick={() => (window.location.href = `/producer?sellerId=${product.seller.userId}`)}
-              className="bg-white rounded-lg p-4 border border-slate-200 cursor-pointer hover:border-teal-400 hover:shadow-md transition-all"
+              onClick={() => (window.location.href = `/producer?sellerId=${product.seller?.userId}`)}
+              className="cursor-pointer rounded-lg border border-slate-200 bg-white p-4 transition-all hover:border-teal-400 hover:shadow-md"
             >
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <span className="text-teal-700 font-bold text-lg">
-                    {product.seller.companyName.charAt(0).toUpperCase()}
+                <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-teal-100">
+                  <span className="text-lg font-bold text-teal-700">
+                    {product.seller?.companyName?.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-slate-800">{product.seller.companyName}</h4>
+                  <h4 className="font-semibold text-slate-800">{product.seller?.companyName}</h4>
                   <p className="text-sm text-slate-500">
-                    {product.seller.firstName} {product.seller.lastName}
+                    {product.seller?.firstName} {product.seller?.lastName}
                   </p>
                 </div>
-                <ExternalLink className="w-4 h-4 text-slate-400 ml-auto" />
+                <ExternalLink className="ml-auto h-4 w-4 text-slate-400" />
               </div>
               {certificates.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1">
                   {certificates.slice(0, 4).map((c) => (
-                    <span key={c.id} className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded flex items-center gap-1">
-                      <Award className="w-3 h-3" />
+                    <span
+                      key={c.id}
+                      className="flex items-center gap-1 rounded bg-teal-50 px-2 py-0.5 text-xs text-teal-700"
+                    >
+                      <Award className="h-3 w-3" />
                       {c.title}
                     </span>
                   ))}
@@ -231,34 +250,40 @@ export default function ProductDetail() {
 
             {/* Price */}
             <div className="flex items-center gap-3">
-              <span className="text-3xl font-bold text-slate-800">{formatEuro(displayPrice)}</span>
-              {selectedVariant && selectedVariant.price !== null && selectedVariant.price !== product.basePrice && (
-                <span className="text-sm text-slate-500 line-through">{formatEuro(product.basePrice)}</span>
-              )}
+              <span className="text-3xl font-bold text-slate-800">{formatEuro(displayPrice ?? 0)}</span>
+              {selectedVariant &&
+                selectedVariant.price !== null &&
+                selectedVariant.price !== product.basePrice && (
+                  <span className="text-sm text-slate-500 line-through">
+                    {formatEuro(product.basePrice ?? 0)}
+                  </span>
+                )}
             </div>
 
             {/* Variant Options */}
             {optionTypes.map((type) => (
               <div key={type}>
-                <h3 className="text-sm font-semibold text-slate-700 mb-2 uppercase tracking-wide">{type}</h3>
+                <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-700">
+                  {type}
+                </h3>
                 <div className="flex flex-wrap gap-2">
                   {optionValues(type).map((val) => {
-                    const inStock = product.variants.some(
+                    const inStock = (product.variants ?? []).some(
                       (v) =>
-                        v.options.some((o) => o.type === type && o.value === val) &&
-                        v.available > 0
+                        (v.options ?? []).some((o) => o.type === type && o.value === val) &&
+                        (v.available ?? false)
                     )
                     return (
                       <button
                         key={val}
                         onClick={() => setSelectedOptions((prev) => ({ ...prev, [type]: val }))}
                         disabled={!inStock}
-                        className={`px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${
+                        className={`rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
                           selectedOptions[type] === val
                             ? "border-teal-600 bg-teal-600 text-white"
                             : inStock
                               ? "border-slate-300 text-slate-700 hover:border-teal-600"
-                              : "border-slate-200 text-slate-400 cursor-not-allowed line-through"
+                              : "cursor-not-allowed border-slate-200 text-slate-400 line-through"
                         }`}
                       >
                         {val}
@@ -267,7 +292,7 @@ export default function ProductDetail() {
                   })}
                 </div>
                 {selectedVariant && (
-                  <p className="text-xs text-slate-500 mt-1">
+                  <p className="mt-1 text-xs text-slate-500">
                     {selectedVariant.available} verfügbar
                   </p>
                 )}
@@ -276,20 +301,24 @@ export default function ProductDetail() {
 
             {/* Quantity */}
             <div>
-              <h3 className="text-sm font-semibold text-slate-700 mb-2 uppercase tracking-wide">Menge</h3>
+              <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-700">
+                Menge
+              </h3>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 rounded-lg border border-slate-300 flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 text-slate-700 transition-colors hover:bg-slate-50"
                 >
-                  <Minus className="w-4 h-4" />
+                  <Minus className="h-4 w-4" />
                 </button>
-                <span className="text-lg font-medium text-slate-800 min-w-[2rem] text-center">{quantity}</span>
+                <span className="min-w-[2rem] text-center text-lg font-medium text-slate-800">
+                  {quantity}
+                </span>
                 <button
                   onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 rounded-lg border border-slate-300 flex items-center justify-center text-slate-700 hover:bg-slate-50 transition-colors"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 text-slate-700 transition-colors hover:bg-slate-50"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -298,24 +327,28 @@ export default function ProductDetail() {
             <button
               onClick={handleAddToCart}
               disabled={isAddingToCart || product.status !== "ACTIVE"}
-              className="w-full bg-teal-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 px-6 py-3 font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
-              {isAddingToCart ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShoppingCart className="w-5 h-5" />}
+              {isAddingToCart ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <ShoppingCart className="h-5 w-5" />
+              )}
               {product.status === "ACTIVE" ? "In den Warenkorb" : "Nicht verfügbar"}
             </button>
 
             {/* Shipping info */}
-            <div className="bg-slate-100 rounded-lg p-4 space-y-2">
+            <div className="space-y-2 rounded-lg bg-slate-100 p-4">
               <div className="flex items-center gap-2 text-slate-700">
-                <Truck className="w-5 h-5 flex-shrink-0" />
+                <Truck className="h-5 w-5 flex-shrink-0" />
                 <span className="text-sm">Kostenloser Versand ab €50</span>
               </div>
               <div className="flex items-center gap-2 text-slate-700">
-                <Shield className="w-5 h-5 flex-shrink-0" />
+                <Shield className="h-5 w-5 flex-shrink-0" />
                 <span className="text-sm">30 Tage Rückgaberecht</span>
               </div>
               <div className="flex items-center gap-2 text-slate-700">
-                <Recycle className="w-5 h-5 flex-shrink-0" />
+                <Recycle className="h-5 w-5 flex-shrink-0" />
                 <span className="text-sm">CO2-neutraler Versand</span>
               </div>
             </div>
@@ -330,10 +363,10 @@ export default function ProductDetail() {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  className={`border-b-2 px-1 py-4 text-sm font-medium transition-colors ${
                     activeTab === tab
                       ? "border-teal-600 text-teal-600"
-                      : "border-transparent text-slate-700 hover:text-teal-600 hover:border-slate-300"
+                      : "border-transparent text-slate-700 hover:border-slate-300 hover:text-teal-600"
                   }`}
                 >
                   {tab === "details" ? "Details" : `Zertifikate (${certificates.length})`}
@@ -345,19 +378,21 @@ export default function ProductDetail() {
           <div className="py-8">
             {activeTab === "details" && (
               <div className="prose max-w-none">
-                <p className="text-slate-700 leading-relaxed whitespace-pre-line">{product.description}</p>
-                <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="bg-white rounded-lg p-4 border border-slate-200">
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Kategorie</p>
-                    <p className="font-medium text-slate-800">{product.category.name}</p>
+                <p className="whitespace-pre-line leading-relaxed text-slate-700">
+                  {product.description}
+                </p>
+                <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
+                  <div className="rounded-lg border border-slate-200 bg-white p-4">
+                    <p className="mb-1 text-xs uppercase tracking-wide text-slate-500">Kategorie</p>
+                    <p className="font-medium text-slate-800">{product.category?.name}</p>
                   </div>
-                  <div className="bg-white rounded-lg p-4 border border-slate-200">
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Verkäufer</p>
-                    <p className="font-medium text-slate-800">{product.seller.companyName}</p>
+                  <div className="rounded-lg border border-slate-200 bg-white p-4">
+                    <p className="mb-1 text-xs uppercase tracking-wide text-slate-500">Verkäufer</p>
+                    <p className="font-medium text-slate-800">{product.seller?.companyName}</p>
                   </div>
-                  <div className="bg-white rounded-lg p-4 border border-slate-200">
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">MwSt.</p>
-                    <p className="font-medium text-slate-800">{bpsToPercent(product.taxRate)}%</p>
+                  <div className="rounded-lg border border-slate-200 bg-white p-4">
+                    <p className="mb-1 text-xs uppercase tracking-wide text-slate-500">MwSt.</p>
+                    <p className="font-medium text-slate-800">{bpsToPercent(product.taxRate ?? 0)}%</p>
                   </div>
                 </div>
               </div>
@@ -368,30 +403,39 @@ export default function ProductDetail() {
                 {certificates.length === 0 ? (
                   <p className="text-slate-500">Keine Zertifikate für dieses Produkt.</p>
                 ) : (
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid gap-4 md:grid-cols-2">
                     {certificates.map((cert) => (
-                      <div key={cert.id} className="bg-white rounded-lg p-5 border border-slate-200">
+                      <div
+                        key={cert.id}
+                        className="rounded-lg border border-slate-200 bg-white p-5"
+                      >
                         <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <Award className="w-5 h-5 text-teal-600" />
+                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-teal-100">
+                            <Award className="h-5 w-5 text-teal-600" />
                           </div>
                           <div>
                             <h4 className="font-semibold text-slate-800">{cert.title}</h4>
-                            <p className="text-sm text-slate-500 mt-0.5">{cert.issuerName}</p>
-                            <div className="flex items-center gap-2 mt-2">
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                                cert.status === "VERIFIED"
-                                  ? "bg-green-100 text-green-700"
+                            <p className="mt-0.5 text-sm text-slate-500">{cert.issuerName}</p>
+                            <div className="mt-2 flex items-center gap-2">
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                  cert.status === "VERIFIED"
+                                    ? "bg-green-100 text-green-700"
+                                    : cert.status === "PENDING"
+                                      ? "bg-yellow-100 text-yellow-700"
+                                      : "bg-red-100 text-red-700"
+                                }`}
+                              >
+                                {cert.status === "VERIFIED"
+                                  ? "Verifiziert"
                                   : cert.status === "PENDING"
-                                    ? "bg-yellow-100 text-yellow-700"
-                                    : "bg-red-100 text-red-700"
-                              }`}>
-                                {cert.status === "VERIFIED" ? "Verifiziert" : cert.status === "PENDING" ? "In Prüfung" : cert.status}
+                                    ? "In Prüfung"
+                                    : cert.status}
                               </span>
                               <span className="text-xs text-slate-400">{cert.certificateType}</span>
                             </div>
                             {cert.expiryDate && (
-                              <p className="text-xs text-slate-400 mt-1">
+                              <p className="mt-1 text-xs text-slate-400">
                                 Gültig bis: {new Date(cert.expiryDate).toLocaleDateString("de-DE")}
                               </p>
                             )}

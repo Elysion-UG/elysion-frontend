@@ -18,8 +18,8 @@ export default function EmailVerification() {
     if (token) {
       setStatus("loading")
       AuthService.verifyEmail(token)
-        .then((res) => {
-          setStatus(res.success ? "success" : "error")
+        .then(() => {
+          setStatus("success")
         })
         .catch(() => {
           setStatus("error")
@@ -45,26 +45,28 @@ export default function EmailVerification() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[60vh] p-4">
-      <div className="bg-white rounded-xl shadow-lg border border-slate-200 w-full max-w-md p-8">
+    <div className="flex min-h-[60vh] items-center justify-center p-4">
+      <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-8 shadow-lg">
         {status === "loading" && (
           <div className="text-center">
-            <Loader2 className="w-12 h-12 text-teal-600 animate-spin mx-auto mb-4" />
-            <h1 className="text-xl font-bold text-slate-800 mb-2">E-Mail wird verifiziert...</h1>
+            <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-teal-600" />
+            <h1 className="mb-2 text-xl font-bold text-slate-800">E-Mail wird verifiziert...</h1>
             <p className="text-slate-600">Bitte warten Sie einen Moment.</p>
           </div>
         )}
 
         {status === "success" && (
           <div className="text-center">
-            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-emerald-600" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+              <CheckCircle className="h-8 w-8 text-emerald-600" />
             </div>
-            <h1 className="text-xl font-bold text-slate-800 mb-2">E-Mail verifiziert!</h1>
-            <p className="text-slate-600 mb-6">Ihr Konto wurde erfolgreich verifiziert. Sie können sich jetzt anmelden.</p>
+            <h1 className="mb-2 text-xl font-bold text-slate-800">E-Mail verifiziert!</h1>
+            <p className="mb-6 text-slate-600">
+              Ihr Konto wurde erfolgreich verifiziert. Sie können sich jetzt anmelden.
+            </p>
             <button
               onClick={handleBackToLogin}
-              className="w-full bg-teal-600 text-white py-2.5 rounded-lg font-medium hover:bg-teal-700 transition-colors"
+              className="w-full rounded-lg bg-teal-600 py-2.5 font-medium text-white transition-colors hover:bg-teal-700"
             >
               Zur Anmeldung
             </button>
@@ -73,19 +75,28 @@ export default function EmailVerification() {
 
         {status === "error" && (
           <div className="text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <XCircle className="w-8 h-8 text-red-600" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+              <XCircle className="h-8 w-8 text-red-600" />
             </div>
-            <h1 className="text-xl font-bold text-slate-800 mb-2">Verifizierung fehlgeschlagen</h1>
-            <p className="text-slate-600 mb-6">
-              Der Verifizierungslink ist ungültig oder abgelaufen. Bitte fordern Sie einen neuen Link an.
+            <h1 className="mb-2 text-xl font-bold text-slate-800">Verifizierung fehlgeschlagen</h1>
+            <p className="mb-6 text-slate-600">
+              Der Verifizierungslink ist ungültig oder abgelaufen. Bitte fordern Sie einen neuen
+              Link an.
             </p>
             <button
               onClick={handleResendEmail}
               disabled={isResending}
-              className="w-full bg-teal-600 text-white py-2.5 rounded-lg font-medium hover:bg-teal-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 font-medium text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
             >
-              {isResending ? <><Loader2 className="w-4 h-4 animate-spin" /> Senden...</> : <><RefreshCw className="w-4 h-4" /> Neuen Link anfordern</>}
+              {isResending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Senden...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" /> Neuen Link anfordern
+                </>
+              )}
             </button>
           </div>
         )}
@@ -93,27 +104,28 @@ export default function EmailVerification() {
         {/* Awaiting — no token in URL, user was redirected from registration */}
         {status === "awaiting" && (
           <>
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="w-8 h-8 text-teal-600" />
+            <div className="mb-6 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-teal-100">
+                <Mail className="h-8 w-8 text-teal-600" />
               </div>
-              <h1 className="text-xl font-bold text-slate-800 mb-2">Überprüfen Sie Ihre E-Mails</h1>
+              <h1 className="mb-2 text-xl font-bold text-slate-800">Überprüfen Sie Ihre E-Mails</h1>
               <p className="text-slate-600">
-                Wir haben Ihnen einen Verifizierungslink gesendet. Klicken Sie auf den Link in der E-Mail, um Ihr Konto zu aktivieren.
+                Wir haben Ihnen einen Verifizierungslink gesendet. Klicken Sie auf den Link in der
+                E-Mail, um Ihr Konto zu aktivieren.
               </p>
             </div>
 
-            <div className="space-y-3 mb-6 text-sm text-slate-600">
+            <div className="mb-6 space-y-3 text-sm text-slate-600">
               <div className="flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-teal-600 mt-0.5 flex-shrink-0" />
+                <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-teal-600" />
                 <span>Klicken Sie auf den Verifizierungslink in Ihrer E-Mail</span>
               </div>
               <div className="flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-teal-600 mt-0.5 flex-shrink-0" />
+                <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-teal-600" />
                 <span>Prüfen Sie auch Ihren Spam-Ordner</span>
               </div>
               <div className="flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 text-teal-600 mt-0.5 flex-shrink-0" />
+                <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-teal-600" />
                 <span>Der Link ist 24 Stunden gültig</span>
               </div>
             </div>
@@ -122,9 +134,17 @@ export default function EmailVerification() {
               <button
                 onClick={handleResendEmail}
                 disabled={isResending}
-                className="w-full bg-teal-600 text-white py-2.5 rounded-lg font-medium hover:bg-teal-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 font-medium text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
               >
-                {isResending ? <><Loader2 className="w-4 h-4 animate-spin" /> Senden...</> : <><Mail className="w-4 h-4" /> Erneut senden</>}
+                {isResending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Senden...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="h-4 w-4" /> Erneut senden
+                  </>
+                )}
               </button>
 
               {resendCount > 0 && (
@@ -135,9 +155,9 @@ export default function EmailVerification() {
 
               <button
                 onClick={handleBackToLogin}
-                className="w-full border border-slate-300 text-slate-700 py-2.5 rounded-lg font-medium hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
+                className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 py-2.5 font-medium text-slate-700 transition-colors hover:bg-slate-50"
               >
-                <ArrowLeft className="w-4 h-4" /> Zurück zur Startseite
+                <ArrowLeft className="h-4 w-4" /> Zurück zur Startseite
               </button>
             </div>
           </>

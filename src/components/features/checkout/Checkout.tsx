@@ -71,17 +71,23 @@ export default function Checkout() {
 
   if (step === "success" && result) {
     return (
-      <div className="max-w-lg mx-auto text-center py-16">
-        <CheckCircle2 className="w-20 h-20 text-green-500 mx-auto mb-6" />
-        <h1 className="text-3xl font-bold text-slate-800 mb-2">Bestellung aufgegeben!</h1>
-        <p className="text-slate-500 mb-1">Bestellnummer</p>
-        <p className="text-2xl font-bold text-teal-700 mb-8">#{result.orderNumber}</p>
-        <p className="text-slate-500 mb-8">Du erhältst eine Bestätigung per E-Mail.</p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <a href="/orders" className="bg-teal-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-teal-700 transition-colors">
+      <div className="mx-auto max-w-lg py-16 text-center">
+        <CheckCircle2 className="mx-auto mb-6 h-20 w-20 text-green-500" />
+        <h1 className="mb-2 text-3xl font-bold text-slate-800">Bestellung aufgegeben!</h1>
+        <p className="mb-1 text-slate-500">Bestellnummer</p>
+        <p className="mb-8 text-2xl font-bold text-teal-700">#{result.orderNumber}</p>
+        <p className="mb-8 text-slate-500">Du erhältst eine Bestätigung per E-Mail.</p>
+        <div className="flex flex-col justify-center gap-3 sm:flex-row">
+          <a
+            href="/orders"
+            className="rounded-lg bg-teal-600 px-6 py-3 font-medium text-white transition-colors hover:bg-teal-700"
+          >
             Meine Bestellungen
           </a>
-          <a href="/" className="border border-slate-300 text-slate-700 px-6 py-3 rounded-lg font-medium hover:bg-slate-50 transition-colors">
+          <a
+            href="/"
+            className="rounded-lg border border-slate-300 px-6 py-3 font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          >
             Weiter einkaufen
           </a>
         </div>
@@ -91,21 +97,23 @@ export default function Checkout() {
 
   if (step === "preview" && preview) {
     return (
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-slate-800 mb-8 flex items-center gap-3">
-          <CreditCard className="w-8 h-8 text-teal-600" />
+      <div className="mx-auto max-w-2xl">
+        <h1 className="mb-8 flex items-center gap-3 text-3xl font-bold text-slate-800">
+          <CreditCard className="h-8 w-8 text-teal-600" />
           Bestellung bestätigen
         </h1>
 
-        <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
-          <h2 className="font-semibold text-slate-700 mb-4 flex items-center gap-2">
-            <ShoppingBag className="w-4 h-4 text-teal-600" />
+        <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6">
+          <h2 className="mb-4 flex items-center gap-2 font-semibold text-slate-700">
+            <ShoppingBag className="h-4 w-4 text-teal-600" />
             Deine Artikel
           </h2>
           <div className="space-y-3">
-            {preview.items.map((item, idx) => (
+            {(preview.items ?? []).map((item, idx) => (
               <div key={idx} className="flex justify-between text-sm">
-                <span className="text-slate-700">{item.quantity}× {item.productName}</span>
+                <span className="text-slate-700">
+                  {item.quantity}× {item.productName}
+                </span>
                 <span className="font-medium text-slate-800">{formatEuro(item.totalPrice)}</span>
               </div>
             ))}
@@ -113,49 +121,57 @@ export default function Checkout() {
         </div>
 
         {preview.shippingAddress && (
-          <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
-            <h2 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-teal-600" />
+          <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6">
+            <h2 className="mb-3 flex items-center gap-2 font-semibold text-slate-700">
+              <MapPin className="h-4 w-4 text-teal-600" />
               Lieferadresse
             </h2>
-            <address className="not-italic text-sm text-slate-600 leading-relaxed">
-              {preview.shippingAddress.firstName} {preview.shippingAddress.lastName}<br />
-              {preview.shippingAddress.street} {preview.shippingAddress.houseNumber}<br />
+            <address className="text-sm not-italic leading-relaxed text-slate-600">
+              {preview.shippingAddress.firstName} {preview.shippingAddress.lastName}
+              <br />
+              {preview.shippingAddress.street} {preview.shippingAddress.houseNumber}
+              <br />
               {preview.shippingAddress.postalCode} {preview.shippingAddress.city}
             </address>
           </div>
         )}
 
-        <div className="bg-white rounded-xl border border-slate-200 p-6 mb-8">
+        <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6">
           <div className="space-y-2 text-sm text-slate-600">
             <div className="flex justify-between">
               <span>Zwischensumme</span>
-              <span>{formatEuro(preview.subtotal)}</span>
+              <span>{formatEuro(preview.subtotal ?? 0)}</span>
             </div>
             <div className="flex justify-between">
               <span>Versand</span>
-              <span>{formatEuro(preview.shippingCost)}</span>
+              <span>{formatEuro(preview.shippingCost ?? 0)}</span>
             </div>
           </div>
-          <div className="border-t border-slate-200 mt-3 pt-3 flex justify-between font-bold text-slate-800">
+          <div className="mt-3 flex justify-between border-t border-slate-200 pt-3 font-bold text-slate-800">
             <span>Gesamt</span>
-            <span>{formatEuro(preview.total)}</span>
+            <span>{formatEuro(preview.total ?? 0)}</span>
           </div>
         </div>
 
         <div className="flex gap-3">
           <button
             onClick={() => setStep("address")}
-            className="flex-1 border border-slate-300 text-slate-700 py-3 rounded-lg font-medium hover:bg-slate-50 transition-colors"
+            className="flex-1 rounded-lg border border-slate-300 py-3 font-medium text-slate-700 transition-colors hover:bg-slate-50"
           >
             Zurück
           </button>
           <button
             onClick={handleComplete}
             disabled={isLoading}
-            className="flex-1 bg-teal-600 text-white py-3 rounded-lg font-medium hover:bg-teal-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-teal-600 py-3 font-medium text-white transition-colors hover:bg-teal-700 disabled:opacity-60"
           >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Jetzt bestellen <ChevronRight className="w-4 h-4" /></>}
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                Jetzt bestellen <ChevronRight className="h-4 w-4" />
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -163,21 +179,21 @@ export default function Checkout() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold text-slate-800 mb-8 flex items-center gap-3">
-        <MapPin className="w-8 h-8 text-teal-600" />
+    <div className="mx-auto max-w-2xl">
+      <h1 className="mb-8 flex items-center gap-3 text-3xl font-bold text-slate-800">
+        <MapPin className="h-8 w-8 text-teal-600" />
         Lieferadresse
       </h1>
 
       {addresses.length === 0 ? (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
-          <p className="text-yellow-800 mb-4">Du hast noch keine gespeicherte Adresse.</p>
-          <a href="/profil" className="text-teal-700 font-medium underline underline-offset-2">
+        <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-6 text-center">
+          <p className="mb-4 text-yellow-800">Du hast noch keine gespeicherte Adresse.</p>
+          <a href="/profil" className="font-medium text-teal-700 underline underline-offset-2">
             Adresse in Profil hinzufügen
           </a>
         </div>
       ) : (
-        <div className="space-y-3 mb-8">
+        <div className="mb-8 space-y-3">
           {addresses.map((addr) => (
             <label
               key={addr.id}
@@ -196,12 +212,18 @@ export default function Checkout() {
                   onChange={() => setSelectedAddressId(addr.id)}
                   className="mt-1 accent-teal-600"
                 />
-                <div className="text-sm text-slate-700 leading-relaxed">
-                  <p className="font-medium">{addr.firstName} {addr.lastName}</p>
-                  <p>{addr.street} {addr.houseNumber}</p>
-                  <p>{addr.postalCode} {addr.city}</p>
+                <div className="text-sm leading-relaxed text-slate-700">
+                  <p className="font-medium">
+                    {addr.firstName} {addr.lastName}
+                  </p>
+                  <p>
+                    {addr.street} {addr.houseNumber}
+                  </p>
+                  <p>
+                    {addr.postalCode} {addr.city}
+                  </p>
                   {addr.isDefault && (
-                    <span className="text-xs text-teal-600 font-medium">Standardadresse</span>
+                    <span className="text-xs font-medium text-teal-600">Standardadresse</span>
                   )}
                 </div>
               </div>
@@ -213,9 +235,15 @@ export default function Checkout() {
       <button
         onClick={handlePreview}
         disabled={isLoading || !selectedAddressId}
-        className="w-full bg-teal-600 text-white py-3 rounded-lg font-medium hover:bg-teal-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 py-3 font-medium text-white transition-colors hover:bg-teal-700 disabled:opacity-60"
       >
-        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Weiter zur Übersicht <ChevronRight className="w-4 h-4" /></>}
+        {isLoading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <>
+            Weiter zur Übersicht <ChevronRight className="h-4 w-4" />
+          </>
+        )}
       </button>
     </div>
   )

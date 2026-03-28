@@ -9,6 +9,7 @@ import { formatEuro } from "@/src/lib/currency"
 
 const orderStatusLabel: Record<OrderStatus, string> = {
   PENDING_PAYMENT: "Zahlung ausstehend",
+  PENDING: "Ausstehend",
   PAID: "Bezahlt",
   CONFIRMED: "Bestätigt",
   PROCESSING: "In Bearbeitung",
@@ -37,7 +38,13 @@ const groupStatusColor: Record<OrderGroupStatus, string> = {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })
+  return new Date(iso).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
 }
 
 export default function OrderDetail() {
@@ -58,65 +65,76 @@ export default function OrderDetail() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[40vh]">
-        <Loader2 className="w-8 h-8 text-teal-600 animate-spin" />
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
       </div>
     )
   }
 
   if (error || !order) {
-    return <div className="text-center py-16 text-red-600">{error ?? "Bestellung nicht gefunden."}</div>
+    return (
+      <div className="py-16 text-center text-red-600">{error ?? "Bestellung nicht gefunden."}</div>
+    )
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <a href="/orders" className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-teal-700 mb-6 transition-colors">
-        <ChevronLeft className="w-4 h-4" />
+    <div className="mx-auto max-w-3xl">
+      <a
+        href="/orders"
+        className="mb-6 flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-teal-700"
+      >
+        <ChevronLeft className="h-4 w-4" />
         Alle Bestellungen
       </a>
 
-      <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
-        <div className="flex items-start justify-between flex-wrap gap-3">
+      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-              <Package className="w-6 h-6 text-teal-600" />
-              #{order.orderNumber}
+            <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-800">
+              <Package className="h-6 w-6 text-teal-600" />#{order.orderNumber}
             </h1>
-            <p className="text-sm text-slate-500 mt-1">Aufgegeben am {formatDate(order.createdAt)}</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Aufgegeben am {formatDate(order.createdAt ?? '')}
+            </p>
           </div>
-          <span className="text-sm font-medium px-3 py-1.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200">
-            {orderStatusLabel[order.status]}
+          <span className="rounded-full border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-medium text-teal-800">
+            {order.status ? orderStatusLabel[order.status] : ''}
           </span>
         </div>
       </div>
 
       {order.shippingAddress && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
-          <h2 className="font-semibold text-slate-700 flex items-center gap-2 mb-3">
-            <MapPin className="w-4 h-4 text-teal-600" />
+        <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6">
+          <h2 className="mb-3 flex items-center gap-2 font-semibold text-slate-700">
+            <MapPin className="h-4 w-4 text-teal-600" />
             Lieferadresse
           </h2>
-          <address className="not-italic text-slate-600 text-sm leading-relaxed">
-            {order.shippingAddress.firstName} {order.shippingAddress.lastName}<br />
-            {order.shippingAddress.street} {order.shippingAddress.houseNumber}<br />
-            {order.shippingAddress.postalCode} {order.shippingAddress.city}<br />
+          <address className="text-sm not-italic leading-relaxed text-slate-600">
+            {order.shippingAddress.firstName} {order.shippingAddress.lastName}
+            <br />
+            {order.shippingAddress.street} {order.shippingAddress.houseNumber}
+            <br />
+            {order.shippingAddress.postalCode} {order.shippingAddress.city}
+            <br />
             {order.shippingAddress.country}
           </address>
         </div>
       )}
 
       {order.groups?.map((group) => (
-        <div key={group.id} className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
+        <div key={group.id} className="mb-6 rounded-xl border border-slate-200 bg-white p-6">
+          <div className="mb-4 flex items-center justify-between">
             <h2 className="font-semibold text-slate-700">Verkäufer-Paket</h2>
-            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${groupStatusColor[group.status]}`}>
+            <span
+              className={`rounded-full px-2.5 py-1 text-xs font-medium ${groupStatusColor[group.status]}`}
+            >
               {groupStatusLabel[group.status]}
             </span>
           </div>
 
           {group.shipment?.trackingNumber && (
-            <div className="bg-slate-50 rounded-lg p-3 mb-4 flex items-center gap-2 text-sm text-slate-600">
-              <Truck className="w-4 h-4 text-teal-600 flex-shrink-0" />
+            <div className="mb-4 flex items-center gap-2 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
+              <Truck className="h-4 w-4 flex-shrink-0 text-teal-600" />
               <span>
                 Tracking: <span className="font-medium">{group.shipment.trackingNumber}</span>
                 {group.shipment.carrier && ` via ${group.shipment.carrier}`}
@@ -124,8 +142,8 @@ export default function OrderDetail() {
             </div>
           )}
           {group.status === "DELIVERED" && (
-            <div className="bg-green-50 rounded-lg p-3 mb-4 flex items-center gap-2 text-sm text-green-700">
-              <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            <div className="mb-4 flex items-center gap-2 rounded-lg bg-green-50 p-3 text-sm text-green-700">
+              <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
               Geliefert
             </div>
           )}
@@ -133,24 +151,32 @@ export default function OrderDetail() {
           <div className="space-y-3">
             {group.items?.map((item, idx) => (
               <div key={idx} className="flex gap-3">
-                <div className="w-14 h-14 bg-slate-100 rounded-lg flex-shrink-0 overflow-hidden">
+                <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
                   {item.imageUrl ? (
-                    <img src={item.imageUrl} alt={item.productName} className="w-full h-full object-cover" />
+                    <img
+                      src={item.imageUrl}
+                      alt={item.productName}
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-300">
-                      <Package className="w-6 h-6" />
+                    <div className="flex h-full w-full items-center justify-center text-slate-300">
+                      <Package className="h-6 w-6" />
                     </div>
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-800 text-sm truncate">{item.productName}</p>
-                  {item.variantOptions?.length > 0 && (
-                    <p className="text-xs text-slate-500">{item.variantOptions.map(o => `${o.name}: ${o.value}`).join(", ")}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-slate-800">{item.productName}</p>
+                  {(item.variantOptions?.length ?? 0) > 0 && (
+                    <p className="text-xs text-slate-500">
+                      {item.variantOptions?.map((o) => `${o.name}: ${o.value}`).join(", ")}
+                    </p>
                   )}
-                  <p className="text-xs text-slate-500 mt-0.5">{item.quantity}× {formatEuro(item.unitPriceCents / 100)}</p>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    {item.quantity}× {formatEuro((item.unitPriceCents ?? 0) / 100)}
+                  </p>
                 </div>
-                <span className="font-medium text-slate-800 text-sm whitespace-nowrap">
-                  {formatEuro(item.totalPriceCents / 100)}
+                <span className="whitespace-nowrap text-sm font-medium text-slate-800">
+                  {formatEuro((item.totalPriceCents ?? 0) / 100)}
                 </span>
               </div>
             ))}
@@ -158,8 +184,8 @@ export default function OrderDetail() {
         </div>
       ))}
 
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <h2 className="font-semibold text-slate-700 mb-4">Zusammenfassung</h2>
+      <div className="rounded-xl border border-slate-200 bg-white p-6">
+        <h2 className="mb-4 font-semibold text-slate-700">Zusammenfassung</h2>
         <div className="space-y-2 text-sm text-slate-600">
           <div className="flex justify-between">
             <span>Zwischensumme</span>
@@ -176,7 +202,7 @@ export default function OrderDetail() {
             </div>
           )}
         </div>
-        <div className="border-t border-slate-200 mt-4 pt-4 flex justify-between font-bold text-slate-800">
+        <div className="mt-4 flex justify-between border-t border-slate-200 pt-4 font-bold text-slate-800">
           <span>Gesamt</span>
           <span>{formatEuro(order.total ?? 0)}</span>
         </div>
