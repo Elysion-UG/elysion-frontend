@@ -8,3 +8,12 @@ node_modules/
 .next/
 .env*.local
 .DS_Store
+
+# Claude
+everything-claude-code/
+CLAUDE.md
+.clone/
+.claude/worktrees/
+
+# Build artifacts
+tsconfig.tsbuildinfo
