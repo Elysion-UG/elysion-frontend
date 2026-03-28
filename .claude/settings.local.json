@@ -26,7 +26,11 @@
       "Bash(xargs -I{} echo \"{} TS errors \\(continue-on-error in CI\\)\")",
       "Bash(npx vitest:*)",
       "Bash(npx prettier:*)",
-      "Bash(npm test:*)"
+      "Bash(npm test:*)",
+      "Bash(rsync -a --exclude='globals.css' app/ src/app/)",
+      "Bash(while read:*)",
+      "Bash(do mkdir:*)",
+      "Bash(do cp:*)"
     ]
   }
 }

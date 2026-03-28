@@ -17,3 +17,6 @@ CLAUDE.md
 
 # Build artifacts
 tsconfig.tsbuildinfo
+# Test coverage output
+coverage/
+*.tsbuildinfo
