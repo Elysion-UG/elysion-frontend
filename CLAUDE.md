@@ -101,14 +101,11 @@ Alle Typen in `src/types/index.ts`. Wichtige Typen:
 
 ```typescript
 UserRole        = "BUYER" | "SELLER" | "ADMIN"
-AccountStatus   = "ACTIVE" | "SUSPENDED" | "DELETED"
+AccountStatus   = "PENDING" | "PENDING_VERIFICATION" | "ACTIVE" | "SUSPENDED" | "DELETED"
 SellerStatus    = "PENDING" | "APPROVED" | "REJECTED" | "SUSPENDED"
-AddressType     = "SHIPPING" | "BILLING" | "BOTH"
-SellerValueProfileLevel = "STANDARD" | "LEVEL_2" | "LEVEL_3"  // Backend: STANDARD|LEVEL_2|LEVEL_3
+AddressType     = "SHIPPING" | "BILLING"
+SellerValueProfileLevel = "STANDARD" | "LEVEL_2" | "LEVEL_3"
 ```
-
-**Hinweis:** Backend gibt `UserStatus` mit `PENDING` zurück (noch nicht verifiziert).
-Frontend-Typ `AccountStatus` muss ggf. um `"PENDING"` erweitert werden.
 
 ---
 
@@ -125,37 +122,38 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 
 ---
 
-## Implementierte Module (Stand: 2026-03-22)
+## Implementierte Module (Stand: 2026-03-28)
 
-| Modul | Status | Services/Komponenten |
-|-------|--------|---------------------|
-| Auth (Login/Register/Logout/Refresh) | ✅ Vollständig | `auth.service.ts`, `AuthContext.tsx` |
-| User Profil (GET/PATCH/DELETE) | ✅ Vollständig | `user.service.ts` |
-| Adressen (CRUD + Default) | ✅ Vollständig | `address.service.ts` |
-| Buyer Value Profile | ✅ Vollständig | `buyer-value-profile.service.ts` |
-| Seller Profil | ✅ Vollständig | `seller-profile.service.ts` |
-| Seller Value Profile | ✅ Vollständig | `seller-value-profile.service.ts` |
-| Admin Panel | ✅ Service + Komponenten | `admin.service.ts`, `AdminUsers.tsx`, `AdminUserDetail.tsx` |
-| Produkte | ✅ Service vorhanden (Backend implementiert) | `product.service.ts` |
-| Kategorien | ✅ Service vorhanden (Backend implementiert) | `category.service.ts` |
-| Zertifikate | ✅ Service vorhanden (Backend implementiert) | `certificate.service.ts` |
-| Matching Engine | ⬜ Backend noch nicht implementiert | — |
-| Warenkorb / Checkout | ⬜ Backend noch nicht implementiert | — |
-| Bestellungen | ⬜ Backend noch nicht implementiert | — |
+| Modul | Frontend | Backend |
+|-------|----------|---------|
+| Auth (Login/Register/Logout/Refresh/Verify/Reset) | ✅ | ✅ |
+| User Profil (GET/PATCH/DELETE) | ⚠️ Noch Mocks in `user.service.ts` | ✅ |
+| Adressen (CRUD + Default) | ✅ | ✅ |
+| Buyer Value Profile | ✅ | ✅ |
+| Seller Profil | ✅ | ✅ |
+| Seller Value Profile | ✅ | ✅ |
+| Admin Panel (User + Seller-Verwaltung) | ✅ | ✅ |
+| Produkte (CRUD + Status + Bilder + Varianten) | ✅ Service + Komponenten | ✅ |
+| Kategorien | ✅ | ✅ |
+| Zertifikate | ✅ | ✅ |
+| Warenkorb | ✅ Service + Context + UI | ✅ |
+| Checkout | ✅ Service + UI | ✅ |
+| Bestellungen (Buyer + Seller) | ✅ Service + UI | ✅ |
+| Matching / Recommendations | ✅ Service + Widget | ✅ |
+| File Upload | ✅ Service | ✅ |
+| Payments | ✅ Service (MOCK) | ✅ |
+| Auth: resend-verification | ❌ Kein UI | ❌ Backend-Endpoint fehlt |
 
 ---
 
 ## Bekannte Abweichungen Frontend ↔ Backend
 
-| Feld | Status | Notiz |
-|------|--------|-------|
-| `AccountStatus` + `"PENDING"` | ✅ Behoben | Backend sendet `PENDING` für unverifizierte User — in `types/index.ts` ergänzt |
-| `SellerValueProfileLevel` | ✅ Behoben | Backend-Werte `STANDARD\|LEVEL_2\|LEVEL_3` in `types/index.ts` korrigiert |
-| `PagedResponse<T>` Feldnamen | ✅ Behoben | Backend: `{ items, page, size, totalElements, totalPages }` — Typ ergänzt |
-| `expiresIn` Feldname | ✅ Behoben | Backend-Feld ist `expiresIn` (nicht `expiresInSeconds`) — bestätigt |
-| Product-Liste (`GET /api/v1/products`) | ⚠️ Aktiv | Gibt Spring-Page zurück: `{ content[], totalElements, totalPages, size, number }` — nicht `PagedResponse<T>`. Typ: `ProductPage` verwenden. |
-| Product-Detail intern (`GET /api/v1/products/{id}`) | ⚠️ Aktiv | Gibt `{ title }` zurück (nicht `{ name }`), kein ApiResponse-Wrapper |
-| Product-Detail öffentlich (`GET /api/v1/products/{slug}`) | ⚠️ Aktiv | Gibt `{ name }` zurück (nicht `{ title }`) |
+| Feld | Notiz |
+|------|-------|
+| Product-Liste (`GET /api/v1/products`) | Gibt Spring-Page zurück: `{ content[], totalElements, totalPages, size, number }` — Typ: `ProductPage` verwenden, nicht `PagedResponse<T>` |
+| Product-Detail intern (`GET /api/v1/products/{id}`) | Gibt `{ title }` zurück (nicht `{ name }`), kein ApiResponse-Wrapper |
+| Product-Detail öffentlich (`GET /api/v1/products/{slug}`) | Gibt `{ name }` zurück (nicht `{ title }`) |
+| `CheckoutCompleteResponse` | Backend gibt `{ completionId, status, paymentStatus, paymentMethod, completedAt, checkout }` — Frontend-Typ noch nicht vollständig angepasst (P1-1) |
 
 ---
 
