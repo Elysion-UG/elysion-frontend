@@ -1,315 +1,148 @@
-# Code-Standards & Best Practices
+# Code-Standards
 
-## Nachhaltigkeits-Zertifikat-Plattform
-
-**Zweck:** Einheitlicher Code-Stil und Best Practices für das gesamte Team
+> Konventionen für das Elysion Frontend-Repo (Next.js 16, React 18, TypeScript).
 
 ---
 
-## 1. Allgemeine Prinzipien
+## Namenskonventionen
 
-### 1.1 Clean Code
-
-- Verständliche Variablen- und Funktionsnamen — kein Kommentar nötig
-- Keine Magic Numbers/Strings → Konstanten verwenden
-- Funktionen tun genau eine Sache
-- Keine auskommentierten Code-Blöcke im Repository
-- Kein Debug-Output im produktiven Code
-
-### 1.2 Naming-Konventionen
-
-| Was                    | Stil             | Beispiel                             |
-| ---------------------- | ---------------- | ------------------------------------ |
-| Variablen & Funktionen | camelCase        | `getUserById`, `totalPrice`          |
-| Klassen & Interfaces   | PascalCase       | `ProductService`, `UserProfile`      |
-| Konstanten             | UPPER_SNAKE_CASE | `MAX_FILE_SIZE`, `API_BASE_URL`      |
-| Datenbank-Tabellen     | snake_case       | `order_items`, `user_profiles`       |
-| Dateinamen (Backend)   | kebab-case       | `auth.service.ts`, `cart.routes.ts`  |
-| Dateinamen (Frontend)  | PascalCase       | `ProductCard.tsx`, `CartContext.tsx` |
-| Enum-Werte             | UPPER_SNAKE_CASE | `ORDER_STATUS.PENDING`               |
-
-### 1.3 Kein Code ohne Tests
-
-- Business-Logik → Unit-Tests
-- API-Endpunkte → Integration-Tests
-- Kritische Flows (Checkout, Payment) → E2E-Tests
-- Mindest-Coverage: 60 %
+| Was                    | Stil        | Beispiel                                            |
+| ---------------------- | ----------- | --------------------------------------------------- |
+| Komponenten (Dateien)  | PascalCase  | `ProductCard.tsx`, `CheckoutForm.tsx`               |
+| Services (Dateien)     | camelCase   | `auth.service.ts`, `order.service.ts`               |
+| Hooks (Dateien)        | camelCase   | `useAuth.ts`, `useCart.ts`                          |
+| Typen & Interfaces     | PascalCase  | `User`, `ProductPage`, `ApiError`                   |
+| Variablen & Funktionen | camelCase   | `accessToken`, `fetchOrders()`                      |
+| Kontexte               | PascalCase  | `AuthContext.tsx`, `CartContext.tsx`                |
+| Imports (Alias)        | `@/src/...` | `import { apiRequest } from "@/src/lib/api-client"` |
 
 ---
 
-## 2. Projektstruktur
+## Dateiorganisation
 
-### Backend
+Siehe Projektstruktur in [`README.md`](../README.md#project-structure).
 
-```
-src/
-├── modules/              # Feature-Module (ein Ordner pro Modul)
-│   ├── auth/
-│   │   ├── auth.controller.ts
-│   │   ├── auth.service.ts
-│   │   ├── auth.repository.ts
-│   │   ├── auth.routes.ts
-│   │   ├── auth.middleware.ts
-│   │   ├── dto/
-│   │   └── __tests__/
-│   └── products/
-│       └── ... (gleiche Struktur)
-├── shared/               # Geteilter Code
-│   ├── errors/
-│   ├── middleware/
-│   └── utils/
-├── config/               # Konfiguration & Umgebungsvariablen
-├── jobs/                 # Cron-Jobs
-├── app.ts
-└── index.ts
-```
-
-### Frontend
-
-```
-src/
-├── app/                  # Routing (Next.js App Router)
-├── components/           # UI-Komponenten
-│   ├── ui/               # Basiskomponenten (Button, Input, Modal)
-│   ├── auth/
-│   ├── products/
-│   └── layout/
-├── hooks/                # Custom Hooks
-├── contexts/             # State-Management
-├── lib/
-│   └── api/              # API-Client-Funktionen
-└── types/                # Globale Typen
-```
+**Faustregel:** Neue Domäne → neues Service-File + neues Feature-Verzeichnis unter `components/features/`.
 
 ---
 
-## 3. Architektur-Patterns
+## API-Client
 
-### 3.1 Schichtenarchitektur (Backend)
+Alle Backend-Requests gehen ausnahmslos über `src/lib/api-client.ts`.
 
-```
-HTTP-Request
-    ↓
-Controller       — HTTP-Handler, keine Business-Logik
-    ↓
-Service          — Business-Logik
-    ↓
-Repository       — Datenbankzugriff
-    ↓
-Datenbank
-```
+Beispiel: siehe [`docs/api-integration.md`](./api-integration.md) — dort ist das Service-Pattern als primäre Referenz dokumentiert.
 
-**Regel:** Keine direkte Datenbankabfrage im Controller. Keine HTTP-spezifischen Konzepte im Service.
+**Nie direkt `fetch()` aufrufen** — der API-Client übernimmt Token-Handling, 401-Retry und Error-Wrapping.
 
-### 3.2 Fehlerbehandlung
-
-- Spezifische Fehler-Klassen verwenden (z.B. `NotFoundError`, `ValidationError`)
-- Fehler werden **geworfen**, nicht als Return-Wert
-- Zentraler Error-Handler fängt alle Fehler ab
-- Niemals rohe Datenbankfehler an den Client durchleiten
-
-```
-// ✅ RICHTIG
-if (!user) throw new NotFoundError('Nutzer nicht gefunden');
-
-// ❌ FALSCH
-if (!user) return { error: 'not found' };
-```
-
-### 3.3 Input-Validierung
-
-- **Immer serverseitig** — Frontend-Validierung ist nur UX, kein Schutz
-- Validierung so früh wie möglich (Controller-Ebene)
-- Strukturierte Fehlermeldungen mit Feldangabe
+**Response-Envelope:** Das Backend gibt `{ status, message, data }` zurück — `apiRequest` gibt direkt `data` zurück.
+**204 No Content** → gibt `null` zurück.
+**Fehler** werfen `ApiError(status, message)`.
 
 ---
 
-## 4. API-Design
+## Fehlerbehandlung
 
-### 4.1 REST-Konventionen
+```typescript
+import { ApiError } from "@/src/lib/api-client"
 
-| Operation               | Methode | Beispiel               |
-| ----------------------- | ------- | ---------------------- |
-| Liste abrufen           | GET     | `GET /products`        |
-| Einzeln abrufen         | GET     | `GET /products/:id`    |
-| Erstellen               | POST    | `POST /products`       |
-| Aktualisieren (partial) | PATCH   | `PATCH /products/:id`  |
-| Löschen                 | DELETE  | `DELETE /products/:id` |
-
-### 4.2 Response-Format
-
-**Erfolg:**
-
-```json
-{
-  "status": "success",
-  "data": { ... }
+try {
+  const order = await OrderService.getOrder(id)
+} catch (error) {
+  if (error instanceof ApiError) {
+    if (error.status === 404) {
+      // Benutzerfreundliche Meldung anzeigen
+    }
+    console.error("API error:", error.message)
+  }
 }
 ```
 
-**Fehler:**
+- Fehler **immer** explizit behandeln — kein stilles Swallowing
+- UI-facing: benutzerfreundliche Fehlermeldung anzeigen (z.B. via `sonner` Toast)
+- Nie rohe Error-Objekte oder Stack-Traces dem Nutzer zeigen
 
-```json
-{
-  "status": "error",
-  "message": "Produkt nicht gefunden"
+---
+
+## TypeScript
+
+- **Alle Typen** sind in [`src/types/index.ts`](../src/types/index.ts) definiert — keine lokalen Ad-hoc-Typen für wiederverwendbare Strukturen
+- `any` ist verboten — bei unbekannten Strukturen `unknown` verwenden und narrowen
+- Bekannte Backend-Abweichungen beachten (siehe [`CLAUDE.md`](../CLAUDE.md#bekannte-abweichungen-frontend--backend)):
+  - Produktliste gibt Spring-`Page` zurück → `ProductPage` statt `PagedResponse<T>` verwenden
+
+---
+
+## Komponenten-Patterns
+
+```typescript
+// ✅ Props explizit typen
+interface ProductCardProps {
+  product: Product
+  onAddToCart: (id: number) => void
+}
+
+export function ProductCard({ product, onAddToCart }: ProductCardProps) {
+  // ...
 }
 ```
 
-**Validierungsfehler:**
+- Keine Mutations an Props oder externem State
+- Kein direktes `localStorage` — Auth-Token wird im Modul-Memory gehalten (XSS-sicher)
+- `useAuth()` und `useCart()` für globalen State verwenden
 
-```json
-{
-  "status": "error",
-  "message": "Validation failed",
-  "errors": [{ "field": "email", "message": "Ungültige E-Mail-Adresse" }]
+---
+
+## Auth-Zugriff in Komponenten
+
+```typescript
+import { useAuth } from "@/src/hooks/useAuth"
+
+export function MyComponent() {
+  const { user, isAuthenticated, isLoading } = useAuth()
+
+  if (isLoading) return <Skeleton />
+  if (!isAuthenticated) return <LoginPrompt />
+
+  return <div>Hallo, {user?.firstName}</div>
 }
 ```
 
-### 4.3 Versionierung
+---
 
-- API-Präfix: `/api/v1/`
-- Breaking Changes → neue Version `/api/v2/`
+## Testing
+
+**Framework:** Vitest + @testing-library/react
+**Coverage-Ziel:** Bestehende Coverage (~97%) nicht senken
+**Test-Dateien:** Co-located, z.B. `auth.service.test.ts` neben `auth.service.ts`
+
+```typescript
+// Aufbau: Arrange → Act → Assert
+it("should return null when cart is empty", async () => {
+  // Arrange
+  const mockApiRequest = vi.fn().mockResolvedValue([])
+
+  // Act
+  const result = await CartService.getCart()
+
+  // Assert
+  expect(result).toHaveLength(0)
+})
+```
+
+**Test-Naming:** `"should [erwartetes Verhalten] when [Bedingung]"`
+
+**Was getestet wird:**
+
+- Service-Methoden (alle)
+- Custom Hooks
+- Utility-Funktionen (`lib/`)
+- Kontexte (AuthContext, CartContext)
 
 ---
 
-## 5. Sicherheits-Richtlinien
+## Sicherheit
 
-### 5.1 Authentifizierung & Autorisierung
-
-- Jeder geschützte Endpoint überprüft das JWT
-- Rollen-Check **vor** dem Datenbankzugriff
-- Nie sensible Daten im Token speichern
-
-### 5.2 Datenzugriff
-
-- Nutzer dürfen nur **eigene Daten** lesen/schreiben
-- Verkäufer dürfen nur **eigene Produkte** bearbeiten
-- Admin-Endpunkte sind durch eine separate Middleware geschützt
-
-### 5.3 Sensible Daten
-
-- Passwörter werden nie zurückgegeben
-- IBAN/Zahlungsdaten: nur maskiert anzeigen
-- Keine Secrets/Credentials im Code oder Git
-
-### 5.4 Allgemein
-
-- Input immer validieren und sanitisieren
-- Parameterized Queries (kein String-Concatenation bei DB-Abfragen)
-- Datei-Uploads: Typ und Größe prüfen
-
----
-
-## 6. Testing-Standards
-
-### 6.1 Test-Aufbau (AAA-Pattern)
-
-```
-// Arrange  — Vorbedingungen setzen
-// Act      — Aktion ausführen
-// Assert   — Ergebnis prüfen
-```
-
-### 6.2 Test-Naming
-
-```
-"should [erwartetes Verhalten] when [Bedingung]"
-
-Beispiele:
-  "should return 404 when product does not exist"
-  "should activate products when certificate is verified"
-  "should throw error when email already exists"
-```
-
-### 6.3 Was zu testen ist
-
-| Ebene       | Was                              | Wann            |
-| ----------- | -------------------------------- | --------------- |
-| Unit        | Service-Methoden, Algorithmen    | Immer           |
-| Integration | API-Endpunkte mit echter DB      | Immer           |
-| E2E         | Checkout, Zahlung, Registrierung | Kritische Flows |
-
-### 6.4 Mocking
-
-- Externe Services (E-Mail, Payment, Storage) immer mocken
-- Datenbank in Unit-Tests mocken, in Integration-Tests echte Test-DB verwenden
-- Keine echten API-Keys in Tests
-
----
-
-## 7. Git & Code-Review
-
-### 7.1 Commit-Konventionen (Conventional Commits)
-
-```
-<type>(<scope>): <beschreibung>
-
-Typen:
-  feat     — neues Feature
-  fix      — Bug-Fix
-  docs     — Dokumentation
-  refactor — Code-Umstrukturierung (kein Feature, kein Fix)
-  test     — Tests
-  chore    — Build, Dependencies
-
-Beispiele:
-  feat(auth): implement password reset
-  fix(cart): correct total price calculation
-  test(products): add unit tests for product service
-```
-
-### 7.2 Vor jedem Commit prüfen
-
-- [ ] Code funktioniert lokal
-- [ ] Tests grün
-- [ ] Kein Debug-Output
-- [ ] Keine Secrets committed
-- [ ] Commit-Message folgt Konvention
-
-### 7.3 Code-Review-Checkliste
-
-**Allgemein**
-
-- [ ] Logik ist klar und nachvollziehbar
-- [ ] Keine unnötige Komplexität
-- [ ] Fehlerbehandlung vorhanden
-
-**Sicherheit**
-
-- [ ] Input-Validierung vorhanden
-- [ ] Keine sensiblen Daten exponiert
-- [ ] Autorisierung korrekt
-
-**Performance**
-
-- [ ] Keine N+1-Queries
-- [ ] Nur benötigte Felder aus DB geladen
-
-**Tests**
-
-- [ ] Business-Logik getestet
-- [ ] Edge-Cases berücksichtigt
-
----
-
-## 8. Dokumentations-Standards
-
-### 8.1 Wann JSDoc schreiben
-
-- Öffentliche Service-Methoden
-- Komplexe Algorithmen
-- Nicht-offensichtliche Business-Logik
-
-### 8.2 README in jedem Modul
-
-Jedes Modul enthält eine kurze `README.md` mit:
-
-- Verantwortlichkeiten
-- API-Endpunkte
-- Abhängigkeiten zu anderen Modulen
-- Benötigte Umgebungsvariablen
-
----
-
-**Grundsatz:** Code wird öfter gelesen als geschrieben — schreib für den nächsten Entwickler, nicht für den Compiler.
+- Keine Secrets, API-Keys oder Passwörter in den Code oder in Git
+- Environment-Variablen für alle externen Werte (`NEXT_PUBLIC_API_URL`)
+- Kein `dangerouslySetInnerHTML` ohne explizite Sanitisierung
+- User-Input validieren vor API-Calls (Zod-Schemas in `lib/validation.ts`)
