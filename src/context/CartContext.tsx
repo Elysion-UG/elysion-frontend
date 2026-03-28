@@ -1,70 +1,77 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useCallback, useEffect } from "react"
-import type { Cart, AddToCartDTO, UpdateCartItemDTO } from "@/src/types"
-import { CartService } from "@/src/services/cart.service"
-import { useAuth } from "@/src/context/AuthContext"
-import { ApiError } from "@/src/lib/api-client"
+import { createContext, useContext, useState, useCallback } from "react"
 
-interface CartContextValue {
-  cart: Cart | null
-  itemCount: number
-  isLoading: boolean
-  addItem: (dto: AddToCartDTO) => Promise<void>
-  updateItem: (itemId: string, dto: UpdateCartItemDTO) => Promise<void>
-  removeItem: (itemId: string) => Promise<void>
-  refetch: () => Promise<void>
+export interface CartItem {
+  productId: string
+  quantity: number
+  price: number
+  name: string
 }
 
-const CartContext = createContext<CartContextValue | null>(null)
+interface CartContextValue {
+  items: CartItem[]
+  addItem: (item: CartItem) => void
+  removeItem: (productId: string) => void
+  updateQuantity: (productId: string, quantity: number) => void
+  clearCart: () => void
+  totalItems: number
+  totalPrice: number
+}
+
+export const CartContext = createContext<CartContextValue | null>(null)
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const { isLoading: authLoading } = useAuth()
-  const [cart, setCart] = useState<Cart | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [items, setItems] = useState<CartItem[]>([])
 
-  const fetchCart = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const data = await CartService.get()
-      setCart(data)
-    } catch (e) {
-      // 404 = no cart yet — treat as empty
-      if (e instanceof ApiError && e.status === 404) {
-        setCart(null)
+  const addItem = useCallback((item: CartItem) => {
+    setItems((prev) => {
+      const existing = prev.find((i) => i.productId === item.productId)
+      if (existing) {
+        return prev.map((i) =>
+          i.productId === item.productId
+            ? { ...i, quantity: i.quantity + item.quantity }
+            : i
+        )
       }
-    } finally {
-      setIsLoading(false)
+      return [...prev, item]
+    })
+  }, [])
+
+  const removeItem = useCallback((productId: string) => {
+    setItems((prev) => prev.filter((i) => i.productId !== productId))
+  }, [])
+
+  const updateQuantity = useCallback((productId: string, quantity: number) => {
+    if (quantity <= 0) {
+      setItems((prev) => prev.filter((i) => i.productId !== productId))
+    } else {
+      setItems((prev) =>
+        prev.map((i) => (i.productId === productId ? { ...i, quantity } : i))
+      )
     }
   }, [])
 
-  // Fetch cart once auth is resolved
-  useEffect(() => {
-    if (!authLoading) {
-      fetchCart()
-    }
-  }, [authLoading, fetchCart])
-
-  const addItem = useCallback(async (dto: AddToCartDTO) => {
-    const updated = await CartService.addItem(dto)
-    setCart(updated)
+  const clearCart = useCallback(() => {
+    setItems([])
   }, [])
 
-  const updateItem = useCallback(async (itemId: string, dto: UpdateCartItemDTO) => {
-    const updated = await CartService.updateItem(itemId, dto)
-    setCart(updated)
-  }, [])
-
-  const removeItem = useCallback(async (itemId: string) => {
-    await CartService.removeItem(itemId)
-    await fetchCart()
-  }, [fetchCart])
-
-  const itemCount = cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0
+  const totalItems = items.reduce((sum, i) => sum + i.quantity, 0)
+  const totalPrice = items.reduce((sum, i) => sum + i.price * i.quantity, 0)
 
   return (
-    <CartContext.Provider value={{ cart, itemCount, isLoading, addItem, updateItem, removeItem, refetch: fetchCart }}>
+    <CartContext.Provider
+      value={{
+        items,
+        addItem,
+        removeItem,
+        updateQuantity,
+        clearCart,
+        totalItems,
+        totalPrice,
+      }}
+    >
       {children}
     </CartContext.Provider>
   )
