@@ -3,19 +3,19 @@
 import { useState } from "react"
 import { Toaster, toast } from "sonner"
 import { Loader2, ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Button } from "@/src/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/src/components/ui/card"
+import { Input } from "@/src/components/ui/input"
+import { Label } from "@/src/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/components/ui/tabs"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
+} from "@/src/components/ui/select"
+import { Textarea } from "@/src/components/ui/textarea"
 import Link from "next/link"
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"

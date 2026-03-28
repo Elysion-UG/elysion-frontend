@@ -35,11 +35,19 @@
 src/
   App.tsx               — Root-Komponente mit Routing-Logik
   app/                  — Next.js App Router (Seiten)
-  components/           — UI-Komponenten
+  components/
+    ui/                 — shadcn/ui Basiskomponenten (Button, Dialog, Card …)
+    features/           — Feature-Komponenten nach Domain (cart/, orders/, …)
+    layout/             — Layout-Komponenten (PageLayout)
+    shared/             — Wiederverwendbare Seiten (About, Contact)
+    *.tsx               — Seiten-Level-Komponenten (SustainableShop, ProductDetail …)
   context/
     AuthContext.tsx      — Globaler Auth-State (User, AccessToken, isAuthenticated)
+    CartContext.tsx      — Warenkorb-State (mit CartService-Sync)
+  hooks/                — Custom React Hooks
   lib/
     api-client.ts        — Zentraler HTTP-Client (fetch wrapper, Token-Handling)
+    utils.ts            — shadcn cn() Utility
   services/
     auth.service.ts      — Auth-API-Calls
     user.service.ts      — User-Profil-API-Calls

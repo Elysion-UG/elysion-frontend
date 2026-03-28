@@ -3,19 +3,19 @@
 import { useState } from "react"
 import { Toaster, toast } from "sonner"
 import { Loader2, ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Button } from "@/src/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/src/components/ui/card"
+import { Input } from "@/src/components/ui/input"
+import { Label } from "@/src/components/ui/label"
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
+} from "@/src/components/ui/select"
+import { Textarea } from "@/src/components/ui/textarea"
+import { Checkbox } from "@/src/components/ui/checkbox"
 import Link from "next/link"
 import { apiRequest, setAccessToken } from "@/src/lib/api-client"
 
