@@ -3,7 +3,6 @@
  */
 import type {
   User,
-  ValuesProfile,
   PaginatedResponse,
   AdminUserListParams,
   AccountStatus,
@@ -48,17 +47,6 @@ export const UserService = {
 
   async deleteAccount(): Promise<void> {
     await delay(800)
-  },
-
-  // ── Values Profile ─────────────────────────────────────────────────
-  async getValuesProfile(): Promise<ValuesProfile> {
-    await delay()
-    return { type: "none" }
-  },
-
-  async saveValuesProfile(profile: ValuesProfile): Promise<ValuesProfile> {
-    await delay()
-    return profile
   },
 
   // ── Admin: User Management ─────────────────────────────────────────

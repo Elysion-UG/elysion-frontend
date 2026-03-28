@@ -64,25 +64,6 @@ describe("UserService", () => {
     })
   })
 
-  // ── getValuesProfile ──────────────────────────────────────────────────
-
-  describe("getValuesProfile", () => {
-    it("returns a values profile with type 'none' by default", async () => {
-      const profile = await UserService.getValuesProfile()
-      expect(profile).toEqual({ type: "none" })
-    })
-  })
-
-  // ── saveValuesProfile ─────────────────────────────────────────────────
-
-  describe("saveValuesProfile", () => {
-    it("echoes back the exact profile passed in", async () => {
-      const input = { type: "eco", priorities: ["organic", "fair-trade"] } as any
-      const result = await UserService.saveValuesProfile(input)
-      expect(result).toEqual(input)
-    })
-  })
-
   // ── getUsers ──────────────────────────────────────────────────────────
 
   describe("getUsers", () => {
