@@ -202,3 +202,88 @@ export interface CategoryUpdateDTO {
   description?: string
   order?: number
 }
+
+// ── Seller Value Profile ────────────────────────────────────────────
+export type SellerValueProfileLevel = "STANDARD" | "LEVEL_2" | "LEVEL_3"
+
+export interface SellerValueProfile {
+  id: string
+  sellerId: string
+  level: SellerValueProfileLevel
+  payload?: string
+  score?: number
+  updatedAt: string
+}
+
+// ── Recommendations ──────────────────────────────────────────────────
+export interface Recommendation {
+  productId: string
+  slug: string
+  name: string
+  price: number
+  imageUrl?: string
+  score: number
+}
+
+// ── Seller Orders & Settlements ──────────────────────────────────────
+export type OrderGroupStatus = "PENDING" | "CONFIRMED" | "SHIPPED" | "DELIVERED" | "CANCELLED"
+
+export interface OrderGroupDetail {
+  id: string
+  buyerId: string
+  sellerId: string
+  status: OrderGroupStatus
+  items: Array<{
+    productId: string
+    variantId?: string
+    name: string
+    quantity: number
+    unitPrice: number
+  }>
+  totalAmount: number
+  shippingAddress?: string
+  trackingNumber?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface OrderGroupsPage {
+  items: OrderGroupDetail[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+}
+
+export interface ShipOrderDTO {
+  trackingNumber: string
+  carrier?: string
+}
+
+export interface Settlement {
+  id: string
+  orderGroupId: string
+  amount: number
+  status: "PENDING" | "PAID"
+  paidAt?: string
+  createdAt: string
+}
+
+export interface SettlementsPage {
+  items: Settlement[]
+  page: number
+  size: number
+  totalElements: number
+  totalPages: number
+}
+
+// ── Product Variant ──────────────────────────────────────────────────
+export interface ProductVariantInput {
+  sku?: string
+  size?: string
+  color?: string
+  material?: string
+  stock: number
+  price: number
+  imageUrls?: string[]
+}

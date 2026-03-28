@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["vitest/globals"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "app/**/*.ts", "app/**/*.tsx", "middleware.ts"],
+  "exclude": [
+    "node_modules",
+    ".next",
+    ".claude",
+    ".clone",
+    "everything-claude-code",
+    "coverage",
+    "app/dev"
+  ]
+}
