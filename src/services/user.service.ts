@@ -1,64 +1,36 @@
-/**
- * UserService — abstract service layer for user profile, values profile, and admin operations.
- */
+import { apiRequest } from "@/src/lib/api-client"
 import type {
   User,
-  ValuesProfile,
   PaginatedResponse,
   AdminUserListParams,
   AccountStatus,
   SellerStatus,
 } from "@/src/types"
 
-const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms))
-
 export const UserService = {
   // ── Profile ────────────────────────────────────────────────────────
   async getCurrentUser(): Promise<User> {
-    await delay()
-    return {
-      id: "usr_1",
-      email: "max.mustermann@email.de",
-      firstName: "Max",
-      lastName: "Mustermann",
-      phone: "+49 123 456789",
-      role: "BUYER",
-      status: "ACTIVE",
-      createdAt: "2024-01-15T10:00:00Z",
-    }
+    return apiRequest<User>("/api/v1/users/me")
   },
 
-  async updateProfile(data: { firstName: string; lastName: string; phone?: string }): Promise<User> {
-    await delay()
-    return {
-      id: "usr_1",
-      email: "max.mustermann@email.de",
-      firstName: data.firstName,
-      lastName: data.lastName,
-      phone: data.phone,
-      role: "BUYER",
-      status: "ACTIVE",
-      createdAt: "2024-01-15T10:00:00Z",
-    }
+  async updateProfile(data: {
+    firstName: string
+    lastName: string
+    phone?: string
+  }): Promise<User> {
+    return apiRequest<User>("/api/v1/users/me", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    })
   },
 
   async deleteAccount(): Promise<void> {
-    await delay(800)
+    await apiRequest<{ userId: string }>("/api/v1/users/me", { method: "DELETE" })
   },
 
-  // ── Values Profile ─────────────────────────────────────────────────
-  async getValuesProfile(): Promise<ValuesProfile> {
-    await delay()
-    return { type: "none" }
-  },
-
-  async saveValuesProfile(profile: ValuesProfile): Promise<ValuesProfile> {
-    await delay()
-    return profile
-  },
-
-  // ── Admin: User Management ─────────────────────────────────────────
+  // ── Admin: User Management (mock — use AdminService for real calls) ─
   async getUsers(params: AdminUserListParams): Promise<PaginatedResponse<User>> {
+    const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms))
     await delay()
     const mockUsers: User[] = [
       {
@@ -77,7 +49,13 @@ export const UserService = {
         lastName: "Schmidt",
         role: "SELLER",
         status: "ACTIVE",
-        sellerProfile: { companyName: "GreenGoods GmbH", vatId: "DE123456789", iban: "DE89370400440532013000", status: "APPROVED" },
+        sellerProfile: {
+          id: "sp_1",
+          companyName: "GreenGoods GmbH",
+          vatId: "DE123456789",
+          iban: "DE89370400440532013000",
+          status: "APPROVED",
+        },
         createdAt: "2024-02-20T14:30:00Z",
       },
       {
@@ -87,7 +65,13 @@ export const UserService = {
         lastName: "Meier",
         role: "SELLER",
         status: "ACTIVE",
-        sellerProfile: { companyName: "EcoStyle", vatId: "DE987654321", iban: "DE02120300000000202051", status: "PENDING" },
+        sellerProfile: {
+          id: "sp_2",
+          companyName: "EcoStyle",
+          vatId: "DE987654321",
+          iban: "DE02120300000000202051",
+          status: "PENDING",
+        },
         createdAt: "2024-03-10T09:15:00Z",
       },
       {
@@ -117,7 +101,7 @@ export const UserService = {
         (u) =>
           u.firstName.toLowerCase().includes(q) ||
           u.lastName.toLowerCase().includes(q) ||
-          u.email.toLowerCase().includes(q),
+          u.email.toLowerCase().includes(q)
       )
     }
     if (params.role) filtered = filtered.filter((u) => u.role === params.role)
@@ -136,7 +120,6 @@ export const UserService = {
   },
 
   async getUserById(id: string): Promise<User> {
-    await delay()
     const allUsers = (await UserService.getUsers({ page: 1, pageSize: 100 })).data
     const user = allUsers.find((u) => u.id === id)
     if (!user) throw new Error("User not found")
@@ -144,13 +127,11 @@ export const UserService = {
   },
 
   async updateUserStatus(userId: string, status: AccountStatus): Promise<void> {
-    await delay()
     void userId
     void status
   },
 
   async updateSellerStatus(userId: string, sellerStatus: SellerStatus): Promise<void> {
-    await delay()
     void userId
     void sellerStatus
   },

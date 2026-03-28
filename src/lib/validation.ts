@@ -9,7 +9,10 @@ export const PASSWORD_RULES: PasswordRule[] = [
   { label: "Mindestens 1 Zahl", test: (pw) => /\d/.test(pw) },
 ]
 
-export function validatePassword(pw: string): { valid: boolean; results: { label: string; passed: boolean }[] } {
+export function validatePassword(pw: string): {
+  valid: boolean
+  results: { label: string; passed: boolean }[]
+} {
   const results = PASSWORD_RULES.map((r) => ({ label: r.label, passed: r.test(pw) }))
   return { valid: results.every((r) => r.passed), results }
 }

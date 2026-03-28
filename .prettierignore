@@ -1,0 +1,8 @@
+.next
+node_modules
+public
+*.lock
+.claude
+.clone
+everything-claude-code
+coverage

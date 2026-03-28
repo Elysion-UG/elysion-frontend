@@ -19,7 +19,7 @@ interface AuthContextValue {
   setUser: (user: User) => void
 }
 
-const AuthContext = createContext<AuthContextValue | null>(null)
+export const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -34,16 +34,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Token refresh interval — conceptual, fires every 10 min
   useEffect(() => {
     if (token) {
-      refreshTimer.current = setInterval(async () => {
-        try {
-          const res = await AuthService.refreshToken(token)
-          setToken(res.token)
-        } catch {
-          // If refresh fails, log out
-          setUser(null)
-          setToken(null)
-        }
-      }, 10 * 60 * 1000)
+      refreshTimer.current = setInterval(
+        async () => {
+          try {
+            const res = await AuthService.refresh()
+            setToken(res.token)
+          } catch {
+            // If refresh fails, log out
+            setUser(null)
+            setToken(null)
+          }
+        },
+        10 * 60 * 1000
+      )
     }
     return () => {
       if (refreshTimer.current) clearInterval(refreshTimer.current)
@@ -85,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshTokenFn = useCallback(async () => {
     if (!token) return
     try {
-      const res = await AuthService.refreshToken(token)
+      const res = await AuthService.refresh()
       setToken(res.token)
     } catch {
       setUser(null)

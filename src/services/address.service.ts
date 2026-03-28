@@ -1,65 +1,44 @@
 /**
- * AddressService — abstract service layer for address CRUD.
+ * AddressService — real API calls for address CRUD.
+ *
+ * Endpoints (base: /api/v1/users/me/addresses):
+ *   GET    /                — list all addresses (default first, then by updatedAt desc)
+ *   POST   /                — create address; first address auto-becomes default
+ *   PATCH  /{id}            — partial update (all fields optional)
+ *   PATCH  /{id}/default    — set as default (bulk switch)
+ *   DELETE /{id}            — delete; next address auto-promoted to default if needed
  */
+import { apiRequest } from "@/src/lib/api-client"
 import type { Address, AddressDTO } from "@/src/types"
-
-const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms))
-
-let mockAddresses: Address[] = [
-  {
-    id: "addr_1",
-    type: "SHIPPING",
-    firstName: "Max",
-    lastName: "Mustermann",
-    street: "Musterstrasse",
-    houseNumber: "123",
-    postalCode: "12345",
-    city: "Musterstadt",
-    country: "Deutschland",
-    isDefault: true,
-  },
-  {
-    id: "addr_2",
-    type: "BILLING",
-    firstName: "Max",
-    lastName: "Mustermann",
-    street: "Firmenstrasse",
-    houseNumber: "45",
-    postalCode: "54321",
-    city: "Arbeitsstadt",
-    country: "Deutschland",
-    isDefault: false,
-  },
-]
 
 export const AddressService = {
   async getAll(): Promise<Address[]> {
-    await delay()
-    return [...mockAddresses]
+    return apiRequest<Address[]>("/api/v1/users/me/addresses")
   },
 
   async create(dto: AddressDTO): Promise<Address> {
-    await delay()
-    const addr: Address = { ...dto, id: `addr_${Date.now()}` }
-    if (addr.isDefault) mockAddresses = mockAddresses.map((a) => ({ ...a, isDefault: false }))
-    mockAddresses.push(addr)
-    return addr
+    return apiRequest<Address>("/api/v1/users/me/addresses", {
+      method: "POST",
+      body: JSON.stringify(dto),
+    })
   },
 
-  async update(id: string, dto: AddressDTO): Promise<Address> {
-    await delay()
-    if (dto.isDefault) mockAddresses = mockAddresses.map((a) => ({ ...a, isDefault: false }))
-    mockAddresses = mockAddresses.map((a) => (a.id === id ? { ...dto, id } : a))
-    return { ...dto, id }
+  async update(id: string, dto: Partial<AddressDTO>): Promise<Address> {
+    return apiRequest<Address>(`/api/v1/users/me/addresses/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(dto),
+    })
+  },
+
+  async setDefault(id: string): Promise<Address> {
+    return apiRequest<Address>(`/api/v1/users/me/addresses/${id}/default`, {
+      method: "PATCH",
+    })
   },
 
   async remove(id: string): Promise<void> {
-    await delay()
-    mockAddresses = mockAddresses.filter((a) => a.id !== id)
-  },
-
-  async setDefault(id: string): Promise<void> {
-    await delay()
-    mockAddresses = mockAddresses.map((a) => ({ ...a, isDefault: a.id === id }))
+    await apiRequest(`/api/v1/users/me/addresses/${id}`, {
+      method: "DELETE",
+    })
   },
 }
