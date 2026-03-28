@@ -1,3 +1,26 @@
+/**
+ * AdminService — API calls for admin panel operations.
+ *
+ * All endpoints require ADMIN role.
+ *
+ * User moderation:
+ *   GET   /api/v1/admin/users                         — list users (paginated)
+ *   GET   /api/v1/admin/users/{id}                    — get user details
+ *   PATCH /api/v1/admin/users/{id}/suspend             — suspend user
+ *   PATCH /api/v1/admin/users/{id}/activate            — reactivate user
+ *
+ * Seller profile review:
+ *   POST  /api/v1/admin/seller-profiles/{id}/approve  — approve seller profile
+ *   POST  /api/v1/admin/seller-profiles/{id}/reject   — reject seller profile
+ *   POST  /api/v1/admin/seller-profiles/{id}/suspend  — suspend seller profile
+ *
+ * Certificate verification:
+ *   PATCH /api/v1/admin/certificates/{id}/verify      — verify certificate
+ *   PATCH /api/v1/admin/certificates/{id}/reject      — reject certificate
+ *
+ * Note: Certificate verify/reject are also in CertificateService.
+ * Use either service — they hit the same endpoint.
+ */
 import { apiRequest } from "@/src/lib/api-client"
 import type {
   AdminUserListItem,
@@ -5,20 +28,6 @@ import type {
   AdminUserListParams,
   PagedResponse,
   SellerProfile,
-  AdminSellerListItem,
-  AdminSellerDetails,
-  AdminSellerListParams,
-  AdminProductListItem,
-  AdminProductDetails,
-  AdminProductListParams,
-  AdminOrderListItem,
-  AdminOrderListParams,
-  OrderDetail,
-  AdminPaymentItem,
-  AdminRefundItem,
-  Settlement,
-  AdminPayoutItem,
-  AdminFinanceListParams,
 } from "@/src/types"
 
 export const AdminService = {
@@ -96,106 +105,5 @@ export const AdminService = {
       method: "PATCH",
       body: JSON.stringify({ reason }),
     })
-  },
-
-  // ── Sellers ──────────────────────────────────────────────────────
-
-  async listSellers(params: AdminSellerListParams = {}): Promise<PagedResponse<AdminSellerListItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    if (params.status) q.set("status", params.status)
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/sellers${qs ? `?${qs}` : ""}`)
-  },
-
-  async getSeller(id: string): Promise<AdminSellerDetails> {
-    return apiRequest(`/api/v1/admin/sellers/${id}`)
-  },
-
-  async unsuspendUser(id: string): Promise<{ userId: string; status: string }> {
-    return apiRequest(`/api/v1/admin/users/${id}/unsuspend`, { method: "POST", body: "{}" })
-  },
-
-  // ── Products ─────────────────────────────────────────────────────
-
-  async listProducts(params: AdminProductListParams = {}): Promise<PagedResponse<AdminProductListItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    if (params.status) q.set("status", params.status)
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/products${qs ? `?${qs}` : ""}`)
-  },
-
-  async getProduct(id: string): Promise<AdminProductDetails> {
-    return apiRequest(`/api/v1/admin/products/${id}`)
-  },
-
-  async activateProduct(id: string): Promise<unknown> {
-    return apiRequest(`/api/v1/admin/products/${id}/activate`, { method: "POST", body: "{}" })
-  },
-
-  async deactivateProduct(id: string): Promise<unknown> {
-    return apiRequest(`/api/v1/admin/products/${id}/deactivate`, { method: "POST", body: "{}" })
-  },
-
-  // ── Orders ───────────────────────────────────────────────────────
-
-  async listOrders(params: AdminOrderListParams = {}): Promise<PagedResponse<AdminOrderListItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    if (params.status) q.set("status", params.status)
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/orders${qs ? `?${qs}` : ""}`)
-  },
-
-  async getOrder(id: string): Promise<OrderDetail> {
-    return apiRequest(`/api/v1/admin/orders/${id}`)
-  },
-
-  // ── Finance ──────────────────────────────────────────────────────
-
-  async listPayments(params: AdminFinanceListParams = {}): Promise<PagedResponse<AdminPaymentItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    return apiRequest(`/api/v1/admin/payments${q.toString() ? `?${q}` : ""}`)
-  },
-
-  async listRefunds(params: AdminFinanceListParams = {}): Promise<PagedResponse<AdminRefundItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    return apiRequest(`/api/v1/admin/refunds${q.toString() ? `?${q}` : ""}`)
-  },
-
-  async listSettlements(params: AdminFinanceListParams = {}): Promise<PagedResponse<Settlement>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    return apiRequest(`/api/v1/admin/settlements${q.toString() ? `?${q}` : ""}`)
-  },
-
-  async listPayouts(params: AdminFinanceListParams = {}): Promise<PagedResponse<AdminPayoutItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    return apiRequest(`/api/v1/admin/payouts${q.toString() ? `?${q}` : ""}`)
-  },
-
-  async getDashboard(): Promise<unknown> {
-    return apiRequest(`/api/v1/admin/dashboard`)
-  },
-
-  // ── Maintenance ──────────────────────────────────────────────────
-
-  async cleanupRefreshTokens(): Promise<unknown> {
-    return apiRequest(`/api/v1/admin/maintenance/refresh-tokens/cleanup`, { method: "POST", body: "{}" })
-  },
-
-  async expirePendingOrders(): Promise<unknown> {
-    return apiRequest(`/api/v1/admin/maintenance/pending-orders/expire`, { method: "POST", body: "{}" })
   },
 }
