@@ -12,8 +12,11 @@ import {
   Menu,
   X,
   Loader2,
+  ShoppingCart,
+  PackageSearch,
 } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
+import { useCart } from "@/src/hooks/useCart"
 import LoginModal from "@/src/components/LoginModal"
 import { toast } from "sonner"
 
@@ -23,6 +26,7 @@ interface PageLayoutProps {
 
 export default function PageLayout({ children }: PageLayoutProps) {
   const { isAuthenticated, role, logout } = useAuth()
+  const { totalItems } = useCart()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
@@ -68,6 +72,8 @@ export default function PageLayout({ children }: PageLayoutProps) {
                 <>
                   {navLink("/praeferenzen", "Präferenzen", <Settings className="h-4 w-4" />)}
                   {navLink("/profil", "Profil", <User className="h-4 w-4" />)}
+                  {role === "BUYER" &&
+                    navLink("/orders", "Bestellungen", <PackageSearch className="h-4 w-4" />)}
                 </>
               )}
 
@@ -78,6 +84,18 @@ export default function PageLayout({ children }: PageLayoutProps) {
               {isAuthenticated &&
                 role === "ADMIN" &&
                 navLink("/admin/users", "Admin", <ShieldCheck className="h-4 w-4" />)}
+
+              <a
+                href="/cart"
+                className="relative flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-teal-700"
+              >
+                <ShoppingCart className="h-5 w-5" />
+                {totalItems > 0 && (
+                  <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-teal-600 text-[10px] font-bold text-white">
+                    {totalItems > 9 ? "9+" : totalItems}
+                  </span>
+                )}
+              </a>
 
               {isAuthenticated ? (
                 <button
@@ -120,11 +138,15 @@ export default function PageLayout({ children }: PageLayoutProps) {
                 navLink("/praeferenzen", "Präferenzen", <Settings className="h-4 w-4" />)}
               {isAuthenticated && navLink("/profil", "Profil", <User className="h-4 w-4" />)}
               {isAuthenticated &&
+                role === "BUYER" &&
+                navLink("/orders", "Bestellungen", <PackageSearch className="h-4 w-4" />)}
+              {isAuthenticated &&
                 role === "SELLER" &&
                 navLink("/seller-dashboard", "Verkäufer", <BarChart3 className="h-4 w-4" />)}
               {isAuthenticated &&
                 role === "ADMIN" &&
                 navLink("/admin/users", "Admin", <ShieldCheck className="h-4 w-4" />)}
+              {navLink("/cart", "Warenkorb", <ShoppingCart className="h-4 w-4" />)}
               {isAuthenticated ? (
                 <button
                   onClick={handleLogout}

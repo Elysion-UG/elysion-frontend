@@ -405,28 +405,53 @@ export interface UpdateCartItemDTO {
 }
 
 // ── Checkout Types ───────────────────────────────────────────────────
+export interface CheckoutAddressDTO {
+  firstName: string
+  lastName: string
+  street: string
+  houseNumber: string
+  postalCode: string
+  city: string
+  country: string
+}
+
 export interface CheckoutDTO {
   shippingAddressId: string
   billingAddressId?: string
+  billingSameAsShipping?: boolean
+  billingAddress?: CheckoutAddressDTO
   paymentMethod: "STRIPE" | "INVOICE" | "MOCK"
-  note?: string
 }
 
 export interface CheckoutStartResponse {
   checkoutId?: string
-  items?: Array<{ quantity: number; productName: string; totalPrice: number }>
+  cartId?: string
+  ownershipType?: string
+  items?: Array<{
+    quantity: number
+    productName: string
+    unitPrice?: number
+    totalPrice: number
+    variantOptions?: Array<{ name: string; value: string }>
+  }>
   shippingAddress?: Address
   subtotal?: number
   shippingCost?: number
   total?: number
-  totalAmount?: number
+  totalQuantity?: number
+  readyToProceed?: boolean
   paymentIntentClientSecret?: string
 }
 
 export interface CheckoutCompleteResponse {
+  completionId?: string
   orderId?: string
   orderNumber?: string
   status?: string
+  paymentStatus?: string
+  paymentMethod?: string
+  completedAt?: string
+  checkout?: CheckoutStartResponse
 }
 
 // ── Order Types ──────────────────────────────────────────────────────

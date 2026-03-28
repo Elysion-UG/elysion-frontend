@@ -10,7 +10,7 @@
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"
 
-// ── Token store (in-memory, cleared on page refresh) ──────────────────────────
+// Token store (in-memory, cleared on page refresh)
 let _accessToken: string | null = null
 
 export function setAccessToken(token: string | null): void {
@@ -21,7 +21,7 @@ export function getAccessToken(): string | null {
   return _accessToken
 }
 
-// ── Error class ───────────────────────────────────────────────────────────────
+// Error class
 export class ApiError extends Error {
   readonly status: number
   readonly body: unknown
@@ -34,8 +34,30 @@ export class ApiError extends Error {
   }
 }
 
-// ── Core request function ─────────────────────────────────────────────────────
-export async function apiRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+// 401 refresh helper — dynamic import avoids circular dependency
+async function tryRefreshAndRetry<T>(path: string, options: RequestInit): Promise<T> {
+  try {
+    const { AuthService } = await import("@/src/services/auth.service")
+    const tokens = await AuthService.refresh()
+    setAccessToken(tokens.token)
+    return apiRequest<T>(path, options, true)
+  } catch {
+    setAccessToken(null)
+    const { toast } = await import("sonner")
+    toast.error("Sitzung abgelaufen. Bitte erneut anmelden.")
+    if (typeof window !== "undefined") {
+      window.location.href = "/"
+    }
+    throw new ApiError(401, "Sitzung abgelaufen")
+  }
+}
+
+// Core request function
+export async function apiRequest<T>(
+  path: string,
+  options: RequestInit = {},
+  _isRetry = false
+): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) ?? {}),
@@ -57,6 +79,11 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
     return null as T
   }
 
+  // 401 Unauthorized — attempt token refresh once
+  if (response.status === 401 && !_isRetry) {
+    return tryRefreshAndRetry<T>(path, options)
+  }
+
   const body = await response.json()
 
   if (!response.ok) {
@@ -70,7 +97,7 @@ export async function apiRequest<T>(path: string, options: RequestInit = {}): Pr
   return body.data as T
 }
 
-// ── Raw request (no ApiResponse unwrapping) ───────────────────────────────────
+// Raw request (no ApiResponse unwrapping)
 export async function apiRequestRaw<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -104,7 +131,7 @@ export async function apiRequestRaw<T>(path: string, options: RequestInit = {}):
   return body as T
 }
 
-// ── Multipart upload ──────────────────────────────────────────────────────────
+// Multipart upload
 export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
   const headers: Record<string, string> = {}
 

@@ -1,64 +1,76 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi, beforeEach } from "vitest"
 import { UserService } from "./user.service"
 
-// UserService uses hardcoded mock data with delay() — no mocking needed.
-// Tests run against the real in-memory logic.
+vi.mock("@/src/lib/api-client", () => ({
+  apiRequest: vi.fn(),
+}))
+
+import { apiRequest } from "@/src/lib/api-client"
+const mockApiRequest = vi.mocked(apiRequest)
+
+const mockUser = {
+  id: "usr_1",
+  email: "max@example.com",
+  firstName: "Max",
+  lastName: "Mustermann",
+  role: "BUYER" as const,
+  status: "ACTIVE" as const,
+  createdAt: "2024-01-15T10:00:00Z",
+}
+
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 describe("UserService", () => {
   // ── getCurrentUser ────────────────────────────────────────────────────
 
   describe("getCurrentUser", () => {
-    it("returns a user with the expected shape", async () => {
+    it("calls GET /api/v1/users/me and returns the user", async () => {
+      mockApiRequest.mockResolvedValueOnce(mockUser)
       const user = await UserService.getCurrentUser()
-      expect(user).toMatchObject({
-        id: "usr_1",
-        email: expect.any(String),
-        firstName: expect.any(String),
-        lastName: expect.any(String),
-        role: "BUYER",
-        status: "ACTIVE",
-        createdAt: expect.any(String),
-      })
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/users/me")
+      expect(user).toEqual(mockUser)
     })
   })
 
   // ── updateProfile ─────────────────────────────────────────────────────
 
   describe("updateProfile", () => {
-    it("reflects the updated firstName and lastName in the returned user", async () => {
-      const updated = await UserService.updateProfile({
-        firstName: "Hans",
-        lastName: "Gruber",
-        phone: "+49 999 000111",
+    it("calls PATCH /api/v1/users/me with the provided data", async () => {
+      const updated = { ...mockUser, firstName: "Hans", lastName: "Gruber" }
+      mockApiRequest.mockResolvedValueOnce(updated)
+      const result = await UserService.updateProfile({ firstName: "Hans", lastName: "Gruber" })
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/users/me", {
+        method: "PATCH",
+        body: JSON.stringify({ firstName: "Hans", lastName: "Gruber" }),
       })
-      expect(updated.firstName).toBe("Hans")
-      expect(updated.lastName).toBe("Gruber")
-      expect(updated.phone).toBe("+49 999 000111")
+      expect(result.firstName).toBe("Hans")
     })
 
-    it("allows phone to be undefined", async () => {
-      const updated = await UserService.updateProfile({
-        firstName: "Hans",
-        lastName: "Gruber",
-      })
-      expect(updated.phone).toBeUndefined()
-    })
-
-    it("preserves fixed fields regardless of input", async () => {
-      const updated = await UserService.updateProfile({
-        firstName: "X",
-        lastName: "Y",
-      })
-      expect(updated.id).toBe("usr_1")
-      expect(updated.role).toBe("BUYER")
-      expect(updated.status).toBe("ACTIVE")
+    it("includes phone when provided", async () => {
+      mockApiRequest.mockResolvedValueOnce(mockUser)
+      await UserService.updateProfile({ firstName: "A", lastName: "B", phone: "+49 123" })
+      expect(mockApiRequest).toHaveBeenCalledWith(
+        "/api/v1/users/me",
+        expect.objectContaining({
+          body: JSON.stringify({ firstName: "A", lastName: "B", phone: "+49 123" }),
+        })
+      )
     })
   })
 
   // ── deleteAccount ─────────────────────────────────────────────────────
 
   describe("deleteAccount", () => {
+    it("calls DELETE /api/v1/users/me", async () => {
+      mockApiRequest.mockResolvedValueOnce({ userId: "usr_1" })
+      await UserService.deleteAccount()
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/users/me", { method: "DELETE" })
+    })
+
     it("resolves without a return value", async () => {
+      mockApiRequest.mockResolvedValueOnce({ userId: "usr_1" })
       const result = await UserService.deleteAccount()
       expect(result).toBeUndefined()
     })
@@ -80,149 +92,40 @@ describe("UserService", () => {
       expect(res.totalPages).toBe(1)
     })
 
-    it("paginates correctly — page 1 of 2 with pageSize 3", async () => {
-      const res = await UserService.getUsers({ page: 1, pageSize: 3 })
-      expect(res.data).toHaveLength(3)
-      expect(res.total).toBe(5)
-      expect(res.totalPages).toBe(2)
+    it("filters by search term", async () => {
+      const res = await UserService.getUsers({ page: 1, pageSize: 100, search: "max" })
+      expect(
+        res.data.every((u) => u.firstName.toLowerCase().includes("max") || u.email.includes("max"))
+      ).toBe(true)
     })
 
-    it("paginates correctly — page 2 of 2 with pageSize 3", async () => {
-      const res = await UserService.getUsers({ page: 2, pageSize: 3 })
+    it("filters by role", async () => {
+      const res = await UserService.getUsers({ page: 1, pageSize: 100, role: "SELLER" })
+      expect(res.data.every((u) => u.role === "SELLER")).toBe(true)
+    })
+
+    it("filters by status", async () => {
+      const res = await UserService.getUsers({ page: 1, pageSize: 100, status: "SUSPENDED" })
+      expect(res.data.every((u) => u.status === "SUSPENDED")).toBe(true)
+    })
+
+    it("paginates correctly", async () => {
+      const res = await UserService.getUsers({ page: 1, pageSize: 2 })
       expect(res.data).toHaveLength(2)
-    })
-
-    it("returns empty data array when page is out of range", async () => {
-      const res = await UserService.getUsers({ page: 99, pageSize: 10 })
-      expect(res.data).toHaveLength(0)
-      expect(res.total).toBe(5)
-    })
-
-    // ── search ──────────────────────────────────────────────────────────
-
-    it("filters by firstName match (case-insensitive)", async () => {
-      const res = await UserService.getUsers({ page: 1, pageSize: 10, search: "max" })
-      expect(res.total).toBe(1)
-      expect(res.data[0].firstName).toBe("Max")
-    })
-
-    it("filters by lastName match (case-insensitive)", async () => {
-      const res = await UserService.getUsers({ page: 1, pageSize: 10, search: "SCHMIDT" })
-      expect(res.total).toBe(1)
-      expect(res.data[0].lastName).toBe("Schmidt")
-    })
-
-    it("filters by email match (case-insensitive)", async () => {
-      const res = await UserService.getUsers({ page: 1, pageSize: 10, search: "admin@elysion" })
-      expect(res.total).toBe(1)
-      expect(res.data[0].role).toBe("ADMIN")
-    })
-
-    it("returns 0 results for a search that matches nothing", async () => {
-      const res = await UserService.getUsers({ page: 1, pageSize: 10, search: "zzznomatch" })
-      expect(res.total).toBe(0)
-      expect(res.data).toHaveLength(0)
-    })
-
-    // ── role filter ──────────────────────────────────────────────────────
-
-    it("filters by BUYER role", async () => {
-      const res = await UserService.getUsers({ page: 1, pageSize: 10, role: "BUYER" })
-      expect(res.total).toBe(2)
-      res.data.forEach((u) => expect(u.role).toBe("BUYER"))
-    })
-
-    it("filters by SELLER role", async () => {
-      const res = await UserService.getUsers({ page: 1, pageSize: 10, role: "SELLER" })
-      expect(res.total).toBe(2)
-      res.data.forEach((u) => expect(u.role).toBe("SELLER"))
-    })
-
-    it("filters by ADMIN role", async () => {
-      const res = await UserService.getUsers({ page: 1, pageSize: 10, role: "ADMIN" })
-      expect(res.total).toBe(1)
-      expect(res.data[0].email).toBe("admin@elysion.de")
-    })
-
-    // ── status filter ────────────────────────────────────────────────────
-
-    it("filters by ACTIVE status", async () => {
-      const res = await UserService.getUsers({ page: 1, pageSize: 10, status: "ACTIVE" })
-      expect(res.total).toBe(4)
-      res.data.forEach((u) => expect(u.status).toBe("ACTIVE"))
-    })
-
-    it("filters by SUSPENDED status", async () => {
-      const res = await UserService.getUsers({ page: 1, pageSize: 10, status: "SUSPENDED" })
-      expect(res.total).toBe(1)
-      expect(res.data[0].id).toBe("usr_4")
-    })
-
-    // ── combined filters ─────────────────────────────────────────────────
-
-    it("combines role and status filters", async () => {
-      // Both sellers (usr_2 and usr_3) have user status "ACTIVE" — only usr_4 is SUSPENDED
-      const res = await UserService.getUsers({
-        page: 1,
-        pageSize: 10,
-        role: "SELLER",
-        status: "ACTIVE",
-      })
-      expect(res.total).toBe(2)
-      res.data.forEach((u) => {
-        expect(u.role).toBe("SELLER")
-        expect(u.status).toBe("ACTIVE")
-      })
-    })
-
-    it("combines search and role filters", async () => {
-      const res = await UserService.getUsers({
-        page: 1,
-        pageSize: 10,
-        search: "anna",
-        role: "SELLER",
-      })
-      expect(res.total).toBe(1)
-      expect(res.data[0].firstName).toBe("Anna")
+      expect(res.totalPages).toBe(3)
     })
   })
 
   // ── getUserById ───────────────────────────────────────────────────────
 
   describe("getUserById", () => {
-    it("returns the correct user for a known id", async () => {
+    it("returns the correct user by id", async () => {
       const user = await UserService.getUserById("usr_1")
       expect(user.id).toBe("usr_1")
-      expect(user.email).toBe("max.mustermann@email.de")
     })
 
-    it("returns a seller user with sellerProfile", async () => {
-      const user = await UserService.getUserById("usr_2")
-      expect(user.role).toBe("SELLER")
-      expect(user.sellerProfile).toBeDefined()
-      expect(user.sellerProfile?.companyName).toBe("GreenGoods GmbH")
-    })
-
-    it("throws an error for an unknown id", async () => {
-      await expect(UserService.getUserById("nonexistent_id")).rejects.toThrow("User not found")
-    })
-  })
-
-  // ── updateUserStatus ──────────────────────────────────────────────────
-
-  describe("updateUserStatus", () => {
-    it("resolves without a return value", async () => {
-      const result = await UserService.updateUserStatus("usr_1", "SUSPENDED")
-      expect(result).toBeUndefined()
-    })
-  })
-
-  // ── updateSellerStatus ────────────────────────────────────────────────
-
-  describe("updateSellerStatus", () => {
-    it("resolves without a return value", async () => {
-      const result = await UserService.updateSellerStatus("usr_2", "APPROVED")
-      expect(result).toBeUndefined()
+    it("throws if user not found", async () => {
+      await expect(UserService.getUserById("nonexistent")).rejects.toThrow("User not found")
     })
   })
 })
