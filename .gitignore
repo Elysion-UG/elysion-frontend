@@ -19,6 +19,10 @@ CLAUDE.md
 # IDE
 .idea/
 
+# Binary docs (use markdown equivalents instead)
+docs/*.xlsx
+docs/*.docx
+
 # Build artifacts
 tsconfig.tsbuildinfo
 # Test coverage output
