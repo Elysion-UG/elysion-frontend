@@ -127,7 +127,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 | Modul | Frontend | Backend |
 |-------|----------|---------|
 | Auth (Login/Register/Logout/Refresh/Verify/Reset) | ✅ | ✅ |
-| User Profil (GET/PATCH/DELETE) | ⚠️ Noch Mocks in `user.service.ts` | ✅ |
+| User Profil (GET/PATCH/DELETE) | ✅ | ✅ |
 | Adressen (CRUD + Default) | ✅ | ✅ |
 | Buyer Value Profile | ✅ | ✅ |
 | Seller Profil | ✅ | ✅ |
@@ -153,7 +153,6 @@ NEXT_PUBLIC_API_URL=http://localhost:8080
 | Product-Liste (`GET /api/v1/products`) | Gibt Spring-Page zurück: `{ content[], totalElements, totalPages, size, number }` — Typ: `ProductPage` verwenden, nicht `PagedResponse<T>` |
 | Product-Detail intern (`GET /api/v1/products/{id}`) | Gibt `{ title }` zurück (nicht `{ name }`), kein ApiResponse-Wrapper |
 | Product-Detail öffentlich (`GET /api/v1/products/{slug}`) | Gibt `{ name }` zurück (nicht `{ title }`) |
-| `CheckoutCompleteResponse` | Backend gibt `{ completionId, status, paymentStatus, paymentMethod, completedAt, checkout }` — Frontend-Typ noch nicht vollständig angepasst (P1-1) |
 
 ---
 

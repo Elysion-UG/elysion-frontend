@@ -28,15 +28,9 @@ Every component calling an API must have:
 
 Applies to: `Cart`, `Checkout`, `Orders`, `OrderDetail` (loading states already done in `SustainableShop`, `SellerDashboard`, `ProductDetail`)
 
-### P5-3 · Confirm Cart Price Field Format
-
-Backend `CartItemResponse` sends `priceSnapshot` (unit price, euro decimal) and `lineTotal` (line total, euro decimal).
-Frontend `CartItem` type now has both fields. `Cart.tsx` still uses `unitPriceCents`/`unitPrice` fallback chain — update to also check `priceSnapshot` and `lineTotal`.
-
 ---
 
 ## Open Questions
 
-1. **Cart price display in Cart.tsx:** Wire `priceSnapshot` and `lineTotal` fields to the display logic (currently falls back to `unitPriceCents`/`unitPrice` which are empty for server-side carts).
-2. **ProductListItem images:** Does `GET /api/v1/products` list response include `imageUrl` per item? → Check if `ProductDetail` in page content includes images.
-3. **Recommendation DTO shape:** Does `RecommendationItemDto.basePrice` match `Recommendation` type in `index.ts`? → Read Java service.
+1. **ProductListItem images:** Does `GET /api/v1/products` list response include image data per item? → Verify with live backend whether `ProductDetail.images` is populated in the page content.
+2. **Recommendation DTO shape:** Does `RecommendationItemDto.basePrice` match `Recommendation` type in `index.ts`? → Read Java service.
