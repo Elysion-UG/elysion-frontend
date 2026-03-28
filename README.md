@@ -192,17 +192,12 @@ npm run test:coverage    # with coverage report
 
 ## Documentation
 
-| File                              | Description                                                              |
-| --------------------------------- | ------------------------------------------------------------------------ |
-| `docs/api-integration.md`         | Complete API integration reference (all endpoints, DTOs, error handling) |
-| `docs/backend-gap-analysis.md`    | Tracked gaps between frontend and backend implementation                 |
-| `docs/FRONTEND_TODOS.md`          | Open frontend tasks (polish & hardening backlog)                         |
-| `docs/TECHNICAL_ARCHITECTURE.md`  | System design, data model, architecture patterns                         |
-| `docs/PRODUCT_VISION.md`          | Business model, target users, value profile system                       |
-| `docs/FUNCTIONAL_REQUIREMENTS.md` | Detailed feature specifications and acceptance criteria                  |
-| `docs/USER_STORIES.md`            | User stories across all roles (Buyer, Seller, Admin)                     |
-| `docs/TESTING_STRATEGY.md`        | Test pyramid, frameworks, coverage guidelines                            |
-| `docs/CODE_STANDARDS.md`          | Naming conventions, architecture patterns, code review checklist         |
-| `docs/CICD_PIPELINE.md`           | GitHub Actions workflow, branch strategy, deployment stages              |
-| `docs/DEPLOYMENT_GUIDE.md`        | AWS infrastructure setup (VPC, RDS, ECS, CloudFront)                     |
-| `docs/SYSTEM_OVERVIEW.md`         | Comprehensive system and module overview                                 |
+| File                      | Description                                                              |
+| ------------------------- | ------------------------------------------------------------------------ |
+| `docs/api-integration.md` | Complete API integration reference (all endpoints, DTOs, error handling) |
+| `docs/BACKEND_QUIRKS.md`  | Known API response discrepancies (field names, missing wrappers)         |
+| `docs/CODE_STANDARDS.md`  | Naming conventions, architecture patterns, code review checklist         |
+| `docs/CICD_PIPELINE.md`   | GitHub Actions workflows, quality gates, pre-commit hooks                |
+| `docs/ROADMAP.md`         | Development roadmap — Phase 1 status, Phase 2 plans                      |
+| `docs/INDEX.md`           | Topic → SSOT reference map for contributors                              |
+| `docs/archive/`           | Superseded and planning-phase documents                                  |

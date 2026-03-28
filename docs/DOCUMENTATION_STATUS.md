@@ -5,32 +5,38 @@
 
 ---
 
-## Übersicht
+## Aktive Dokumentation
 
-Dieser Überblick zeigt den aktuellen Stand aller Projektdokumentationen.
+| Datei                     | Inhalt                                                                          | Status     |
+| ------------------------- | ------------------------------------------------------------------------------- | ---------- |
+| `README.md`               | Projekt-Übersicht, Setup, Architektur, implementierte Module                    | ✅ Aktuell |
+| `CONTRIBUTING.md`         | Branch-Strategie, Commit-Konventionen, PR-Prozess, CI-Übersicht                 | ✅ Aktuell |
+| `docs/api-integration.md` | Vollständige API-Integrations-Referenz (alle Endpoints, DTOs, Fehlerbehandlung) | ✅ Aktuell |
+| `docs/BACKEND_QUIRKS.md`  | Bekannte Abweichungen Backend-Response vs. Frontend-Typen                       | ✅ Aktuell |
+| `docs/CODE_STANDARDS.md`  | Namenskonventionen, Architekturmuster, Code-Review-Checkliste                   | ✅ Aktuell |
+| `docs/CICD_PIPELINE.md`   | GitHub Actions Workflows, Quality Gates, Pre-commit Hooks                       | ✅ Aktuell |
+| `docs/ROADMAP.md`         | Entwicklungs-Roadmap — Phase 1 abgeschlossen, Phase 2 geplant                   | ✅ Aktuell |
+| `docs/INDEX.md`           | Topic → SSOT Referenzkarte für Mitwirkende                                      | ✅ Aktuell |
 
 ---
 
-## Vorhandene Dokumentation
+## Archiv
 
-| Datei                             | Inhalt                                                                          | Status          |
-| --------------------------------- | ------------------------------------------------------------------------------- | --------------- |
-| `README.md`                       | Projekt-Übersicht, Setup, Architektur, implementierte Module                    | ✅ Aktuell      |
-| `docs/api-integration.md`         | Vollständige API-Integrations-Referenz (alle Endpoints, DTOs, Fehlerbehandlung) | ✅ Aktuell      |
-| `docs/backend-gap-analysis.md`    | Offene Lücken zwischen Frontend-Erwartungen und Backend-Implementierung         | ✅ Aktuell      |
-| `docs/FRONTEND_TODOS.md`          | Offene Frontend-Aufgaben (P5-1 Toasts, P5-2 Skeleton-States)                    | ✅ Aktuell      |
-| `docs/ROADMAP.md`                 | Entwicklungs-Roadmap — Phase 1 abgeschlossen, Phase 2 geplant                   | ✅ Aktualisiert |
-| `docs/TECHNICAL_ARCHITECTURE.md`  | Systemdesign, Datenmodell, Architekturmuster                                    | Referenz        |
-| `docs/PRODUCT_VISION.md`          | Geschäftsmodell, Zielgruppen, Value-Profile-System                              | Referenz        |
-| `docs/FUNCTIONAL_REQUIREMENTS.md` | Detaillierte Feature-Spezifikationen und Abnahmekriterien                       | Referenz        |
-| `docs/USER_STORIES.md`            | User Stories für alle Rollen (Buyer, Seller, Admin)                             | Referenz        |
-| `docs/TESTING_STRATEGY.md`        | Test-Pyramide, Frameworks, Coverage-Richtlinien                                 | Referenz        |
-| `docs/CODE_STANDARDS.md`          | Namenskonventionen, Architekturmuster, Code-Review-Checkliste                   | Referenz        |
-| `docs/CICD_PIPELINE.md`           | GitHub Actions, Branch-Strategie, Deployment-Stufen                             | Referenz        |
-| `docs/DEPLOYMENT_GUIDE.md`        | AWS-Infrastruktur (VPC, RDS, ECS, CloudFront)                                   | Referenz        |
-| `docs/SYSTEM_OVERVIEW.md`         | Vollständige Systemübersicht für Onboarding                                     | Referenz        |
-| `docs/MODULES_OVERVIEW.md`        | Modulliste mit Abhängigkeiten                                                   | Referenz        |
-| `docs/API_SPECIFICATION.md`       | OpenAPI 3.0 Spezifikationsvorlage                                               | Referenz        |
+Superseded und planungsphasenbezogene Dokumente (nicht mehr aktiv gepflegt):
+
+| Datei                                     | Inhalt                                          |
+| ----------------------------------------- | ----------------------------------------------- |
+| `docs/archive/CODE_STANDARDS.md`          | Ursprüngliche Code-Standards (317 Zeilen)       |
+| `docs/archive/API_SPECIFICATION.md`       | OpenAPI 3.0 Spezifikationsvorlage               |
+| `docs/archive/CICD_PIPELINE.md`           | Ältere CI/CD-Dokumentation                      |
+| `docs/archive/DEPLOYMENT_GUIDE.md`        | AWS-Infrastruktur-Entwurf (VPC, RDS, ECS, CDN)  |
+| `docs/archive/MODULES_OVERVIEW.md`        | Modulliste mit Abhängigkeiten                   |
+| `docs/archive/SYSTEM_OVERVIEW.md`         | Ältere Systemübersicht                          |
+| `docs/archive/TECHNICAL_ARCHITECTURE.md`  | Systemdesign, Datenmodell, Architekturmuster    |
+| `docs/archive/TESTING_STRATEGY.md`        | Test-Pyramide, Frameworks, Coverage-Richtlinien |
+| `docs/archive/FUNCTIONAL_REQUIREMENTS.md` | Feature-Spezifikationen (Planungsphase)         |
+| `docs/archive/PRODUCT_VISION.md`          | Geschäftsmodell, Zielgruppen (Planungsphase)    |
+| `docs/archive/USER_STORIES.md`            | User Stories (Planungsphase)                    |
 
 ---
 
