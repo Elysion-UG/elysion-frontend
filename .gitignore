@@ -13,7 +13,10 @@ node_modules/
 everything-claude-code/
 CLAUDE.md
 .clone/
-.claude/worktrees/
+.claude/
+
+# IDE
+.idea/
 
 # Build artifacts
 tsconfig.tsbuildinfo
