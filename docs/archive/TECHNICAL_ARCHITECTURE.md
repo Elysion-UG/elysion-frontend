@@ -1,3 +1,5 @@
+> **ARCHIVIERT** — Dieses Dokument stammt aus der Planungsphase (Februar 2026) und beschreibt ein nie realisiertes Node.js/Prisma-Backend. Aktuelle Dokumentation: [README.md](../../README.md) · [docs/api-integration.md](../api-integration.md)
+
 # Technische Architektur
 
 ## Nachhaltigkeits-Zertifikat-Plattform

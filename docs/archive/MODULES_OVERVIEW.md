@@ -1,3 +1,5 @@
+> **ARCHIVIERT** — Dieses Dokument stammt aus der Planungsphase (Februar 2026) und enthält ein Prisma-Schema sowie Referenzen auf Dateien, die nicht existieren. Aktuelle Modulübersicht: [README.md](../../README.md) · [docs/ROADMAP.md](../ROADMAP.md)
+
 # Module-Übersicht
 
 ## Nachhaltigkeits-Zertifikat-Plattform

@@ -1,3 +1,5 @@
+> **ARCHIVIERT** — Dieses Dokument stammt aus der Planungsphase (Februar 2026) und beschreibt AWS-Infrastruktur (ECS, RDS, CloudFront), die nie aufgebaut wurde. Tatsächliches Deployment: Render.com (`marketplace-backend-1-1w30.onrender.com`). Aktuelle Dokumentation: [README.md](../../README.md)
+
 # Deployment-Guide
 
 ## AWS Infrastructure Setup

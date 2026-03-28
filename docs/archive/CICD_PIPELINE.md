@@ -1,3 +1,5 @@
+> **ARCHIVIERT** — Dieses Dokument stammt aus der Planungsphase (Februar 2026) und beschreibt einen IONOS VPS + rsync-Deploy, der nie implementiert wurde. Tatsächliches Deployment: Render.com. Aktuelle Dokumentation: [README.md](../../README.md)
+
 # CI/CD Pipeline Strategie
 
 ## Automated Deployment: Development → Test → Stage → Production

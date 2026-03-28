@@ -1,3 +1,5 @@
+> **ARCHIVIERT** — Dieses Dokument stammt aus der Planungsphase (Februar 2026) und ist ein nie ausgefülltes OpenAPI-Template. Aktuelle API-Referenz: [docs/api-integration.md](../api-integration.md)
+
 # API-Dokumentation (OpenAPI 3.0)
 
 ## Nachhaltigkeits-Zertifikat-Plattform

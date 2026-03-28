@@ -1,3 +1,5 @@
+> **ARCHIVIERT** — Dieses Dokument stammt aus der Planungsphase (Februar 2026) und ist veraltet: mehrere Module werden als [TODO] geführt, obwohl sie längst implementiert sind. Aktuelle Dokumentation: [README.md](../../README.md) · [CLAUDE.md](../../CLAUDE.md)
+
 # AI CONTEXT FILE
 
 ## Nachhaltigkeits-Zertifikat-Plattform - Komplette System-Logik

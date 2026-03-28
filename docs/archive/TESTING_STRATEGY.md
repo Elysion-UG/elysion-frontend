@@ -1,3 +1,5 @@
+> **ARCHIVIERT** — Dieses Dokument stammt aus der Planungsphase (Februar 2026) und beschreibt Jest/Supertest für ein nie realisiertes Node.js-Backend. Das Frontend nutzt Vitest. Aktuelle Dokumentation: [README.md](../../README.md)
+
 # Testing-Strategie
 
 ## Nachhaltigkeits-Zertifikat-Plattform
