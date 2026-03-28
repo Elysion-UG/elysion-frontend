@@ -83,11 +83,11 @@ export default function Cart() {
             const unitPrice =
               item.unitPriceCents != null
                 ? centsToEuro(item.unitPriceCents)
-                : ((item as unknown as { unitPrice: number }).unitPrice ?? 0)
+                : (item.priceSnapshot ?? item.unitPrice ?? 0)
             const totalPrice =
               item.totalPriceCents != null
                 ? centsToEuro(item.totalPriceCents)
-                : ((item as unknown as { totalPrice: number }).totalPrice ?? 0)
+                : (item.lineTotal ?? item.totalPrice ?? unitPrice * item.quantity)
             const isItemLoading = loadingItemId === item.id
 
             return (

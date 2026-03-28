@@ -384,6 +384,10 @@ export interface CartItem {
   unitPriceCents?: number
   totalPrice?: number
   totalPriceCents?: number
+  /** Backend field: unit price in euro (decimal) */
+  priceSnapshot?: number
+  /** Backend field: line total in euro (decimal) */
+  lineTotal?: number
 }
 
 export interface Cart {

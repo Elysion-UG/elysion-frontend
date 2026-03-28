@@ -5,44 +5,6 @@
 
 ---
 
-## Phase 4 — Seller Dashboard Overhaul
-
-> Replace mock data in SellerDashboard
-
-### P4-1 · Overhaul `src/components/SellerDashboard.tsx` — Products Tab
-
-Replace hardcoded array:
-
-1. `ProductService.list({ sellerId: currentUser.id })` on mount
-2. Table: name, status badge (all 5: `DRAFT/REVIEW/ACTIVE/INACTIVE/REJECTED`), price, actions
-3. "Neues Produkt" → open `ProductForm` dialog (create mode)
-4. "Bearbeiten" → open `ProductForm` dialog (edit mode, pre-filled)
-5. Status transition buttons per state machine:
-   - `DRAFT` → "Zur Prüfung" → `updateStatus("REVIEW")`
-   - `ACTIVE` → "Deaktivieren" → `updateStatus("INACTIVE")`
-   - `INACTIVE` → "Aktivieren" → `updateStatus("ACTIVE")`
-
-### P4-2 · Add Orders Tab to `src/components/SellerDashboard.tsx`
-
-New tab "Bestellungen":
-
-1. `SellerOrderService.list()` on tab mount
-2. Table: order number, buyer city, status, item count, subtotal, date
-3. Action buttons:
-   - `CONFIRMED` → "In Bearbeitung" → `updateStatus("PROCESSING")`
-   - `PROCESSING` → "Versandt" → ship modal (trackingNumber + carrier) → `SellerOrderService.ship()`
-   - `SHIPPED` → "Geliefert" → `SellerOrderService.deliver()`
-
-### P4-3 · Add Settlements Tab to `src/components/SellerDashboard.tsx`
-
-New tab "Auszahlungen":
-
-1. `SellerOrderService.listSettlements()` on tab mount
-2. Table: period, gross, platform fee, net, status badge, paid date
-3. All amounts via `centsToEuro()` from `src/lib/currency.ts`
-
----
-
 ## Phase 5 — Polish & Hardening
 
 ### P5-1 · Toast Notifications for All Mutations
@@ -64,21 +26,17 @@ Every component calling an API must have:
 - Buttons disabled while mutation in progress (`isLoading` state)
 - Error state with retry option
 
-Applies to: `Cart`, `Checkout`, `Orders`, `OrderDetail`, `SustainableShop`, `SellerDashboard` (all tabs)
+Applies to: `Cart`, `Checkout`, `Orders`, `OrderDetail` (loading states already done in `SustainableShop`, `SellerDashboard`, `ProductDetail`)
 
 ### P5-3 · Confirm Cart Price Field Format
 
-Before finalizing cart UI: read Java `CartItemResponse` DTO in backend to confirm if `unitPriceCents`/`totalPriceCents` are:
-
-- Integer cents → use `centsToEuro()` from `src/lib/currency.ts`
-- Euro decimals → rename types to `unitPrice`/`totalPrice` and remove "Cents" suffix
-
-Same for `Settlement` amount fields.
+Backend `CartItemResponse` sends `priceSnapshot` (unit price, euro decimal) and `lineTotal` (line total, euro decimal).
+Frontend `CartItem` type now has both fields. `Cart.tsx` still uses `unitPriceCents`/`unitPrice` fallback chain — update to also check `priceSnapshot` and `lineTotal`.
 
 ---
 
 ## Open Questions
 
-1. **Cart price format:** Are `CartItem.unitPriceCents/totalPriceCents` integer cents or euro decimals? → Read Java `CartItemResponse` DTO.
-2. **ProductListItem images:** Does `GET /api/v1/products` list response include `imageUrl`? → Check `ProductQueryService` in backend.
+1. **Cart price display in Cart.tsx:** Wire `priceSnapshot` and `lineTotal` fields to the display logic (currently falls back to `unitPriceCents`/`unitPrice` which are empty for server-side carts).
+2. **ProductListItem images:** Does `GET /api/v1/products` list response include `imageUrl` per item? → Check if `ProductDetail` in page content includes images.
 3. **Recommendation DTO shape:** Does `RecommendationItemDto.basePrice` match `Recommendation` type in `index.ts`? → Read Java service.

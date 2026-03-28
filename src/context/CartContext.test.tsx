@@ -1,8 +1,17 @@
-import { describe, it, expect, beforeEach } from "vitest"
+import { describe, it, expect, vi } from "vitest"
 import { renderHook, act } from "@testing-library/react"
 import React from "react"
 import { CartProvider, useCart } from "./CartContext"
 import type { AddToCartDTO } from "@/src/types"
+
+vi.mock("@/src/services/cart.service", () => ({
+  CartService: {
+    get: vi.fn().mockResolvedValue(null),
+    addItem: vi.fn().mockResolvedValue(null),
+    updateItem: vi.fn().mockResolvedValue(null),
+    removeItem: vi.fn().mockResolvedValue(undefined),
+  },
+}))
 
 // ── Wrapper ────────────────────────────────────────────────────────────────────
 
