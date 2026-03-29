@@ -58,16 +58,36 @@ export function clearAuthSession(): void {
 // time any component's useEffect calls an API, the token must already be
 // present in _accessToken — we cannot rely on AuthContext's useEffect to set
 // it first.
+//
+// We parse the JWT exp claim locally before trusting the token. If already
+// expired we clear sessionStorage immediately — otherwise an invalid
+// Authorization header is sent to every request, including public endpoints,
+// causing backends that validate auth eagerly to return 401.
 let _accessToken: string | null = null
+
+function isJwtExpired(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1])) as { exp?: number }
+    if (!payload.exp) return false
+    return payload.exp < Math.floor(Date.now() / 1000)
+  } catch {
+    return false // unparseable — let the server decide
+  }
+}
 
 if (typeof window !== "undefined") {
   const persisted = loadAuthSession()
   if (persisted?.token) {
-    _accessToken = persisted.token
-    console.log(
-      "[auth] module init — token restored from sessionStorage:",
-      persisted.token.slice(0, 20) + "…"
-    )
+    if (isJwtExpired(persisted.token)) {
+      console.log("[auth] module init — token expired, clearing sessionStorage")
+      clearAuthSession()
+    } else {
+      _accessToken = persisted.token
+      console.log(
+        "[auth] module init — token restored from sessionStorage:",
+        persisted.token.slice(0, 20) + "…"
+      )
+    }
   }
 }
 
@@ -194,6 +214,14 @@ export async function apiRequest<T>(
   const body = await response.json()
 
   if (!response.ok) {
+    console.log(
+      "[api] ERROR",
+      response.status,
+      path,
+      body?.message ?? "(no message)",
+      "skipRetry:",
+      skipRetry
+    )
     throw new ApiError(
       response.status,
       body?.message ?? `Request failed (${response.status})`,
@@ -204,8 +232,14 @@ export async function apiRequest<T>(
   return body.data as T
 }
 
-// Raw request (no ApiResponse unwrapping)
-export async function apiRequestRaw<T>(path: string, options: RequestInit = {}): Promise<T> {
+// Raw request (no ApiResponse unwrapping — returns body as-is, no data envelope extraction)
+// Includes the same 401-refresh-retry logic as apiRequest so an expired token
+// does not permanently break public endpoints that still validate auth headers.
+export async function apiRequestRaw<T>(
+  path: string,
+  options: RequestInit = {},
+  skipRetry = false
+): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) ?? {}),
@@ -223,6 +257,26 @@ export async function apiRequestRaw<T>(path: string, options: RequestInit = {}):
 
   if (response.status === 204) {
     return null as T
+  }
+
+  if (response.status === 401 && !skipRetry) {
+    console.log("[auth] 401 on", path, "— attempting refresh retry (raw)")
+    // Refresh, update the token, then retry once without the envelope extraction
+    const hadToken = _accessToken != null
+    try {
+      const tokens = await refreshSession()
+      setAccessToken(tokens.accessToken)
+      return apiRequestRaw<T>(path, options, true)
+    } catch {
+      setAccessToken(null)
+      if (hadToken && typeof window !== "undefined") {
+        console.log("[auth] REDIRECT → / — refresh failed after 401 (raw), path:", path)
+        const { toast } = await import("sonner")
+        toast.error("Sitzung abgelaufen. Bitte erneut anmelden.")
+        window.location.href = "/"
+      }
+      throw new ApiError(401, "Sitzung abgelaufen")
+    }
   }
 
   const body = await response.json()
