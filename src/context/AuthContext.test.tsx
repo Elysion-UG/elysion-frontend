@@ -15,8 +15,16 @@ vi.mock("@/src/services/auth.service", () => ({
   },
 }))
 
+// Mock api-client to control refreshSession directly and avoid the module-level
+// _refreshInFlight cache bleeding between tests.
+vi.mock("@/src/lib/api-client", () => ({
+  setAccessToken: vi.fn(),
+  refreshSession: vi.fn(),
+}))
+
 // Import AFTER mock so we get the mocked version
 import { AuthService } from "@/src/services/auth.service"
+import { refreshSession } from "@/src/lib/api-client"
 
 // ── Fixtures ───────────────────────────────────────────────────────────────────
 
@@ -42,11 +50,18 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
   <AuthProvider>{children}</AuthProvider>
 )
 
+// Default: refreshSession rejects immediately (no active session).
+// Individual tests override this when they need specific session-restore behaviour.
+beforeEach(() => {
+  vi.mocked(refreshSession).mockRejectedValue(new Error("no session"))
+})
+
 // ── Initial state ──────────────────────────────────────────────────────────────
 
 describe("AuthContext — initial state", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(refreshSession).mockRejectedValue(new Error("no session"))
   })
 
   it("starts with user = null", () => {
@@ -64,9 +79,11 @@ describe("AuthContext — initial state", () => {
     expect(result.current.isAuthenticated).toBe(false)
   })
 
-  it("starts with isLoading = false", () => {
+  it("starts with isLoading = true (session restore in progress)", () => {
+    // isLoading is true from mount until refreshSession() settles.
+    // This is intentional — it prevents a "logged out" flash on page reload.
     const { result } = renderHook(() => useAuth(), { wrapper })
-    expect(result.current.isLoading).toBe(false)
+    expect(result.current.isLoading).toBe(true)
   })
 
   it("starts with role = null", () => {
@@ -415,6 +432,52 @@ describe("register", () => {
         })
       })
     ).rejects.toThrow("Email already in use")
+  })
+})
+
+// ── session restore on mount (page reload) ────────────────────────────────────
+// Regression: isLoading starts as true during refreshSession() so the UI must
+// not show the login button until isLoading=false to avoid a "logged out" flash.
+
+describe("session restore on mount", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it("isLoading is true before refreshSession resolves", () => {
+    // Never-resolving promise simulates an in-flight request
+    vi.mocked(refreshSession).mockReturnValue(new Promise(() => {}))
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    // isLoading must be true while refresh is pending
+    expect(result.current.isLoading).toBe(true)
+    expect(result.current.isAuthenticated).toBe(false)
+  })
+
+  it("restores session when refreshSession succeeds", async () => {
+    vi.mocked(refreshSession).mockResolvedValue(mockTokensResponse as never)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(result.current.user).toEqual(mockUser)
+    expect(result.current.token).toBe("access-token-abc")
+    expect(result.current.isLoading).toBe(false)
+  })
+
+  it("stays logged out and sets isLoading=false when refreshSession fails", async () => {
+    vi.mocked(refreshSession).mockRejectedValue(new Error("no session"))
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    expect(result.current.isAuthenticated).toBe(false)
+    expect(result.current.user).toBeNull()
+    expect(result.current.isLoading).toBe(false)
   })
 })
 

@@ -25,7 +25,7 @@ interface PageLayoutProps {
 }
 
 export default function PageLayout({ children }: PageLayoutProps) {
-  const { isAuthenticated, role, logout } = useAuth()
+  const { isAuthenticated, isLoading: authLoading, role, logout } = useAuth()
   const { totalItems } = useCart()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -100,7 +100,11 @@ export default function PageLayout({ children }: PageLayoutProps) {
                 )}
               </a>
 
-              {isAuthenticated ? (
+              {/* Hide auth button while session is being restored to avoid a
+                  flash of the "Anmelden" button on every page reload */}
+              {authLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+              ) : isAuthenticated ? (
                 <button
                   onClick={handleLogout}
                   disabled={loggingOut}
@@ -150,24 +154,25 @@ export default function PageLayout({ children }: PageLayoutProps) {
                 role === "ADMIN" &&
                 navLink("/admin/users", "Admin", <ShieldCheck className="h-4 w-4" />)}
               {navLink("/cart", "Warenkorb", <ShoppingCart className="h-4 w-4" />)}
-              {isAuthenticated ? (
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-1.5 text-sm font-medium text-red-600"
-                >
-                  <LogOut className="h-4 w-4" /> Abmelden
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    setIsLoginModalOpen(true)
-                    setMobileMenuOpen(false)
-                  }}
-                  className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white"
-                >
-                  Anmelden
-                </button>
-              )}
+              {!authLoading &&
+                (isAuthenticated ? (
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-1.5 text-sm font-medium text-red-600"
+                  >
+                    <LogOut className="h-4 w-4" /> Abmelden
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setIsLoginModalOpen(true)
+                      setMobileMenuOpen(false)
+                    }}
+                    className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white"
+                  >
+                    Anmelden
+                  </button>
+                ))}
             </nav>
           )}
         </div>
