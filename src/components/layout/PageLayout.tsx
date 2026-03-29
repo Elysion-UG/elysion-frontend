@@ -40,6 +40,9 @@ export default function PageLayout({ children }: PageLayoutProps) {
       await logout()
       toast.success("Erfolgreich abgemeldet.")
       window.location.href = "/"
+    } catch {
+      // logout() clears local state via finally — just redirect
+      window.location.href = "/"
     } finally {
       setLoggingOut(false)
     }

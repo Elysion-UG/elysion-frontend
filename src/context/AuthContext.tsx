@@ -158,6 +158,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true)
     try {
       await AuthService.logout()
+    } catch {
+      // 401 "Missing refresh token" is expected when the session already expired.
+      // Local logout (clearing state) always succeeds regardless.
     } finally {
       setUser(null)
       setToken(null)

@@ -40,12 +40,12 @@ export const AuthService = {
 
   /**
    * Revokes the current refresh token and clears the HttpOnly cookie.
+   * skipRetry=true — a 401 on logout means "no active session to revoke",
+   * which is fine. We must not trigger tryRefreshAndRetry here because that
+   * would show a spurious "Sitzung abgelaufen" toast and re-redirect to "/".
    */
   async logout(): Promise<void> {
-    return apiRequest("/api/v1/auth/logout", {
-      method: "POST",
-      body: "{}",
-    })
+    return apiRequest("/api/v1/auth/logout", { method: "POST", body: "{}" }, true)
   },
 
   async verifyEmail(token: string): Promise<void> {
