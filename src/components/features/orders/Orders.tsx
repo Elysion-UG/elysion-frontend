@@ -106,10 +106,7 @@ export default function Orders() {
                 <ChevronRight className="h-5 w-5 text-slate-400" />
               </div>
             </div>
-            <div className="mt-3 flex items-center justify-between text-sm">
-              <span className="text-slate-500">
-                {order.itemCount ? `${order.itemCount} Artikel` : ""}
-              </span>
+            <div className="mt-3 flex justify-end text-sm">
               <span className="font-semibold text-slate-800">{formatEuro(order.total ?? 0)}</span>
             </div>
           </a>

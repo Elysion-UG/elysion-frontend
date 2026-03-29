@@ -4,9 +4,15 @@ import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { Package, Truck, CheckCircle2, Loader2, ChevronLeft, MapPin } from "lucide-react"
 import { OrderService } from "@/src/services/order.service"
+import { ProductService } from "@/src/services/product.service"
 import type { OrderDetail as OrderDetailType, OrderStatus, OrderGroupStatus } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
 import { toCountryName } from "@/src/lib/country"
+import {
+  getProductDisplayCache,
+  saveProductDisplay,
+  type ProductDisplayEntry,
+} from "@/src/lib/product-display-cache"
 
 const orderStatusLabel: Record<OrderStatus, string> = {
   PENDING_PAYMENT: "Zahlung ausstehend",
@@ -55,6 +61,8 @@ export default function OrderDetail() {
   const [order, setOrder] = useState<OrderDetailType | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [displayMap, setDisplayMap] =
+    useState<Record<string, ProductDisplayEntry>>(getProductDisplayCache)
 
   useEffect(() => {
     if (!orderId) return
@@ -63,6 +71,45 @@ export default function OrderDetail() {
       .catch(() => setError("Bestellung konnte nicht geladen werden."))
       .finally(() => setIsLoading(false))
   }, [orderId])
+
+  // Fetch images for order items whose productId isn't in the display cache.
+  // productSnapshot.productSlug is available directly — no product-list lookup needed.
+  useEffect(() => {
+    if (!order?.groups?.length) return
+
+    const slugsToFetch: Array<{ productId: string; slug: string; name: string }> = []
+    for (const group of order.groups ?? []) {
+      for (const item of group.items ?? []) {
+        const snap = item.productSnapshot
+        if (snap?.productId && snap.productSlug && !displayMap[snap.productId]) {
+          slugsToFetch.push({
+            productId: snap.productId,
+            slug: snap.productSlug,
+            name: snap.productName ?? snap.productId,
+          })
+        }
+      }
+    }
+
+    if (slugsToFetch.length === 0) return
+
+    Promise.all(
+      slugsToFetch.map(async ({ productId, slug, name }) => {
+        let imageUrl: string | undefined
+        try {
+          const detail = await ProductService.getBySlug(slug)
+          imageUrl = detail.images?.[0]?.url ?? detail.imageUrls?.[0]
+        } catch {
+          // image fetch failed — show without image
+        }
+        const entry: ProductDisplayEntry = { name, imageUrl, slug }
+        saveProductDisplay(productId, entry)
+        return [productId, entry] as const
+      })
+    )
+      .then((entries) => setDisplayMap((prev) => ({ ...prev, ...Object.fromEntries(entries) })))
+      .catch(() => {})
+  }, [order])
 
   if (isLoading) {
     return (
@@ -150,37 +197,40 @@ export default function OrderDetail() {
           )}
 
           <div className="space-y-3">
-            {group.items?.map((item, idx) => (
-              <div key={idx} className="flex gap-3">
-                <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                  {item.imageUrl ? (
-                    <img
-                      src={item.imageUrl}
-                      alt={item.productName}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-slate-300">
-                      <Package className="h-6 w-6" />
-                    </div>
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-slate-800">{item.productName}</p>
-                  {(item.variantOptions?.length ?? 0) > 0 && (
-                    <p className="text-xs text-slate-500">
-                      {item.variantOptions?.map((o) => `${o.name}: ${o.value}`).join(", ")}
+            {group.items?.map((item, idx) => {
+              const snap = item.productSnapshot
+              const display = snap?.productId ? displayMap[snap.productId] : null
+              const name = snap?.productName ?? display?.name ?? "Artikel"
+              const imageUrl = display?.imageUrl
+              const options = snap?.options ?? []
+              return (
+                <div key={idx} className="flex gap-3">
+                  <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                    {imageUrl ? (
+                      <img src={imageUrl} alt={name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-slate-300">
+                        <Package className="h-6 w-6" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-slate-800">{name}</p>
+                    {options.length > 0 && (
+                      <p className="text-xs text-slate-500">
+                        {options.map((o) => `${o.type}: ${o.value}`).join(", ")}
+                      </p>
+                    )}
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {item.quantity}× {formatEuro(item.pricePerUnit)}
                     </p>
-                  )}
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    {item.quantity}× {formatEuro((item.unitPriceCents ?? 0) / 100)}
-                  </p>
+                  </div>
+                  <span className="whitespace-nowrap text-sm font-medium text-slate-800">
+                    {formatEuro(item.subtotal)}
+                  </span>
                 </div>
-                <span className="whitespace-nowrap text-sm font-medium text-slate-800">
-                  {formatEuro((item.totalPriceCents ?? 0) / 100)}
-                </span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       ))}

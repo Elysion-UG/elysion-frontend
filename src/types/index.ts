@@ -482,33 +482,42 @@ export type OrderStatus =
 export interface Order {
   id: string
   orderNumber?: string
-  buyerId?: string
   status: OrderStatus
-  totalAmount?: number
   total?: number
-  itemCount?: number | null
+  currency?: string
   createdAt: string
-  updatedAt?: string
+}
+
+/** Frozen product/variant data captured at purchase time. */
+export interface OrderProductSnapshot {
+  productId?: string
+  productName?: string
+  productSlug?: string
+  sellerId?: string
+  variantId?: string
+  sku?: string
+  /** Variant options — backend field: options[].type / options[].value */
+  options?: Array<{ type: string; value: string }>
+  currency?: string
 }
 
 export interface OrderItem {
   id: string
-  productId: string
   variantId?: string
-  name?: string
-  productName?: string
-  imageUrl?: string
-  variantOptions?: Array<{ name: string; value: string }>
   quantity: number
-  unitPrice?: number
-  unitPriceCents?: number
-  totalPrice?: number
-  totalPriceCents?: number
+  /** Price per unit in euro (decimal). Backend field: pricePerUnit */
+  pricePerUnit: number
+  /** Line total in euro (decimal). Backend field: subtotal */
+  subtotal: number
+  productSnapshot?: OrderProductSnapshot
 }
 
 export interface OrderGroup {
   id: string
+  sellerId?: string
   status: OrderGroupStatus
+  subtotal?: number
+  shippingCost?: number
   shipment?: { trackingNumber: string; carrier?: string } | null
   items: OrderItem[]
 }
@@ -516,18 +525,23 @@ export interface OrderGroup {
 export interface OrderDetail {
   id?: string
   orderNumber?: string
-  buyerId?: string
   status?: OrderStatus
   createdAt?: string
-  shippingAddress?: Address
+  shippingAddress?: {
+    firstName: string
+    lastName: string
+    street: string
+    houseNumber: string
+    postalCode: string
+    city: string
+    country: string
+  }
   groups?: OrderGroup[]
-  items?: OrderItem[]
   subtotal?: number
   shippingCost?: number
   tax?: number | null
   total?: number
-  totalAmount?: number
-  trackingNumber?: string
+  currency?: string
 }
 
 // ── Order Group (Seller) ─────────────────────────────────────────────
