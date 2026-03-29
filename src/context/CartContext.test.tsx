@@ -86,6 +86,46 @@ describe("addItem", () => {
     expect(item.quantity).toBe(2)
   })
 
+  it("stores display fields (productName, productSlug, imageUrl, unitPriceCents) on the new item", async () => {
+    const { result } = renderHook(() => useCart(), { wrapper })
+
+    await act(async () => {
+      await result.current.addItem({
+        productId: "prod-1",
+        quantity: 1,
+        productName: "Bio-Shirt",
+        productSlug: "bio-shirt",
+        imageUrl: "https://example.com/img.jpg",
+        unitPriceCents: 2999,
+      })
+    })
+
+    const item = result.current.cart.items[0]
+    expect(item.productName).toBe("Bio-Shirt")
+    expect(item.productSlug).toBe("bio-shirt")
+    expect(item.imageUrl).toBe("https://example.com/img.jpg")
+    expect(item.unitPriceCents).toBe(2999)
+  })
+
+  it("persists display fields to localStorage for guest users", async () => {
+    const { result } = renderHook(() => useCart(), { wrapper })
+
+    await act(async () => {
+      await result.current.addItem({
+        productId: "prod-1",
+        quantity: 2,
+        productName: "Öko-Jeans",
+        productSlug: "oeko-jeans",
+        unitPriceCents: 7900,
+      })
+    })
+
+    const stored = JSON.parse(localStorage.getItem("guest_cart")!)
+    expect(stored.items[0].productName).toBe("Öko-Jeans")
+    expect(stored.items[0].productSlug).toBe("oeko-jeans")
+    expect(stored.items[0].unitPriceCents).toBe(7900)
+  })
+
   it("adds a second distinct item alongside an existing one", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
 

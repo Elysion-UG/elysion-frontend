@@ -108,6 +108,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           variantId: dto.variantId,
           quantity: dto.quantity,
           variantOptions: [],
+          productName: dto.productName,
+          productSlug: dto.productSlug,
+          imageUrl: dto.imageUrl,
+          unitPriceCents: dto.unitPriceCents,
         }
         return { ...prev, items: [...prev.items, newItem] }
       })

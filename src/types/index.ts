@@ -402,6 +402,12 @@ export interface AddToCartDTO {
   productId: string
   variantId?: string
   quantity: number
+  /** Display fields — used to populate the optimistic cart item for guests */
+  productName?: string
+  productSlug?: string
+  imageUrl?: string
+  /** Price in cents — used to show the correct price in the guest cart */
+  unitPriceCents?: number
 }
 
 export interface UpdateCartItemDTO {

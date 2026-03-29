@@ -126,10 +126,15 @@ export default function ProductDetail() {
     }
     setIsAddingToCart(true)
     try {
+      const priceEuro = selectedVariant?.price ?? product.basePrice ?? product.price
       await addItem({
         productId: product.id,
         ...(selectedVariant ? { variantId: selectedVariant.id } : {}),
         quantity,
+        productName: product.name,
+        productSlug: product.slug,
+        imageUrl: product.images?.[0]?.url ?? product.imageUrls?.[0],
+        unitPriceCents: priceEuro != null ? Math.round(priceEuro * 100) : undefined,
       })
       toast.success("Zum Warenkorb hinzugefügt!")
     } catch {
