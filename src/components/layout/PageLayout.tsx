@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Leaf,
   Settings,
@@ -30,6 +30,9 @@ export default function PageLayout({ children }: PageLayoutProps) {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => setMounted(true), [])
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -90,7 +93,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
                 className="relative flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-teal-700"
               >
                 <ShoppingCart className="h-5 w-5" />
-                {totalItems > 0 && (
+                {mounted && totalItems > 0 && (
                   <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-teal-600 text-[10px] font-bold text-white">
                     {totalItems > 9 ? "9+" : totalItems}
                   </span>
