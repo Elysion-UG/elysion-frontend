@@ -131,8 +131,10 @@ export default function ProductDetail() {
         productId: product.id,
         ...(selectedVariant ? { variantId: selectedVariant.id } : {}),
         quantity,
-        productName: product.name,
-        productSlug: product.slug,
+        productName: product.name ?? product.title,
+        // product.slug may not be returned by the backend — fall back to the
+        // URL slug which is always available and definitively correct.
+        productSlug: product.slug ?? slug ?? undefined,
         imageUrl: product.images?.[0]?.url ?? product.imageUrls?.[0],
         unitPriceCents: priceEuro != null ? Math.round(priceEuro * 100) : undefined,
       })

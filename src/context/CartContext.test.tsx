@@ -126,6 +126,21 @@ describe("addItem", () => {
     expect(stored.items[0].unitPriceCents).toBe(7900)
   })
 
+  it("stores productSlug undefined when no slug is provided (caller must pass URL slug)", async () => {
+    // Regression: if caller forgets to pass productSlug, item still lands in cart
+    // but slug is undefined — Cart component must render a graceful fallback.
+    const { result } = renderHook(() => useCart(), { wrapper })
+
+    await act(async () => {
+      await result.current.addItem({ productId: "prod-1", quantity: 1, productName: "Bio-Shirt" })
+    })
+
+    const item = result.current.cart.items[0]
+    expect(item.productId).toBe("prod-1")
+    expect(item.productName).toBe("Bio-Shirt")
+    expect(item.productSlug).toBeUndefined()
+  })
+
   it("adds a second distinct item alongside an existing one", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
 

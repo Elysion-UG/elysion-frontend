@@ -112,12 +112,18 @@ export default function Cart() {
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <a
-                    href={`/product?slug=${item.productSlug}`}
-                    className="block truncate font-semibold text-slate-800 hover:text-teal-700"
-                  >
-                    {item.productName}
-                  </a>
+                  {item.productSlug ? (
+                    <a
+                      href={`/product?slug=${item.productSlug}`}
+                      className="block truncate font-semibold text-slate-800 hover:text-teal-700"
+                    >
+                      {item.productName ?? "Produkt"}
+                    </a>
+                  ) : (
+                    <span className="block truncate font-semibold text-slate-800">
+                      {item.productName ?? "Produkt"}
+                    </span>
+                  )}
                   {(item.variantOptions?.length ?? 0) > 0 && (
                     <p className="mt-0.5 text-sm text-slate-500">
                       {item.variantOptions?.map((o) => `${o.name}: ${o.value}`).join(", ")}
