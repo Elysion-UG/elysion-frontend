@@ -19,6 +19,7 @@ interface CartContextValue {
 }
 
 const emptyCart: Cart = { items: [] }
+const GUEST_CART_KEY = "guest_cart"
 
 // Ensures a cart object from the backend always has a defined items array.
 // The backend may omit the field or return null when the cart is empty.
@@ -26,24 +27,67 @@ function normalizeCart(data: Cart): Cart {
   return { ...data, items: data.items ?? [] }
 }
 
+function loadGuestCart(): Cart {
+  if (typeof window === "undefined") return emptyCart
+  try {
+    const stored = localStorage.getItem(GUEST_CART_KEY)
+    if (stored) return normalizeCart(JSON.parse(stored) as Cart)
+  } catch {
+    // ignore corrupt data
+  }
+  return emptyCart
+}
+
+function saveGuestCart(cart: Cart): void {
+  try {
+    localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cart))
+  } catch {
+    // ignore storage errors (e.g. private browsing quota)
+  }
+}
+
+function clearGuestCart(): void {
+  try {
+    localStorage.removeItem(GUEST_CART_KEY)
+  } catch {}
+}
+
 export const CartContext = createContext<CartContextValue | null>(null)
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [cart, setCart] = useState<Cart>(emptyCart)
+  // Lazily initialize from localStorage so the guest cart survives full-page
+  // navigation (the <a href="/cart"> link causes a page reload, not a client-
+  // side transition, which would otherwise reset React state).
+  const [cart, setCart] = useState<Cart>(() => loadGuestCart())
   const [isLoading, setIsLoading] = useState(false)
   const { isAuthenticated, isLoading: authLoading } = useAuth()
 
+  // Sync cart with auth state:
+  //   - authenticated  → fetch from backend, clear localStorage guest cart
+  //   - unauthenticated (incl. after logout) → load from localStorage
   useEffect(() => {
-    // Wait until auth state is known; only fetch backend cart for authenticated users.
-    // Unauthenticated users get a local-only guest cart — no backend sync.
     if (authLoading) return
-    if (!isAuthenticated) return
+    if (!isAuthenticated) {
+      // Reload from localStorage to pick up any pre-existing guest cart after
+      // logout (localStorage will be empty if it was cleared on login).
+      setCart(loadGuestCart())
+      return
+    }
+    // Authenticated: backend is authoritative; drop the local guest cart.
+    clearGuestCart()
     CartService.get()
       .then((data) => {
         if (data != null) setCart(normalizeCart(data))
       })
       .catch(() => {})
   }, [isAuthenticated, authLoading])
+
+  // Persist guest cart to localStorage on every change so page reloads don't
+  // wipe items for unauthenticated users.
+  useEffect(() => {
+    if (isAuthenticated) return
+    saveGuestCart(cart)
+  }, [cart, isAuthenticated])
 
   const addItem = useCallback(
     async (dto: AddToCartDTO) => {
