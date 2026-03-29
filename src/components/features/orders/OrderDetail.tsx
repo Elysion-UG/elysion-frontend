@@ -6,6 +6,7 @@ import { Package, Truck, CheckCircle2, Loader2, ChevronLeft, MapPin } from "luci
 import { OrderService } from "@/src/services/order.service"
 import type { OrderDetail as OrderDetailType, OrderStatus, OrderGroupStatus } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
+import { toCountryName } from "@/src/lib/country"
 
 const orderStatusLabel: Record<OrderStatus, string> = {
   PENDING_PAYMENT: "Zahlung ausstehend",
@@ -116,7 +117,7 @@ export default function OrderDetail() {
             <br />
             {order.shippingAddress.postalCode} {order.shippingAddress.city}
             <br />
-            {order.shippingAddress.country}
+            {toCountryName(order.shippingAddress.country)}
           </address>
         </div>
       )}

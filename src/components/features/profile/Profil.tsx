@@ -22,6 +22,7 @@ import { AddressService } from "@/src/services/address.service"
 import type { Address } from "@/src/types"
 import AddressForm from "@/src/components/features/profile/AddressForm"
 import { toast } from "sonner"
+import { toCountryName } from "@/src/lib/country"
 
 export default function Profil() {
   const { user, setUser, logout } = useAuth()
@@ -294,7 +295,7 @@ export default function Profil() {
                     <p className="text-sm text-slate-600">
                       {addr.postalCode} {addr.city}
                     </p>
-                    <p className="text-sm text-slate-600">{addr.country}</p>
+                    <p className="text-sm text-slate-600">{toCountryName(addr.country)}</p>
                     <p className="mt-1 text-xs text-slate-400">
                       {addr.type === "SHIPPING" ? "Lieferadresse" : "Rechnungsadresse"}
                     </p>

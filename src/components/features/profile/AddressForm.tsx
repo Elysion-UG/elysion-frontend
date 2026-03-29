@@ -4,6 +4,7 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import { X, Loader2 } from "lucide-react"
 import type { Address, AddressDTO, AddressType } from "@/src/types"
+import { toCountryCode, toCountryName } from "@/src/lib/country"
 
 interface AddressFormProps {
   isOpen: boolean
@@ -33,7 +34,7 @@ export default function AddressForm({ isOpen, onClose, onSave, address }: Addres
       setHouseNumber(address.houseNumber)
       setPostalCode(address.postalCode)
       setCity(address.city)
-      setCountry(address.country)
+      setCountry(toCountryName(address.country))
       setIsDefault(address.isDefault)
     } else {
       setType("SHIPPING")
@@ -60,7 +61,7 @@ export default function AddressForm({ isOpen, onClose, onSave, address }: Addres
         houseNumber,
         postalCode,
         city,
-        country,
+        country: toCountryCode(country),
         isDefault,
       })
       onClose()
