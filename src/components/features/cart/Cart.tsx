@@ -4,11 +4,14 @@ import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Loader2, PackageOpen } f
 import { useCart } from "@/src/context/CartContext"
 import { formatEuro, centsToEuro } from "@/src/lib/currency"
 import { toast } from "sonner"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 export default function Cart() {
   const { cart, isLoading, updateItem, removeItem } = useCart()
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => setMounted(true), [])
 
   const handleUpdateQty = async (itemId: string, newQty: number) => {
     if (newQty < 1) return
@@ -34,7 +37,7 @@ export default function Cart() {
     }
   }
 
-  if (isLoading) {
+  if (!mounted || isLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
