@@ -10,10 +10,64 @@
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"
 
-// Token store (in-memory, cleared on page refresh)
+// ── Session persistence ────────────────────────────────────────────────────────
+// Storing { token, user } in sessionStorage lets us survive full-page navigations
+// within the same browser tab (<a href> reloads). The key is owned here so that
+// the token can be restored *synchronously* at module-load time — before React
+// renders or any useEffect fires.
+
+export const AUTH_SESSION_KEY = "auth_session"
+
+export interface PersistedAuthSession {
+  token: string
+  user: unknown
+}
+
+export function saveAuthSession(token: string, user: unknown): void {
+  try {
+    window.sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ token, user }))
+  } catch {}
+}
+
+export function loadAuthSession(): PersistedAuthSession | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = window.sessionStorage.getItem(AUTH_SESSION_KEY)
+    return raw ? (JSON.parse(raw) as PersistedAuthSession) : null
+  } catch {
+    return null
+  }
+}
+
+export function clearAuthSession(): void {
+  try {
+    window.sessionStorage.removeItem(AUTH_SESSION_KEY)
+  } catch {}
+}
+
+// ── Token store ────────────────────────────────────────────────────────────────
+// _accessToken lives in module memory for XSS safety.
+//
+// IMPORTANT: We seed it synchronously from sessionStorage at module-load time.
+// React child effects run before parent effects (bottom-up order), so by the
+// time any component's useEffect calls an API, the token must already be
+// present in _accessToken — we cannot rely on AuthContext's useEffect to set
+// it first.
 let _accessToken: string | null = null
 
+if (typeof window !== "undefined") {
+  const persisted = loadAuthSession()
+  if (persisted?.token) {
+    _accessToken = persisted.token
+    console.debug(
+      "[auth] module init — token restored from sessionStorage:",
+      persisted.token.slice(0, 20) + "…"
+    )
+  }
+}
+
 export function setAccessToken(token: string | null): void {
+  console.debug("[auth] setAccessToken():", token ? token.slice(0, 20) + "…" : "null")
   _accessToken = token
 }
 
@@ -45,11 +99,25 @@ let _refreshInFlight: Promise<TokensResponse> | null = null
 
 export async function refreshSession(): Promise<TokensResponse> {
   if (!_refreshInFlight) {
-    const p = import("@/src/services/auth.service").then(({ AuthService }) => AuthService.refresh())
+    console.debug("[auth] refreshSession() — starting backend refresh")
+    const p = import("@/src/services/auth.service")
+      .then(({ AuthService }) => AuthService.refresh())
+      .then((res) => {
+        console.debug(
+          "[auth] refreshSession() — SUCCESS, new token:",
+          res.accessToken?.slice(0, 20) + "…"
+        )
+        return res
+      })
+    p.catch((err) => {
+      console.debug("[auth] refreshSession() — FAILED:", err?.message ?? err)
+    })
     p.finally(() => {
       _refreshInFlight = null
     })
     _refreshInFlight = p
+  } else {
+    console.debug("[auth] refreshSession() — reusing in-flight promise")
   }
   return _refreshInFlight
 }
@@ -92,6 +160,13 @@ export async function apiRequest<T>(
     headers["Authorization"] = `Bearer ${_accessToken}`
   }
 
+  console.debug(
+    "[api]",
+    options.method ?? "GET",
+    path,
+    "| token:",
+    _accessToken ? "present" : "MISSING"
+  )
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers,
@@ -106,6 +181,7 @@ export async function apiRequest<T>(
 
   // 401 Unauthorized — attempt token refresh once
   if (response.status === 401 && !skipRetry) {
+    console.debug("[auth] 401 on", path, "— attempting refresh retry")
     return tryRefreshAndRetry<T>(path, options)
   }
 

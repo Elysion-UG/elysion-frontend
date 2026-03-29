@@ -16,15 +16,25 @@ vi.mock("@/src/services/auth.service", () => ({
 }))
 
 // Mock api-client to control refreshSession directly and avoid the module-level
-// _refreshInFlight cache bleeding between tests.
+// _refreshInFlight cache bleeding between tests. All session-storage helpers are
+// mocked as no-ops so tests control sessionStorage themselves via the Web API.
 vi.mock("@/src/lib/api-client", () => ({
   setAccessToken: vi.fn(),
   refreshSession: vi.fn(),
+  saveAuthSession: vi.fn(),
+  loadAuthSession: vi.fn().mockReturnValue(null),
+  clearAuthSession: vi.fn(),
+  AUTH_SESSION_KEY: "auth_session",
 }))
 
 // Import AFTER mock so we get the mocked version
 import { AuthService } from "@/src/services/auth.service"
-import { refreshSession } from "@/src/lib/api-client"
+import {
+  refreshSession,
+  loadAuthSession,
+  saveAuthSession,
+  clearAuthSession,
+} from "@/src/lib/api-client"
 
 // ── Fixtures ───────────────────────────────────────────────────────────────────
 
@@ -214,10 +224,8 @@ describe("login", () => {
       await result.current.login({ email: "jane@example.com", password: "secret" })
     })
 
-    const stored = JSON.parse(sessionStorage.getItem("auth_session") ?? "null")
-    expect(stored).not.toBeNull()
-    expect(stored.token).toBe("access-token-abc")
-    expect(stored.user).toEqual(mockUser)
+    expect(saveAuthSession).toHaveBeenCalledOnce()
+    expect(saveAuthSession).toHaveBeenCalledWith("access-token-abc", mockUser)
   })
 
   it("sets sellerStatus from sellerProfile when user is a SELLER", async () => {
@@ -332,13 +340,13 @@ describe("logout", () => {
       await result.current.login({ email: "jane@example.com", password: "secret" })
     })
 
-    expect(sessionStorage.getItem("auth_session")).not.toBeNull()
+    expect(saveAuthSession).toHaveBeenCalled()
 
     await act(async () => {
       await result.current.logout()
     })
 
-    expect(sessionStorage.getItem("auth_session")).toBeNull()
+    expect(clearAuthSession).toHaveBeenCalled()
   })
 
   it("clears user and token even when AuthService.logout throws", async () => {
@@ -520,11 +528,9 @@ describe("session restore on mount — cold start (no sessionStorage)", () => {
 describe("session restore on mount — sessionStorage hit (page navigation)", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // Simulate a previously saved session (written on login)
-    sessionStorage.setItem(
-      "auth_session",
-      JSON.stringify({ token: "access-token-abc", user: mockUser })
-    )
+    // Simulate a previously saved session: loadAuthSession() returns the persisted data
+    vi.mocked(loadAuthSession).mockReturnValue({ token: "access-token-abc", user: mockUser })
+    vi.mocked(refreshSession).mockRejectedValue(new Error("no cookie"))
   })
 
   it("restores user and token immediately without waiting for the network", () => {
@@ -568,7 +574,7 @@ describe("session restore on mount — sessionStorage hit (page navigation)", ()
 
     await act(async () => {})
 
-    // Session from sessionStorage is preserved
+    // Session from loadAuthSession is preserved
     expect(result.current.isAuthenticated).toBe(true)
     expect(result.current.token).toBe("access-token-abc")
     expect(result.current.isLoading).toBe(false)

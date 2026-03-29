@@ -18,6 +18,10 @@ vi.mock("@/src/services/auth.service", () => ({
 vi.mock("@/src/lib/api-client", () => ({
   setAccessToken: vi.fn(),
   refreshSession: vi.fn().mockRejectedValue(new Error("no session")),
+  loadAuthSession: vi.fn().mockReturnValue(null),
+  saveAuthSession: vi.fn(),
+  clearAuthSession: vi.fn(),
+  AUTH_SESSION_KEY: "auth_session",
 }))
 
 describe("useAuth hook", () => {
