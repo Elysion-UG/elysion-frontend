@@ -12,24 +12,23 @@ import {
 } from "lucide-react"
 import { AddressService } from "@/src/services/address.service"
 import { CheckoutService } from "@/src/services/checkout.service"
+import { ProductService } from "@/src/services/product.service"
 import { useCart } from "@/src/context/CartContext"
 import { useAuth } from "@/src/context/AuthContext"
 import LoginModal from "@/src/components/LoginModal"
 import type { Address, CheckoutStartResponse, CheckoutCompleteResponse } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
-import { getProductDisplayCache } from "@/src/lib/product-display-cache"
+import {
+  getProductDisplayCache,
+  saveProductDisplay,
+  type ProductDisplayEntry,
+} from "@/src/lib/product-display-cache"
 import { toast } from "sonner"
 
 type Step = "address" | "preview" | "success"
 
 export default function Checkout() {
   const { refetch } = useCart()
-
-  // Product display cache — populated whenever addItem() is called.
-  // Persists across page reloads via localStorage so names and images are
-  // available even after the cart is re-fetched from the backend (which
-  // does not include productName or imageUrl in its CartItemResponse).
-  const productDisplayCache = getProductDisplayCache()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [loginModalOpen, setLoginModalOpen] = useState(false)
   const [step, setStep] = useState<Step>("address")
@@ -38,6 +37,58 @@ export default function Checkout() {
   const [preview, setPreview] = useState<CheckoutStartResponse | null>(null)
   const [result, setResult] = useState<CheckoutCompleteResponse | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+
+  // Product display data (name + image) for checkout items.
+  // Seed from localStorage cache (populated by addItem). When items are missing
+  // from the cache (e.g. cart loaded from backend in a previous session before
+  // this feature existed), fetch from the API as a fallback.
+  const [displayMap, setDisplayMap] =
+    useState<Record<string, ProductDisplayEntry>>(getProductDisplayCache)
+
+  useEffect(() => {
+    if (!preview?.items?.length) return
+
+    const missing = (preview.items ?? [])
+      .map((i) => i.productId)
+      .filter((id): id is string => !!id && !displayMap[id])
+
+    if (missing.length === 0) return
+
+    // 1. Fetch the full product list to get slug + title per productId.
+    //    The public list endpoint returns {id, slug, title} — no images.
+    ProductService.list({ size: 200 })
+      .then(async (page) => {
+        const found = page.content.filter((p) => missing.includes(p.id))
+        if (found.length === 0) return
+
+        // 2. For each found product, fetch the public detail to get images.
+        const entries = await Promise.all(
+          found.map(async (p) => {
+            let imageUrl: string | undefined
+            if (p.slug) {
+              try {
+                const detail = await ProductService.getBySlug(p.slug)
+                imageUrl = detail.images?.[0]?.url ?? detail.imageUrls?.[0]
+              } catch {
+                // image fetch failed — show without image
+              }
+            }
+            const entry: ProductDisplayEntry = {
+              name: (p as unknown as { title?: string }).title ?? p.name ?? p.id,
+              imageUrl,
+              slug: p.slug,
+            }
+            saveProductDisplay(p.id, entry)
+            return [p.id, entry] as const
+          })
+        )
+
+        setDisplayMap((prev) => ({ ...prev, ...Object.fromEntries(entries) }))
+      })
+      .catch(() => {
+        // Silently ignore — placeholder remains
+      })
+  }, [preview])
 
   useEffect(() => {
     if (!isAuthenticated) return
@@ -157,7 +208,7 @@ export default function Checkout() {
           </h2>
           <div className="space-y-3">
             {(preview.items ?? []).map((item, idx) => {
-              const display = item.productId ? productDisplayCache[item.productId] : null
+              const display = item.productId ? displayMap[item.productId] : null
               return (
                 <div key={idx} className="flex items-center gap-3 text-sm">
                   {display?.imageUrl ? (
