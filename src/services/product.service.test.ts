@@ -127,10 +127,10 @@ describe("ProductService", () => {
   // ── getById ──────────────────────────────────────────────────────────
 
   describe("getById", () => {
-    it("calls /api/v1/products/{id}", async () => {
+    it("calls /api/v1/products/by-id/{id}", async () => {
       mockApiRequest.mockResolvedValue(mockProductInternalDetail)
       await ProductService.getById("prod_1")
-      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products/prod_1")
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products/by-id/prod_1")
     })
 
     it("returns the internal product detail", async () => {

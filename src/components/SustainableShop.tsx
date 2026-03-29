@@ -100,9 +100,9 @@ const importanceScale = [
 // ── Sort options ──────────────────────────────────────────────────────────────
 
 const sortOptions = [
-  { value: "newest", label: "Neueste", apiSort: "createdAt,desc" },
-  { value: "price-low", label: "Preis: Niedrig → Hoch", apiSort: "price,asc" },
-  { value: "price-high", label: "Preis: Hoch → Niedrig", apiSort: "price,desc" },
+  { value: "newest", label: "Neueste", apiSort: "newest" },
+  { value: "price-low", label: "Preis: Niedrig → Hoch", apiSort: "price_asc" },
+  { value: "price-high", label: "Preis: Hoch → Niedrig", apiSort: "price_desc" },
 ]
 
 const PAGE_SIZE = 12

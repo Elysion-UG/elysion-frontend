@@ -36,18 +36,29 @@ interface ProductPage {
 
 Two different endpoints return product details with different field names and response wrappers:
 
-| Endpoint                               | Wrapper                  | `name` field | Notes                         |
-| -------------------------------------- | ------------------------ | ------------ | ----------------------------- |
-| `GET /api/v1/products/{id}` (internal) | No `ApiResponse` wrapper | `title`      | Used for seller/admin views   |
-| `GET /api/v1/products/{slug}` (public) | Standard `ApiResponse`   | `name`       | Used for public product pages |
+| Endpoint                               | Wrapper                  | name field | Auth required       | Notes                         |
+| -------------------------------------- | ------------------------ | ---------- | ------------------- | ----------------------------- |
+| `GET /api/v1/products/by-id/{id}`      | No `ApiResponse` wrapper | `title`    | ADMIN, SELLER (own) | Used for seller/admin views   |
+| `GET /api/v1/products/{slug}` (public) | Standard `ApiResponse`   | `name`     | No                  | Used for public product pages |
+
+**Breaking change (2026-03-28):** The internal endpoint path changed from `/api/v1/products/{id}` to `/api/v1/products/by-id/{id}` to eliminate an ambiguous handler conflict with `/{slug}`. UUID-based public navigation is no longer supported — always use `slug` for storefront links.
 
 ```typescript
-// Internal — no wrapper, field is "title"
-const product = await apiRequest<{ title: string; ... }>(`/api/v1/products/${id}`)
+// Internal — no wrapper, field is "title" — authenticated only
+const product = await apiRequest<ProductInternalDetail>(`/api/v1/products/by-id/${id}`)
 
 // Public — standard wrapper, field is "name"
 const product = await apiRequest<Product>(`/api/v1/products/${slug}`)
 // apiRequest unwraps { status, message, data } automatically → returns Product
+```
+
+**Navigation rule:** Always use `slug` for product page links. `ProductListItemDto` now includes `slug`.
+
+```typescript
+// CORRECT
+window.location.href = product.slug ? `/product?slug=${product.slug}` : `/product?id=${product.id}`
+// WRONG — UUID no longer routable on public endpoint
+window.location.href = `/product?id=${product.id}`
 ```
 
 ---
@@ -106,6 +117,21 @@ Backend now sends transactional emails automatically (as of Module 10, 2026-03-2
 - Refund confirmation
 
 No frontend involvement needed. The `resend-verification` email remains unimplemented (see above).
+
+---
+
+## Product List — sort parameter values
+
+The `sort` query param uses **enum-style values**, not Spring's `field,direction` format.
+
+| Frontend intent  | Correct `sort` value |
+| ---------------- | -------------------- |
+| Newest first     | `newest`             |
+| Price ascending  | `price_asc`          |
+| Price descending | `price_desc`         |
+| Match score      | `match_score`        |
+
+Sending `createdAt,desc` or `price,asc` returns `400 Unsupported sort`.
 
 ---
 

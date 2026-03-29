@@ -37,8 +37,9 @@ export default function ProducerPage() {
         // Try fetching one product's detail to get seller info.
         if (page.content.length > 0) {
           try {
-            const detail = await ProductService.getBySlug(page.content[0].id)
-            setSeller(detail.seller ?? null)
+            const firstSlug = page.content[0].slug
+            const detail = firstSlug ? await ProductService.getBySlug(firstSlug) : null
+            if (detail) setSeller(detail.seller ?? null)
           } catch {
             // fallback: no seller detail available
           }
@@ -158,7 +159,11 @@ export default function ProducerPage() {
                     {products.map((product) => (
                       <div
                         key={product.id}
-                        onClick={() => (window.location.href = `/product?id=${product.id}`)}
+                        onClick={() =>
+                          (window.location.href = product.slug
+                            ? `/product?slug=${product.slug}`
+                            : `/product?id=${product.id}`)
+                        }
                         className="group cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-white transition-all hover:border-teal-400 hover:shadow-lg"
                       >
                         <div className="flex aspect-square items-center justify-center overflow-hidden bg-slate-100">
@@ -175,7 +180,9 @@ export default function ProducerPage() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
-                                window.location.href = `/product?id=${product.id}`
+                                window.location.href = product.slug
+                                  ? `/product?slug=${product.slug}`
+                                  : `/product?id=${product.id}`
                               }}
                               className="rounded-full p-2 text-teal-600 transition-colors hover:bg-teal-100"
                             >

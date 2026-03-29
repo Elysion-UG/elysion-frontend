@@ -58,17 +58,16 @@ export default function Cart() {
     )
   }
 
-  const subtotal =
-    cart.subtotalCents != null
-      ? centsToEuro(cart.subtotalCents)
-      : cart.items.reduce(
-          (s, i) =>
-            s +
-            (i.totalPriceCents != null
-              ? centsToEuro(i.totalPriceCents)
-              : ((i as unknown as { totalPrice: number }).totalPrice ?? 0)),
-          0
-        )
+  // Always computed from unitPrice × quantity so it stays in sync with optimistic
+  // quantity updates. cart.subtotalCents/totalPriceCents/lineTotal are backend-sourced
+  // and stale until the next server response.
+  const subtotal = cart.items.reduce((s, i) => {
+    const unitPrice =
+      i.unitPriceCents != null
+        ? centsToEuro(i.unitPriceCents)
+        : (i.priceSnapshot ?? i.unitPrice ?? 0)
+    return s + unitPrice * i.quantity
+  }, 0)
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -84,10 +83,10 @@ export default function Cart() {
               item.unitPriceCents != null
                 ? centsToEuro(item.unitPriceCents)
                 : (item.priceSnapshot ?? item.unitPrice ?? 0)
-            const totalPrice =
-              item.totalPriceCents != null
-                ? centsToEuro(item.totalPriceCents)
-                : (item.lineTotal ?? item.totalPrice ?? unitPrice * item.quantity)
+            // Always derive from unitPrice × quantity so it updates instantly on
+            // quantity changes — never use totalPriceCents/lineTotal which are
+            // backend-sourced and stale until the next server response.
+            const totalPrice = unitPrice * item.quantity
             const isItemLoading = loadingItemId === item.id
 
             return (

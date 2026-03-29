@@ -56,15 +56,21 @@ export default function Profil() {
     setExpandedSections((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
-  // Populate form from AuthContext user (already loaded on app start)
+  // Fetch fresh profile data from the backend — don't rely on AuthContext.user
+  // which may be stale or null after a page refresh.
   useEffect(() => {
-    if (user) {
-      setFirstName(user.firstName ?? "")
-      setLastName(user.lastName ?? "")
-      setPhone(user.phone ?? "")
-    }
-    setIsLoadingProfile(false)
-  }, [user])
+    UserService.getCurrentUser()
+      .then((freshUser) => {
+        setUser(freshUser)
+        setFirstName(freshUser.firstName ?? "")
+        setLastName(freshUser.lastName ?? "")
+        setPhone(freshUser.phone ?? "")
+      })
+      .catch(() => {
+        toast.error("Profildaten konnten nicht geladen werden.")
+      })
+      .finally(() => setIsLoadingProfile(false))
+  }, [])
 
   // Load addresses
   useEffect(() => {

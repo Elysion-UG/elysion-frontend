@@ -134,7 +134,9 @@ export default function SustainableShop() {
   }, [debouncedSearch, selectedCategoryId, sortBy])
 
   const handleProductClick = (product: ProductListItem) => {
-    window.location.href = `/product?id=${product.id}`
+    window.location.href = product.slug
+      ? `/product?slug=${product.slug}`
+      : `/product?id=${product.id}`
   }
 
   return (

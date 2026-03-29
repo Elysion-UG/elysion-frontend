@@ -28,3 +28,7 @@ tsconfig.tsbuildinfo
 # Test coverage output
 coverage/
 *.tsbuildinfo
+
+# Local integration tests (not for CI/CD)
+vitest.integration.config.ts
+src/__integration__/

@@ -31,7 +31,7 @@ const mockUser: User = {
 }
 
 const mockTokensResponse: TokensResponse = {
-  token: "access-token-abc",
+  accessToken: "access-token-abc",
   user: mockUser,
   expiresIn: 3600,
 }

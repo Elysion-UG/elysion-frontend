@@ -34,18 +34,41 @@ export class ApiError extends Error {
   }
 }
 
-// 401 refresh helper — dynamic import avoids circular dependency
+// Shared in-flight refresh promise — deduplicates concurrent refresh calls.
+// Without this, AuthContext's session-restore and a simultaneous 401 retry would
+// both call POST /auth/refresh with the same cookie. Refresh-token rotation
+// invalidates the cookie on the first use, so the second call would fail and
+// either kick the user to home or leave the auth state empty.
+type TokensResponse = { accessToken: string; user: unknown; expiresIn: number }
+
+let _refreshInFlight: Promise<TokensResponse> | null = null
+
+export async function refreshSession(): Promise<TokensResponse> {
+  if (!_refreshInFlight) {
+    const p = import("@/src/services/auth.service").then(({ AuthService }) => AuthService.refresh())
+    p.finally(() => {
+      _refreshInFlight = null
+    })
+    _refreshInFlight = p
+  }
+  return _refreshInFlight
+}
+
+// 401 refresh helper — uses shared refreshSession() to avoid concurrent refresh calls
 async function tryRefreshAndRetry<T>(path: string, options: RequestInit): Promise<T> {
+  // Capture whether the user had an active token before the refresh attempt.
+  // Only redirect to home if their session actually expired — not if they were
+  // simply never logged in (e.g. an unauthenticated visitor loading the cart).
+  const hadToken = _accessToken != null
   try {
-    const { AuthService } = await import("@/src/services/auth.service")
-    const tokens = await AuthService.refresh()
-    setAccessToken(tokens.token)
+    const tokens = await refreshSession()
+    setAccessToken(tokens.accessToken)
     return apiRequest<T>(path, options, true)
   } catch {
     setAccessToken(null)
-    const { toast } = await import("sonner")
-    toast.error("Sitzung abgelaufen. Bitte erneut anmelden.")
-    if (typeof window !== "undefined") {
+    if (hadToken && typeof window !== "undefined") {
+      const { toast } = await import("sonner")
+      toast.error("Sitzung abgelaufen. Bitte erneut anmelden.")
       window.location.href = "/"
     }
     throw new ApiError(401, "Sitzung abgelaufen")
@@ -53,10 +76,12 @@ async function tryRefreshAndRetry<T>(path: string, options: RequestInit): Promis
 }
 
 // Core request function
+// skipRetry=true prevents the 401 interceptor from triggering — use for the refresh
+// endpoint itself to avoid infinite recursion.
 export async function apiRequest<T>(
   path: string,
   options: RequestInit = {},
-  _isRetry = false
+  skipRetry = false
 ): Promise<T> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -80,7 +105,7 @@ export async function apiRequest<T>(
   }
 
   // 401 Unauthorized — attempt token refresh once
-  if (response.status === 401 && !_isRetry) {
+  if (response.status === 401 && !skipRetry) {
     return tryRefreshAndRetry<T>(path, options)
   }
 

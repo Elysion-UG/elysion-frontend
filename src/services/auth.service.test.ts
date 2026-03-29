@@ -10,7 +10,7 @@ vi.mock("@/src/lib/api-client", () => ({
 const mockApiRequest = vi.mocked(apiRequest)
 
 const mockTokensResponse: TokensResponse = {
-  token: "access-token-abc",
+  accessToken: "access-token-abc",
   user: {
     id: "u1",
     email: "user@example.com",
@@ -58,14 +58,17 @@ describe("AuthService", () => {
     expect(result).toEqual(mockTokensResponse)
   })
 
-  it("refresh — calls POST /api/v1/auth/refresh and returns new tokens", async () => {
+  it("refresh — calls POST /api/v1/auth/refresh with skipRetry=true and returns new tokens", async () => {
     mockApiRequest.mockResolvedValue(mockTokensResponse)
 
     const result = await AuthService.refresh()
 
+    // skipRetry must be true to prevent infinite recursion when the refresh
+    // endpoint itself returns 401 (expired cookie).
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/auth/refresh",
-      expect.objectContaining({ method: "POST" })
+      expect.objectContaining({ method: "POST" }),
+      true
     )
     expect(result).toEqual(mockTokensResponse)
   })

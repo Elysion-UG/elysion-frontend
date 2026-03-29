@@ -4,6 +4,7 @@ import type React from "react"
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react"
 import type { User, LoginDTO, RegisterDTO, UserRole, SellerStatus } from "@/src/types"
 import { AuthService } from "@/src/services/auth.service"
+import { setAccessToken, refreshSession } from "@/src/lib/api-client"
 
 interface AuthContextValue {
   user: User | null
@@ -24,8 +25,25 @@ export const AuthContext = createContext<AuthContextValue | null>(null)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(true) // true until session restore completes
   const refreshTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Restore session on mount — uses refreshSession() which deduplicates the
+  // refresh call so CartContext or any other concurrent 401 retry shares the
+  // same in-flight promise instead of racing with a separate refresh request.
+  useEffect(() => {
+    refreshSession()
+      .then((res) => {
+        const tokens = res as import("@/src/types").TokensResponse
+        setUser(tokens.user)
+        setToken(tokens.accessToken)
+        setAccessToken(tokens.accessToken)
+      })
+      .catch(() => {
+        // No valid session — stay logged out
+      })
+      .finally(() => setIsLoading(false))
+  }, [])
 
   const isAuthenticated = !!token && !!user
   const role = user?.role ?? null
@@ -38,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         async () => {
           try {
             const res = await AuthService.refresh()
-            setToken(res.token)
+            setToken(res.accessToken)
           } catch {
             // If refresh fails, log out
             setUser(null)
@@ -58,7 +76,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await AuthService.login(dto)
       setUser(res.user)
-      setToken(res.token)
+      setToken(res.accessToken)
+      setAccessToken(res.accessToken)
     } finally {
       setIsLoading(false)
     }
@@ -80,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setUser(null)
       setToken(null)
+      setAccessToken(null)
       setIsLoading(false)
       if (refreshTimer.current) clearInterval(refreshTimer.current)
     }
@@ -89,7 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!token) return
     try {
       const res = await AuthService.refresh()
-      setToken(res.token)
+      setToken(res.accessToken)
     } catch {
       setUser(null)
       setToken(null)

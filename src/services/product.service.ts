@@ -63,7 +63,7 @@ export const ProductService = {
   // ── Authenticated ─────────────────────────────────────────────────
 
   async getById(id: string): Promise<ProductInternalDetail> {
-    return apiRequest(`/api/v1/products/${id}`)
+    return apiRequest(`/api/v1/products/by-id/${id}`)
   },
 
   // ── Seller commands ───────────────────────────────────────────────

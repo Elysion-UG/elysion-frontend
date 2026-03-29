@@ -68,7 +68,7 @@ export interface LoginResponse {
 
 /** Returned by /auth/login and /auth/refresh */
 export interface TokensResponse {
-  token: string
+  accessToken: string
   user: User
   expiresIn: number
 }

@@ -33,10 +33,9 @@ export const AuthService = {
    * Returns a new access token and rotates the refresh cookie.
    */
   async refresh(): Promise<TokensResponse> {
-    return apiRequest("/api/v1/auth/refresh", {
-      method: "POST",
-      body: "{}",
-    })
+    // Pass skipRetry=true — if the refresh endpoint itself returns 401,
+    // we must not re-enter tryRefreshAndRetry, which would cause infinite recursion.
+    return apiRequest("/api/v1/auth/refresh", { method: "POST", body: "{}" }, true)
   },
 
   /**

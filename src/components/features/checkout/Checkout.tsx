@@ -1,10 +1,20 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { CheckCircle2, Loader2, MapPin, ShoppingBag, CreditCard, ChevronRight } from "lucide-react"
+import {
+  CheckCircle2,
+  Loader2,
+  MapPin,
+  ShoppingBag,
+  CreditCard,
+  ChevronRight,
+  ShieldAlert,
+} from "lucide-react"
 import { AddressService } from "@/src/services/address.service"
 import { CheckoutService } from "@/src/services/checkout.service"
 import { useCart } from "@/src/context/CartContext"
+import { useAuth } from "@/src/context/AuthContext"
+import LoginModal from "@/src/components/LoginModal"
 import type { Address, CheckoutStartResponse, CheckoutCompleteResponse } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
 import { toast } from "sonner"
@@ -13,6 +23,8 @@ type Step = "address" | "preview" | "success"
 
 export default function Checkout() {
   const { refetch } = useCart()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const [loginModalOpen, setLoginModalOpen] = useState(false)
   const [step, setStep] = useState<Step>("address")
   const [addresses, setAddresses] = useState<Address[]>([])
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
@@ -21,6 +33,7 @@ export default function Checkout() {
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
+    if (!isAuthenticated) return
     AddressService.getAll()
       .then((list) => {
         setAddresses(list)
@@ -28,7 +41,34 @@ export default function Checkout() {
         if (def) setSelectedAddressId(def.id)
       })
       .catch(() => toast.error("Adressen konnten nicht geladen werden."))
-  }, [])
+  }, [isAuthenticated])
+
+  if (authLoading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <>
+        <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-24 text-center">
+          <ShieldAlert className="h-16 w-16 text-slate-300" />
+          <h2 className="text-2xl font-bold text-slate-800">Anmeldung erforderlich</h2>
+          <p className="text-slate-500">Bitte melde dich an, um den Checkout fortzusetzen.</p>
+          <button
+            onClick={() => setLoginModalOpen(true)}
+            className="mt-2 rounded-lg bg-teal-600 px-8 py-3 font-medium text-white transition-colors hover:bg-teal-700"
+          >
+            Jetzt anmelden
+          </button>
+        </div>
+        <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
+      </>
+    )
+  }
 
   const handlePreview = async () => {
     if (!selectedAddressId) {
