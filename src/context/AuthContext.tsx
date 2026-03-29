@@ -49,21 +49,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const persisted = loadAuthSession()
 
     if (persisted) {
-      console.debug("[auth] mount — restoring React state from sessionStorage")
+      console.log("[auth] mount — restoring React state from sessionStorage")
       // _accessToken is ALREADY set at module-load time (api-client.ts init).
       // Here we just sync the React state (user, token, isLoading).
       setUser(persisted.user as User)
       setToken(persisted.token)
       setIsLoading(false)
 
-      // Background refresh to rotate the token if the backend supports it
+      // Background refresh to rotate the token if the backend supports it.
+      // Keep the persisted user as fallback — the refresh endpoint may not
+      // return a user object (some backends only return accessToken + expiresIn).
       refreshSession()
         .then((res) => {
           const tokens = res as import("@/src/types").TokensResponse
-          setUser(tokens.user)
+          const freshUser = (tokens.user ?? persisted.user) as User
+          console.log(
+            "[auth] background refresh success — user from response:",
+            tokens.user ? "present" : "absent, keeping persisted"
+          )
+          setUser(freshUser)
           setToken(tokens.accessToken)
           setAccessToken(tokens.accessToken)
-          saveAuthSession(tokens.accessToken, tokens.user)
+          saveAuthSession(tokens.accessToken, freshUser)
         })
         .catch(() => {
           // Refresh failed — keep the sessionStorage token; it may still be
@@ -73,14 +80,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     // No sessionStorage entry — cold start, try the backend refresh cookie.
-    console.debug("[auth] mount — no sessionStorage, attempting backend refresh")
+    console.log("[auth] mount — no sessionStorage, attempting backend refresh")
     refreshSession()
-      .then((res) => {
+      .then(async (res) => {
         const tokens = res as import("@/src/types").TokensResponse
-        setUser(tokens.user)
         setToken(tokens.accessToken)
         setAccessToken(tokens.accessToken)
-        saveAuthSession(tokens.accessToken, tokens.user)
+
+        if (tokens.user) {
+          setUser(tokens.user)
+          saveAuthSession(tokens.accessToken, tokens.user)
+        } else {
+          // Backend's refresh endpoint didn't return a user — fetch it separately
+          const { UserService } = await import("@/src/services/user.service")
+          const freshUser = await UserService.getCurrentUser()
+          setUser(freshUser)
+          saveAuthSession(tokens.accessToken, freshUser)
+        }
       })
       .catch(() => {
         // No valid session — stay logged out

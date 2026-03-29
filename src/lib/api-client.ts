@@ -33,7 +33,12 @@ export function loadAuthSession(): PersistedAuthSession | null {
   if (typeof window === "undefined") return null
   try {
     const raw = window.sessionStorage.getItem(AUTH_SESSION_KEY)
-    return raw ? (JSON.parse(raw) as PersistedAuthSession) : null
+    const result = raw ? (JSON.parse(raw) as PersistedAuthSession) : null
+    console.log(
+      "[auth] loadAuthSession():",
+      result ? `token present (${result.token.slice(0, 20)}…)` : "null — no session in storage"
+    )
+    return result
   } catch {
     return null
   }
@@ -59,7 +64,7 @@ if (typeof window !== "undefined") {
   const persisted = loadAuthSession()
   if (persisted?.token) {
     _accessToken = persisted.token
-    console.debug(
+    console.log(
       "[auth] module init — token restored from sessionStorage:",
       persisted.token.slice(0, 20) + "…"
     )
@@ -67,7 +72,7 @@ if (typeof window !== "undefined") {
 }
 
 export function setAccessToken(token: string | null): void {
-  console.debug("[auth] setAccessToken():", token ? token.slice(0, 20) + "…" : "null")
+  console.log("[auth] setAccessToken():", token ? token.slice(0, 20) + "…" : "null")
   _accessToken = token
 }
 
@@ -99,25 +104,25 @@ let _refreshInFlight: Promise<TokensResponse> | null = null
 
 export async function refreshSession(): Promise<TokensResponse> {
   if (!_refreshInFlight) {
-    console.debug("[auth] refreshSession() — starting backend refresh")
+    console.log("[auth] refreshSession() — starting backend refresh")
     const p = import("@/src/services/auth.service")
       .then(({ AuthService }) => AuthService.refresh())
       .then((res) => {
-        console.debug(
+        console.log(
           "[auth] refreshSession() — SUCCESS, new token:",
           res.accessToken?.slice(0, 20) + "…"
         )
         return res
       })
     p.catch((err) => {
-      console.debug("[auth] refreshSession() — FAILED:", err?.message ?? err)
+      console.log("[auth] refreshSession() — FAILED:", err?.message ?? err)
     })
     p.finally(() => {
       _refreshInFlight = null
     })
     _refreshInFlight = p
   } else {
-    console.debug("[auth] refreshSession() — reusing in-flight promise")
+    console.log("[auth] refreshSession() — reusing in-flight promise")
   }
   return _refreshInFlight
 }
@@ -135,6 +140,7 @@ async function tryRefreshAndRetry<T>(path: string, options: RequestInit): Promis
   } catch {
     setAccessToken(null)
     if (hadToken && typeof window !== "undefined") {
+      console.log("[auth] REDIRECT → / — refresh failed after 401, hadToken=true, path:", path)
       const { toast } = await import("sonner")
       toast.error("Sitzung abgelaufen. Bitte erneut anmelden.")
       window.location.href = "/"
@@ -160,7 +166,7 @@ export async function apiRequest<T>(
     headers["Authorization"] = `Bearer ${_accessToken}`
   }
 
-  console.debug(
+  console.log(
     "[api]",
     options.method ?? "GET",
     path,
@@ -181,7 +187,7 @@ export async function apiRequest<T>(
 
   // 401 Unauthorized — attempt token refresh once
   if (response.status === 401 && !skipRetry) {
-    console.debug("[auth] 401 on", path, "— attempting refresh retry")
+    console.log("[auth] 401 on", path, "— attempting refresh retry")
     return tryRefreshAndRetry<T>(path, options)
   }
 
