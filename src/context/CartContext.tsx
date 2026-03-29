@@ -5,6 +5,7 @@ import { createContext, useContext, useState, useCallback, useEffect } from "rea
 import type { Cart, CartItem, AddToCartDTO } from "@/src/types"
 import { CartService } from "@/src/services/cart.service"
 import { useAuth } from "@/src/context/AuthContext"
+import { saveProductDisplay } from "@/src/lib/product-display-cache"
 
 interface CartContextValue {
   cart: Cart
@@ -91,6 +92,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addItem = useCallback(
     async (dto: AddToCartDTO) => {
+      // Persist display metadata so the checkout page can show name + image
+      // even after a full page reload (when the backend cart has no such fields).
+      if (dto.productName) {
+        saveProductDisplay(dto.productId, {
+          name: dto.productName,
+          imageUrl: dto.imageUrl,
+          slug: dto.productSlug,
+        })
+      }
+
       // Optimistic update (always — guest and authenticated users alike)
       setCart((prev) => {
         const existingIdx = prev.items.findIndex(

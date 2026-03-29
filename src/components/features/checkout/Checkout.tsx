@@ -17,22 +17,19 @@ import { useAuth } from "@/src/context/AuthContext"
 import LoginModal from "@/src/components/LoginModal"
 import type { Address, CheckoutStartResponse, CheckoutCompleteResponse } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
+import { getProductDisplayCache } from "@/src/lib/product-display-cache"
 import { toast } from "sonner"
 
 type Step = "address" | "preview" | "success"
 
 export default function Checkout() {
-  const { refetch, cart } = useCart()
+  const { refetch } = useCart()
 
-  // Build a productId → productName lookup from the cart context.
-  // Cart items loaded from the backend don't include productName, but items
-  // added in the current session via the optimistic/guest cart do. This covers
-  // the common "add → checkout" flow; it falls back to "Artikel" otherwise.
-  const productNameMap = Object.fromEntries(
-    (cart.items ?? [])
-      .filter((i) => i.productId && i.productName)
-      .map((i) => [i.productId!, i.productName!])
-  )
+  // Product display cache — populated whenever addItem() is called.
+  // Persists across page reloads via localStorage so names and images are
+  // available even after the cart is re-fetched from the backend (which
+  // does not include productName or imageUrl in its CartItemResponse).
+  const productDisplayCache = getProductDisplayCache()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [loginModalOpen, setLoginModalOpen] = useState(false)
   const [step, setStep] = useState<Step>("address")
@@ -159,14 +156,28 @@ export default function Checkout() {
             Deine Artikel
           </h2>
           <div className="space-y-3">
-            {(preview.items ?? []).map((item, idx) => (
-              <div key={idx} className="flex justify-between text-sm">
-                <span className="text-slate-700">
-                  {item.quantity}× {(item.productId && productNameMap[item.productId]) ?? "Artikel"}
-                </span>
-                <span className="font-medium text-slate-800">{formatEuro(item.lineTotal)}</span>
-              </div>
-            ))}
+            {(preview.items ?? []).map((item, idx) => {
+              const display = item.productId ? productDisplayCache[item.productId] : null
+              return (
+                <div key={idx} className="flex items-center gap-3 text-sm">
+                  {display?.imageUrl ? (
+                    <img
+                      src={display.imageUrl}
+                      alt={display.name}
+                      className="h-12 w-12 flex-shrink-0 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100">
+                      <ShoppingBag className="h-5 w-5 text-slate-400" />
+                    </div>
+                  )}
+                  <span className="flex-1 text-slate-700">
+                    {item.quantity}× {display?.name ?? "Artikel"}
+                  </span>
+                  <span className="font-medium text-slate-800">{formatEuro(item.lineTotal)}</span>
+                </div>
+              )
+            })}
           </div>
         </div>
 
