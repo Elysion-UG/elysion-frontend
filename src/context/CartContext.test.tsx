@@ -1,7 +1,9 @@
-import { describe, it, expect, vi } from "vitest"
+import { describe, it, expect, vi, type MockedFunction } from "vitest"
 import { renderHook, act } from "@testing-library/react"
 import React from "react"
 import { CartProvider, useCart } from "./CartContext"
+import { useAuth } from "@/src/context/AuthContext"
+import { CartService } from "@/src/services/cart.service"
 import type { AddToCartDTO } from "@/src/types"
 
 vi.mock("@/src/services/cart.service", () => ({
@@ -11,6 +13,12 @@ vi.mock("@/src/services/cart.service", () => ({
     updateItem: vi.fn().mockResolvedValue(null),
     removeItem: vi.fn().mockResolvedValue(undefined),
   },
+}))
+
+// CartProvider calls useAuth() — provide a default guest context for all tests.
+// Individual tests can override this mock as needed.
+vi.mock("@/src/context/AuthContext", () => ({
+  useAuth: vi.fn().mockReturnValue({ isAuthenticated: false, isLoading: false }),
 }))
 
 // ── Wrapper ────────────────────────────────────────────────────────────────────
@@ -421,5 +429,114 @@ describe("totalPrice", () => {
     })
 
     expect(result.current.totalPrice).toBe(0)
+  })
+})
+
+// ── Guest cart (unauthenticated) — regression tests ───────────────────────────
+// Regression: addItem as a guest used to revert the optimistic update because
+// CartService.addItem() threw a 401, leaving the cart empty after navigation.
+
+describe("guest cart — unauthenticated user", () => {
+  it("addItem keeps the item in the cart without calling the backend", async () => {
+    // useAuth mock already returns isAuthenticated: false (see top of file)
+    ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockClear()
+    const { result } = renderHook(() => useCart(), { wrapper })
+
+    await act(async () => {
+      await result.current.addItem({ productId: "prod-1", quantity: 2 })
+    })
+
+    expect(result.current.cart.items).toHaveLength(1)
+    expect(result.current.cart.items[0].productId).toBe("prod-1")
+    expect(result.current.cart.items[0].quantity).toBe(2)
+    expect(CartService.addItem as MockedFunction<typeof CartService.addItem>).not.toHaveBeenCalled()
+  })
+
+  it("addItem does NOT revert when the backend would return 401", async () => {
+    // Simulate what the backend returns for unauthenticated users
+    ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockRejectedValueOnce(
+      new Error("401 Unauthorized")
+    )
+
+    const { result } = renderHook(() => useCart(), { wrapper })
+
+    await act(async () => {
+      await result.current.addItem({ productId: "prod-1", quantity: 1 })
+    })
+
+    // Item must still be in the cart — the 401 must NOT trigger a revert
+    expect(result.current.cart.items).toHaveLength(1)
+  })
+
+  it("updateItem works locally without backend call", async () => {
+    ;(CartService.updateItem as MockedFunction<typeof CartService.updateItem>).mockClear()
+    const { result } = renderHook(() => useCart(), { wrapper })
+
+    await act(async () => {
+      await result.current.addItem({ productId: "prod-1", quantity: 1 })
+    })
+    const itemId = result.current.cart.items[0].id
+
+    await act(async () => {
+      await result.current.updateItem(itemId, { quantity: 5 })
+    })
+
+    expect(result.current.cart.items[0].quantity).toBe(5)
+    expect(
+      CartService.updateItem as MockedFunction<typeof CartService.updateItem>
+    ).not.toHaveBeenCalled()
+  })
+
+  it("removeItem works locally without backend call", async () => {
+    ;(CartService.removeItem as MockedFunction<typeof CartService.removeItem>).mockClear()
+    const { result } = renderHook(() => useCart(), { wrapper })
+
+    await act(async () => {
+      await result.current.addItem({ productId: "prod-1", quantity: 1 })
+    })
+    const itemId = result.current.cart.items[0].id
+
+    await act(async () => {
+      await result.current.removeItem(itemId)
+    })
+
+    expect(result.current.cart.items).toHaveLength(0)
+    expect(
+      CartService.removeItem as MockedFunction<typeof CartService.removeItem>
+    ).not.toHaveBeenCalled()
+  })
+
+  it("does NOT fetch the backend cart on mount", async () => {
+    ;(CartService.get as MockedFunction<typeof CartService.get>).mockClear()
+    renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+    expect(CartService.get as MockedFunction<typeof CartService.get>).not.toHaveBeenCalled()
+  })
+
+  it("fetches the backend cart when the user logs in", async () => {
+    ;(CartService.get as MockedFunction<typeof CartService.get>).mockClear()
+    const mockUseAuth = useAuth as MockedFunction<typeof useAuth>
+
+    // Start as guest
+    mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: false } as ReturnType<
+      typeof useAuth
+    >)
+    const { rerender } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+    expect(CartService.get as MockedFunction<typeof CartService.get>).not.toHaveBeenCalled()
+
+    // Simulate login
+    mockUseAuth.mockReturnValue({ isAuthenticated: true, isLoading: false } as ReturnType<
+      typeof useAuth
+    >)
+    rerender()
+    await act(async () => {})
+
+    expect(CartService.get as MockedFunction<typeof CartService.get>).toHaveBeenCalledTimes(1)
+
+    // Restore default mock for subsequent tests
+    mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: false } as ReturnType<
+      typeof useAuth
+    >)
   })
 })
