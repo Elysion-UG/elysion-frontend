@@ -434,21 +434,24 @@ export interface CheckoutDTO {
 }
 
 export interface CheckoutStartResponse {
-  checkoutId?: string
   cartId?: string
   ownershipType?: string
+  /** Validated line items — backend does NOT include productName; resolve via cart context */
   items?: Array<{
+    cartItemId?: string
+    productId?: string
+    variantId?: string
     quantity: number
-    productName: string
     unitPrice?: number
-    totalPrice: number
-    variantOptions?: Array<{ name: string; value: string }>
+    /** Line total in euro (decimal). Backend field name: lineTotal */
+    lineTotal: number
+    currency?: string
   }>
-  shippingAddress?: Address
+  shippingAddress?: CheckoutAddressDTO
+  /** Validated subtotal in euro (decimal). Backend has no separate shippingCost or total. */
   subtotal?: number
-  shippingCost?: number
-  total?: number
   totalQuantity?: number
+  currency?: string
   readyToProceed?: boolean
   paymentIntentClientSecret?: string
 }

@@ -135,6 +135,24 @@ Sending `createdAt,desc` or `price,asc` returns `400 Unsupported sort`.
 
 ---
 
+## Checkout — response shape mismatches
+
+**Endpoint:** `POST /api/v1/checkout`
+
+The `CheckoutStartResponse` does **not** contain `productName`, `shippingCost`, or `total`. Field names differ from earlier frontend assumptions:
+
+| Frontend assumed      | Actual backend field | Notes                                       |
+| --------------------- | -------------------- | ------------------------------------------- |
+| `items[].productName` | ❌ absent            | Resolve from cart context by `productId`    |
+| `items[].totalPrice`  | `items[].lineTotal`  | Euro decimal (e.g. `29.99`)                 |
+| `shippingCost`        | ❌ absent            | No separate shipping cost; show "Kostenlos" |
+| `total`               | ❌ absent            | Use `subtotal` as the grand total           |
+
+`subtotal` is returned as a euro decimal (BigDecimal, e.g. `29.99`), **not cents**.
+`lineTotal` per item is likewise a euro decimal.
+
+---
+
 ## General
 
 - All other endpoints follow the standard `{ status, message, data }` envelope and can use the generic `apiRequest<T>()` call.

@@ -22,7 +22,17 @@ import { toast } from "sonner"
 type Step = "address" | "preview" | "success"
 
 export default function Checkout() {
-  const { refetch } = useCart()
+  const { refetch, cart } = useCart()
+
+  // Build a productId → productName lookup from the cart context.
+  // Cart items loaded from the backend don't include productName, but items
+  // added in the current session via the optimistic/guest cart do. This covers
+  // the common "add → checkout" flow; it falls back to "Artikel" otherwise.
+  const productNameMap = Object.fromEntries(
+    (cart.items ?? [])
+      .filter((i) => i.productId && i.productName)
+      .map((i) => [i.productId!, i.productName!])
+  )
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [loginModalOpen, setLoginModalOpen] = useState(false)
   const [step, setStep] = useState<Step>("address")
@@ -152,9 +162,9 @@ export default function Checkout() {
             {(preview.items ?? []).map((item, idx) => (
               <div key={idx} className="flex justify-between text-sm">
                 <span className="text-slate-700">
-                  {item.quantity}× {item.productName}
+                  {item.quantity}× {(item.productId && productNameMap[item.productId]) ?? "Artikel"}
                 </span>
-                <span className="font-medium text-slate-800">{formatEuro(item.totalPrice)}</span>
+                <span className="font-medium text-slate-800">{formatEuro(item.lineTotal)}</span>
               </div>
             ))}
           </div>
@@ -184,12 +194,12 @@ export default function Checkout() {
             </div>
             <div className="flex justify-between">
               <span>Versand</span>
-              <span>{formatEuro(preview.shippingCost ?? 0)}</span>
+              <span>Kostenlos</span>
             </div>
           </div>
           <div className="mt-3 flex justify-between border-t border-slate-200 pt-3 font-bold text-slate-800">
             <span>Gesamt</span>
-            <span>{formatEuro(preview.total ?? 0)}</span>
+            <span>{formatEuro(preview.subtotal ?? 0)}</span>
           </div>
         </div>
 
