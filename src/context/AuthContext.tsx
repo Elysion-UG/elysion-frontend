@@ -6,6 +6,44 @@ import type { User, LoginDTO, RegisterDTO, UserRole, SellerStatus } from "@/src/
 import { AuthService } from "@/src/services/auth.service"
 import { setAccessToken, refreshSession } from "@/src/lib/api-client"
 
+// ── sessionStorage persistence ─────────────────────────────────────────────────
+// Saves the access token + user to sessionStorage so the session survives
+// full-page navigations (e.g. <a href>) within the same browser tab.
+// sessionStorage is cleared automatically when the tab is closed, which keeps
+// the security footprint comparable to the in-memory-only approach.
+
+const SESSION_KEY = "auth_session"
+
+interface PersistedSession {
+  token: string
+  user: User
+}
+
+function loadPersistedSession(): PersistedSession | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = window.sessionStorage.getItem(SESSION_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as PersistedSession
+  } catch {
+    return null
+  }
+}
+
+function savePersistedSession(token: string, user: User): void {
+  try {
+    window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({ token, user }))
+  } catch {}
+}
+
+function clearPersistedSession(): void {
+  try {
+    window.sessionStorage.removeItem(SESSION_KEY)
+  } catch {}
+}
+
+// ── Context ────────────────────────────────────────────────────────────────────
+
 interface AuthContextValue {
   user: User | null
   token: string | null
@@ -28,16 +66,49 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true) // true until session restore completes
   const refreshTimer = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Restore session on mount — uses refreshSession() which deduplicates the
-  // refresh call so CartContext or any other concurrent 401 retry shares the
-  // same in-flight promise instead of racing with a separate refresh request.
+  // Restore session on mount.
+  // Strategy:
+  //   1. Check sessionStorage for a previously saved token + user.
+  //      If found, apply it immediately so the UI shows the correct auth state
+  //      without waiting for a network round-trip.
+  //   2. Then attempt a backend refresh in the background to rotate the token.
+  //      If the backend refresh succeeds: update with the fresh token.
+  //      If it fails (no cookie, cross-origin issue, expired): keep the
+  //      sessionStorage token as-is — the user stays logged in for this tab.
   useEffect(() => {
+    const persisted = loadPersistedSession()
+
+    if (persisted) {
+      // Restore immediately from sessionStorage
+      setUser(persisted.user)
+      setToken(persisted.token)
+      setAccessToken(persisted.token)
+      setIsLoading(false)
+
+      // Background refresh to rotate the token if the backend supports it
+      refreshSession()
+        .then((res) => {
+          const tokens = res as import("@/src/types").TokensResponse
+          setUser(tokens.user)
+          setToken(tokens.accessToken)
+          setAccessToken(tokens.accessToken)
+          savePersistedSession(tokens.accessToken, tokens.user)
+        })
+        .catch(() => {
+          // Refresh failed — keep the sessionStorage token; it may still be
+          // valid for the remainder of its TTL.
+        })
+      return
+    }
+
+    // No sessionStorage entry — cold start, try the backend refresh cookie.
     refreshSession()
       .then((res) => {
         const tokens = res as import("@/src/types").TokensResponse
         setUser(tokens.user)
         setToken(tokens.accessToken)
         setAccessToken(tokens.accessToken)
+        savePersistedSession(tokens.accessToken, tokens.user)
       })
       .catch(() => {
         // No valid session — stay logged out
@@ -49,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const role = user?.role ?? null
   const sellerStatus = user?.sellerProfile?.status ?? null
 
-  // Token refresh interval — conceptual, fires every 10 min
+  // Token refresh interval — fires every 10 min
   useEffect(() => {
     if (token) {
       refreshTimer.current = setInterval(
@@ -57,10 +128,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             const res = await AuthService.refresh()
             setToken(res.accessToken)
+            setAccessToken(res.accessToken)
+            if (user) savePersistedSession(res.accessToken, user)
           } catch {
-            // If refresh fails, log out
             setUser(null)
             setToken(null)
+            clearPersistedSession()
           }
         },
         10 * 60 * 1000
@@ -69,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       if (refreshTimer.current) clearInterval(refreshTimer.current)
     }
-  }, [token])
+  }, [token, user])
 
   const login = useCallback(async (dto: LoginDTO) => {
     setIsLoading(true)
@@ -78,6 +151,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(res.user)
       setToken(res.accessToken)
       setAccessToken(res.accessToken)
+      savePersistedSession(res.accessToken, res.user)
     } finally {
       setIsLoading(false)
     }
@@ -100,6 +174,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null)
       setToken(null)
       setAccessToken(null)
+      clearPersistedSession()
       setIsLoading(false)
       if (refreshTimer.current) clearInterval(refreshTimer.current)
     }
@@ -110,11 +185,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await AuthService.refresh()
       setToken(res.accessToken)
+      setAccessToken(res.accessToken)
+      if (user) savePersistedSession(res.accessToken, user)
     } catch {
       setUser(null)
       setToken(null)
+      clearPersistedSession()
     }
-  }, [token])
+  }, [token, user])
+
+  const handleSetUser = useCallback(
+    (u: User) => {
+      setUser(u)
+      if (token) savePersistedSession(token, u)
+    },
+    [token]
+  )
 
   return (
     <AuthContext.Provider
@@ -129,7 +215,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         register,
         logout,
         refreshToken: refreshTokenFn,
-        setUser,
+        setUser: handleSetUser,
       }}
     >
       {children}

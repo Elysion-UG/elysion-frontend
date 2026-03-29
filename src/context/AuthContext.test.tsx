@@ -52,7 +52,9 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 
 // Default: refreshSession rejects immediately (no active session).
 // Individual tests override this when they need specific session-restore behaviour.
+// Clear sessionStorage so persisted auth state doesn't bleed between tests.
 beforeEach(() => {
+  sessionStorage.clear()
   vi.mocked(refreshSession).mockRejectedValue(new Error("no session"))
 })
 
@@ -205,6 +207,19 @@ describe("login", () => {
     ).rejects.toThrow("Invalid credentials")
   })
 
+  it("saves token and user to sessionStorage after login", async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {
+      await result.current.login({ email: "jane@example.com", password: "secret" })
+    })
+
+    const stored = JSON.parse(sessionStorage.getItem("auth_session") ?? "null")
+    expect(stored).not.toBeNull()
+    expect(stored.token).toBe("access-token-abc")
+    expect(stored.user).toEqual(mockUser)
+  })
+
   it("sets sellerStatus from sellerProfile when user is a SELLER", async () => {
     const sellerUser: User = {
       ...mockUser,
@@ -308,6 +323,22 @@ describe("logout", () => {
     })
 
     expect(result.current.isLoading).toBe(false)
+  })
+
+  it("clears sessionStorage after logout", async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {
+      await result.current.login({ email: "jane@example.com", password: "secret" })
+    })
+
+    expect(sessionStorage.getItem("auth_session")).not.toBeNull()
+
+    await act(async () => {
+      await result.current.logout()
+    })
+
+    expect(sessionStorage.getItem("auth_session")).toBeNull()
   })
 
   it("clears user and token even when AuthService.logout throws", async () => {
@@ -436,12 +467,17 @@ describe("register", () => {
 })
 
 // ── session restore on mount (page reload) ────────────────────────────────────
-// Regression: isLoading starts as true during refreshSession() so the UI must
-// not show the login button until isLoading=false to avoid a "logged out" flash.
+// Two restore paths:
+//   A) Cold start (no sessionStorage) — waits for refreshSession() to settle.
+//      isLoading stays true until then so the UI shows a spinner, not "Anmelden".
+//   B) sessionStorage hit — restores immediately without waiting for the network.
+//      A background refresh is still attempted to rotate the token, but failures
+//      are silenced; the tab stays logged in for the token's remaining TTL.
 
-describe("session restore on mount", () => {
+describe("session restore on mount — cold start (no sessionStorage)", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    sessionStorage.clear()
   })
 
   it("isLoading is true before refreshSession resolves", () => {
@@ -477,6 +513,64 @@ describe("session restore on mount", () => {
 
     expect(result.current.isAuthenticated).toBe(false)
     expect(result.current.user).toBeNull()
+    expect(result.current.isLoading).toBe(false)
+  })
+})
+
+describe("session restore on mount — sessionStorage hit (page navigation)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // Simulate a previously saved session (written on login)
+    sessionStorage.setItem(
+      "auth_session",
+      JSON.stringify({ token: "access-token-abc", user: mockUser })
+    )
+  })
+
+  it("restores user and token immediately without waiting for the network", () => {
+    // refreshSession never resolves — but the session is already restored
+    vi.mocked(refreshSession).mockReturnValue(new Promise(() => {}))
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(result.current.user).toEqual(mockUser)
+    expect(result.current.token).toBe("access-token-abc")
+  })
+
+  it("sets isLoading=false immediately when sessionStorage has data", () => {
+    vi.mocked(refreshSession).mockReturnValue(new Promise(() => {}))
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    expect(result.current.isLoading).toBe(false)
+  })
+
+  it("updates token when background refreshSession succeeds", async () => {
+    const freshResponse = {
+      ...mockTokensResponse,
+      accessToken: "fresh-token-xyz",
+    }
+    vi.mocked(refreshSession).mockResolvedValue(freshResponse as never)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    expect(result.current.token).toBe("fresh-token-xyz")
+    expect(result.current.isAuthenticated).toBe(true)
+  })
+
+  it("keeps existing session when background refreshSession fails", async () => {
+    vi.mocked(refreshSession).mockRejectedValue(new Error("no cookie"))
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    // Session from sessionStorage is preserved
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(result.current.token).toBe("access-token-abc")
     expect(result.current.isLoading).toBe(false)
   })
 })

@@ -15,6 +15,11 @@ vi.mock("@/src/services/auth.service", () => ({
   },
 }))
 
+vi.mock("@/src/lib/api-client", () => ({
+  setAccessToken: vi.fn(),
+  refreshSession: vi.fn().mockRejectedValue(new Error("no session")),
+}))
+
 describe("useAuth hook", () => {
   it("returns auth context when used inside AuthProvider", () => {
     const wrapper = ({ children }: { children: React.ReactNode }) =>
@@ -32,8 +37,9 @@ describe("useAuth hook", () => {
 
 describe("useCart hook", () => {
   it("returns cart context when used inside CartProvider", () => {
+    // CartProvider calls useAuth() internally, so it must be nested inside AuthProvider
     const wrapper = ({ children }: { children: React.ReactNode }) =>
-      React.createElement(CartProvider, null, children)
+      React.createElement(AuthProvider, null, React.createElement(CartProvider, null, children))
     const { result } = renderHook(() => useCart(), { wrapper })
     expect(result.current).toBeDefined()
     expect(result.current.cart).toBeDefined()
