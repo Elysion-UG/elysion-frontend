@@ -4,15 +4,22 @@ import React from "react"
 import { CartProvider, useCart } from "./CartContext"
 import { useAuth } from "@/src/context/AuthContext"
 import { CartService } from "@/src/services/cart.service"
-import type { AddToCartDTO } from "@/src/types"
+import * as productDisplayCache from "@/src/lib/product-display-cache"
+import type { AddToCartDTO, Cart } from "@/src/types"
 
 vi.mock("@/src/services/cart.service", () => ({
   CartService: {
     get: vi.fn().mockResolvedValue(null),
-    addItem: vi.fn().mockResolvedValue(null),
-    updateItem: vi.fn().mockResolvedValue(null),
+    addItem: vi.fn().mockResolvedValue(undefined),
+    updateItem: vi.fn().mockResolvedValue(undefined),
     removeItem: vi.fn().mockResolvedValue(undefined),
   },
+}))
+
+vi.mock("@/src/lib/product-display-cache", () => ({
+  saveProductDisplay: vi.fn(),
+  getProductDisplay: vi.fn().mockReturnValue(null),
+  getProductDisplayCache: vi.fn().mockReturnValue({}),
 }))
 
 // CartProvider calls useAuth() — provide a default guest context for all tests.
@@ -638,5 +645,221 @@ describe("guest cart — unauthenticated user", () => {
     mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: false } as ReturnType<
       typeof useAuth
     >)
+  })
+})
+
+// ── Regression: authenticated cart — backend API shape change ─────────────────
+// The backend POST /api/v1/cart/items now only accepts { variantId, quantity }.
+// Sending productId or display fields used to cause silent failures or 400s.
+
+describe("authenticated cart — backend API contract (regression)", () => {
+  const mockUseAuth = useAuth as MockedFunction<typeof useAuth>
+
+  beforeEach(() => {
+    mockUseAuth.mockReturnValue({ isAuthenticated: true, isLoading: false } as ReturnType<
+      typeof useAuth
+    >)
+    ;(CartService.get as MockedFunction<typeof CartService.get>).mockResolvedValue({
+      items: [],
+    } as Cart)
+    // mockReset clears both call history AND pending mock implementations
+    // (e.g. mockRejectedValueOnce from previous describe blocks)
+    ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockReset()
+    ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockResolvedValue(
+      undefined
+    )
+  })
+
+  afterEach(() => {
+    mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: false } as ReturnType<
+      typeof useAuth
+    >)
+  })
+
+  it("addItem sends only variantId and quantity to the backend", async () => {
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    await act(async () => {
+      await result.current.addItem({
+        productId: "prod-1",
+        variantId: "var-XL",
+        quantity: 2,
+        productName: "Bio-Shirt",
+        imageUrl: "https://example.com/img.jpg",
+        unitPriceCents: 2999,
+      })
+    })
+
+    // Context passes the full AddToCartDTO to CartService.addItem.
+    // The service layer then strips it to { variantId, quantity } for the HTTP body.
+    // Verify the context calls the service with the correct DTO (service-level stripping
+    // is covered by cart.service.test.ts).
+    expect(CartService.addItem).toHaveBeenCalledTimes(1)
+    expect(
+      (CartService.addItem as MockedFunction<typeof CartService.addItem>).mock.calls[0][0]
+    ).toMatchObject({ variantId: "var-XL", quantity: 2 })
+  })
+
+  it("addItem result: item retains display fields from the optimistic update after backend sync", async () => {
+    // POST /api/v1/cart/items returns CartItemResponse (void from our perspective),
+    // so cart state is never replaced with the backend response — the optimistic
+    // update with full display fields is what persists.
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    await act(async () => {
+      await result.current.addItem({
+        productId: "prod-1",
+        variantId: "var-XL",
+        quantity: 2,
+        productName: "Bio-Shirt",
+        imageUrl: "https://example.com/img.jpg",
+        productSlug: "bio-shirt",
+        unitPriceCents: 2999,
+      })
+    })
+
+    const item = result.current.cart.items[0]
+    expect(item.productName).toBe("Bio-Shirt")
+    expect(item.imageUrl).toBe("https://example.com/img.jpg")
+    expect(item.productSlug).toBe("bio-shirt")
+    expect(item.unitPriceCents).toBe(2999)
+  })
+
+  it("normalizes priceSnapshot (decimal EUR) to unitPriceCents on backend cart load", async () => {
+    const backendCart: Cart = {
+      items: [
+        {
+          id: "srv-1",
+          productId: "prod-1",
+          variantId: "var-XL",
+          quantity: 1,
+          priceSnapshot: 29.99,
+        },
+      ],
+    }
+    ;(CartService.get as MockedFunction<typeof CartService.get>).mockResolvedValue(backendCart)
+
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    expect(result.current.cart.items[0].unitPriceCents).toBe(2999)
+  })
+
+  it("totalPrice is computed from priceSnapshot when backend items lack unitPriceCents", async () => {
+    const backendCart: Cart = {
+      items: [
+        { id: "srv-1", productId: "prod-1", variantId: "var-XL", quantity: 2, priceSnapshot: 10.0 },
+        { id: "srv-2", productId: "prod-2", variantId: "var-M", quantity: 3, priceSnapshot: 5.5 },
+      ],
+    }
+    ;(CartService.get as MockedFunction<typeof CartService.get>).mockResolvedValue(backendCart)
+
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    // 2 × €10 + 3 × €5.50 = €20 + €16.50 = €36.50
+    expect(result.current.totalPrice).toBeCloseTo(36.5, 2)
+  })
+
+  it("reverts optimistic quantity increase when backend returns 409 (insufficient stock)", async () => {
+    ;(
+      CartService.updateItem as MockedFunction<typeof CartService.updateItem>
+    ).mockRejectedValueOnce(Object.assign(new Error("Insufficient stock"), { status: 409 }))
+
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    // Add item at quantity 2
+    await act(async () => {
+      await result.current.addItem({ productId: "prod-1", variantId: "var-XL", quantity: 2 })
+    })
+    const itemId = result.current.cart.items[0].id
+
+    // Try to increase to 5 — backend rejects with 409
+    await expect(
+      act(async () => {
+        await result.current.updateItem(itemId, { quantity: 5 })
+      })
+    ).rejects.toThrow()
+
+    // Must revert to original quantity 2
+    expect(result.current.cart.items[0].quantity).toBe(2)
+  })
+
+  it("re-throws the backend error on updateItem failure so callers can show a toast", async () => {
+    ;(
+      CartService.updateItem as MockedFunction<typeof CartService.updateItem>
+    ).mockRejectedValueOnce(new Error("Insufficient stock"))
+
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    await act(async () => {
+      await result.current.addItem({ productId: "prod-1", variantId: "var-XL", quantity: 1 })
+    })
+    const itemId = result.current.cart.items[0].id
+
+    let thrown: unknown
+    await act(async () => {
+      try {
+        await result.current.updateItem(itemId, { quantity: 10 })
+      } catch (e) {
+        thrown = e
+      }
+    })
+
+    expect(thrown).toBeInstanceOf(Error)
+  })
+
+  it("item stays in cart after quantity decrease (regression: PATCH returns CartItemResponse not Cart)", async () => {
+    // Bug: CartService.updateItem used to return Promise<Cart>, but the backend
+    // PATCH endpoint returns CartItemResponse (a single item). normalizeCart received
+    // an object without an `items` field → items became [] → cart appeared empty.
+    // Fix: CartService.updateItem now returns Promise<void>; context never calls
+    // setCart with the PATCH response.
+    ;(CartService.updateItem as MockedFunction<typeof CartService.updateItem>).mockResolvedValue(
+      undefined
+    )
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    // Add item (quantity 3)
+    await act(async () => {
+      await result.current.addItem({ productId: "prod-1", variantId: "var-XL", quantity: 3 })
+    })
+    expect(result.current.cart.items).toHaveLength(1)
+    const itemId = result.current.cart.items[0].id
+
+    // Reduce to 2 — item must remain visible
+    await act(async () => {
+      await result.current.updateItem(itemId, { quantity: 2 })
+    })
+
+    expect(result.current.cart.items).toHaveLength(1)
+    expect(result.current.cart.items[0].quantity).toBe(2)
+  })
+
+  it("does not overwrite unitPriceCents when backend already provides it", async () => {
+    const backendCart: Cart = {
+      items: [
+        {
+          id: "srv-1",
+          productId: "prod-1",
+          variantId: "var-XL",
+          quantity: 1,
+          unitPriceCents: 3000,
+          priceSnapshot: 29.99,
+        },
+      ],
+    }
+    ;(CartService.get as MockedFunction<typeof CartService.get>).mockResolvedValue(backendCart)
+
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    // unitPriceCents from backend takes precedence over priceSnapshot conversion
+    expect(result.current.cart.items[0].unitPriceCents).toBe(3000)
   })
 })

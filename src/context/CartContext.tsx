@@ -5,7 +5,7 @@ import { createContext, useContext, useState, useCallback, useEffect } from "rea
 import type { Cart, CartItem, AddToCartDTO } from "@/src/types"
 import { CartService } from "@/src/services/cart.service"
 import { useAuth } from "@/src/context/AuthContext"
-import { saveProductDisplay } from "@/src/lib/product-display-cache"
+import { saveProductDisplay, getProductDisplay } from "@/src/lib/product-display-cache"
 
 interface CartContextValue {
   cart: Cart
@@ -23,9 +23,23 @@ const emptyCart: Cart = { items: [] }
 const GUEST_CART_KEY = "guest_cart"
 
 // Ensures a cart object from the backend always has a defined items array.
-// The backend may omit the field or return null when the cart is empty.
+// Also converts priceSnapshot (decimal EUR from backend) to unitPriceCents and
+// enriches items with display data (name, image, slug) from the local cache so
+// the cart renders correctly after backend sync.
 function normalizeCart(data: Cart): Cart {
-  return { ...data, items: data.items ?? [] }
+  const items = (data.items ?? []).map((item) => {
+    const display = item.productId ? getProductDisplay(item.productId) : null
+    return {
+      ...item,
+      unitPriceCents:
+        item.unitPriceCents ??
+        (item.priceSnapshot != null ? Math.round(item.priceSnapshot * 100) : undefined),
+      productName: item.productName ?? display?.name,
+      imageUrl: item.imageUrl ?? display?.imageUrl,
+      productSlug: item.productSlug ?? display?.slug,
+    }
+  })
+  return { ...data, items }
 }
 
 function loadGuestCart(): Cart {
@@ -128,10 +142,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       })
       // Guest users: local-only cart, no backend sync
       if (!isAuthenticated) return
-      // Sync with backend — replace optimistic state with server response if valid
+      // Sync with backend — POST returns CartItemResponse (single item), not the
+      // full Cart. Optimistic update above is already correct, so we only await
+      // the call to surface errors; we never overwrite state with the response.
       try {
-        const updated = await CartService.addItem(dto)
-        if (updated != null) setCart(normalizeCart(updated))
+        await CartService.addItem(dto)
       } catch (err) {
         // Revert optimistic update and re-throw so the caller can show an error
         setCart((prev) => ({
@@ -148,6 +163,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const updateItem = useCallback(
     async (itemId: string, dto: { quantity: number }) => {
+      // Capture previous quantity for rollback on backend error
+      let previousQuantity: number | undefined
+      setCart((prev) => {
+        const item = prev.items.find((i) => i.id === itemId)
+        previousQuantity = item?.quantity
+        return prev
+      })
+
       // Optimistic update
       if (dto.quantity <= 0) {
         setCart((prev) => ({ ...prev, items: prev.items.filter((i) => i.id !== itemId) }))
@@ -159,12 +182,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       // Guest users: local-only cart, no backend sync
       if (!isAuthenticated) return
-      // Sync with backend
+      // Sync with backend — PATCH returns CartItemResponse (single item), not the
+      // full Cart. On failure, revert the optimistic update and re-throw so the
+      // caller (Cart.tsx) can show an error toast.
       try {
-        const updated = await CartService.updateItem(itemId, dto)
-        if (updated != null) setCart(normalizeCart(updated))
-      } catch {
-        // keep optimistic state on failure
+        await CartService.updateItem(itemId, dto)
+      } catch (err) {
+        // Revert to previous quantity
+        if (previousQuantity !== undefined) {
+          setCart((prev) => ({
+            ...prev,
+            items: prev.items.map((i) =>
+              i.id === itemId ? { ...i, quantity: previousQuantity! } : i
+            ),
+          }))
+        }
+        throw err
       }
     },
     [isAuthenticated]

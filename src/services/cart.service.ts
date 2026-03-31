@@ -6,15 +6,15 @@ export const CartService = {
     return apiRequest<Cart>("/api/v1/cart")
   },
 
-  async addItem(dto: AddToCartDTO): Promise<Cart> {
-    return apiRequest<Cart>("/api/v1/cart/items", {
+  async addItem(dto: AddToCartDTO): Promise<void> {
+    return apiRequest<void>("/api/v1/cart/items", {
       method: "POST",
-      body: JSON.stringify(dto),
+      body: JSON.stringify({ variantId: dto.variantId, quantity: dto.quantity }),
     })
   },
 
-  async updateItem(itemId: string, dto: UpdateCartItemDTO): Promise<Cart> {
-    return apiRequest<Cart>(`/api/v1/cart/items/${itemId}`, {
+  async updateItem(itemId: string, dto: UpdateCartItemDTO): Promise<void> {
+    return apiRequest<void>(`/api/v1/cart/items/${itemId}`, {
       method: "PATCH",
       body: JSON.stringify(dto),
     })
