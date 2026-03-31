@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@/src/context/AuthContext"
 import { validatePassword, isValidEmail } from "@/src/lib/validation"
 import { sellerUrl } from "@/src/lib/seller-url"
+import { AuthService } from "@/src/services/auth.service"
 import { toast } from "sonner"
 
 interface LoginModalProps {
@@ -69,7 +70,14 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     e.preventDefault()
     setError("")
     try {
-      await login({ email: loginEmail, password: loginPassword })
+      const role = await login({ email: loginEmail, password: loginPassword })
+      if (role === "SELLER") {
+        await AuthService.logout()
+        resetAll()
+        onClose()
+        window.location.href = sellerUrl("/login/seller")
+        return
+      }
       toast.success("Erfolgreich angemeldet!")
       resetAll()
       onClose()

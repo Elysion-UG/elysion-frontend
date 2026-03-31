@@ -29,7 +29,7 @@ interface AuthContextValue {
   isLoading: boolean
   role: UserRole | null
   sellerStatus: SellerStatus | null
-  login: (dto: LoginDTO) => Promise<void>
+  login: (dto: LoginDTO) => Promise<UserRole>
   register: (dto: RegisterDTO) => Promise<void>
   logout: () => Promise<void>
   refreshToken: () => Promise<void>
@@ -148,7 +148,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [token, user])
 
-  const login = useCallback(async (dto: LoginDTO) => {
+  const login = useCallback(async (dto: LoginDTO): Promise<UserRole> => {
     setIsLoading(true)
     try {
       const res = await AuthService.login(dto)
@@ -156,6 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(res.accessToken)
       setAccessToken(res.accessToken)
       saveAuthSession(res.accessToken, res.user)
+      return res.user.role
     } finally {
       setIsLoading(false)
     }

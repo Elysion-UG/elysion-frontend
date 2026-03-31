@@ -16,6 +16,7 @@ import {
 import { useAuth } from "@/src/context/AuthContext"
 import { AuthService } from "@/src/services/auth.service"
 import { validatePassword, isValidEmail } from "@/src/lib/validation"
+import { buyerUrl } from "@/src/lib/seller-url"
 import { toast } from "sonner"
 
 type View = "login" | "register" | "forgot"
@@ -70,10 +71,10 @@ export default function SellerLogin() {
     e.preventDefault()
     setError("")
     try {
-      const result = await login({ email, password })
-      // Verify role after login
-      if ((result as unknown as { role?: string })?.role === "BUYER") {
-        setError("Dieses Konto ist kein Verkäuferkonto. Bitte verwenden Sie die normale Anmeldung.")
+      const role = await login({ email, password })
+      if (role === "BUYER") {
+        await AuthService.logout()
+        window.location.href = buyerUrl("/")
         return
       }
       toast.success("Erfolgreich angemeldet!")
