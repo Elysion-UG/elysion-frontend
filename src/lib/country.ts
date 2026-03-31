@@ -59,7 +59,6 @@ const NAME_TO_CODE: Record<string, string> = {
   Sweden: "SE",
   Norway: "NO",
   Finland: "FI",
-  Portugal: "PT",
   Greece: "GR",
   Ireland: "IE",
   "United Kingdom": "GB",

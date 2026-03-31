@@ -80,7 +80,8 @@ describe("AuthService", () => {
 
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/auth/logout",
-      expect.objectContaining({ method: "POST" })
+      expect.objectContaining({ method: "POST" }),
+      true
     )
   })
 
