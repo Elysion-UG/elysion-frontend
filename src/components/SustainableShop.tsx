@@ -169,7 +169,24 @@ export default function SustainableShop() {
         page: currentPage,
         size: PAGE_SIZE,
       })
-      setProducts(page.content)
+
+      // The list endpoint returns only id/slug/title/price — no images.
+      // Enrich each item with the full detail (which includes images) by
+      // fetching all slugs in parallel. Failed enrichments fall back
+      // gracefully to the list-only data (placeholder image).
+      const enriched = await Promise.all(
+        page.content.map(async (item) => {
+          if (!item.slug) return item
+          try {
+            const detail = await ProductService.getBySlug(item.slug)
+            return { ...item, images: detail.images, imageUrls: detail.imageUrls }
+          } catch {
+            return item
+          }
+        })
+      )
+
+      setProducts(enriched)
       setTotalElements(page.totalElements)
       setTotalPages(page.totalPages)
     } catch {
