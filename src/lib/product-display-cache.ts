@@ -10,6 +10,7 @@
  */
 
 const CACHE_KEY = "product_display_cache"
+const VARIANT_OPTIONS_CACHE_KEY = "variant_options_cache"
 
 export interface ProductDisplayEntry {
   name: string
@@ -50,4 +51,38 @@ export function getProductDisplay(productId: string): ProductDisplayEntry | null
 
 export function getProductDisplayCache(): CacheMap {
   return readCache()
+}
+
+// ── Variant options cache ──────────────────────────────────────────────────────
+// Keyed by variantId. The backend never returns human-readable variant labels
+// (e.g. "Größe: XL"), so we cache them at add-to-cart time and restore them
+// in normalizeCart after a backend cart load.
+
+type VariantOption = { name: string; value: string }
+type VariantOptionsMap = Record<string, VariantOption[]>
+
+function readVariantOptionsCache(): VariantOptionsMap {
+  if (typeof window === "undefined") return {}
+  try {
+    const raw = localStorage.getItem(VARIANT_OPTIONS_CACHE_KEY)
+    return raw ? (JSON.parse(raw) as VariantOptionsMap) : {}
+  } catch {
+    return {}
+  }
+}
+
+export function saveVariantOptions(variantId: string, options: VariantOption[]): void {
+  if (!variantId || options.length === 0) return
+  try {
+    const cache = readVariantOptionsCache()
+    localStorage.setItem(
+      VARIANT_OPTIONS_CACHE_KEY,
+      JSON.stringify({ ...cache, [variantId]: options })
+    )
+  } catch {}
+}
+
+export function getVariantOptions(variantId: string): VariantOption[] | null {
+  if (!variantId) return null
+  return readVariantOptionsCache()[variantId] ?? null
 }

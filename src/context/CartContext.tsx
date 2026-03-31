@@ -5,7 +5,12 @@ import { createContext, useContext, useState, useCallback, useEffect } from "rea
 import type { Cart, CartItem, AddToCartDTO } from "@/src/types"
 import { CartService } from "@/src/services/cart.service"
 import { useAuth } from "@/src/context/AuthContext"
-import { saveProductDisplay, getProductDisplay } from "@/src/lib/product-display-cache"
+import {
+  saveProductDisplay,
+  getProductDisplay,
+  saveVariantOptions,
+  getVariantOptions,
+} from "@/src/lib/product-display-cache"
 
 interface CartContextValue {
   cart: Cart
@@ -37,6 +42,12 @@ function normalizeCart(data: Cart): Cart {
       productName: item.productName ?? display?.name,
       imageUrl: item.imageUrl ?? display?.imageUrl,
       productSlug: item.productSlug ?? display?.slug,
+      variantOptions:
+        (item.variantOptions?.length ?? 0) > 0
+          ? item.variantOptions
+          : item.variantId
+            ? (getVariantOptions(item.variantId) ?? item.variantOptions)
+            : item.variantOptions,
     }
   })
   return { ...data, items }
@@ -114,6 +125,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           imageUrl: dto.imageUrl,
           slug: dto.productSlug,
         })
+      }
+      if (dto.variantId && dto.variantOptions?.length) {
+        saveVariantOptions(dto.variantId, dto.variantOptions)
       }
 
       // Optimistic update (always — guest and authenticated users alike)

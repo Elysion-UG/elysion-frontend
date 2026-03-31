@@ -20,6 +20,8 @@ vi.mock("@/src/lib/product-display-cache", () => ({
   saveProductDisplay: vi.fn(),
   getProductDisplay: vi.fn().mockReturnValue(null),
   getProductDisplayCache: vi.fn().mockReturnValue({}),
+  saveVariantOptions: vi.fn(),
+  getVariantOptions: vi.fn().mockReturnValue(null),
 }))
 
 // CartProvider calls useAuth() — provide a default guest context for all tests.
@@ -725,6 +727,45 @@ describe("authenticated cart — backend API contract (regression)", () => {
     expect(item.imageUrl).toBe("https://example.com/img.jpg")
     expect(item.productSlug).toBe("bio-shirt")
     expect(item.unitPriceCents).toBe(2999)
+  })
+
+  it("restores variantOptions from cache after backend cart load (regression: options lost on reload)", async () => {
+    // Backend never returns variantOptions — they must be restored from the
+    // variant-options cache that was populated at add-to-cart time.
+    const cachedOptions = [{ name: "Größe", value: "XL" }]
+    ;(
+      productDisplayCache.getVariantOptions as MockedFunction<
+        typeof productDisplayCache.getVariantOptions
+      >
+    ).mockReturnValue(cachedOptions)
+
+    const backendCart: Cart = {
+      items: [{ id: "srv-1", productId: "prod-1", variantId: "var-XL", quantity: 1 }],
+    }
+    ;(CartService.get as MockedFunction<typeof CartService.get>).mockResolvedValue(backendCart)
+
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    expect(result.current.cart.items[0].variantOptions).toEqual(cachedOptions)
+  })
+
+  it("saves variantOptions to cache when addItem is called with variantId and options", async () => {
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    await act(async () => {
+      await result.current.addItem({
+        productId: "prod-1",
+        variantId: "var-XL",
+        quantity: 1,
+        variantOptions: [{ name: "Größe", value: "XL" }],
+      })
+    })
+
+    expect(productDisplayCache.saveVariantOptions).toHaveBeenCalledWith("var-XL", [
+      { name: "Größe", value: "XL" },
+    ])
   })
 
   it("normalizes priceSnapshot (decimal EUR) to unitPriceCents on backend cart load", async () => {
