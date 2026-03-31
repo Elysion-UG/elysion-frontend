@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   MapPin,
@@ -44,6 +45,7 @@ type Product = {
 }
 
 export default function ProducerPage() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("about")
 
   const producer: Producer = {
@@ -114,11 +116,11 @@ Jedes EcoWear-Kleidungsstück ist auf Langlebigkeit ausgelegt, wodurch der Bedar
   ]
 
   const handleGoBack = () => {
-    window.location.href = "/"
+    router.back()
   }
 
   const handleProductClick = (productId: number) => {
-    window.location.href = `/product?id=${productId}`
+    router.push(`/product?id=${productId}`)
   }
 
   const getSustainabilityIcon = (attribute: string) => {

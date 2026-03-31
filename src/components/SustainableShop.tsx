@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, useCallback, useRef } from "react"
+import { useRouter } from "next/navigation"
 import {
   Leaf,
   Heart,
@@ -110,6 +111,7 @@ const PAGE_SIZE = 12
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function SustainableShop() {
+  const router = useRouter()
   // ── Filter state ───────────────────────────────────────────────────
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
@@ -218,12 +220,12 @@ export default function SustainableShop() {
   }
 
   const handleProductClick = (slug: string | undefined, id: string) => {
-    window.location.href = slug ? `/product?slug=${slug}` : `/product?id=${id}`
+    router.push(slug ? `/product?slug=${slug}` : `/product?id=${id}`)
   }
 
   const handleSellerClick = (e: React.MouseEvent, sellerId: string | undefined) => {
     e.stopPropagation()
-    if (sellerId) window.location.href = `/producer?id=${sellerId}`
+    if (sellerId) router.push(`/producer?id=${sellerId}`)
   }
 
   const getProductImage = (product: ProductDetail): string => {
