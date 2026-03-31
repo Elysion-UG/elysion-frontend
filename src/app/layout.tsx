@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/src/app/providers"
+import NavbarShell from "@/src/components/layout/NavbarShell"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -38,7 +39,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sans antialiased">
-        <Providers>{children}</Providers>
+        <Providers>
+          <NavbarShell>{children}</NavbarShell>
+        </Providers>
       </body>
     </html>
   )

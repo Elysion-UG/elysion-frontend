@@ -1,7 +1,15 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react"
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+} from "react"
 import type { User, LoginDTO, RegisterDTO, UserRole, SellerStatus } from "@/src/types"
 import { AuthService } from "@/src/services/auth.service"
 import {
@@ -36,29 +44,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true) // true until session restore completes
   const refreshTimer = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Restore session on mount.
-  // Strategy:
-  //   1. Check sessionStorage for a previously saved token + user.
-  //      If found, apply it immediately so the UI shows the correct auth state
-  //      without waiting for a network round-trip.
-  //   2. Then attempt a backend refresh in the background to rotate the token.
-  //      If the backend refresh succeeds: update with the fresh token.
-  //      If it fails (no cookie, cross-origin issue, expired): keep the
-  //      sessionStorage token as-is — the user stays logged in for this tab.
+  // ── Phase 1: synchronous sessionStorage restore (before first paint) ──────────
+  //
+  // useLayoutEffect runs after DOM mutations but before the browser paints.
+  // If a session exists in sessionStorage we can resolve auth state here,
+  // which means the navbar renders in the correct logged-in/out state on the
+  // very first frame — no spinner flash for returning users.
+  //
+  // _accessToken is already seeded at module-load time by api-client.ts, so
+  // we only need to sync the React state (user, token, isLoading).
+  useLayoutEffect(() => {
+    const persisted = loadAuthSession()
+    if (!persisted) return // nothing to restore synchronously — Phase 2 handles this
+
+    console.log("[auth] mount — restoring React state from sessionStorage")
+    setUser(persisted.user as User)
+    setToken(persisted.token)
+    setIsLoading(false)
+  }, [])
+
+  // ── Phase 2: async background work after paint ─────────────────────────────
+  //
+  // Two cases:
+  //   a) Session existed  → rotate the token in the background (silent, non-blocking)
+  //   b) No session       → cold start; try the HttpOnly refresh cookie once
+  //
+  // Both paths are intentionally async so they never block the first render.
   useEffect(() => {
     const persisted = loadAuthSession()
 
     if (persisted) {
-      console.log("[auth] mount — restoring React state from sessionStorage")
-      // _accessToken is ALREADY set at module-load time (api-client.ts init).
-      // Here we just sync the React state (user, token, isLoading).
-      setUser(persisted.user as User)
-      setToken(persisted.token)
-      setIsLoading(false)
-
-      // Background refresh to rotate the token if the backend supports it.
-      // Keep the persisted user as fallback — the refresh endpoint may not
-      // return a user object (some backends only return accessToken + expiresIn).
+      // Background token rotation — keep persisted user if the endpoint
+      // doesn't return one.
       refreshSession()
         .then((res) => {
           const tokens = res as import("@/src/types").TokensResponse
@@ -73,8 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           saveAuthSession(tokens.accessToken, freshUser)
         })
         .catch(() => {
-          // Refresh failed — keep the sessionStorage token; it may still be
-          // valid for the remainder of its TTL.
+          // Refresh failed — keep the sessionStorage token for its remaining TTL.
         })
       return
     }
@@ -91,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(tokens.user)
           saveAuthSession(tokens.accessToken, tokens.user)
         } else {
-          // Backend's refresh endpoint didn't return a user — fetch it separately
+          // Backend's refresh endpoint didn't return a user — fetch it separately.
           const { UserService } = await import("@/src/services/user.service")
           const freshUser = await UserService.getCurrentUser()
           setUser(freshUser)
@@ -99,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch(() => {
-        // No valid session — stay logged out
+        // No valid session — stay logged out.
       })
       .finally(() => setIsLoading(false))
   }, [])
