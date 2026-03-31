@@ -50,7 +50,8 @@ Alle Kernfeatures sind implementiert und ins Backend integriert.
 ### Polish & Hardening (P5)
 
 - [ ] **P5-1** Toast-Benachrichtigungen vollständig: SellerDashboard (Ship, Status-Update)
-- [ ] **P5-2** Skeleton-Loading-States: Cart, Orders, OrderDetail, Checkout
+- [x] **P5-2a** Skeleton-Loading-States: SustainableShop (Produktlisting) — React Query Cache
+- [ ] **P5-2b** Skeleton-Loading-States: Cart, Orders, OrderDetail, Checkout
 - [ ] `POST /api/v1/auth/resend-verification` UI verdrahten (wartet auf Backend)
 
 ### Neue Features
@@ -64,8 +65,8 @@ Alle Kernfeatures sind implementiert und ins Backend integriert.
 
 ### Technisch
 
-- [ ] Session-Wiederherstellung nach Page-Reload (AuthContext: `refresh()` on mount)
-- [ ] Next.js `router.push()` / `<Link>` statt `window.location.href`
+- [x] Session-Wiederherstellung nach Page-Reload (sessionStorage + useLayoutEffect, kein Auth-Flash)
+- [x] Next.js `router.push()` / `<Link>` statt `window.location.href`
 - [ ] `/dev`-Routen in Produktion absichern (Env-Guard)
 - [ ] E2E-Tests mit Playwright für kritische User-Flows
 

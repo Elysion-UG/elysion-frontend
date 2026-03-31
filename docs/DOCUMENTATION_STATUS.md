@@ -1,6 +1,6 @@
 # Dokumentationsstatus
 
-**Stand:** 2026-03-28
+**Stand:** 2026-03-31
 **Status:** Aktuell
 
 ---
@@ -70,7 +70,7 @@ Alle 16 Backend-Module sind vollständig ins Frontend integriert:
 ### Phase 2 — Geplant
 
 - Stripe-Zahlungsintegration (`PaymentService` ist vorbereitet)
-- Skeleton-Loading-States (Cart, Orders, OrderDetail, Checkout)
+- Skeleton-Loading-States: SustainableShop ✅ done; Cart, Orders, OrderDetail, Checkout noch ausstehend
 - Toast-Abdeckung SellerDashboard vervollständigen
 - Guest Checkout
 - Wishlist / Favoriten

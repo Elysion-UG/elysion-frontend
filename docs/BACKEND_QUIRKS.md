@@ -55,9 +55,9 @@ const product = await apiRequest<Product>(`/api/v1/products/${slug}`)
 **Navigation rule:** Always use `slug` for product page links. `ProductListItemDto` now includes `slug`.
 
 ```typescript
-// CORRECT
-window.location.href = product.slug ? `/product?slug=${product.slug}` : `/product?id=${product.id}`
-// WRONG — UUID no longer routable on public endpoint
+// CORRECT — use Next.js router.push, always prefer slug
+router.push(`/product?slug=${product.slug}`)
+// WRONG — UUID no longer routable on public endpoint; also avoid window.location.href
 window.location.href = `/product?id=${product.id}`
 ```
 

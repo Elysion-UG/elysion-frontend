@@ -181,7 +181,7 @@ npm run test:coverage    # with coverage report
 | Item                                                          | Status                                                          |
 | ------------------------------------------------------------- | --------------------------------------------------------------- |
 | `POST /api/v1/auth/resend-verification`                       | Backend endpoint not yet implemented — UI built, call is mocked |
-| Skeleton loading states (Cart, Orders, OrderDetail, Checkout) | Planned — P5-2                                                  |
+| Skeleton loading states (Cart, Orders, OrderDetail, Checkout) | Planned — P5-2b (product listing already done)                  |
 | Toast coverage in SellerDashboard (ship / status update)      | Planned — P5-1                                                  |
 | Stripe payment integration                                    | Planned — `PaymentService` ready, Checkout uses MOCK            |
 | Guest checkout                                                | Planned — Phase 2                                               |
