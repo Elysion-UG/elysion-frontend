@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import {
   Leaf,
@@ -14,9 +14,9 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react"
-import { ProductService } from "@/src/services/product.service"
 import { formatEuro } from "@/src/lib/currency"
 import type { ProductDetail } from "@/src/types"
+import { useProducts, PRODUCTS_PAGE_SIZE } from "@/src/hooks/useProducts"
 
 // ── Sustainability filter config (frontend weighting, displayed only) ─────────
 
@@ -106,8 +106,6 @@ const sortOptions = [
   { value: "price-high", label: "Preis: Hoch → Niedrig", apiSort: "price_desc" },
 ]
 
-const PAGE_SIZE = 12
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function SustainableShop() {
@@ -138,13 +136,6 @@ export default function SustainableShop() {
   const [expandedFilterSections, setExpandedFilterSections] = useState({ price: true })
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false)
 
-  // ── Data state ─────────────────────────────────────────────────────
-  const [products, setProducts] = useState<ProductDetail[]>([])
-  const [totalElements, setTotalElements] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
   // ── Debounce search ────────────────────────────────────────────────
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -157,50 +148,17 @@ export default function SustainableShop() {
     }, 400)
   }
 
-  // ── Fetch products ─────────────────────────────────────────────────
-  const fetchProducts = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const apiSort = sortOptions.find((o) => o.value === sortBy)?.apiSort
-      const page = await ProductService.list({
-        search: debouncedSearch || undefined,
-        minPrice: priceRange.min > 0 ? priceRange.min : undefined,
-        maxPrice: priceRange.max < 300 ? priceRange.max : undefined,
-        sort: apiSort,
-        page: currentPage,
-        size: PAGE_SIZE,
-      })
-
-      // The list endpoint returns only id/slug/title/price — no images.
-      // Enrich each item with the full detail (which includes images) by
-      // fetching all slugs in parallel. Failed enrichments fall back
-      // gracefully to the list-only data (placeholder image).
-      const enriched = await Promise.all(
-        page.content.map(async (item) => {
-          if (!item.slug) return item
-          try {
-            const detail = await ProductService.getBySlug(item.slug)
-            return { ...item, images: detail.images, imageUrls: detail.imageUrls }
-          } catch {
-            return item
-          }
-        })
-      )
-
-      setProducts(enriched)
-      setTotalElements(page.totalElements)
-      setTotalPages(page.totalPages)
-    } catch {
-      setError("Produkte konnten nicht geladen werden.")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [debouncedSearch, priceRange, sortBy, currentPage])
-
-  useEffect(() => {
-    fetchProducts()
-  }, [fetchProducts])
+  // ── Data via React Query ───────────────────────────────────────────
+  const apiSort = sortOptions.find((o) => o.value === sortBy)?.apiSort
+  const { data, isLoading, isFetching, error, refetch } = useProducts({
+    search: debouncedSearch,
+    priceRange,
+    apiSort,
+    currentPage,
+  })
+  const products: ProductDetail[] = data?.products ?? []
+  const totalElements = data?.totalElements ?? 0
+  const totalPages = data?.totalPages ?? 0
 
   // ── Handlers ───────────────────────────────────────────────────────
   const handleImportanceChange = (attribute: string, importance: string) => {
@@ -399,12 +357,13 @@ export default function SustainableShop() {
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <p className="text-slate-600">
+            <p className="flex items-center gap-2 text-slate-600">
               {isLoading ? (
                 <span className="text-slate-400">Lädt…</span>
               ) : (
                 <>
                   <span className="font-medium">{totalElements}</span> Produkte gefunden
+                  {isFetching && <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400" />}
                 </>
               )}
             </p>
@@ -440,10 +399,24 @@ export default function SustainableShop() {
             </div>
           </div>
 
-          {/* Loading */}
+          {/* Skeleton — shown only on first load (no cached data yet) */}
           {isLoading && (
-            <div className="flex min-h-[300px] items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {Array.from({ length: PRODUCTS_PAGE_SIZE }).map((_, i) => (
+                <div
+                  key={i}
+                  className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+                >
+                  <div className="aspect-square animate-pulse bg-slate-200" />
+                  <div className="space-y-2 p-4">
+                    <div className="h-3 w-1/3 animate-pulse rounded bg-slate-200" />
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-slate-200" />
+                    <div className="h-3 w-full animate-pulse rounded bg-slate-200" />
+                    <div className="h-3 w-4/5 animate-pulse rounded bg-slate-200" />
+                    <div className="mt-2 h-5 w-1/4 animate-pulse rounded bg-slate-200" />
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
@@ -451,9 +424,9 @@ export default function SustainableShop() {
           {!isLoading && error && (
             <div className="flex min-h-[300px] flex-col items-center justify-center gap-4 text-slate-600">
               <AlertCircle className="h-12 w-12 text-red-400" />
-              <p>{error}</p>
+              <p>Produkte konnten nicht geladen werden.</p>
               <button
-                onClick={fetchProducts}
+                onClick={() => refetch()}
                 className="rounded-lg bg-teal-600 px-4 py-2 text-sm text-white hover:bg-teal-700"
               >
                 Erneut versuchen
@@ -468,9 +441,11 @@ export default function SustainableShop() {
             </div>
           )}
 
-          {/* Products Grid */}
+          {/* Products Grid — dimmed while a background re-fetch is in progress */}
           {!isLoading && !error && products.length > 0 && (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div
+              className={`grid gap-6 transition-opacity duration-200 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isFetching ? "opacity-60" : "opacity-100"}`}
+            >
               {products.map((product) => {
                 const sellerName = getSellerName(product)
                 const image = getProductImage(product)
