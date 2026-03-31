@@ -17,7 +17,14 @@ import PageLayout from "@/src/components/layout/PageLayout"
  *   - The navbar does not re-initialise or flash on route changes.
  */
 
-const NO_NAVBAR_PREFIXES = ["/admin", "/login", "/reset-password", "/verify-email", "/dev"]
+const NO_NAVBAR_PREFIXES = [
+  "/admin",
+  "/login",
+  "/reset-password",
+  "/verify-email",
+  "/dev",
+  "/seller-dashboard",
+]
 
 function needsNavbar(pathname: string): boolean {
   return !NO_NAVBAR_PREFIXES.some(
