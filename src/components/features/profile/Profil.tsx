@@ -18,6 +18,7 @@ import {
   AlertTriangle,
 } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
+import { AuthService } from "@/src/services/auth.service"
 import { UserService } from "@/src/services/user.service"
 import { AddressService } from "@/src/services/address.service"
 import type { Address } from "@/src/types"
@@ -66,6 +67,9 @@ export default function Profil() {
   // Address state
   const [addressFormOpen, setAddressFormOpen] = useState(false)
   const [editingAddress, setEditingAddress] = useState<Address | null>(null)
+
+  // Password reset state
+  const [isSendingPasswordReset, setIsSendingPasswordReset] = useState(false)
 
   // Delete account state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -145,6 +149,19 @@ export default function Profil() {
       toast.success("Standardadresse gesetzt.")
     } catch {
       toast.error("Fehler.")
+    }
+  }
+
+  const handlePasswordReset = async () => {
+    if (!user?.email) return
+    setIsSendingPasswordReset(true)
+    try {
+      await AuthService.forgotPassword(user.email)
+      toast.success("Reset-E-Mail wurde gesendet. Bitte überprüfen Sie Ihr Postfach.")
+    } catch {
+      toast.error("Fehler beim Senden der Reset-E-Mail.")
+    } finally {
+      setIsSendingPasswordReset(false)
     }
   }
 
@@ -413,8 +430,12 @@ export default function Profil() {
                   <p className="font-medium text-slate-800">Passwort</p>
                   <p className="text-sm text-slate-500">Zuletzt geändert vor 3 Monaten</p>
                 </div>
-                <button className="rounded-lg border border-teal-600 px-4 py-2 text-sm text-teal-600 transition-colors hover:bg-teal-50">
-                  Ändern
+                <button
+                  onClick={handlePasswordReset}
+                  disabled={isSendingPasswordReset}
+                  className="flex items-center gap-2 rounded-lg border border-teal-600 px-4 py-2 text-sm text-teal-600 transition-colors hover:bg-teal-50 disabled:opacity-50"
+                >
+                  {isSendingPasswordReset ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ändern"}
                 </button>
               </div>
 
