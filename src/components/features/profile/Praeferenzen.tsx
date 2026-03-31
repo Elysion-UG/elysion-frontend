@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   ChevronDown,
   ChevronRight,
@@ -15,8 +16,8 @@ import {
 } from "lucide-react"
 import type { ValuesProfileType } from "@/src/types"
 import { BuyerValueProfileService } from "@/src/services/buyer-value-profile.service"
-import { ApiError } from "@/src/lib/api-client"
 import { toast } from "sonner"
+import { useBuyerValueProfile } from "@/src/hooks/useBuyerValueProfile"
 
 // Exactly 7 categories as per Module 01 spec
 const CATEGORIES = [
@@ -108,44 +109,70 @@ const defaultExtendedWeights = (): Record<string, Record<string, number>> => {
   return init
 }
 
+function PraeferenzenSkeleton() {
+  return (
+    <div className="mx-auto max-w-4xl">
+      <div className="mb-8">
+        <div className="mb-2 h-9 w-40 animate-pulse rounded bg-slate-200" />
+        <div className="h-4 w-96 animate-pulse rounded bg-slate-200" />
+      </div>
+      {/* Profile type switcher skeleton */}
+      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-5">
+        <div className="mb-3 h-4 w-24 animate-pulse rounded bg-slate-200" />
+        <div className="grid grid-cols-3 gap-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-16 animate-pulse rounded-lg border-2 border-slate-200 bg-slate-100"
+            />
+          ))}
+        </div>
+      </div>
+      {/* Category skeletons */}
+      <div className="space-y-4">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="rounded-xl border border-slate-200 bg-white p-5">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 animate-pulse rounded-lg bg-slate-200" />
+              <div className="h-5 w-40 animate-pulse rounded bg-slate-200" />
+              <div className="ml-auto h-4 w-8 animate-pulse rounded bg-slate-200" />
+            </div>
+            <div className="mt-4 h-2 animate-pulse rounded-lg bg-slate-200" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function Praeferenzen() {
+  const queryClient = useQueryClient()
+  const { data: profile, isLoading, error } = useBuyerValueProfile()
+
   const [profileType, setProfileType] = useState<ValuesProfileType>("none")
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
-  const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [simpleWeights, setSimpleWeights] = useState<Record<string, number>>(defaultSimpleWeights)
   const [extendedWeights, setExtendedWeights] =
     useState<Record<string, Record<string, number>>>(defaultExtendedWeights)
 
+  // Initialise form state when cached/fetched data arrives.
   useEffect(() => {
-    async function load() {
-      try {
-        const profile = await BuyerValueProfileService.get()
-        setProfileType(profile.activeProfileType)
-        if (profile.simpleProfile) {
-          setSimpleWeights((prev) => ({ ...prev, ...profile.simpleProfile }))
-        }
-        if (profile.extendedProfile) {
-          setExtendedWeights((prev) => {
-            const next = { ...prev }
-            for (const catId of Object.keys(profile.extendedProfile!)) {
-              next[catId] = { ...(prev[catId] ?? {}), ...profile.extendedProfile![catId] }
-            }
-            return next
-          })
-        }
-      } catch (e) {
-        if (e instanceof ApiError && e.status === 404) {
-          // No profile yet — defaults remain
-        } else {
-          toast.error("Profil konnte nicht geladen werden.")
-        }
-      } finally {
-        setIsLoading(false)
-      }
+    if (!profile) return
+    setProfileType(profile.activeProfileType)
+    if (profile.simpleProfile) {
+      setSimpleWeights((prev) => ({ ...prev, ...profile.simpleProfile }))
     }
-    load()
-  }, [])
+    if (profile.extendedProfile) {
+      setExtendedWeights((prev) => {
+        const next = { ...prev }
+        for (const catId of Object.keys(profile.extendedProfile!)) {
+          next[catId] = { ...(prev[catId] ?? {}), ...profile.extendedProfile![catId] }
+        }
+        return next
+      })
+    }
+  }, [profile])
 
   const toggleCategory = (id: string) => {
     setExpandedCategories((prev) => ({ ...prev, [id]: !prev[id] }))
@@ -159,6 +186,7 @@ export default function Praeferenzen() {
         simpleProfile: profileType === "simple" ? simpleWeights : null,
         extendedProfile: profileType === "extended" ? extendedWeights : null,
       })
+      await queryClient.invalidateQueries({ queryKey: ["buyerValueProfile"] })
       toast.success("Präferenzen gespeichert.")
     } catch {
       toast.error("Fehler beim Speichern.")
@@ -168,9 +196,13 @@ export default function Praeferenzen() {
   }
 
   if (isLoading) {
+    return <PraeferenzenSkeleton />
+  }
+
+  if (error) {
     return (
-      <div className="mx-auto flex max-w-4xl justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+      <div className="mx-auto max-w-4xl py-16 text-center text-red-600">
+        Präferenzen konnten nicht geladen werden.
       </div>
     )
   }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   User,
   MapPin,
@@ -23,20 +24,46 @@ import type { Address } from "@/src/types"
 import AddressForm from "@/src/components/features/profile/AddressForm"
 import { toast } from "sonner"
 import { toCountryName } from "@/src/lib/country"
+import { useUserProfile, useAddresses } from "@/src/hooks/useProfile"
+
+function ProfileSkeleton() {
+  return (
+    <div className="mx-auto max-w-3xl">
+      <div className="mb-8">
+        <div className="mb-2 h-9 w-44 animate-pulse rounded bg-slate-200" />
+        <div className="h-4 w-80 animate-pulse rounded bg-slate-200" />
+      </div>
+      <div className="space-y-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="flex items-center justify-between p-5">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 animate-pulse rounded-lg bg-slate-200" />
+                <div className="h-5 w-36 animate-pulse rounded bg-slate-200" />
+              </div>
+              <div className="h-5 w-5 animate-pulse rounded bg-slate-200" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function Profil() {
+  const queryClient = useQueryClient()
   const { user, setUser, logout } = useAuth()
 
-  // Profile state
+  const { data: profileData, isLoading: isLoadingProfile } = useUserProfile()
+  const { data: addresses = [], isLoading: isLoadingAddresses } = useAddresses()
+
+  // Form state — initialised from fetched profile data.
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [phone, setPhone] = useState("")
   const [isSavingProfile, setIsSavingProfile] = useState(false)
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
 
   // Address state
-  const [addresses, setAddresses] = useState<Address[]>([])
-  const [isLoadingAddresses, setIsLoadingAddresses] = useState(true)
   const [addressFormOpen, setAddressFormOpen] = useState(false)
   const [editingAddress, setEditingAddress] = useState<Address | null>(null)
 
@@ -53,40 +80,18 @@ export default function Profil() {
     security: false,
   })
 
+  // Sync form fields and AuthContext whenever profile data arrives (first load or refetch).
+  useEffect(() => {
+    if (!profileData) return
+    setUser(profileData)
+    setFirstName(profileData.firstName ?? "")
+    setLastName(profileData.lastName ?? "")
+    setPhone(profileData.phone ?? "")
+  }, [profileData])
+
   const toggleSection = (id: string) => {
     setExpandedSections((prev) => ({ ...prev, [id]: !prev[id] }))
   }
-
-  // Fetch fresh profile data from the backend — don't rely on AuthContext.user
-  // which may be stale or null after a page refresh.
-  useEffect(() => {
-    UserService.getCurrentUser()
-      .then((freshUser) => {
-        setUser(freshUser)
-        setFirstName(freshUser.firstName ?? "")
-        setLastName(freshUser.lastName ?? "")
-        setPhone(freshUser.phone ?? "")
-      })
-      .catch(() => {
-        toast.error("Profildaten konnten nicht geladen werden.")
-      })
-      .finally(() => setIsLoadingProfile(false))
-  }, [])
-
-  // Load addresses
-  useEffect(() => {
-    async function load() {
-      try {
-        const addrs = await AddressService.getAll()
-        setAddresses(addrs)
-      } catch {
-        toast.error("Adressen konnten nicht geladen werden.")
-      } finally {
-        setIsLoadingAddresses(false)
-      }
-    }
-    load()
-  }, [])
 
   const handleSaveProfile = async () => {
     setIsSavingProfile(true)
@@ -98,6 +103,7 @@ export default function Profil() {
         lastName: updated.lastName,
         phone: updated.phone,
       })
+      await queryClient.invalidateQueries({ queryKey: ["profile"] })
       toast.success("Profil gespeichert!")
     } catch {
       toast.error("Fehler beim Speichern.")
@@ -115,8 +121,7 @@ export default function Profil() {
         await AddressService.create(dto)
         toast.success("Adresse hinzugefügt!")
       }
-      const addrs = await AddressService.getAll()
-      setAddresses(addrs)
+      await queryClient.invalidateQueries({ queryKey: ["addresses"] })
       setEditingAddress(null)
     } catch {
       toast.error("Fehler beim Speichern der Adresse.")
@@ -126,7 +131,7 @@ export default function Profil() {
   const handleDeleteAddress = async (id: string) => {
     try {
       await AddressService.remove(id)
-      setAddresses((prev) => prev.filter((a) => a.id !== id))
+      await queryClient.invalidateQueries({ queryKey: ["addresses"] })
       toast.success("Adresse gelöscht.")
     } catch {
       toast.error("Fehler beim Löschen.")
@@ -136,7 +141,7 @@ export default function Profil() {
   const handleSetDefault = async (id: string) => {
     try {
       await AddressService.setDefault(id)
-      setAddresses((prev) => prev.map((a) => ({ ...a, isDefault: a.id === id })))
+      await queryClient.invalidateQueries({ queryKey: ["addresses"] })
       toast.success("Standardadresse gesetzt.")
     } catch {
       toast.error("Fehler.")
@@ -185,6 +190,11 @@ export default function Profil() {
     </button>
   )
 
+  // Show skeleton only on first load (no cached data available yet).
+  if (isLoadingProfile && !profileData) {
+    return <ProfileSkeleton />
+  }
+
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-8">
@@ -198,71 +208,59 @@ export default function Profil() {
           <SectionHeader id="personal" icon={User} label="Persönliche Daten" />
           {expandedSections.personal && (
             <div className="space-y-4 px-5 pb-5">
-              {isLoadingProfile ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-teal-600" />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-600">Vorname</label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
                 </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-slate-600">
-                        Vorname
-                      </label>
-                      <input
-                        type="text"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-sm font-medium text-slate-600">
-                        Nachname
-                      </label>
-                      <input
-                        type="text"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">
-                      E-Mail <span className="text-slate-400">(nicht änderbar)</span>
-                    </label>
-                    <input
-                      type="email"
-                      value={user?.email ?? ""}
-                      disabled
-                      className="w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-slate-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">Telefon</label>
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
-                    />
-                  </div>
-                  <button
-                    onClick={handleSaveProfile}
-                    disabled={isSavingProfile}
-                    className="mt-2 flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
-                  >
-                    {isSavingProfile ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" /> Speichern...
-                      </>
-                    ) : (
-                      "Änderungen speichern"
-                    )}
-                  </button>
-                </>
-              )}
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-600">Nachname</label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-600">
+                  E-Mail <span className="text-slate-400">(nicht änderbar)</span>
+                </label>
+                <input
+                  type="email"
+                  value={user?.email ?? ""}
+                  disabled
+                  className="w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-slate-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-600">Telefon</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                />
+              </div>
+              <button
+                onClick={handleSaveProfile}
+                disabled={isSavingProfile}
+                className="mt-2 flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
+              >
+                {isSavingProfile ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Speichern...
+                  </>
+                ) : (
+                  "Änderungen speichern"
+                )}
+              </button>
             </div>
           )}
         </div>
@@ -272,9 +270,11 @@ export default function Profil() {
           <SectionHeader id="address" icon={MapPin} label="Liefer- & Adresseinstellungen" />
           {expandedSections.address && (
             <div className="space-y-4 px-5 pb-5">
-              {isLoadingAddresses ? (
-                <div className="flex justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-teal-600" />
+              {isLoadingAddresses && addresses.length === 0 ? (
+                <div className="space-y-3 py-2">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="h-24 animate-pulse rounded-lg bg-slate-100" />
+                  ))}
                 </div>
               ) : addresses.length === 0 ? (
                 <p className="py-4 text-center text-sm text-slate-500">Keine Adressen vorhanden.</p>

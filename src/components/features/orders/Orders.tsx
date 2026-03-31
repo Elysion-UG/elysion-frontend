@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { Package, ChevronRight, Loader2, PackageOpen } from "lucide-react"
-import { OrderService } from "@/src/services/order.service"
-import type { Order, OrderStatus } from "@/src/types"
+import Link from "next/link"
+import type { OrderStatus } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
+import { useOrders } from "@/src/hooks/useOrders"
 
 const statusLabel: Record<OrderStatus, string> = {
   PENDING_PAYMENT: "Zahlung ausstehend",
@@ -38,42 +38,60 @@ function formatDate(iso: string) {
   })
 }
 
-export default function Orders() {
-  const [orders, setOrders] = useState<Order[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+function OrdersSkeleton() {
+  return (
+    <div className="mx-auto max-w-3xl">
+      <div className="mb-8 flex items-center gap-3">
+        <Package className="h-8 w-8 text-teal-600" />
+        <div className="h-8 w-48 animate-pulse rounded bg-slate-200" />
+      </div>
+      <div className="space-y-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-xl border border-slate-200 bg-white p-5">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-2">
+                <div className="h-5 w-32 animate-pulse rounded bg-slate-200" />
+                <div className="h-3 w-20 animate-pulse rounded bg-slate-200" />
+              </div>
+              <div className="h-6 w-24 animate-pulse rounded-full bg-slate-200" />
+            </div>
+            <div className="mt-3 flex justify-end">
+              <div className="h-4 w-16 animate-pulse rounded bg-slate-200" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
-  useEffect(() => {
-    OrderService.list()
-      .then(setOrders)
-      .catch(() => setError("Bestellungen konnten nicht geladen werden."))
-      .finally(() => setIsLoading(false))
-  }, [])
+export default function Orders() {
+  const { data: orders, isLoading, error } = useOrders()
 
   if (isLoading) {
+    return <OrdersSkeleton />
+  }
+
+  if (error) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+      <div className="py-16 text-center text-red-600">
+        Bestellungen konnten nicht geladen werden.
       </div>
     )
   }
 
-  if (error) {
-    return <div className="py-16 text-center text-red-600">{error}</div>
-  }
-
-  if (orders.length === 0) {
+  if (!orders || orders.length === 0) {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 text-center">
         <PackageOpen className="h-16 w-16 text-slate-300" />
         <h2 className="text-2xl font-bold text-slate-700">Noch keine Bestellungen</h2>
         <p className="text-slate-500">Deine Bestellungen erscheinen hier.</p>
-        <a
+        <Link
           href="/"
           className="rounded-lg bg-teal-600 px-6 py-2 font-medium text-white transition-colors hover:bg-teal-700"
         >
           Zum Shop
-        </a>
+        </Link>
       </div>
     )
   }
@@ -87,7 +105,7 @@ export default function Orders() {
 
       <div className="space-y-4">
         {orders.map((order) => (
-          <a
+          <Link
             key={order.id}
             href={`/orders/${order.id}`}
             className="block rounded-xl border border-slate-200 bg-white p-5 transition-all hover:border-teal-300 hover:shadow-sm"
@@ -109,7 +127,7 @@ export default function Orders() {
             <div className="mt-3 flex justify-end text-sm">
               <span className="font-semibold text-slate-800">{formatEuro(order.total ?? 0)}</span>
             </div>
-          </a>
+          </Link>
         ))}
       </div>
     </div>
