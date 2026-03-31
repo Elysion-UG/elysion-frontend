@@ -125,7 +125,12 @@ let _refreshInFlight: Promise<TokensResponse> | null = null
 export async function refreshSession(): Promise<TokensResponse> {
   if (!_refreshInFlight) {
     console.log("[auth] refreshSession() — starting backend refresh")
-    const p = import("@/src/services/auth.service")
+    // Chain catch and finally INLINE (not as side-branches off p).
+    // Side-branch `.catch()` / `.finally()` off a rejected promise produce a
+    // second unhandled-rejection chain that surfaces as "Uncaught (in promise)"
+    // in the browser console. Inline chaining keeps a single promise where all
+    // rejections flow through to the caller's own .catch() handler.
+    _refreshInFlight = import("@/src/services/auth.service")
       .then(({ AuthService }) => AuthService.refresh())
       .then((res) => {
         console.log(
@@ -134,13 +139,13 @@ export async function refreshSession(): Promise<TokensResponse> {
         )
         return res
       })
-    p.catch((err) => {
-      console.log("[auth] refreshSession() — FAILED:", err?.message ?? err)
-    })
-    p.finally(() => {
-      _refreshInFlight = null
-    })
-    _refreshInFlight = p
+      .catch((err) => {
+        console.log("[auth] refreshSession() — FAILED:", err?.message ?? err)
+        throw err
+      })
+      .finally(() => {
+        _refreshInFlight = null
+      })
   } else {
     console.log("[auth] refreshSession() — reusing in-flight promise")
   }
