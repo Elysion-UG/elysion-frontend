@@ -77,7 +77,12 @@ export default function SellerLogin() {
         return
       }
       toast.success("Erfolgreich angemeldet!")
-      window.location.href = "/seller-dashboard"
+      const sellerDomain = process.env.NEXT_PUBLIC_SELLER_DOMAIN
+      if (sellerDomain && window.location.host !== sellerDomain) {
+        window.location.href = `${window.location.protocol}//${sellerDomain}/seller-dashboard`
+      } else {
+        window.location.href = "/seller-dashboard"
+      }
     } catch {
       setError("Ungültige Anmeldedaten.")
     }
