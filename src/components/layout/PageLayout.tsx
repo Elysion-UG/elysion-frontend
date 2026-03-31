@@ -2,6 +2,8 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   Leaf,
   Settings,
@@ -27,6 +29,7 @@ interface PageLayoutProps {
 export default function PageLayout({ children }: PageLayoutProps) {
   const { isAuthenticated, isLoading: authLoading, role, logout } = useAuth()
   const { totalItems } = useCart()
+  const router = useRouter()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
@@ -39,24 +42,23 @@ export default function PageLayout({ children }: PageLayoutProps) {
     try {
       await logout()
       toast.success("Erfolgreich abgemeldet.")
-      window.location.href = "/"
     } catch {
-      // logout() clears local state via finally — just redirect
-      window.location.href = "/"
+      // logout() clears local state via finally — state is already cleared
     } finally {
       setLoggingOut(false)
+      router.push("/")
     }
   }
 
   const navLink = (href: string, label: string, icon?: React.ReactNode) => (
-    <a
+    <Link
       key={href}
       href={href}
       className="flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-teal-700"
     >
       {icon}
       {label}
-    </a>
+    </Link>
   )
 
   return (
@@ -64,10 +66,10 @@ export default function PageLayout({ children }: PageLayoutProps) {
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <a href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
               <Leaf className="h-7 w-7 text-teal-600" />
               <span className="text-xl font-bold text-slate-800">Elysion</span>
-            </a>
+            </Link>
 
             <nav className="hidden items-center gap-5 md:flex">
               {navLink("/", "Home")}
@@ -91,7 +93,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
                 role === "ADMIN" &&
                 navLink("/admin/users", "Admin", <ShieldCheck className="h-4 w-4" />)}
 
-              <a
+              <Link
                 href="/cart"
                 className="relative flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-teal-700"
               >
@@ -101,7 +103,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
                     {totalItems > 9 ? "9+" : totalItems}
                   </span>
                 )}
-              </a>
+              </Link>
 
               {/* Hide auth button while session is being restored to avoid a
                   flash of the "Anmelden" button on every page reload */}
@@ -156,7 +158,13 @@ export default function PageLayout({ children }: PageLayoutProps) {
               {isAuthenticated &&
                 role === "ADMIN" &&
                 navLink("/admin/users", "Admin", <ShieldCheck className="h-4 w-4" />)}
-              {navLink("/cart", "Warenkorb", <ShoppingCart className="h-4 w-4" />)}
+              <Link
+                href="/cart"
+                className="flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-teal-700"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                Warenkorb
+              </Link>
               {!authLoading &&
                 (isAuthenticated ? (
                   <button
