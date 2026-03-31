@@ -149,10 +149,13 @@ export async function refreshSession(): Promise<TokensResponse> {
 
 // 401 refresh helper — uses shared refreshSession() to avoid concurrent refresh calls
 async function tryRefreshAndRetry<T>(path: string, options: RequestInit): Promise<T> {
-  // Capture whether the user had an active token before the refresh attempt.
-  // Only redirect to home if their session actually expired — not if they were
-  // simply never logged in (e.g. an unauthenticated visitor loading the cart).
+  // Guests have no access token and no persisted session — skip refresh entirely.
+  // Attempting refresh without a cookie causes a "Missing refresh token" error.
   const hadToken = _accessToken != null
+  const hasPersistedSession = typeof window !== "undefined" && loadAuthSession() != null
+  if (!hadToken && !hasPersistedSession) {
+    throw new ApiError(401, "Nicht autorisiert")
+  }
   try {
     const tokens = await refreshSession()
     setAccessToken(tokens.accessToken)
@@ -261,8 +264,11 @@ export async function apiRequestRaw<T>(
 
   if (response.status === 401 && !skipRetry) {
     console.log("[auth] 401 on", path, "— attempting refresh retry (raw)")
-    // Refresh, update the token, then retry once without the envelope extraction
     const hadToken = _accessToken != null
+    const hasPersistedSession = typeof window !== "undefined" && loadAuthSession() != null
+    if (!hadToken && !hasPersistedSession) {
+      throw new ApiError(401, "Nicht autorisiert")
+    }
     try {
       const tokens = await refreshSession()
       setAccessToken(tokens.accessToken)

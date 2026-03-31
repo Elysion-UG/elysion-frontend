@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import {
   ApiError,
+  AUTH_SESSION_KEY,
   setAccessToken,
   getAccessToken,
   apiRequest,
@@ -141,7 +142,9 @@ describe("apiRequest", () => {
     })
   })
 
-  it("throws ApiError on 401 Unauthorized", async () => {
+  it("throws ApiError(401) when guest (no token, no session) gets 401 — no refresh attempt", async () => {
+    // Guest user: no access token, no persisted session → must NOT call AuthService.refresh
+    window.sessionStorage.removeItem(AUTH_SESSION_KEY)
     const mockFetch = vi
       .fn()
       .mockResolvedValue(mockFetchResponse(401, { message: "Unauthorized" }, false))
@@ -149,8 +152,10 @@ describe("apiRequest", () => {
 
     await expect(apiRequest("/api/v1/protected")).rejects.toMatchObject({
       status: 401,
-      message: "Unauthorized",
+      message: "Nicht autorisiert",
     })
+    // fetch was called exactly once — no retry after the 401
+    expect(mockFetch).toHaveBeenCalledTimes(1)
   })
 
   it("throws ApiError on 404 Not Found", async () => {
@@ -487,6 +492,102 @@ describe("apiUpload", () => {
     await expect(apiUpload("/api/v1/files", new FormData())).rejects.toMatchObject({
       status: 500,
       message: "Upload failed (500)",
+    })
+  })
+})
+
+// ── Regression: guest users must not trigger token refresh on 401 ──────────────
+//
+// Bug: unauthenticated (guest) users who hit a protected endpoint received a
+// runtime ApiError "Missing refresh token" because the 401 interceptor blindly
+// called AuthService.refresh() even when no access token / session existed.
+// The backend rejected the call because there was no HttpOnly refresh-token
+// cookie to send.
+//
+// Fix: skip the refresh attempt entirely when both _accessToken is null AND
+// sessionStorage holds no persisted session — i.e. the user is a guest.
+
+describe("regression — guest user 401 must not attempt token refresh", () => {
+  beforeEach(() => {
+    setAccessToken(null)
+    window.sessionStorage.removeItem(AUTH_SESSION_KEY)
+    vi.stubGlobal("fetch", vi.fn())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    setAccessToken(null)
+  })
+
+  it("apiRequest: does not call AuthService.refresh for a guest 401", async () => {
+    const { AuthService } = await import("@/src/services/auth.service")
+    const refreshSpy = vi.spyOn(AuthService, "refresh")
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(mockFetchResponse(401, { message: "Unauthorized" }, false))
+    )
+
+    await expect(apiRequest("/api/v1/protected")).rejects.toMatchObject({ status: 401 })
+    expect(refreshSpy).not.toHaveBeenCalled()
+  })
+
+  it("apiRequestRaw: does not call AuthService.refresh for a guest 401", async () => {
+    const { AuthService } = await import("@/src/services/auth.service")
+    const refreshSpy = vi.spyOn(AuthService, "refresh")
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(mockFetchResponse(401, { message: "Unauthorized" }, false))
+    )
+
+    await expect(apiRequestRaw("/api/v1/protected")).rejects.toMatchObject({ status: 401 })
+    expect(refreshSpy).not.toHaveBeenCalled()
+  })
+
+  it("apiRequest: fetch is called exactly once for a guest 401 (no retry)", async () => {
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(mockFetchResponse(401, { message: "Unauthorized" }, false))
+    vi.stubGlobal("fetch", mockFetch)
+
+    await expect(apiRequest("/api/v1/protected")).rejects.toMatchObject({ status: 401 })
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it("apiRequestRaw: fetch is called exactly once for a guest 401 (no retry)", async () => {
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValue(mockFetchResponse(401, { message: "Unauthorized" }, false))
+    vi.stubGlobal("fetch", mockFetch)
+
+    await expect(apiRequestRaw("/api/v1/protected")).rejects.toMatchObject({ status: 401 })
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it("apiRequest: throws ApiError(401, 'Nicht autorisiert') for a guest 401", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(mockFetchResponse(401, { message: "x" }, false))
+    )
+
+    await expect(apiRequest("/api/v1/protected")).rejects.toMatchObject({
+      name: "ApiError",
+      status: 401,
+      message: "Nicht autorisiert",
+    })
+  })
+
+  it("apiRequestRaw: throws ApiError(401, 'Nicht autorisiert') for a guest 401", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(mockFetchResponse(401, { message: "x" }, false))
+    )
+
+    await expect(apiRequestRaw("/api/v1/protected")).rejects.toMatchObject({
+      name: "ApiError",
+      status: 401,
+      message: "Nicht autorisiert",
     })
   })
 })
