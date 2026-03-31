@@ -20,6 +20,8 @@ import {
 import { useAuth } from "@/src/context/AuthContext"
 import { useCart } from "@/src/hooks/useCart"
 import LoginModal from "@/src/components/LoginModal"
+import Footer from "@/src/components/layout/Footer"
+import { sellerUrl } from "@/src/lib/seller-url"
 import { toast } from "sonner"
 
 interface PageLayoutProps {
@@ -85,9 +87,15 @@ export default function PageLayout({ children }: PageLayoutProps) {
                 </>
               )}
 
-              {isAuthenticated &&
-                role === "SELLER" &&
-                navLink("/seller-dashboard", "Verkäufer", <BarChart3 className="h-4 w-4" />)}
+              {isAuthenticated && role === "SELLER" && (
+                <a
+                  href={sellerUrl("/seller-dashboard")}
+                  className="flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-teal-700"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  Verkäufer
+                </a>
+              )}
 
               {isAuthenticated &&
                 role === "ADMIN" &&
@@ -152,9 +160,15 @@ export default function PageLayout({ children }: PageLayoutProps) {
               {isAuthenticated &&
                 role === "BUYER" &&
                 navLink("/orders", "Bestellungen", <PackageSearch className="h-4 w-4" />)}
-              {isAuthenticated &&
-                role === "SELLER" &&
-                navLink("/seller-dashboard", "Verkäufer", <BarChart3 className="h-4 w-4" />)}
+              {isAuthenticated && role === "SELLER" && (
+                <a
+                  href={sellerUrl("/seller-dashboard")}
+                  className="flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-teal-700"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  Verkäufer
+                </a>
+              )}
               {isAuthenticated &&
                 role === "ADMIN" &&
                 navLink("/admin/users", "Admin", <ShieldCheck className="h-4 w-4" />)}
@@ -190,6 +204,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
       </header>
 
       <main className="container mx-auto px-4 py-8">{children}</main>
+      <Footer />
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </div>
   )

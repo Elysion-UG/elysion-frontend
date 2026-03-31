@@ -52,15 +52,18 @@ export function middleware(request: NextRequest) {
 
   // ── Main / buyer domain ──────────────────────────────────────────────────
 
-  // Redirect seller-dashboard to seller domain when SELLER_DOMAIN is configured
-  if (SELLER_PROTECTED.some((r) => pathname.startsWith(r))) {
+  // Redirect all seller entry points to the seller domain when configured
+  const isSellerEntryPoint =
+    SELLER_PROTECTED.some((r) => pathname.startsWith(r)) || pathname.startsWith("/login/seller")
+
+  if (isSellerEntryPoint) {
     const sellerDomain = process.env.SELLER_DOMAIN
     if (sellerDomain) {
       const target = new URL(pathname, `${request.nextUrl.protocol}//${sellerDomain}`)
       return NextResponse.redirect(target)
     }
-    // No seller domain configured → fall through to normal auth check
-    if (!hasSession(request)) {
+    // No seller domain configured → protect seller-dashboard with session check
+    if (SELLER_PROTECTED.some((r) => pathname.startsWith(r)) && !hasSession(request)) {
       return NextResponse.redirect(new URL("/", request.url))
     }
     return NextResponse.next()

@@ -16,8 +16,8 @@ import {
   AlertTriangle,
 } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
-import type { UserRole } from "@/src/types"
 import { validatePassword, isValidEmail } from "@/src/lib/validation"
+import { sellerUrl } from "@/src/lib/seller-url"
 import { toast } from "sonner"
 
 interface LoginModalProps {
@@ -41,10 +41,6 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [regConfirmPassword, setRegConfirmPassword] = useState("")
   const [regFirstName, setRegFirstName] = useState("")
   const [regLastName, setRegLastName] = useState("")
-  const [regRole, setRegRole] = useState<UserRole>("BUYER")
-  const [regCompanyName, setRegCompanyName] = useState("")
-  const [regVatId, setRegVatId] = useState("")
-  const [regIban, setRegIban] = useState("")
 
   const [forgotEmail, setForgotEmail] = useState("")
   const [forgotSubmitted, setForgotSubmitted] = useState(false)
@@ -58,10 +54,6 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setRegConfirmPassword("")
     setRegFirstName("")
     setRegLastName("")
-    setRegRole("BUYER")
-    setRegCompanyName("")
-    setRegVatId("")
-    setRegIban("")
     setForgotEmail("")
     setForgotSubmitted(false)
     setShowPassword(false)
@@ -107,31 +99,14 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       return
     }
 
-    if (regRole === "SELLER" && (!regCompanyName || !regVatId || !regIban)) {
-      setError("Bitte füllen Sie alle Verkäufer-Felder aus.")
-      return
-    }
-
     try {
-      const dto =
-        regRole === "SELLER"
-          ? {
-              email: regEmail,
-              password: regPassword,
-              firstName: regFirstName,
-              lastName: regLastName,
-              role: "SELLER" as const,
-              companyName: regCompanyName,
-              vatId: regVatId,
-              iban: regIban,
-            }
-          : {
-              email: regEmail,
-              password: regPassword,
-              firstName: regFirstName,
-              lastName: regLastName,
-              role: "BUYER" as const,
-            }
+      const dto = {
+        email: regEmail,
+        password: regPassword,
+        firstName: regFirstName,
+        lastName: regLastName,
+        role: "BUYER" as const,
+      }
 
       await register(dto)
       toast.success(
@@ -298,20 +273,23 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    onClick={() => setRegRole("BUYER")}
-                    className={`rounded-lg border-2 p-3 text-center transition-colors ${regRole === "BUYER" ? "border-teal-600 bg-teal-50 text-teal-700" : "border-slate-200 text-slate-600 hover:border-slate-300"}`}
+                    className="rounded-lg border-2 border-teal-600 bg-teal-50 p-3 text-center text-teal-700"
                   >
                     <User className="mx-auto mb-1 h-5 w-5" />
                     <span className="text-sm font-medium">Käufer</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => setRegRole("SELLER")}
-                    className={`rounded-lg border-2 p-3 text-center transition-colors ${regRole === "SELLER" ? "border-teal-600 bg-teal-50 text-teal-700" : "border-slate-200 text-slate-600 hover:border-slate-300"}`}
+                  <a
+                    href={sellerUrl("/login/seller")}
+                    className="rounded-lg border-2 border-slate-200 p-3 text-center text-slate-500 transition-colors hover:border-teal-300 hover:text-teal-600"
+                    onClick={() => {
+                      resetAll()
+                      onClose()
+                    }}
                   >
                     <Building2 className="mx-auto mb-1 h-5 w-5" />
                     <span className="text-sm font-medium">Verkäufer</span>
-                  </button>
+                    <span className="mt-0.5 block text-[10px] text-slate-400">→ Seller Portal</span>
+                  </a>
                 </div>
               </div>
 
@@ -428,53 +406,6 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   </p>
                 )}
               </div>
-
-              {regRole === "SELLER" && (
-                <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-medium text-slate-700">Unternehmensdaten</p>
-                  <div>
-                    <label htmlFor="reg-company" className="mb-1 block text-sm text-slate-600">
-                      Firmenname
-                    </label>
-                    <input
-                      id="reg-company"
-                      type="text"
-                      value={regCompanyName}
-                      onChange={(e) => setRegCompanyName(e.target.value)}
-                      required
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-800 focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="reg-vat" className="mb-1 block text-sm text-slate-600">
-                      USt-IdNr.
-                    </label>
-                    <input
-                      id="reg-vat"
-                      type="text"
-                      value={regVatId}
-                      onChange={(e) => setRegVatId(e.target.value)}
-                      required
-                      placeholder="DE123456789"
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-800 focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="reg-iban" className="mb-1 block text-sm text-slate-600">
-                      IBAN
-                    </label>
-                    <input
-                      id="reg-iban"
-                      type="text"
-                      value={regIban}
-                      onChange={(e) => setRegIban(e.target.value)}
-                      required
-                      placeholder="DE89 3704 0044 0532 0130 00"
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-slate-800 focus:border-teal-500 focus:ring-2 focus:ring-teal-500"
-                    />
-                  </div>
-                </div>
-              )}
 
               <button
                 type="submit"
