@@ -132,7 +132,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           productId: dto.productId,
           variantId: dto.variantId,
           quantity: dto.quantity,
-          variantOptions: [],
+          variantOptions: dto.variantOptions ?? [],
           productName: dto.productName,
           productSlug: dto.productSlug,
           imageUrl: dto.imageUrl,

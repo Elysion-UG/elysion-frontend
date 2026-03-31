@@ -137,6 +137,7 @@ export default function ProductDetail() {
         productSlug: product.slug ?? slug ?? undefined,
         imageUrl: product.images?.[0]?.url ?? product.imageUrls?.[0],
         unitPriceCents: priceEuro != null ? Math.round(priceEuro * 100) : undefined,
+        variantOptions: selectedVariant?.options?.map((o) => ({ name: o.type, value: o.value })),
       })
       toast.success("Zum Warenkorb hinzugefügt!")
     } catch {

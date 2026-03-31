@@ -408,6 +408,8 @@ export interface AddToCartDTO {
   imageUrl?: string
   /** Price in cents — used to show the correct price in the guest cart */
   unitPriceCents?: number
+  /** Human-readable variant labels (e.g. [{name:"Größe",value:"XL"}]) */
+  variantOptions?: Array<{ name: string; value: string }>
 }
 
 export interface UpdateCartItemDTO {
