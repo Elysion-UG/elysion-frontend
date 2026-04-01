@@ -1,12 +1,22 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Truck, CheckCircle2, BarChart3, RefreshCw, Loader2, ChevronRight, X } from "lucide-react"
+import {
+  Truck,
+  CheckCircle2,
+  BarChart3,
+  RefreshCw,
+  Loader2,
+  ChevronRight,
+  X,
+  DollarSign,
+} from "lucide-react"
 import { SellerOrderService } from "@/src/services/seller-order.service"
 import type { OrderGroupDetail } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
 import { toast } from "sonner"
 import { orderStatusLabel, orderStatusColor } from "./sellerDashboard.constants"
+import SellerKpiCard from "./SellerKpiCard"
 
 // ── Order Detail Drawer ──────────────────────────────────────────────────────
 
@@ -318,8 +328,38 @@ export default function SellerOrdersTab() {
     }
   }
 
+  const pendingCount = orders.filter(
+    (o) => o.status === "CONFIRMED" || o.status === "PENDING"
+  ).length
+  const processingCount = orders.filter((o) => o.status === "PROCESSING").length
+  const shippedCount = orders.filter((o) => o.status === "SHIPPED").length
+  const totalRevenue = orders.reduce((sum, o) => sum + (o.totalAmount ?? 0), 0)
+
   return (
     <>
+      {orders.length > 0 && (
+        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <SellerKpiCard
+            label="Neu / Bestätigt"
+            value={pendingCount}
+            icon={BarChart3}
+            color="amber"
+          />
+          <SellerKpiCard
+            label="In Bearbeitung"
+            value={processingCount}
+            icon={Loader2}
+            color="teal"
+          />
+          <SellerKpiCard label="Versandt" value={shippedCount} icon={Truck} color="slate" />
+          <SellerKpiCard
+            label="Gesamtumsatz"
+            value={formatEuro(totalRevenue)}
+            icon={DollarSign}
+            color="emerald"
+          />
+        </div>
+      )}
       <div className="rounded-xl border border-slate-200 bg-white">
         <div className="flex items-center justify-between border-b border-slate-200 p-6">
           <h2 className="text-xl font-semibold text-slate-800">Eingehende Bestellungen</h2>

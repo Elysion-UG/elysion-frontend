@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Plus, Edit, Package, RefreshCw, Loader2 } from "lucide-react"
+import { Plus, Edit, Package, RefreshCw, Loader2, CheckCircle2, Clock } from "lucide-react"
 import { ProductService } from "@/src/services/product.service"
 import ProductForm from "@/src/components/features/products/ProductForm"
 import type { ProductListItem, ProductStatus } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
 import { toast } from "sonner"
 import { productStatusLabel, productStatusColor } from "./sellerDashboard.constants"
+import SellerKpiCard from "./SellerKpiCard"
 
 interface SellerProductsTabProps {
   isApproved: boolean
@@ -47,8 +48,32 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
     }
   }
 
+  const activeCount = products.filter(
+    (p) => (p as unknown as { status: string }).status === "ACTIVE"
+  ).length
+  const draftCount = products.filter(
+    (p) => (p as unknown as { status: string }).status === "DRAFT"
+  ).length
+  const reviewCount = products.filter(
+    (p) => (p as unknown as { status: string }).status === "REVIEW"
+  ).length
+
   return (
     <>
+      {products.length > 0 && (
+        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <SellerKpiCard label="Gesamt" value={products.length} icon={Package} color="slate" />
+          <SellerKpiCard label="Aktiv" value={activeCount} icon={CheckCircle2} color="emerald" />
+          <SellerKpiCard label="Entwürfe" value={draftCount} icon={Edit} color="amber" />
+          <SellerKpiCard
+            label="In Prüfung"
+            value={reviewCount}
+            icon={Clock}
+            color="teal"
+            note="Warten auf Freigabe"
+          />
+        </div>
+      )}
       <div
         className={`rounded-xl border border-slate-200 bg-white ${!isApproved ? "pointer-events-none opacity-60" : ""}`}
       >

@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import SellerHeader from "@/src/components/layout/SellerHeader"
+import SellerShell from "@/src/components/layout/SellerShell"
 
 export const metadata: Metadata = {
   title: "Elysion — Seller Portal",
@@ -7,10 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-950">
-      <SellerHeader />
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">{children}</main>
-    </div>
-  )
+  return <SellerShell>{children}</SellerShell>
 }
