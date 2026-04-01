@@ -15,7 +15,7 @@ import { CheckoutService } from "@/src/services/checkout.service"
 import { ProductService } from "@/src/services/product.service"
 import { useCart } from "@/src/context/CartContext"
 import { useAuth } from "@/src/context/AuthContext"
-import LoginModal from "@/src/components/LoginModal"
+import LoginModal from "@/src/components/features/auth/LoginModal"
 import type { Address, CheckoutStartResponse, CheckoutCompleteResponse } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
 import {

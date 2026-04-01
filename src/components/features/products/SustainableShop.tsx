@@ -1,6 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import type React from "react"
+import { useState, useRef } from "react"
+import { useRouter } from "next/navigation"
 import {
   Leaf,
   Heart,
@@ -10,16 +12,21 @@ import {
   ChevronDown,
   ChevronRight,
   Loader2,
-  Search,
-  Package,
+  AlertCircle,
 } from "lucide-react"
-import { ProductService } from "@/src/services/product.service"
-import { CategoryService } from "@/src/services/category.service"
-import type { ProductListItem, ProductListParams, CategoryTreeNode } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
-import RecommendationsWidget from "@/src/components/features/products/RecommendationsWidget"
+import type { ProductDetail } from "@/src/types"
+import { useProducts, PRODUCTS_PAGE_SIZE } from "@/src/hooks/useProducts"
 
-const sustainabilityFilters = {
+// ── Sustainability filter config (frontend weighting, displayed only) ─────────
+
+type SustainabilityFilter = {
+  label: string
+  icon: typeof Leaf
+  subpoints: string[]
+}
+
+const sustainabilityFilters: Record<string, SustainabilityFilter> = {
   produktqualitaet: {
     label: "Produktqualität",
     icon: Star,
@@ -30,18 +37,57 @@ const sustainabilityFilters = {
     icon: Leaf,
     subpoints: [
       "Schutz von Umwelt, Natur und Ressourcen",
-      "Klimaschutz, Artenvielfalt, Kreislaufwirtschaft",
+      "Fokus auf Klimaschutz, Artenvielfalt, Ressourcenschonung, Kreislaufwirtschaft",
     ],
   },
   oekonomisch: {
     label: "Ökonomische Nachhaltigkeit",
     icon: Recycle,
-    subpoints: ["Faire Löhne in der Lieferkette", "Langfristig tragfähiges Wirtschaften"],
+    subpoints: [
+      "Lieferantenbeziehungen",
+      "Faire Löhne in der Lieferkette",
+      "Wirtschaftliches Handeln so gestalten, dass es langfristig tragfähig ist",
+    ],
   },
   sozial: {
     label: "Soziale Nachhaltigkeit",
     icon: Heart,
-    subpoints: ["Gerechtigkeit, Chancengleichheit", "Faire Arbeitsbedingungen, Menschenrechte"],
+    subpoints: [
+      "Gerechtigkeit, Chancengleichheit, soziale Sicherheit",
+      "Menschenrechte, Bildung, Gesundheit, faire Arbeitsbedingungen",
+    ],
+  },
+  kulturell: {
+    label: "Kulturelle Nachhaltigkeit",
+    icon: Heart,
+    subpoints: [
+      "Erhalt kultureller Vielfalt, Traditionen und Identitäten",
+      "Unterstützung lokaler Kulturen im Globalisierungsprozess",
+    ],
+  },
+  politisch: {
+    label: "Politische Nachhaltigkeit",
+    icon: Leaf,
+    subpoints: [
+      "Demokratische Strukturen, Rechtsstaatlichkeit, Mitbestimmung",
+      "Firmensitz und Produktionsstandorte",
+    ],
+  },
+  technologisch: {
+    label: "Technologische Nachhaltigkeit",
+    icon: Recycle,
+    subpoints: [
+      "Förderung und Nutzung umweltfreundlicher und effizienter Technologien",
+      "Innovation im Einklang mit Umwelt und Gesellschaft",
+    ],
+  },
+  institutionell: {
+    label: "Institutionelle Nachhaltigkeit",
+    icon: Star,
+    subpoints: [
+      "Unterstützung von Institutionen, die nachhaltig wirken",
+      "Integration von Nachhaltigkeit im Unternehmen",
+    ],
   },
 }
 
@@ -52,125 +98,138 @@ const importanceScale = [
   { value: "4", label: "Sehr wichtig" },
 ]
 
+// ── Sort options ──────────────────────────────────────────────────────────────
+
 const sortOptions = [
-  { value: "newest", label: "Neueste" },
-  { value: "price_asc", label: "Preis: Niedrig → Hoch" },
-  { value: "price_desc", label: "Preis: Hoch → Niedrig" },
+  { value: "newest", label: "Neueste", apiSort: "newest" },
+  { value: "price-low", label: "Preis: Niedrig → Hoch", apiSort: "price_asc" },
+  { value: "price-high", label: "Preis: Hoch → Niedrig", apiSort: "price_desc" },
 ]
 
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export default function SustainableShop() {
-  const [products, setProducts] = useState<ProductListItem[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [totalPages, setTotalPages] = useState(1)
-  const [currentPage, setCurrentPage] = useState(0)
-  const [totalElements, setTotalElements] = useState(0)
-
-  const [categories, setCategories] = useState<CategoryTreeNode[]>([])
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>(undefined)
-
+  const router = useRouter()
+  // ── Filter state ───────────────────────────────────────────────────
   const [search, setSearch] = useState("")
-  const [sortBy, setSortBy] = useState<"newest" | "price_asc" | "price_desc">("newest")
-  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false)
-  const [expandedSections, setExpandedSections] = useState({
-    sustainability: false,
-    categories: true,
-  })
-  const [expandedFilters, setExpandedFilters] = useState<Record<string, boolean>>({})
+  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 300 })
+  const [sortBy, setSortBy] = useState("newest")
+  const [currentPage, setCurrentPage] = useState(0)
   const [sustainabilityImportance, setSustainabilityImportance] = useState<Record<string, string>>({
     produktqualitaet: "4",
     oekologisch: "4",
     oekonomisch: "3",
     sozial: "3",
+    kulturell: "2",
+    politisch: "2",
+    technologisch: "3",
+    institutionell: "2",
   })
 
-  // Debounce search
-  const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [debouncedSearch, setDebouncedSearch] = useState("")
+  // ── UI state ───────────────────────────────────────────────────────
+  const [expandedSections, setExpandedSections] = useState({
+    sustainability: false,
+    categories: false,
+  })
+  const [expandedFilters, setExpandedFilters] = useState<Record<string, boolean>>({})
+  const [expandedFilterSections, setExpandedFilterSections] = useState({ price: true })
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false)
 
-  useEffect(() => {
-    if (searchTimeout.current) clearTimeout(searchTimeout.current)
-    searchTimeout.current = setTimeout(() => setDebouncedSearch(search), 300)
-    return () => {
-      if (searchTimeout.current) clearTimeout(searchTimeout.current)
-    }
-  }, [search])
-
-  // Load categories
-  useEffect(() => {
-    CategoryService.tree()
-      .then(setCategories)
-      .catch(() => {})
-  }, [])
-
-  // Load products
-  const fetchProducts = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const params: ProductListParams = {
-        page: currentPage,
-        size: 12,
-        sort: sortBy,
-      }
-      if (debouncedSearch) params.search = debouncedSearch
-      if (selectedCategoryId) params.categoryId = selectedCategoryId
-      const page = await ProductService.list(params)
-      setProducts(page.content)
-      setTotalPages(page.totalPages)
-      setTotalElements(page.totalElements)
-    } catch {
-      setProducts([])
-    } finally {
-      setIsLoading(false)
-    }
-  }, [currentPage, sortBy, debouncedSearch, selectedCategoryId])
-
-  useEffect(() => {
-    fetchProducts()
-  }, [fetchProducts])
-
-  // Reset to page 0 on filter/sort change
-  useEffect(() => {
-    setCurrentPage(0)
-  }, [debouncedSearch, selectedCategoryId, sortBy])
-
-  const handleProductClick = (product: ProductListItem) => {
-    window.location.href = product.slug
-      ? `/product?slug=${product.slug}`
-      : `/product?id=${product.id}`
+  // ── Debounce search ────────────────────────────────────────────────
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setSearch(value)
+    if (debounceTimer.current) clearTimeout(debounceTimer.current)
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(value)
+      setCurrentPage(0)
+    }, 400)
   }
+
+  // ── Data via React Query ───────────────────────────────────────────
+  const apiSort = sortOptions.find((o) => o.value === sortBy)?.apiSort
+  const { data, isLoading, isFetching, error, refetch } = useProducts({
+    search: debouncedSearch,
+    priceRange,
+    apiSort,
+    currentPage,
+  })
+  const products: ProductDetail[] = data?.products ?? []
+  const totalElements = data?.totalElements ?? 0
+  const totalPages = data?.totalPages ?? 0
+
+  // ── Handlers ───────────────────────────────────────────────────────
+  const handleImportanceChange = (attribute: string, importance: string) => {
+    setSustainabilityImportance((prev) => ({ ...prev, [attribute]: importance }))
+  }
+
+  const toggleSection = (key: "sustainability" | "categories") => {
+    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  const toggleFilterExpansion = (key: string) => {
+    setExpandedFilters((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  const getImportanceLabel = (value: string) => {
+    return importanceScale.find((scale) => scale.value === value)?.label ?? ""
+  }
+
+  const handleProductClick = (slug: string | undefined, id: string) => {
+    router.push(slug ? `/product?slug=${slug}` : `/product?id=${id}`)
+  }
+
+  const handleSellerClick = (e: React.MouseEvent, sellerId: string | undefined) => {
+    e.stopPropagation()
+    if (sellerId) router.push(`/producer?id=${sellerId}`)
+  }
+
+  const getProductImage = (product: ProductDetail): string => {
+    return product.images?.[0]?.url ?? product.imageUrls?.[0] ?? "/placeholder.svg"
+  }
+
+  const getProductPrice = (product: ProductDetail): number => {
+    return product.basePrice ?? product.price ?? 0
+  }
+
+  const getSellerName = (product: ProductDetail): string | null => {
+    if (!product.seller) return null
+    return (
+      product.seller.companyName ??
+      (product.seller.firstName && product.seller.lastName
+        ? `${product.seller.firstName} ${product.seller.lastName}`
+        : null)
+    )
+  }
+
+  const activeSortLabel = sortOptions.find((o) => o.value === sortBy)?.label ?? "Sortieren"
 
   return (
     <div>
-      {/* Recommendations widget for authenticated buyers */}
-      <RecommendationsWidget />
+      {/* Search bar */}
+      <div className="mb-6">
+        <input
+          type="text"
+          value={search}
+          onChange={handleSearchChange}
+          placeholder="Produkte suchen…"
+          className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+        />
+      </div>
 
-      <div className="grid gap-8 md:grid-cols-[300px_1fr]">
-        {/* Filters Sidebar */}
-        <div className="sticky top-20 h-fit overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+      <div className="grid gap-8 md:grid-cols-[320px_1fr]">
+        {/* ── Filters Sidebar ──────────────────────────────────────────── */}
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 bg-slate-100 p-4">
             <h2 className="text-lg font-semibold text-slate-800">Filter</h2>
-          </div>
-
-          {/* Search */}
-          <div className="border-b border-slate-200 p-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Produkte suchen…"
-                className="w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-              />
-            </div>
           </div>
 
           {/* Nachhaltigkeitspräferenzen */}
           <div className="border-b border-slate-200">
             <button
-              onClick={() =>
-                setExpandedSections((s) => ({ ...s, sustainability: !s.sustainability }))
-              }
+              onClick={() => toggleSection("sustainability")}
               className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
             >
               <span className="font-medium text-slate-700">Nachhaltigkeitspräferenzen</span>
@@ -183,16 +242,14 @@ export default function SustainableShop() {
             {expandedSections.sustainability && (
               <div className="space-y-4 px-4 pb-4">
                 <p className="text-sm text-slate-500">
-                  Bewerten Sie, wie wichtig Ihnen jeder Aspekt ist.
+                  Bewerten Sie, wie wichtig Ihnen jeder Nachhaltigkeitsaspekt ist.
                 </p>
                 {Object.entries(sustainabilityFilters).map(([key, filter]) => {
                   const Icon = filter.icon
                   return (
                     <div key={key} className="space-y-2">
                       <button
-                        onClick={() =>
-                          setExpandedFilters((prev) => ({ ...prev, [key]: !prev[key] }))
-                        }
+                        onClick={() => toggleFilterExpansion(key)}
                         className="flex w-full items-center justify-between text-left"
                       >
                         <div className="flex items-center gap-2">
@@ -205,34 +262,28 @@ export default function SustainableShop() {
                           <ChevronRight className="h-4 w-4 text-slate-400" />
                         )}
                       </button>
+
                       {expandedFilters[key] && (
                         <div className="ml-6 rounded bg-slate-50 p-2 text-xs text-slate-600">
                           <ul className="list-inside list-disc space-y-1">
-                            {filter.subpoints.map((sp, i) => (
-                              <li key={i}>{sp}</li>
+                            {filter.subpoints.map((subpoint, idx) => (
+                              <li key={idx}>{subpoint}</li>
                             ))}
                           </ul>
                         </div>
                       )}
+
                       <div className="ml-6 flex items-center gap-2">
                         <input
                           type="range"
                           min="1"
                           max="4"
                           value={sustainabilityImportance[key]}
-                          onChange={(e) =>
-                            setSustainabilityImportance((prev) => ({
-                              ...prev,
-                              [key]: e.target.value,
-                            }))
-                          }
+                          onChange={(e) => handleImportanceChange(key, e.target.value)}
                           className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-teal-600"
                         />
                         <span className="w-24 text-right text-xs text-slate-500">
-                          {
-                            importanceScale.find((s) => s.value === sustainabilityImportance[key])
-                              ?.label
-                          }
+                          {getImportanceLabel(sustainabilityImportance[key])}
                         </span>
                       </div>
                     </div>
@@ -242,83 +293,105 @@ export default function SustainableShop() {
             )}
           </div>
 
-          {/* Kategorien */}
-          <div>
+          {/* Preisspanne */}
+          <div className="border-b border-slate-200">
             <button
-              onClick={() => setExpandedSections((s) => ({ ...s, categories: !s.categories }))}
+              onClick={() => setExpandedFilterSections((prev) => ({ ...prev, price: !prev.price }))}
               className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
             >
-              <span className="font-medium text-slate-700">Kategorien</span>
-              {expandedSections.categories ? (
+              <span className="font-medium text-slate-700">Preisspanne</span>
+              {expandedFilterSections.price ? (
                 <ChevronDown className="h-5 w-5 text-slate-500" />
               ) : (
                 <ChevronRight className="h-5 w-5 text-slate-500" />
               )}
             </button>
-            {expandedSections.categories && (
-              <div className="flex flex-col gap-1 px-4 pb-4">
-                <button
-                  onClick={() => setSelectedCategoryId(undefined)}
-                  className={`rounded-md px-3 py-2 text-left text-sm transition-colors ${!selectedCategoryId ? "bg-teal-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}
-                >
-                  Alle
-                </button>
-                {categories.map((cat) => (
-                  <div key={cat.id}>
-                    <button
-                      onClick={() => setSelectedCategoryId(cat.id)}
-                      className={`w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${selectedCategoryId === cat.id ? "bg-teal-600 text-white" : "text-slate-600 hover:bg-slate-100"}`}
-                    >
-                      {cat.name}
-                    </button>
-                    {cat.children?.map((sub) => (
-                      <button
-                        key={sub.id}
-                        onClick={() => setSelectedCategoryId(sub.id)}
-                        className={`w-full rounded-md py-1.5 pl-7 pr-3 text-left text-sm transition-colors ${selectedCategoryId === sub.id ? "bg-teal-500 text-white" : "text-slate-500 hover:bg-slate-50"}`}
-                      >
-                        {sub.name}
-                      </button>
-                    ))}
+            {expandedFilterSections.price && (
+              <div className="space-y-4 px-4 pb-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <label className="mb-1 block text-xs text-slate-500">Min (€)</label>
+                    <input
+                      type="number"
+                      value={priceRange.min}
+                      onChange={(e) => {
+                        setPriceRange((prev) => ({ ...prev, min: Number(e.target.value) }))
+                        setCurrentPage(0)
+                      }}
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                      placeholder="0"
+                    />
                   </div>
-                ))}
+                  <span className="mt-5 text-slate-400">–</span>
+                  <div className="flex-1">
+                    <label className="mb-1 block text-xs text-slate-500">Max (€)</label>
+                    <input
+                      type="number"
+                      value={priceRange.max}
+                      onChange={(e) => {
+                        setPriceRange((prev) => ({ ...prev, max: Number(e.target.value) }))
+                        setCurrentPage(0)
+                      }}
+                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                      placeholder="300"
+                    />
+                  </div>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="300"
+                  value={priceRange.max}
+                  onChange={(e) => {
+                    setPriceRange((prev) => ({ ...prev, max: Number(e.target.value) }))
+                    setCurrentPage(0)
+                  }}
+                  className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-teal-600"
+                />
               </div>
             )}
           </div>
         </div>
 
-        {/* Products Section */}
+        {/* ── Products Section ─────────────────────────────────────────── */}
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <p className="text-slate-600">
+            <p className="flex items-center gap-2 text-slate-600">
               {isLoading ? (
-                <Loader2 className="mr-2 inline h-4 w-4 animate-spin text-teal-600" />
+                <span className="text-slate-400">Lädt…</span>
               ) : (
-                <span className="font-medium">{totalElements}</span>
-              )}{" "}
-              Produkte gefunden
+                <>
+                  <span className="font-medium">{totalElements}</span> Produkte gefunden
+                  {isFetching && <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400" />}
+                </>
+              )}
             </p>
+
+            {/* Sort Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm transition-colors hover:bg-slate-50"
+                className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 transition-colors hover:bg-slate-50"
               >
                 <ArrowUpDown className="h-4 w-4" />
-                Sortieren
+                <span className="text-sm">{activeSortLabel}</span>
               </button>
               {isSortDropdownOpen && (
                 <div className="absolute right-0 z-10 mt-2 w-52 rounded-lg border border-slate-200 bg-white shadow-lg">
-                  {sortOptions.map((opt) => (
+                  {sortOptions.map((option) => (
                     <button
-                      key={opt.value}
+                      key={option.value}
                       onClick={() => {
-                        setSortBy(opt.value as typeof sortBy)
+                        setSortBy(option.value)
+                        setCurrentPage(0)
                         setIsSortDropdownOpen(false)
                       }}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-50 ${sortBy === opt.value ? "bg-slate-100 font-medium" : ""}`}
+                      className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-50 ${
+                        sortBy === option.value ? "bg-slate-100 font-medium" : ""
+                      }`}
                     >
-                      {opt.label}
+                      {option.label}
                     </button>
                   ))}
                 </div>
@@ -326,66 +399,87 @@ export default function SustainableShop() {
             </div>
           </div>
 
-          {/* Products Grid */}
-          {isLoading ? (
+          {/* Skeleton — shown only on first load (no cached data yet) */}
+          {isLoading && (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {Array.from({ length: 8 }).map((_, i) => (
+              {Array.from({ length: PRODUCTS_PAGE_SIZE }).map((_, i) => (
                 <div
                   key={i}
-                  className="animate-pulse overflow-hidden rounded-lg border border-slate-200 bg-white"
+                  className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
                 >
-                  <div className="aspect-square bg-slate-200" />
+                  <div className="aspect-square animate-pulse bg-slate-200" />
                   <div className="space-y-2 p-4">
-                    <div className="h-3 w-1/3 rounded bg-slate-200" />
-                    <div className="h-4 w-3/4 rounded bg-slate-200" />
-                    <div className="h-3 w-1/2 rounded bg-slate-200" />
+                    <div className="h-3 w-1/3 animate-pulse rounded bg-slate-200" />
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-slate-200" />
+                    <div className="h-3 w-full animate-pulse rounded bg-slate-200" />
+                    <div className="h-3 w-4/5 animate-pulse rounded bg-slate-200" />
+                    <div className="mt-2 h-5 w-1/4 animate-pulse rounded bg-slate-200" />
                   </div>
                 </div>
               ))}
             </div>
-          ) : products.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 text-center">
-              <Package className="mb-4 h-16 w-16 text-slate-300" />
-              <h3 className="mb-2 text-xl font-semibold text-slate-700">Keine Produkte gefunden</h3>
-              <p className="text-slate-500">Versuchen Sie andere Filtereinstellungen.</p>
+          )}
+
+          {/* Error */}
+          {!isLoading && error && (
+            <div className="flex min-h-[300px] flex-col items-center justify-center gap-4 text-slate-600">
+              <AlertCircle className="h-12 w-12 text-red-400" />
+              <p>Produkte konnten nicht geladen werden.</p>
+              <button
+                onClick={() => refetch()}
+                className="rounded-lg bg-teal-600 px-4 py-2 text-sm text-white hover:bg-teal-700"
+              >
+                Erneut versuchen
+              </button>
             </div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          )}
+
+          {/* Empty */}
+          {!isLoading && !error && products.length === 0 && (
+            <div className="flex min-h-[300px] items-center justify-center text-slate-500">
+              Keine Produkte gefunden.
+            </div>
+          )}
+
+          {/* Products Grid — dimmed while a background re-fetch is in progress */}
+          {!isLoading && !error && products.length > 0 && (
+            <div
+              className={`grid gap-6 transition-opacity duration-200 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isFetching ? "opacity-60" : "opacity-100"}`}
+            >
               {products.map((product) => {
-                const imageUrl = (product as unknown as { imageUrl?: string }).imageUrl
-                const category = (product as unknown as { categoryName?: string }).categoryName
+                const sellerName = getSellerName(product)
+                const image = getProductImage(product)
+                const price = getProductPrice(product)
                 return (
                   <div
                     key={product.id}
-                    onClick={() => handleProductClick(product)}
+                    onClick={() => handleProductClick(product.slug, product.id)}
                     className="group cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md"
                   >
                     <div className="relative aspect-square overflow-hidden bg-slate-100">
-                      {imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt={product.title}
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-slate-200">
-                          <Package className="h-12 w-12" />
-                        </div>
-                      )}
+                      <img
+                        src={image}
+                        alt={product.name ?? product.title ?? "Produkt"}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
                     </div>
                     <div className="space-y-2 p-4">
-                      {category && (
-                        <p className="text-xs font-medium uppercase tracking-wide text-teal-600">
-                          {category}
-                        </p>
+                      {sellerName && (
+                        <button
+                          onClick={(e) => handleSellerClick(e, product.seller?.userId)}
+                          className="text-xs font-medium uppercase tracking-wide text-teal-600 hover:text-teal-700 hover:underline"
+                        >
+                          {sellerName}
+                        </button>
                       )}
-                      <h3 className="line-clamp-2 text-sm font-medium text-slate-800">
-                        {product.title}
+                      <h3 className="line-clamp-1 font-medium text-slate-800">
+                        {product.name ?? product.title}
                       </h3>
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="font-bold text-slate-800">
-                          {formatEuro(product.price ?? 0)}
-                        </span>
+                      {product.shortDesc && (
+                        <p className="line-clamp-2 text-sm text-slate-500">{product.shortDesc}</p>
+                      )}
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="font-bold text-slate-800">{formatEuro(price)}</span>
                       </div>
                     </div>
                   </div>
@@ -395,22 +489,23 @@ export default function SustainableShop() {
           )}
 
           {/* Pagination */}
-          {totalPages > 1 && (
+          {!isLoading && totalPages > 1 && (
             <div className="flex items-center justify-center gap-2 pt-6">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
                 disabled={currentPage === 0}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
               >
                 Vorherige
               </button>
+
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 const page = Math.max(0, Math.min(currentPage - 2, totalPages - 5)) + i
                 return (
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`rounded-lg border px-4 py-2 text-sm ${
+                    className={`rounded-lg border px-4 py-2 ${
                       page === currentPage
                         ? "border-teal-600 bg-teal-600 text-white"
                         : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
@@ -420,10 +515,11 @@ export default function SustainableShop() {
                   </button>
                 )
               })}
+
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={currentPage >= totalPages - 1}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
               >
                 Nächste
               </button>

@@ -19,7 +19,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
 import { useCart } from "@/src/hooks/useCart"
-import LoginModal from "@/src/components/LoginModal"
+import LoginModal from "@/src/components/features/auth/LoginModal"
 import Footer from "@/src/components/layout/Footer"
 import { sellerUrl } from "@/src/lib/seller-url"
 import { toast } from "sonner"

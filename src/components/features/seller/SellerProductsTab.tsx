@@ -1,0 +1,205 @@
+"use client"
+
+import { useState, useEffect, useCallback } from "react"
+import { Plus, Edit, Package, RefreshCw, Loader2 } from "lucide-react"
+import { ProductService } from "@/src/services/product.service"
+import ProductForm from "@/src/components/features/products/ProductForm"
+import type { ProductListItem, ProductStatus } from "@/src/types"
+import { formatEuro } from "@/src/lib/currency"
+import { toast } from "sonner"
+import { productStatusLabel, productStatusColor } from "./sellerDashboard.constants"
+
+interface SellerProductsTabProps {
+  isApproved: boolean
+  userId: string | undefined
+}
+
+export default function SellerProductsTab({ isApproved, userId }: SellerProductsTabProps) {
+  const [products, setProducts] = useState<ProductListItem[]>([])
+  const [productsLoading, setProductsLoading] = useState(false)
+  const [showProductForm, setShowProductForm] = useState(false)
+  const [editProduct, setEditProduct] = useState<ProductListItem | null>(null)
+
+  const fetchProducts = useCallback(async () => {
+    if (!userId || !isApproved) return
+    setProductsLoading(true)
+    try {
+      const page = await ProductService.list({ sellerId: userId, size: 100 })
+      setProducts(page.content)
+    } catch {
+      toast.error("Produkte konnten nicht geladen werden.")
+    } finally {
+      setProductsLoading(false)
+    }
+  }, [userId, isApproved])
+
+  useEffect(() => {
+    fetchProducts()
+  }, [fetchProducts])
+
+  const handleStatusChange = async (productId: string, status: ProductStatus) => {
+    try {
+      await ProductService.updateStatus(productId, { status })
+      toast.success(`Status auf "${productStatusLabel[status]}" gesetzt.`)
+      fetchProducts()
+    } catch {
+      toast.error("Status konnte nicht geändert werden.")
+    }
+  }
+
+  return (
+    <>
+      <div
+        className={`rounded-xl border border-slate-200 bg-white ${!isApproved ? "pointer-events-none opacity-60" : ""}`}
+      >
+        <div className="flex items-center justify-between border-b border-slate-200 p-6">
+          <h2 className="text-xl font-semibold text-slate-800">Ihre Produkte</h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={fetchProducts}
+              className="text-slate-400 transition-colors hover:text-slate-600"
+              title="Aktualisieren"
+            >
+              <RefreshCw className={`h-4 w-4 ${productsLoading ? "animate-spin" : ""}`} />
+            </button>
+            <button
+              disabled={!isApproved}
+              className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
+              onClick={() => {
+                setEditProduct(null)
+                setShowProductForm(true)
+              }}
+            >
+              <Plus className="h-4 w-4" /> Neues Produkt
+            </button>
+          </div>
+        </div>
+
+        {productsLoading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-teal-600" />
+          </div>
+        ) : products.length === 0 ? (
+          <div className="py-12 text-center">
+            <Package className="mx-auto mb-4 h-12 w-12 text-slate-300" />
+            <h3 className="mb-2 text-lg font-semibold text-slate-800">Noch keine Produkte</h3>
+            <p className="text-slate-500">Fügen Sie Ihr erstes nachhaltiges Produkt hinzu.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">
+                    Produkt
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">
+                    Preis
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">
+                    Aktionen
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {products.map((product) => {
+                  const status = (product as unknown as { status: ProductStatus }).status as
+                    | ProductStatus
+                    | undefined
+                  return (
+                    <tr key={product.id} className="hover:bg-slate-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-teal-100">
+                            <Package className="h-5 w-5 text-teal-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-slate-800">{product.title}</p>
+                            <p className="text-xs text-slate-400">ID: {product.id.slice(0, 8)}…</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-slate-800">
+                        {formatEuro(product.price ?? 0)}
+                      </td>
+                      <td className="px-6 py-4">
+                        {status ? (
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${productStatusColor[status]}`}
+                          >
+                            {productStatusLabel[status]}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400">–</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setEditProduct(product)
+                              setShowProductForm(true)
+                            }}
+                            className="text-teal-600 transition-colors hover:text-teal-800"
+                            title="Bearbeiten"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          {status === "DRAFT" && (
+                            <button
+                              onClick={() => handleStatusChange(product.id, "REVIEW")}
+                              className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800 hover:bg-amber-200"
+                            >
+                              Zur Prüfung
+                            </button>
+                          )}
+                          {status === "ACTIVE" && (
+                            <button
+                              onClick={() => handleStatusChange(product.id, "INACTIVE")}
+                              className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-200"
+                            >
+                              Deaktivieren
+                            </button>
+                          )}
+                          {status === "INACTIVE" && (
+                            <button
+                              onClick={() => handleStatusChange(product.id, "ACTIVE")}
+                              className="rounded bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800 hover:bg-emerald-200"
+                            >
+                              Aktivieren
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {showProductForm && (
+        <ProductForm
+          productId={editProduct?.id}
+          initialValues={
+            editProduct ? { name: editProduct.title, basePrice: editProduct.price } : undefined
+          }
+          onClose={() => {
+            setShowProductForm(false)
+            setEditProduct(null)
+          }}
+          onSaved={() => {
+            setShowProductForm(false)
+            setEditProduct(null)
+            fetchProducts()
+          }}
+        />
+      )}
+    </>
+  )
+}
