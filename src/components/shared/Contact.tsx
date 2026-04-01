@@ -42,11 +42,11 @@ export default function Contact() {
   }
 
   return (
-    <div className="min-h-screen bg-green-50">
+    <div className="min-h-screen bg-stone-50">
       <div className="container mx-auto px-4 py-12">
         <div className="mb-12 text-center">
-          <h1 className="mb-4 text-4xl font-bold text-green-800">Get in Touch</h1>
-          <p className="mx-auto max-w-2xl text-xl text-green-600">
+          <h1 className="mb-4 text-4xl font-bold text-stone-800">Get in Touch</h1>
+          <p className="mx-auto max-w-2xl text-xl text-emerald-700">
             Have questions about sustainable shopping or need help with your order? We're here to
             help!
           </p>
@@ -55,49 +55,49 @@ export default function Contact() {
         <div className="grid gap-12 lg:grid-cols-2">
           <div className="space-y-8">
             <div>
-              <h2 className="mb-6 text-2xl font-bold text-green-800">Contact Information</h2>
+              <h2 className="mb-6 text-2xl font-bold text-stone-800">Contact Information</h2>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-green-100">
-                    <Mail className="h-6 w-6 text-green-600" />
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-50">
+                    <Mail className="h-6 w-6 text-emerald-700" />
                   </div>
                   <div>
-                    <h3 className="mb-1 font-semibold text-green-800">Email Us</h3>
-                    <p className="text-green-600">support@ecoshop.com</p>
-                    <p className="text-green-600">hello@ecoshop.com</p>
+                    <h3 className="mb-1 font-semibold text-stone-800">Email Us</h3>
+                    <p className="text-emerald-700">support@ecoshop.com</p>
+                    <p className="text-emerald-700">hello@ecoshop.com</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-green-100">
-                    <Phone className="h-6 w-6 text-green-600" />
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-50">
+                    <Phone className="h-6 w-6 text-emerald-700" />
                   </div>
                   <div>
-                    <h3 className="mb-1 font-semibold text-green-800">Call Us</h3>
-                    <p className="text-green-600">+1 (555) 123-4567</p>
-                    <p className="text-sm text-green-600">Mon-Fri, 9AM-6PM EST</p>
+                    <h3 className="mb-1 font-semibold text-stone-800">Call Us</h3>
+                    <p className="text-emerald-700">+1 (555) 123-4567</p>
+                    <p className="text-sm text-emerald-700">Mon-Fri, 9AM-6PM EST</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-green-100">
-                    <MapPin className="h-6 w-6 text-green-600" />
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-50">
+                    <MapPin className="h-6 w-6 text-emerald-700" />
                   </div>
                   <div>
-                    <h3 className="mb-1 font-semibold text-green-800">Visit Us</h3>
-                    <p className="text-green-600">123 Sustainable Street</p>
-                    <p className="text-green-600">Green City, GC 12345</p>
+                    <h3 className="mb-1 font-semibold text-stone-800">Visit Us</h3>
+                    <p className="text-emerald-700">123 Sustainable Street</p>
+                    <p className="text-emerald-700">Green City, GC 12345</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-lg border border-green-200 bg-white p-6 shadow-sm">
+            <div className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-3">
-                <Clock className="h-6 w-6 text-green-600" />
-                <h3 className="text-lg font-semibold text-green-800">Business Hours</h3>
+                <Clock className="h-6 w-6 text-emerald-700" />
+                <h3 className="text-lg font-semibold text-stone-800">Business Hours</h3>
               </div>
-              <div className="space-y-2 text-green-700">
+              <div className="space-y-2 text-stone-700">
                 <div className="flex justify-between">
                   <span>Monday - Friday</span>
                   <span>9:00 AM - 6:00 PM</span>
@@ -113,27 +113,27 @@ export default function Contact() {
               </div>
             </div>
 
-            <div className="rounded-lg bg-green-100 p-6">
+            <div className="rounded-lg bg-emerald-50 p-6">
               <div className="mb-3 flex items-center gap-3">
-                <MessageCircle className="h-6 w-6 text-green-600" />
-                <h3 className="text-lg font-semibold text-green-800">Quick Answers</h3>
+                <MessageCircle className="h-6 w-6 text-emerald-700" />
+                <h3 className="text-lg font-semibold text-stone-800">Quick Answers</h3>
               </div>
-              <p className="mb-4 text-green-700">
+              <p className="mb-4 text-stone-700">
                 Looking for quick answers? Check out our frequently asked questions for instant
                 help.
               </p>
-              <button className="rounded-lg bg-green-600 px-4 py-2 text-white transition-colors hover:bg-green-700">
+              <button className="rounded-lg bg-emerald-700 px-4 py-2 text-white transition-colors hover:bg-green-700">
                 View FAQ
               </button>
             </div>
           </div>
 
-          <div className="rounded-lg border border-green-200 bg-white p-8 shadow-sm">
-            <h2 className="mb-6 text-2xl font-bold text-green-800">Send us a Message</h2>
+          <div className="rounded-lg border border-stone-200 bg-white p-8 shadow-sm">
+            <h2 className="mb-6 text-2xl font-bold text-stone-800">Send us a Message</h2>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                 <div>
-                  <label htmlFor="name" className="mb-2 block text-sm font-medium text-green-700">
+                  <label htmlFor="name" className="mb-2 block text-sm font-medium text-stone-700">
                     Full Name *
                   </label>
                   <input
@@ -148,7 +148,7 @@ export default function Contact() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="mb-2 block text-sm font-medium text-green-700">
+                  <label htmlFor="email" className="mb-2 block text-sm font-medium text-stone-700">
                     Email Address *
                   </label>
                   <input
@@ -165,7 +165,7 @@ export default function Contact() {
               </div>
 
               <div>
-                <label htmlFor="subject" className="mb-2 block text-sm font-medium text-green-700">
+                <label htmlFor="subject" className="mb-2 block text-sm font-medium text-stone-700">
                   Subject *
                 </label>
                 <select
@@ -187,7 +187,7 @@ export default function Contact() {
               </div>
 
               <div>
-                <label htmlFor="message" className="mb-2 block text-sm font-medium text-green-700">
+                <label htmlFor="message" className="mb-2 block text-sm font-medium text-stone-700">
                   Message *
                 </label>
                 <textarea
@@ -205,7 +205,7 @@ export default function Contact() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-3 font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-green-400"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-6 py-3 font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-green-400"
               >
                 {isSubmitting ? (
                   <>

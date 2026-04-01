@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Loader2,
   AlertCircle,
+  Search,
 } from "lucide-react"
 import { formatEuro } from "@/src/lib/currency"
 import type { ProductDetail } from "@/src/types"
@@ -208,41 +209,52 @@ export default function SustainableShop() {
 
   return (
     <div>
+      {/* Hero intro */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-stone-900 sm:text-3xl">Nachhaltig einkaufen</h1>
+        <p className="mt-2 text-stone-500">
+          Produkte, die fair hergestellt, zertifiziert und für die Zukunft gedacht sind.
+        </p>
+      </div>
+
       {/* Search bar */}
-      <div className="mb-6">
+      <div className="relative mb-6">
+        <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
         <input
           type="text"
           value={search}
           onChange={handleSearchChange}
           placeholder="Produkte suchen…"
-          className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full rounded-xl border border-stone-200 bg-white py-2.5 pl-10 pr-4 text-sm text-stone-800 placeholder:text-stone-400 focus:border-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-200"
         />
       </div>
 
-      <div className="grid gap-8 md:grid-cols-[320px_1fr]">
+      <div className="grid gap-8 md:grid-cols-[280px_1fr]">
         {/* ── Filters Sidebar ──────────────────────────────────────────── */}
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 bg-slate-100 p-4">
-            <h2 className="text-lg font-semibold text-slate-800">Filter</h2>
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
+          <div className="border-b border-stone-100 px-4 py-4">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-stone-500">
+              Filter
+            </h2>
           </div>
 
           {/* Nachhaltigkeitspräferenzen */}
-          <div className="border-b border-slate-200">
+          <div className="border-b border-stone-100">
             <button
               onClick={() => toggleSection("sustainability")}
-              className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
+              className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-stone-50"
             >
-              <span className="font-medium text-slate-700">Nachhaltigkeitspräferenzen</span>
+              <span className="text-sm font-medium text-stone-700">Nachhaltigkeitspräferenzen</span>
               {expandedSections.sustainability ? (
-                <ChevronDown className="h-5 w-5 text-slate-500" />
+                <ChevronDown className="h-4 w-4 text-stone-400" />
               ) : (
-                <ChevronRight className="h-5 w-5 text-slate-500" />
+                <ChevronRight className="h-4 w-4 text-stone-400" />
               )}
             </button>
             {expandedSections.sustainability && (
               <div className="space-y-4 px-4 pb-4">
-                <p className="text-sm text-slate-500">
-                  Bewerten Sie, wie wichtig Ihnen jeder Nachhaltigkeitsaspekt ist.
+                <p className="text-xs text-stone-400">
+                  Wie wichtig ist Ihnen jeder Nachhaltigkeitsaspekt?
                 </p>
                 {Object.entries(sustainabilityFilters).map(([key, filter]) => {
                   const Icon = filter.icon
@@ -253,18 +265,18 @@ export default function SustainableShop() {
                         className="flex w-full items-center justify-between text-left"
                       >
                         <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4 text-teal-600" />
-                          <span className="text-sm font-medium text-slate-700">{filter.label}</span>
+                          <Icon className="h-3.5 w-3.5 text-emerald-700" />
+                          <span className="text-sm text-stone-600">{filter.label}</span>
                         </div>
                         {expandedFilters[key] ? (
-                          <ChevronDown className="h-4 w-4 text-slate-400" />
+                          <ChevronDown className="h-3.5 w-3.5 text-stone-300" />
                         ) : (
-                          <ChevronRight className="h-4 w-4 text-slate-400" />
+                          <ChevronRight className="h-3.5 w-3.5 text-stone-300" />
                         )}
                       </button>
 
                       {expandedFilters[key] && (
-                        <div className="ml-6 rounded bg-slate-50 p-2 text-xs text-slate-600">
+                        <div className="ml-5 rounded-lg bg-stone-50 p-2.5 text-xs text-stone-500">
                           <ul className="list-inside list-disc space-y-1">
                             {filter.subpoints.map((subpoint, idx) => (
                               <li key={idx}>{subpoint}</li>
@@ -273,16 +285,16 @@ export default function SustainableShop() {
                         </div>
                       )}
 
-                      <div className="ml-6 flex items-center gap-2">
+                      <div className="ml-5 flex items-center gap-3">
                         <input
                           type="range"
                           min="1"
                           max="4"
                           value={sustainabilityImportance[key]}
                           onChange={(e) => handleImportanceChange(key, e.target.value)}
-                          className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-teal-600"
+                          className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-stone-200 accent-emerald-700"
                         />
-                        <span className="w-24 text-right text-xs text-slate-500">
+                        <span className="w-20 shrink-0 text-right text-xs text-stone-400">
                           {getImportanceLabel(sustainabilityImportance[key])}
                         </span>
                       </div>
@@ -294,23 +306,23 @@ export default function SustainableShop() {
           </div>
 
           {/* Preisspanne */}
-          <div className="border-b border-slate-200">
+          <div>
             <button
               onClick={() => setExpandedFilterSections((prev) => ({ ...prev, price: !prev.price }))}
-              className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-slate-50"
+              className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-stone-50"
             >
-              <span className="font-medium text-slate-700">Preisspanne</span>
+              <span className="text-sm font-medium text-stone-700">Preisspanne</span>
               {expandedFilterSections.price ? (
-                <ChevronDown className="h-5 w-5 text-slate-500" />
+                <ChevronDown className="h-4 w-4 text-stone-400" />
               ) : (
-                <ChevronRight className="h-5 w-5 text-slate-500" />
+                <ChevronRight className="h-4 w-4 text-stone-400" />
               )}
             </button>
             {expandedFilterSections.price && (
               <div className="space-y-4 px-4 pb-4">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                   <div className="flex-1">
-                    <label className="mb-1 block text-xs text-slate-500">Min (€)</label>
+                    <label className="mb-1 block text-xs text-stone-400">Min (€)</label>
                     <input
                       type="number"
                       value={priceRange.min}
@@ -318,13 +330,13 @@ export default function SustainableShop() {
                         setPriceRange((prev) => ({ ...prev, min: Number(e.target.value) }))
                         setCurrentPage(0)
                       }}
-                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-200"
                       placeholder="0"
                     />
                   </div>
-                  <span className="mt-5 text-slate-400">–</span>
+                  <span className="mt-5 text-stone-300">–</span>
                   <div className="flex-1">
-                    <label className="mb-1 block text-xs text-slate-500">Max (€)</label>
+                    <label className="mb-1 block text-xs text-stone-400">Max (€)</label>
                     <input
                       type="number"
                       value={priceRange.max}
@@ -332,7 +344,7 @@ export default function SustainableShop() {
                         setPriceRange((prev) => ({ ...prev, max: Number(e.target.value) }))
                         setCurrentPage(0)
                       }}
-                      className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+                      className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-200"
                       placeholder="300"
                     />
                   </div>
@@ -346,7 +358,7 @@ export default function SustainableShop() {
                     setPriceRange((prev) => ({ ...prev, max: Number(e.target.value) }))
                     setCurrentPage(0)
                   }}
-                  className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-teal-600"
+                  className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-stone-200 accent-emerald-700"
                 />
               </div>
             )}
@@ -354,16 +366,16 @@ export default function SustainableShop() {
         </div>
 
         {/* ── Products Section ─────────────────────────────────────────── */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <p className="flex items-center gap-2 text-slate-600">
+            <p className="flex items-center gap-2 text-sm text-stone-500">
               {isLoading ? (
-                <span className="text-slate-400">Lädt…</span>
+                <span className="text-stone-400">Lädt…</span>
               ) : (
                 <>
-                  <span className="font-medium">{totalElements}</span> Produkte gefunden
-                  {isFetching && <Loader2 className="h-3.5 w-3.5 animate-spin text-slate-400" />}
+                  <span className="font-semibold text-stone-700">{totalElements}</span> Produkte
+                  {isFetching && <Loader2 className="h-3.5 w-3.5 animate-spin text-stone-300" />}
                 </>
               )}
             </p>
@@ -372,13 +384,13 @@ export default function SustainableShop() {
             <div className="relative">
               <button
                 onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 transition-colors hover:bg-slate-50"
+                className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 transition-colors hover:border-stone-300 hover:bg-stone-50"
               >
-                <ArrowUpDown className="h-4 w-4" />
-                <span className="text-sm">{activeSortLabel}</span>
+                <ArrowUpDown className="h-3.5 w-3.5" />
+                {activeSortLabel}
               </button>
               {isSortDropdownOpen && (
-                <div className="absolute right-0 z-10 mt-2 w-52 rounded-lg border border-slate-200 bg-white shadow-lg">
+                <div className="absolute right-0 z-10 mt-2 w-52 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg">
                   {sortOptions.map((option) => (
                     <button
                       key={option.value}
@@ -387,8 +399,8 @@ export default function SustainableShop() {
                         setCurrentPage(0)
                         setIsSortDropdownOpen(false)
                       }}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-slate-50 ${
-                        sortBy === option.value ? "bg-slate-100 font-medium" : ""
+                      className={`w-full px-4 py-2.5 text-left text-sm text-stone-600 hover:bg-stone-50 ${
+                        sortBy === option.value ? "bg-stone-50 font-medium text-stone-900" : ""
                       }`}
                     >
                       {option.label}
@@ -399,21 +411,20 @@ export default function SustainableShop() {
             </div>
           </div>
 
-          {/* Skeleton — shown only on first load (no cached data yet) */}
+          {/* Skeleton — shown only on first load */}
           {isLoading && (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: PRODUCTS_PAGE_SIZE }).map((_, i) => (
                 <div
                   key={i}
-                  className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm"
+                  className="overflow-hidden rounded-xl border border-stone-200 bg-white"
                 >
-                  <div className="aspect-square animate-pulse bg-slate-200" />
-                  <div className="space-y-2 p-4">
-                    <div className="h-3 w-1/3 animate-pulse rounded bg-slate-200" />
-                    <div className="h-4 w-3/4 animate-pulse rounded bg-slate-200" />
-                    <div className="h-3 w-full animate-pulse rounded bg-slate-200" />
-                    <div className="h-3 w-4/5 animate-pulse rounded bg-slate-200" />
-                    <div className="mt-2 h-5 w-1/4 animate-pulse rounded bg-slate-200" />
+                  <div className="aspect-square animate-pulse bg-stone-100" />
+                  <div className="space-y-2.5 p-4">
+                    <div className="h-3 w-1/3 animate-pulse rounded-full bg-stone-100" />
+                    <div className="h-4 w-3/4 animate-pulse rounded-full bg-stone-100" />
+                    <div className="h-3 w-full animate-pulse rounded-full bg-stone-100" />
+                    <div className="mt-2 h-5 w-1/4 animate-pulse rounded-full bg-stone-100" />
                   </div>
                 </div>
               ))}
@@ -422,12 +433,12 @@ export default function SustainableShop() {
 
           {/* Error */}
           {!isLoading && error && (
-            <div className="flex min-h-[300px] flex-col items-center justify-center gap-4 text-slate-600">
-              <AlertCircle className="h-12 w-12 text-red-400" />
-              <p>Produkte konnten nicht geladen werden.</p>
+            <div className="flex min-h-[300px] flex-col items-center justify-center gap-4 text-stone-500">
+              <AlertCircle className="h-10 w-10 text-red-300" />
+              <p className="text-sm">Produkte konnten nicht geladen werden.</p>
               <button
                 onClick={() => refetch()}
-                className="rounded-lg bg-teal-600 px-4 py-2 text-sm text-white hover:bg-teal-700"
+                className="rounded-lg bg-stone-900 px-4 py-2 text-sm text-white hover:bg-stone-800"
               >
                 Erneut versuchen
               </button>
@@ -436,15 +447,15 @@ export default function SustainableShop() {
 
           {/* Empty */}
           {!isLoading && !error && products.length === 0 && (
-            <div className="flex min-h-[300px] items-center justify-center text-slate-500">
+            <div className="flex min-h-[300px] items-center justify-center text-sm text-stone-400">
               Keine Produkte gefunden.
             </div>
           )}
 
-          {/* Products Grid — dimmed while a background re-fetch is in progress */}
+          {/* Products Grid */}
           {!isLoading && !error && products.length > 0 && (
             <div
-              className={`grid gap-6 transition-opacity duration-200 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isFetching ? "opacity-60" : "opacity-100"}`}
+              className={`grid gap-5 transition-opacity duration-200 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isFetching ? "opacity-60" : "opacity-100"}`}
             >
               {products.map((product) => {
                 const sellerName = getSellerName(product)
@@ -454,32 +465,36 @@ export default function SustainableShop() {
                   <div
                     key={product.id}
                     onClick={() => handleProductClick(product.slug, product.id)}
-                    className="group cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md"
+                    className="group cursor-pointer overflow-hidden rounded-xl border border-stone-200 bg-white transition-all duration-200 hover:border-stone-300 hover:shadow-md"
                   >
-                    <div className="relative aspect-square overflow-hidden bg-slate-100">
+                    <div className="relative aspect-square overflow-hidden bg-stone-100">
                       <img
                         src={image}
                         alt={product.name ?? product.title ?? "Produkt"}
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     </div>
-                    <div className="space-y-2 p-4">
+                    <div className="space-y-1.5 p-4">
                       {sellerName && (
                         <button
                           onClick={(e) => handleSellerClick(e, product.seller?.userId)}
-                          className="text-xs font-medium uppercase tracking-wide text-teal-600 hover:text-teal-700 hover:underline"
+                          className="text-xs font-medium uppercase tracking-wider text-emerald-700 hover:text-emerald-800 hover:underline"
                         >
                           {sellerName}
                         </button>
                       )}
-                      <h3 className="line-clamp-1 font-medium text-slate-800">
+                      <h3 className="line-clamp-1 text-sm font-semibold text-stone-800">
                         {product.name ?? product.title}
                       </h3>
                       {product.shortDesc && (
-                        <p className="line-clamp-2 text-sm text-slate-500">{product.shortDesc}</p>
+                        <p className="line-clamp-2 text-xs leading-relaxed text-stone-400">
+                          {product.shortDesc}
+                        </p>
                       )}
-                      <div className="flex items-center justify-between pt-2">
-                        <span className="font-bold text-slate-800">{formatEuro(price)}</span>
+                      <div className="pt-2">
+                        <span className="text-base font-bold text-stone-900">
+                          {formatEuro(price)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -490,11 +505,11 @@ export default function SustainableShop() {
 
           {/* Pagination */}
           {!isLoading && totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-6">
+            <div className="flex items-center justify-center gap-2 pt-4">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
                 disabled={currentPage === 0}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
+                className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-300"
               >
                 Vorherige
               </button>
@@ -505,10 +520,10 @@ export default function SustainableShop() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`rounded-lg border px-4 py-2 ${
+                    className={`rounded-lg border px-4 py-2 text-sm transition-colors ${
                       page === currentPage
-                        ? "border-teal-600 bg-teal-600 text-white"
-                        : "border-slate-300 bg-white text-slate-600 hover:bg-slate-50"
+                        ? "border-stone-900 bg-stone-900 text-white"
+                        : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
                     }`}
                   >
                     {page + 1}
@@ -519,7 +534,7 @@ export default function SustainableShop() {
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={currentPage >= totalPages - 1}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
+                className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-300"
               >
                 Nächste
               </button>
