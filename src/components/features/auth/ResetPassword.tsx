@@ -7,11 +7,11 @@ import { AuthService } from "@/src/services/auth.service"
 import { validatePassword } from "@/src/lib/validation"
 import { toast } from "sonner"
 
-type ResetStatus = "form" | "success" | "invalid-token"
+type ResetStatus = "validating" | "form" | "success" | "invalid-token"
 
 export default function ResetPassword() {
   const [token, setToken] = useState("")
-  const [status, setStatus] = useState<ResetStatus>("form")
+  const [status, setStatus] = useState<ResetStatus>("validating")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -23,9 +23,16 @@ export default function ResetPassword() {
     const t = params.get("token")
     if (!t) {
       setStatus("invalid-token")
-    } else {
-      setToken(t)
+      return
     }
+    setToken(t)
+    AuthService.validateResetToken(t)
+      .then(() => {
+        setStatus("form")
+      })
+      .catch(() => {
+        setStatus("invalid-token")
+      })
   }, [])
 
   const pwValidation = validatePassword(password)
@@ -58,6 +65,14 @@ export default function ResetPassword() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-4">
       <div className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-8 shadow-lg">
+        {status === "validating" && (
+          <div className="text-center">
+            <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-sage-600" />
+            <h1 className="mb-2 text-xl font-bold text-stone-800">Link wird geprüft...</h1>
+            <p className="text-stone-500">Bitte warten Sie einen Moment.</p>
+          </div>
+        )}
+
         {status === "invalid-token" && (
           <div className="text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">

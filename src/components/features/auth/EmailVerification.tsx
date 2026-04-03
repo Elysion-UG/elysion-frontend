@@ -11,6 +11,7 @@ export default function EmailVerification() {
   const [status, setStatus] = useState<VerifyStatus>("awaiting")
   const [isResending, setIsResending] = useState(false)
   const [resendCount, setResendCount] = useState(0)
+  const [email, setEmail] = useState("")
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -28,9 +29,13 @@ export default function EmailVerification() {
   }, [])
 
   const handleResendEmail = async () => {
+    if (!email.trim()) {
+      toast.error("Bitte geben Sie Ihre E-Mail-Adresse ein.")
+      return
+    }
     setIsResending(true)
     try {
-      await new Promise((r) => setTimeout(r, 1500))
+      await AuthService.resendVerification(email.trim())
       setResendCount((c) => c + 1)
       toast.success("Verifizierungs-E-Mail wurde erneut gesendet!")
     } catch {
@@ -83,9 +88,16 @@ export default function EmailVerification() {
               Der Verifizierungslink ist ungültig oder abgelaufen. Bitte fordern Sie einen neuen
               Link an.
             </p>
+            <input
+              type="email"
+              placeholder="Ihre E-Mail-Adresse"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mb-3 w-full rounded-xl border border-stone-300 px-4 py-2.5 text-stone-800 focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
+            />
             <button
               onClick={handleResendEmail}
-              disabled={isResending}
+              disabled={isResending || !email.trim()}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 py-2.5 font-semibold text-white transition-colors hover:bg-sage-700 disabled:opacity-50"
             >
               {isResending ? (
@@ -131,9 +143,16 @@ export default function EmailVerification() {
             </div>
 
             <div className="space-y-3">
+              <input
+                type="email"
+                placeholder="Ihre E-Mail-Adresse"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl border border-stone-300 px-4 py-2.5 text-stone-800 focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
+              />
               <button
                 onClick={handleResendEmail}
-                disabled={isResending}
+                disabled={isResending || !email.trim()}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 py-2.5 font-semibold text-white transition-colors hover:bg-sage-700 disabled:opacity-50"
               >
                 {isResending ? (

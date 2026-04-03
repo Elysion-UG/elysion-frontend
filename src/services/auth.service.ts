@@ -95,4 +95,24 @@ export const AuthService = {
       body: JSON.stringify({ token, newPassword }),
     })
   },
+
+  /**
+   * Resend the verification email. Always returns 200 to prevent email enumeration.
+   */
+  async resendVerification(email: string): Promise<void> {
+    return apiRequest("/api/v1/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    })
+  },
+
+  /**
+   * Validate a reset-password token without consuming it.
+   * Returns 200 if valid, throws on 4xx (expired/invalid).
+   */
+  async validateResetToken(token: string): Promise<void> {
+    return apiRequest(`/api/v1/auth/reset-password?token=${encodeURIComponent(token)}`, {
+      method: "GET",
+    })
+  },
 }
