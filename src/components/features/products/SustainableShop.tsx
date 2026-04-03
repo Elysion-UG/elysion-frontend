@@ -15,14 +15,22 @@ import {
   AlertCircle,
   Search,
   UserCircle,
+  ShieldCheck,
+  Users,
+  Layers,
+  Home,
+  Sparkles,
 } from "lucide-react"
+import Link from "next/link"
 import { formatEuro } from "@/src/lib/currency"
 import type { ProductDetail } from "@/src/types"
+import type { CertificateType } from "@/src/types/certificate"
 import { useProducts, PRODUCTS_PAGE_SIZE } from "@/src/hooks/useProducts"
 import { useAuth } from "@/src/context/AuthContext"
 import { useBuyerValueProfile } from "@/src/hooks/useBuyerValueProfile"
+import { sellerUrl } from "@/src/lib/seller-url"
 
-// ── Sustainability filter config (frontend weighting, displayed only) ─────────
+// ── Sustainability filter config ───────────────────────────────────────────────
 
 type SustainabilityFilter = {
   label: string
@@ -103,7 +111,6 @@ const importanceScale = [
   { value: "5", label: "Sehr wichtig" },
 ]
 
-// Maps a profile weight (0–100) to a slider step (1–5).
 function profileWeightToSlider(weight: number): string {
   return String(Math.min(5, Math.max(1, Math.round((weight / 100) * 4 + 1))))
 }
@@ -113,7 +120,7 @@ const MIDDLE_IMPORTANCE: Record<string, string> = Object.keys(sustainabilityFilt
   {}
 )
 
-// ── Sort options ──────────────────────────────────────────────────────────────
+// ── Sort options ───────────────────────────────────────────────────────────────
 
 const sortOptions = [
   { value: "newest", label: "Neueste", apiSort: "newest" },
@@ -121,12 +128,50 @@ const sortOptions = [
   { value: "price-high", label: "Preis: Hoch → Niedrig", apiSort: "price_desc" },
 ]
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Category chips ─────────────────────────────────────────────────────────────
+
+const categoryChips: { label: string; icon: typeof Leaf; query: string }[] = [
+  { label: "Textilien", icon: Layers, query: "Textil" },
+  { label: "Accessoires", icon: Star, query: "Accessoire" },
+  { label: "Bio & Natur", icon: Leaf, query: "Bio" },
+  { label: "Haushalt", icon: Home, query: "Haushalt" },
+  { label: "Beauty", icon: Sparkles, query: "Beauty" },
+  { label: "Fair Trade", icon: Heart, query: "Fair" },
+]
+
+// ── Certificate helpers ────────────────────────────────────────────────────────
+
+const certTypeLabels: Record<CertificateType, string> = {
+  ORGANIC: "Bio",
+  FAIR_TRADE: "Fairtrade",
+  RECYCLED: "Recycled",
+  VEGAN: "Vegan",
+}
+
+const certTypeStyles: Record<CertificateType, string> = {
+  ORGANIC: "bg-sage-100 text-sage-700",
+  FAIR_TRADE: "bg-amber-100 text-amber-700",
+  RECYCLED: "bg-sky-100 text-sky-700",
+  VEGAN: "bg-emerald-100 text-emerald-700",
+}
+
+function certLabel(type: CertificateType | undefined): string {
+  return type ? (certTypeLabels[type] ?? type) : "Zertifiziert"
+}
+
+function certStyle(type: CertificateType | undefined): string {
+  return type
+    ? (certTypeStyles[type] ?? "bg-stone-100 text-stone-600")
+    : "bg-stone-100 text-stone-600"
+}
+
+// ── Component ──────────────────────────────────────────────────────────────────
 
 export default function SustainableShop() {
   const router = useRouter()
   const { isAuthenticated } = useAuth()
   const { data: valueProfile } = useBuyerValueProfile(isAuthenticated)
+  const shopRef = useRef<HTMLDivElement>(null)
 
   // ── Filter state ───────────────────────────────────────────────────
   const [search, setSearch] = useState("")
@@ -137,9 +182,6 @@ export default function SustainableShop() {
   const [sustainabilityImportance, setSustainabilityImportance] =
     useState<Record<string, string>>(MIDDLE_IMPORTANCE)
 
-  // Sync slider values with the user's value profile whenever it loads or
-  // the auth state changes. Falls back to MIDDLE_IMPORTANCE when not logged in
-  // or when no profile has been saved yet.
   useEffect(() => {
     if (!isAuthenticated || !valueProfile?.simpleProfile) {
       setSustainabilityImportance(MIDDLE_IMPORTANCE)
@@ -174,6 +216,20 @@ export default function SustainableShop() {
       setDebouncedSearch(value)
       setCurrentPage(0)
     }, 400)
+  }
+
+  const applyCategory = (query: string) => {
+    setSearch(query)
+    setDebouncedSearch(query)
+    setCurrentPage(0)
+    shopRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  const resetFilters = () => {
+    setSearch("")
+    setDebouncedSearch("")
+    setPriceRange({ min: 0, max: 300 })
+    setCurrentPage(0)
   }
 
   // ── Data via React Query ───────────────────────────────────────────
@@ -236,31 +292,109 @@ export default function SustainableShop() {
 
   return (
     <div>
-      {/* Hero intro */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-stone-900 sm:text-3xl">Nachhaltig einkaufen</h1>
-        <p className="mt-2 text-stone-500">
-          Produkte, die fair hergestellt, zertifiziert und für die Zukunft gedacht sind.
-        </p>
+      {/* ── Hero ──────────────────────────────────────────────────────── */}
+      <div className="relative mb-8 animate-fade-up overflow-hidden rounded-2xl border border-sage-100 bg-gradient-to-br from-sage-50 via-white to-bark-50 px-8 py-10 sm:py-14">
+        {/* Decorative background circles */}
+        <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-sage-100/40" />
+        <div className="pointer-events-none absolute -bottom-10 right-24 h-40 w-40 rounded-full bg-bark-100/30" />
+
+        <div className="relative max-w-lg">
+          <span className="mb-3 inline-block text-xs font-semibold uppercase tracking-widest text-sage-600">
+            Nachhaltiger Marktplatz
+          </span>
+          <h1 className="animate-fade-up-1 mb-4 text-3xl font-bold leading-tight text-stone-900 sm:text-4xl">
+            Einkaufen mit
+            <br />
+            gutem Gewissen
+          </h1>
+          <p className="animate-fade-up-2 mb-6 max-w-sm text-base leading-relaxed text-stone-500">
+            Produkte, die fair hergestellt, zertifiziert und für die Zukunft gedacht sind.
+          </p>
+          <div className="animate-fade-up-3 flex flex-wrap gap-3">
+            <button
+              onClick={() => shopRef.current?.scrollIntoView({ behavior: "smooth" })}
+              className="rounded-xl bg-sage-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sage-700"
+            >
+              Jetzt entdecken
+            </button>
+            <Link
+              href="/about"
+              className="rounded-xl border border-bark-300 px-5 py-2.5 text-sm font-semibold text-bark-700 transition-colors hover:bg-bark-50"
+            >
+              Mehr erfahren
+            </Link>
+          </div>
+        </div>
       </div>
 
-      {/* Search bar */}
-      <div className="relative mb-6">
+      {/* ── Trust Bar ─────────────────────────────────────────────────── */}
+      <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { icon: ShieldCheck, label: "Geprüfte Zertifikate", sub: "100% verifiziert" },
+          { icon: Leaf, label: "Bio & Fair Trade", sub: "Nachhaltige Qualität" },
+          { icon: Users, label: "Direkt vom Hersteller", sub: "Keine Zwischenhändler" },
+          { icon: Recycle, label: "Kreislaufwirtschaft", sub: "Ressourcenschonend" },
+        ].map(({ icon: Icon, label, sub }) => (
+          <div
+            key={label}
+            className="flex flex-col items-center gap-2 rounded-xl border border-stone-100 bg-white px-4 py-4 text-center shadow-sm"
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sage-50">
+              <Icon className="h-4 w-4 text-sage-600" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-stone-700">{label}</p>
+              <p className="text-[11px] text-stone-400">{sub}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Category Chips ────────────────────────────────────────────── */}
+      <div className="scrollbar-hide mb-8 flex gap-2 overflow-x-auto pb-1">
+        <button
+          onClick={resetFilters}
+          className={`flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-sm transition-colors ${
+            !debouncedSearch
+              ? "border-sage-300 bg-sage-600 text-white"
+              : "border-stone-200 bg-white text-stone-600 hover:border-sage-300 hover:bg-sage-50 hover:text-sage-700"
+          }`}
+        >
+          Alle
+        </button>
+        {categoryChips.map(({ label, icon: Icon, query }) => (
+          <button
+            key={label}
+            onClick={() => applyCategory(query)}
+            className={`flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-sm transition-colors ${
+              debouncedSearch === query
+                ? "border-sage-300 bg-sage-600 text-white"
+                : "border-stone-200 bg-white text-stone-600 hover:border-sage-300 hover:bg-sage-50 hover:text-sage-700"
+            }`}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Search bar ────────────────────────────────────────────────── */}
+      <div ref={shopRef} className="relative mb-6">
         <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
         <input
           type="text"
           value={search}
           onChange={handleSearchChange}
           placeholder="Produkte suchen…"
-          className="w-full rounded-xl border border-stone-200 bg-white py-2.5 pl-10 pr-4 text-sm text-stone-800 placeholder:text-stone-400 focus:border-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-200"
+          className="w-full rounded-xl border border-stone-200 bg-white py-2.5 pl-10 pr-4 text-sm text-stone-800 placeholder:text-stone-400 focus:border-sage-400 focus:outline-none focus:ring-2 focus:ring-sage-100"
         />
       </div>
 
       <div className="grid gap-8 md:grid-cols-[280px_1fr]">
         {/* ── Filters Sidebar ──────────────────────────────────────────── */}
-        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-          <div className="border-b border-stone-100 px-4 py-4">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-stone-500">
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+          <div className="border-b border-stone-100 bg-stone-50/60 px-4 py-3.5">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-stone-500">
               Filter
             </h2>
           </div>
@@ -271,7 +405,15 @@ export default function SustainableShop() {
               onClick={() => toggleSection("sustainability")}
               className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-stone-50"
             >
-              <span className="text-sm font-medium text-stone-700">Nachhaltigkeitspräferenzen</span>
+              <div className="flex items-center gap-2">
+                <Leaf className="h-3.5 w-3.5 text-sage-600" />
+                <span className="text-sm font-medium text-stone-700">
+                  Nachhaltigkeitspräferenzen
+                </span>
+                <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium text-stone-400">
+                  Bald verfügbar
+                </span>
+              </div>
               {expandedSections.sustainability ? (
                 <ChevronDown className="h-4 w-4 text-stone-400" />
               ) : (
@@ -279,9 +421,9 @@ export default function SustainableShop() {
               )}
             </button>
             {expandedSections.sustainability && (
-              <div className="space-y-4 px-4 pb-4">
+              <div className="pointer-events-none space-y-4 px-4 pb-4 opacity-50">
                 {isAuthenticated && valueProfile?.simpleProfile ? (
-                  <div className="flex items-center gap-1.5 text-xs text-sage-600">
+                  <div className="flex items-center gap-1.5 rounded-lg bg-sage-50 px-2.5 py-1.5 text-xs text-sage-700">
                     <UserCircle className="h-3.5 w-3.5" />
                     <span>Aus deinem Werteprofil</span>
                   </div>
@@ -310,7 +452,7 @@ export default function SustainableShop() {
                       </button>
 
                       {expandedFilters[key] && (
-                        <div className="ml-5 rounded-lg bg-stone-50 p-2.5 text-xs text-stone-500">
+                        <div className="ml-5 rounded-lg bg-sage-50/60 p-2.5 text-xs text-stone-500">
                           <ul className="list-inside list-disc space-y-1">
                             {filter.subpoints.map((subpoint, idx) => (
                               <li key={idx}>{subpoint}</li>
@@ -345,7 +487,10 @@ export default function SustainableShop() {
               onClick={() => setExpandedFilterSections((prev) => ({ ...prev, price: !prev.price }))}
               className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-stone-50"
             >
-              <span className="text-sm font-medium text-stone-700">Preisspanne</span>
+              <div className="flex items-center gap-2">
+                <Star className="h-3.5 w-3.5 text-sage-600" />
+                <span className="text-sm font-medium text-stone-700">Preisspanne</span>
+              </div>
               {expandedFilterSections.price ? (
                 <ChevronDown className="h-4 w-4 text-stone-400" />
               ) : (
@@ -364,7 +509,7 @@ export default function SustainableShop() {
                         setPriceRange((prev) => ({ ...prev, min: Number(e.target.value) }))
                         setCurrentPage(0)
                       }}
-                      className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-200"
+                      className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-700 focus:border-sage-300 focus:outline-none focus:ring-2 focus:ring-sage-100"
                       placeholder="0"
                     />
                   </div>
@@ -378,7 +523,7 @@ export default function SustainableShop() {
                         setPriceRange((prev) => ({ ...prev, max: Number(e.target.value) }))
                         setCurrentPage(0)
                       }}
-                      className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-700 focus:outline-none focus:ring-2 focus:ring-stone-200"
+                      className="w-full rounded-lg border border-stone-200 px-3 py-2 text-sm text-stone-700 focus:border-sage-300 focus:outline-none focus:ring-2 focus:ring-sage-100"
                       placeholder="300"
                     />
                   </div>
@@ -394,6 +539,9 @@ export default function SustainableShop() {
                   }}
                   className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-stone-200 accent-sage-600"
                 />
+                <p className="text-right text-xs text-stone-400">
+                  bis {formatEuro(priceRange.max)}
+                </p>
               </div>
             )}
           </div>
@@ -418,7 +566,7 @@ export default function SustainableShop() {
             <div className="relative">
               <button
                 onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-                className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 transition-colors hover:border-stone-300 hover:bg-stone-50"
+                className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 shadow-sm transition-colors hover:border-stone-300 hover:bg-stone-50"
               >
                 <ArrowUpDown className="h-3.5 w-3.5" />
                 {activeSortLabel}
@@ -433,8 +581,10 @@ export default function SustainableShop() {
                         setCurrentPage(0)
                         setIsSortDropdownOpen(false)
                       }}
-                      className={`w-full px-4 py-2.5 text-left text-sm text-stone-600 hover:bg-stone-50 ${
-                        sortBy === option.value ? "bg-stone-50 font-medium text-stone-900" : ""
+                      className={`w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-stone-50 ${
+                        sortBy === option.value
+                          ? "bg-sage-50 font-medium text-sage-700"
+                          : "text-stone-600"
                       }`}
                     >
                       {option.label}
@@ -451,14 +601,18 @@ export default function SustainableShop() {
               {Array.from({ length: PRODUCTS_PAGE_SIZE }).map((_, i) => (
                 <div
                   key={i}
-                  className="overflow-hidden rounded-xl border border-stone-200 bg-white"
+                  className="overflow-hidden rounded-xl border border-stone-100 bg-white shadow-sm"
                 >
-                  <div className="aspect-square animate-pulse bg-stone-100" />
+                  <div className="aspect-square animate-pulse bg-sage-50" />
                   <div className="space-y-2.5 p-4">
-                    <div className="h-3 w-1/3 animate-pulse rounded-full bg-stone-100" />
+                    <div className="h-3 w-1/3 animate-pulse rounded-full bg-sage-100" />
                     <div className="h-4 w-3/4 animate-pulse rounded-full bg-stone-100" />
                     <div className="h-3 w-full animate-pulse rounded-full bg-stone-100" />
-                    <div className="mt-2 h-5 w-1/4 animate-pulse rounded-full bg-stone-100" />
+                    <div className="flex gap-1.5 pt-1">
+                      <div className="h-4 w-12 animate-pulse rounded-full bg-sage-100" />
+                      <div className="h-4 w-14 animate-pulse rounded-full bg-amber-100" />
+                    </div>
+                    <div className="mt-1 h-5 w-1/4 animate-pulse rounded-full bg-stone-100" />
                   </div>
                 </div>
               ))}
@@ -467,12 +621,17 @@ export default function SustainableShop() {
 
           {/* Error */}
           {!isLoading && error && (
-            <div className="flex min-h-[300px] flex-col items-center justify-center gap-4 text-stone-500">
-              <AlertCircle className="h-10 w-10 text-red-300" />
-              <p className="text-sm">Produkte konnten nicht geladen werden.</p>
+            <div className="flex min-h-[300px] flex-col items-center justify-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
+                <AlertCircle className="h-8 w-8 text-red-300" />
+              </div>
+              <div className="text-center">
+                <p className="font-medium text-stone-700">Produkte konnten nicht geladen werden</p>
+                <p className="mt-1 text-sm text-stone-400">Bitte überprüfe deine Verbindung</p>
+              </div>
               <button
                 onClick={() => refetch()}
-                className="rounded-lg bg-bark-700 px-4 py-2 text-sm text-white hover:bg-bark-800"
+                className="rounded-lg bg-bark-700 px-4 py-2 text-sm font-medium text-white hover:bg-bark-800"
               >
                 Erneut versuchen
               </button>
@@ -481,8 +640,22 @@ export default function SustainableShop() {
 
           {/* Empty */}
           {!isLoading && !error && products.length === 0 && (
-            <div className="flex min-h-[300px] items-center justify-center text-sm text-stone-400">
-              Keine Produkte gefunden.
+            <div className="flex min-h-[300px] flex-col items-center justify-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-stone-100">
+                <Leaf className="h-8 w-8 text-stone-300" />
+              </div>
+              <div className="text-center">
+                <p className="font-medium text-stone-700">Keine Produkte gefunden</p>
+                <p className="mt-1 text-sm text-stone-400">
+                  Versuche andere Suchbegriffe oder passe die Filter an
+                </p>
+              </div>
+              <button
+                onClick={resetFilters}
+                className="text-sm font-medium text-sage-600 hover:underline"
+              >
+                Filter zurücksetzen
+              </button>
             </div>
           )}
 
@@ -495,24 +668,43 @@ export default function SustainableShop() {
                 const sellerName = getSellerName(product)
                 const image = getProductImage(product)
                 const price = getProductPrice(product)
+                const certs = product.certificates ?? []
                 return (
                   <div
                     key={product.id}
                     onClick={() => handleProductClick(product.slug, product.id)}
-                    className="group cursor-pointer overflow-hidden rounded-xl border border-stone-200 bg-white transition-all duration-200 hover:border-stone-300 hover:shadow-md"
+                    className="group cursor-pointer overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-sage-200 hover:shadow-lg"
                   >
-                    <div className="relative aspect-square overflow-hidden bg-stone-100">
+                    {/* Product image */}
+                    <div className="relative aspect-square overflow-hidden bg-sage-50">
                       <img
                         src={image}
                         alt={product.name ?? product.title ?? "Produkt"}
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
+
+                      {/* Certificate count badge */}
+                      {certs.length > 0 && (
+                        <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-semibold text-sage-700 shadow-sm backdrop-blur-sm">
+                          <ShieldCheck className="h-3 w-3" />
+                          {certs.length}
+                        </div>
+                      )}
+
+                      {/* Category badge */}
+                      {product.category?.name && (
+                        <div className="absolute right-2 top-2 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-medium text-stone-600 shadow-sm backdrop-blur-sm">
+                          {product.category.name}
+                        </div>
+                      )}
                     </div>
+
+                    {/* Card body */}
                     <div className="space-y-1.5 p-4">
                       {sellerName && (
                         <button
                           onClick={(e) => handleSellerClick(e, product.seller?.userId)}
-                          className="text-xs font-medium uppercase tracking-wider text-sage-600 hover:text-sage-700 hover:underline"
+                          className="text-xs font-semibold uppercase tracking-wider text-sage-600 hover:text-sage-700 hover:underline"
                         >
                           {sellerName}
                         </button>
@@ -525,10 +717,31 @@ export default function SustainableShop() {
                           {product.shortDesc}
                         </p>
                       )}
-                      <div className="pt-2">
+
+                      {/* Certificate chips */}
+                      {certs.length > 0 && (
+                        <div className="flex flex-wrap gap-1 pt-0.5">
+                          {certs.slice(0, 2).map((cert) => (
+                            <span
+                              key={cert.id}
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${certStyle(cert.certificateType)}`}
+                            >
+                              {certLabel(cert.certificateType)}
+                            </span>
+                          ))}
+                          {certs.length > 2 && (
+                            <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-medium text-stone-500">
+                              +{certs.length - 2}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between pt-2">
                         <span className="text-base font-bold text-stone-900">
                           {formatEuro(price)}
                         </span>
+                        <span className="text-[10px] font-medium text-sage-600">Auf Lager</span>
                       </div>
                     </div>
                   </div>
@@ -543,7 +756,7 @@ export default function SustainableShop() {
               <button
                 onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
                 disabled={currentPage === 0}
-                className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-300"
+                className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 shadow-sm transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-300"
               >
                 Vorherige
               </button>
@@ -554,9 +767,9 @@ export default function SustainableShop() {
                   <button
                     key={page}
                     onClick={() => setCurrentPage(page)}
-                    className={`rounded-lg border px-4 py-2 text-sm transition-colors ${
+                    className={`rounded-lg border px-4 py-2 text-sm shadow-sm transition-colors ${
                       page === currentPage
-                        ? "border-bark-700 bg-bark-700 text-white"
+                        ? "border-sage-600 bg-sage-600 text-white"
                         : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
                     }`}
                   >
@@ -568,7 +781,7 @@ export default function SustainableShop() {
               <button
                 onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={currentPage >= totalPages - 1}
-                className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-300"
+                className="rounded-lg border border-stone-200 bg-white px-4 py-2 text-sm text-stone-600 shadow-sm transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:text-stone-300"
               >
                 Nächste
               </button>

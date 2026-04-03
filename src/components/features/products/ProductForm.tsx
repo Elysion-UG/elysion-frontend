@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { X, Loader2 } from "lucide-react"
+import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import { ProductService } from "@/src/services/product.service"
 import { CategoryService } from "@/src/services/category.service"
 import type {
@@ -108,16 +109,25 @@ export default function ProductForm({
     }
   }
 
+  const modalRef = useFocusTrap(onClose)
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
-      <div className="my-4 w-full max-w-lg rounded-xl bg-white shadow-xl">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="product-form-title"
+        className="my-4 w-full max-w-lg rounded-xl bg-white shadow-xl"
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-200 p-6">
-          <h3 className="text-lg font-semibold text-slate-800">
+          <h3 id="product-form-title" className="text-lg font-semibold text-slate-800">
             {isEdit ? "Produkt bearbeiten" : "Neues Produkt erstellen"}
           </h3>
           <button
             onClick={onClose}
+            aria-label="Schliessen"
             className="text-slate-400 transition-colors hover:text-slate-600"
           >
             <X className="h-5 w-5" />

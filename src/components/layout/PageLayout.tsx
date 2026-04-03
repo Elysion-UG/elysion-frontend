@@ -56,7 +56,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
     <Link
       key={href}
       href={href}
-      className="flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors hover:text-stone-900"
+      className="flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors hover:text-sage-700"
     >
       {icon}
       {label}
@@ -65,14 +65,26 @@ export default function PageLayout({ children }: PageLayoutProps) {
 
   return (
     <div className="flex min-h-screen flex-col bg-stone-50">
+      {/* WCAG 2.1 / BFSG: Skip-Navigation für Tastaturnutzer und Screenreader */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-sage-600 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg"
+      >
+        Zum Inhalt springen
+      </a>
       <header className="sticky top-0 z-40 border-b border-stone-200 bg-white/95 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sage-600">
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sage-600 shadow-sm">
                 <Leaf className="h-4 w-4 text-white" />
               </div>
-              <span className="text-lg font-bold tracking-tight text-stone-900">Elysion</span>
+              <div className="flex flex-col leading-none">
+                <span className="text-base font-bold tracking-tight text-stone-900">Elysion</span>
+                <span className="hidden text-[10px] font-medium tracking-wide text-sage-600 sm:block">
+                  Nachhaltig. Zertifiziert.
+                </span>
+              </div>
             </Link>
 
             <nav className="hidden items-center gap-6 md:flex">
@@ -208,7 +220,9 @@ export default function PageLayout({ children }: PageLayoutProps) {
         </div>
       </header>
 
-      <main className="container mx-auto flex-1 px-4 py-8">{children}</main>
+      <main id="main-content" className="container mx-auto flex-1 px-4 py-8">
+        {children}
+      </main>
       <Footer />
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </div>

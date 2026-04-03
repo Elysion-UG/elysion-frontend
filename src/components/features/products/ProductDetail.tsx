@@ -58,7 +58,9 @@ export default function ProductDetail() {
         // Load certificates in background
         CertificateService.getProductCertificates(data.id)
           .then(setCertificates)
-          .catch(() => {})
+          .catch(() => {
+            toast.error("Zertifikate konnten nicht geladen werden.")
+          })
       } catch {
         setError("Produkt konnte nicht geladen werden.")
       } finally {
@@ -78,7 +80,7 @@ export default function ProductDetail() {
         productId: product.id,
         variantId: selectedVariant?.id,
         quantity,
-        productName: product.name ?? product.title,
+        productName: product.name,
         // product.slug may not be returned by the backend — fall back to the
         // URL slug which is always available and definitively correct.
         productSlug: product.slug ?? slug ?? undefined,
@@ -98,19 +100,23 @@ export default function ProductDetail() {
   if (isLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+        <Loader2 className="h-7 w-7 animate-spin text-sage-500" />
       </div>
     )
   }
 
   if (error || !product) {
     return (
-      <div className="flex min-h-[400px] flex-col items-center justify-center gap-4 text-slate-600">
-        <AlertCircle className="h-12 w-12 text-red-400" />
-        <p>{error ?? "Produkt nicht gefunden."}</p>
+      <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
+          <AlertCircle className="h-8 w-8 text-red-400" />
+        </div>
+        <div className="text-center">
+          <p className="font-medium text-stone-700">{error ?? "Produkt nicht gefunden."}</p>
+        </div>
         <button
           onClick={() => router.back()}
-          className="rounded-lg bg-teal-600 px-4 py-2 text-sm text-white hover:bg-teal-700"
+          className="rounded-xl bg-sage-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sage-700"
         >
           Zurück zum Shop
         </button>
@@ -171,262 +177,299 @@ export default function ProductDetail() {
     : true
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="container mx-auto px-4 py-8">
-        <button
-          onClick={() => router.back()}
-          className="mb-6 flex items-center gap-2 text-slate-700 transition-colors hover:text-teal-600"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Zurück zu Produkten
-        </button>
+    <div>
+      <button
+        onClick={() => router.back()}
+        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-stone-400 transition-colors hover:text-sage-600"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Zurück zu Produkten
+      </button>
 
-        <div className="grid gap-12 lg:grid-cols-2">
-          {/* Product Images */}
-          <div className="space-y-4">
-            <div className="aspect-square overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-              <img
-                src={displayImages[selectedImageIndex] ?? "/placeholder.svg"}
-                alt={product.name ?? product.title}
-                className="h-full w-full object-cover"
-              />
-            </div>
-            {displayImages.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto">
-                {displayImages.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImageIndex(index)}
-                    className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-colors ${
-                      selectedImageIndex === index ? "border-teal-600" : "border-slate-200"
-                    }`}
-                  >
-                    <img
-                      src={image}
-                      alt={`${product.name} ${index + 1}`}
-                      className="h-full w-full object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
+      <div className="grid gap-12 lg:grid-cols-2">
+        {/* Product Images */}
+        <div className="space-y-4">
+          <div className="aspect-square overflow-hidden rounded-2xl border border-stone-200 bg-sage-50 shadow-sm">
+            <img
+              src={displayImages[selectedImageIndex] ?? "/placeholder.svg"}
+              alt={product.name}
+              className="h-full w-full object-cover"
+            />
           </div>
+          {displayImages.length > 1 && (
+            <div className="flex gap-2 overflow-x-auto">
+              {displayImages.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImageIndex(index)}
+                  className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2 transition-colors ${
+                    selectedImageIndex === index
+                      ? "border-sage-500 shadow-sm"
+                      : "border-stone-200 hover:border-stone-300"
+                  }`}
+                >
+                  <img
+                    src={image}
+                    alt={`${product.name} ${index + 1}`}
+                    className="h-full w-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
-          {/* Product Info */}
-          <div className="space-y-6">
-            <div>
+        {/* Product Info */}
+        <div className="space-y-6">
+          <div>
+            <div className="mb-3 flex flex-wrap gap-2">
               {product.category && (
-                <span className="mb-2 inline-flex items-center rounded-full border border-slate-300 bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-800">
+                <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">
                   {product.category.name}
                 </span>
               )}
-
-              {sellerName && (
-                <button
-                  onClick={() =>
-                    product.seller?.userId && router.push(`/producer?id=${product.seller.userId}`)
-                  }
-                  className="mb-1 flex items-center gap-1 text-sm font-medium text-teal-600 transition-colors hover:text-teal-700 hover:underline"
-                >
-                  {sellerName}
-                </button>
-              )}
-
-              <h1 className="mb-2 text-3xl font-bold text-slate-800">
-                {product.name ?? product.title}
-              </h1>
-              {product.shortDesc && <p className="text-lg text-slate-600">{product.shortDesc}</p>}
             </div>
 
-            {/* Seller card */}
             {sellerName && (
-              <div
+              <button
                 onClick={() =>
                   product.seller?.userId && router.push(`/producer?id=${product.seller.userId}`)
                 }
-                className="cursor-pointer rounded-lg border border-slate-200 bg-white p-4 transition-all hover:border-teal-400 hover:shadow-md"
+                className="mb-2 text-xs font-semibold uppercase tracking-wider text-sage-600 transition-colors hover:text-sage-700 hover:underline"
               >
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
-                    <span className="text-lg font-bold text-teal-700">{sellerName.charAt(0)}</span>
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-slate-800">{sellerName}</h4>
-                    <div className="flex items-center gap-1 text-sm text-slate-600">
-                      <MapPin className="h-3 w-3" />
-                      Verifizierter Verkäufer
-                    </div>
+                {sellerName}
+              </button>
+            )}
+
+            <h1 className="mb-2 text-2xl font-bold text-stone-900 sm:text-3xl">{product.name}</h1>
+            {product.shortDesc && (
+              <p className="text-base leading-relaxed text-stone-500">{product.shortDesc}</p>
+            )}
+          </div>
+
+          {/* Seller card */}
+          {sellerName && (
+            <div
+              onClick={() =>
+                product.seller?.userId && router.push(`/producer?id=${product.seller.userId}`)
+              }
+              className="cursor-pointer rounded-xl border border-stone-200 bg-white p-4 shadow-sm transition-all hover:border-sage-300 hover:shadow-md"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sage-100">
+                  <span className="text-sm font-bold text-sage-700">{sellerName.charAt(0)}</span>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-stone-800">{sellerName}</h4>
+                  <div className="flex items-center gap-1 text-xs text-stone-500">
+                    <MapPin className="h-3 w-3 text-sage-500" />
+                    Verifizierter Verkäufer
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Price */}
+          {/* Price */}
+          <div>
             <div className="flex items-center gap-3">
-              <span className="text-3xl font-bold text-slate-800">{formatEuro(price)}</span>
-              {!inStock && (
-                <span className="rounded-full border border-red-300 bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800">
+              <span className="text-3xl font-bold text-stone-900">{formatEuro(price)}</span>
+              {inStock ? (
+                <span className="rounded-full bg-sage-100 px-2.5 py-0.5 text-xs font-medium text-sage-700">
+                  Auf Lager
+                </span>
+              ) : (
+                <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700">
                   Nicht verfügbar
                 </span>
               )}
             </div>
+            {/* § 1 PAngV: MwSt.-Hinweis */}
+            <p className="mt-1 text-xs text-stone-400">
+              inkl. MwSt.,{" "}
+              <a href="/versand" className="underline hover:text-stone-600">
+                zzgl. Versandkosten
+              </a>
+            </p>
+          </div>
 
-            {/* Variant selectors */}
-            {Object.entries(optionTypes).map(([type, values]) => (
-              <div key={type}>
-                <h3 className="mb-3 text-lg font-semibold text-slate-800">{type}</h3>
-                <div className="flex flex-wrap gap-2">
-                  {values.map((value) => (
-                    <button
-                      key={value}
-                      onClick={() => handleOptionSelect(type, value)}
-                      className={`rounded-lg border px-4 py-2 font-medium transition-colors ${
-                        selectedOptionValues[type] === value
-                          ? "border-teal-600 bg-teal-600 text-white"
-                          : "border-slate-300 text-slate-700 hover:border-teal-600"
-                      }`}
-                    >
-                      {value}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-            {/* Quantity */}
-            <div>
-              <h3 className="mb-3 text-lg font-semibold text-slate-800">Menge</h3>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 text-slate-700 transition-colors hover:bg-slate-50"
-                >
-                  <Minus className="h-4 w-4" />
-                </button>
-                <span className="min-w-[2rem] text-center text-lg font-medium text-slate-800">
-                  {quantity}
-                </span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-300 text-slate-700 transition-colors hover:bg-slate-50"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
+          {/* Variant selectors */}
+          {Object.entries(optionTypes).map(([type, values]) => (
+            <div key={type}>
+              <h3 className="mb-3 text-lg font-semibold text-stone-800">{type}</h3>
+              <div className="flex flex-wrap gap-2">
+                {values.map((value) => (
+                  <button
+                    key={value}
+                    onClick={() => handleOptionSelect(type, value)}
+                    className={`rounded-xl border px-4 py-2 text-sm font-medium transition-colors ${
+                      selectedOptionValues[type] === value
+                        ? "border-sage-600 bg-sage-600 text-white shadow-sm"
+                        : "border-stone-200 text-stone-700 hover:border-sage-400 hover:bg-sage-50"
+                    }`}
+                  >
+                    {value}
+                  </button>
+                ))}
               </div>
             </div>
+          ))}
 
-            {/* Add to cart */}
-            <button
-              onClick={handleAddToCart}
-              disabled={!inStock || addingToCart}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 px-6 py-3 font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-gray-400"
-            >
-              {addingToCart ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <ShoppingCart className="h-5 w-5" />
-              )}
-              {inStock ? "In den Warenkorb" : "Nicht verfügbar"}
-            </button>
+          {/* Quantity */}
+          <div>
+            <h3 className="mb-3 text-sm font-semibold text-stone-700">Menge</h3>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                aria-label="Menge verringern"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-200 text-stone-500 transition-colors hover:border-sage-300 hover:bg-sage-50 hover:text-sage-700"
+              >
+                <Minus className="h-3.5 w-3.5" />
+              </button>
+              <span
+                aria-live="polite"
+                aria-label={`Menge: ${quantity}`}
+                className="min-w-[2rem] text-center text-base font-bold text-stone-800"
+              >
+                {quantity}
+              </span>
+              <button
+                onClick={() => setQuantity(quantity + 1)}
+                aria-label="Menge erhöhen"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-200 text-stone-500 transition-colors hover:border-sage-300 hover:bg-sage-50 hover:text-sage-700"
+              >
+                <Plus className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
 
-            {/* Shipping info */}
-            <div className="space-y-2 rounded-lg bg-slate-100 p-4">
-              <div className="flex items-center gap-2 text-slate-700">
-                <Truck className="h-5 w-5" />
-                <span className="font-medium">Kostenloser Versand ab €50</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-700">
-                <Shield className="h-5 w-5" />
-                <span className="font-medium">30 Tage Rückgaberecht</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-700">
-                <Recycle className="h-5 w-5" />
-                <span className="font-medium">CO2-neutraler Versand</span>
-              </div>
+          {/* Add to cart */}
+          <button
+            onClick={handleAddToCart}
+            disabled={!inStock || addingToCart}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sage-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+          >
+            {addingToCart ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <ShoppingCart className="h-5 w-5" />
+            )}
+            {inStock ? "In den Warenkorb" : "Nicht verfügbar"}
+          </button>
+
+          {/* Shipping info */}
+          <div className="space-y-2.5 rounded-xl border border-sage-100 bg-sage-50 p-4">
+            <div className="flex items-center gap-2 text-sm text-sage-700">
+              <Truck className="h-4 w-4 text-sage-500" />
+              <span>Kostenloser Versand ab €50</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-sage-700">
+              <Shield className="h-4 w-4 text-sage-500" />
+              <span>
+                14 Tage gesetzliches Widerrufsrecht (
+                <a href="/widerruf" className="underline hover:text-sage-900">
+                  Details
+                </a>
+                )
+              </span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-sage-700">
+              <Recycle className="h-4 w-4 text-sage-500" />
+              <span>Klimafreundlicher Versand (vom Verkäufer zertifiziert)</span>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Tabs */}
-        <div className="mt-12">
-          <div className="border-b border-slate-200">
-            <nav className="flex space-x-8">
-              {["details", "sustainability"].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`border-b-2 px-1 py-4 text-sm font-medium transition-colors ${
-                    activeTab === tab
-                      ? "border-teal-600 text-teal-600"
-                      : "border-transparent text-slate-700 hover:border-slate-300 hover:text-teal-600"
-                  }`}
-                >
-                  {tab === "details" ? "Details" : "Nachhaltigkeit"}
-                </button>
-              ))}
-            </nav>
-          </div>
+      {/* Tabs */}
+      <div className="mt-12">
+        <div className="border-b border-stone-200">
+          <nav className="flex gap-1">
+            {[
+              { id: "details", label: "Details" },
+              { id: "sustainability", label: "Nachhaltigkeit" },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`border-b-2 px-4 py-3.5 text-sm font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? "border-sage-600 text-sage-700"
+                    : "border-transparent text-stone-500 hover:text-stone-800"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
 
-          <div className="py-8">
-            {activeTab === "details" && (
-              <div className="prose max-w-none">
-                <p className="leading-relaxed text-slate-700">
-                  {product.description ?? "Keine Beschreibung vorhanden."}
-                </p>
-                {selectedVariant && (
-                  <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-                    {selectedVariant.sku && (
-                      <div>
-                        <span className="font-medium text-slate-700">SKU:</span>{" "}
-                        <span className="text-slate-600">{selectedVariant.sku}</span>
-                      </div>
-                    )}
-                    {selectedVariant.material && (
-                      <div>
-                        <span className="font-medium text-slate-700">Material:</span>{" "}
-                        <span className="text-slate-600">{selectedVariant.material}</span>
-                      </div>
-                    )}
-                    {selectedVariant.stock !== undefined && (
-                      <div>
-                        <span className="font-medium text-slate-700">Lagerbestand:</span>{" "}
-                        <span className="text-slate-600">{selectedVariant.stock} Stück</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
+        <div className="py-8">
+          {activeTab === "details" && (
+            <div className="space-y-6">
+              <p className="leading-relaxed text-stone-600">
+                {product.description ?? "Keine Beschreibung vorhanden."}
+              </p>
+              {selectedVariant && (
+                <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+                  {selectedVariant.sku && (
+                    <div className="rounded-lg border border-stone-100 bg-stone-50 px-3 py-2">
+                      <p className="text-xs text-stone-400">SKU</p>
+                      <p className="font-medium text-stone-700">{selectedVariant.sku}</p>
+                    </div>
+                  )}
+                  {selectedVariant.material && (
+                    <div className="rounded-lg border border-stone-100 bg-stone-50 px-3 py-2">
+                      <p className="text-xs text-stone-400">Material</p>
+                      <p className="font-medium text-stone-700">{selectedVariant.material}</p>
+                    </div>
+                  )}
+                  {selectedVariant.stock !== undefined && (
+                    <div className="rounded-lg border border-stone-100 bg-stone-50 px-3 py-2">
+                      <p className="text-xs text-stone-400">Lagerbestand</p>
+                      <p className="font-medium text-stone-700">{selectedVariant.stock} Stück</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
-            {activeTab === "sustainability" && (
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-slate-800">Zertifizierungen</h3>
-                {certificates.length > 0 ? (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {certificates.map((cert) => (
-                      <div key={cert.id} className="rounded-lg bg-slate-100 p-4">
-                        <h4 className="font-semibold text-slate-800">
-                          {cert.title ?? cert.name ?? cert.certificateType}
-                        </h4>
-                        {cert.issuerName && (
-                          <p className="mt-1 text-sm text-slate-600">
-                            Aussteller: {cert.issuerName}
-                          </p>
-                        )}
-                        {cert.validUntil && (
-                          <p className="mt-1 text-sm text-slate-600">
-                            Gültig bis: {new Date(cert.validUntil).toLocaleDateString("de-DE")}
-                          </p>
-                        )}
+          {activeTab === "sustainability" && (
+            <div className="space-y-5">
+              <h3 className="text-base font-semibold text-stone-800">Zertifizierungen</h3>
+              {certificates.length > 0 ? (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {certificates.map((cert) => (
+                    <div key={cert.id} className="rounded-xl border border-sage-100 bg-sage-50 p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sage-100">
+                          <Shield className="h-4 w-4 text-sage-600" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-stone-800">
+                            {cert.title ?? cert.name ?? cert.certificateType}
+                          </h4>
+                          {cert.issuerName && (
+                            <p className="mt-0.5 text-xs text-stone-500">
+                              Aussteller: {cert.issuerName}
+                            </p>
+                          )}
+                          {cert.validUntil && (
+                            <p className="mt-0.5 text-xs text-stone-400">
+                              Gültig bis: {new Date(cert.validUntil).toLocaleDateString("de-DE")}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-slate-600">Keine Zertifizierungen hinterlegt.</p>
-                )}
-              </div>
-            )}
-          </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-stone-400">Keine Zertifizierungen hinterlegt.</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

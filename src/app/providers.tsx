@@ -5,6 +5,8 @@ import { useState } from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { AuthProvider } from "@/src/context/AuthContext"
 import { CartProvider } from "@/src/context/CartContext"
+import { CookieConsentProvider } from "@/src/context/CookieConsentContext"
+import { ErrorProvider } from "@/src/context/ErrorContext"
 import { Toaster } from "sonner"
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -12,13 +14,17 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <CartProvider>
-          {children}
-          <Toaster richColors position="top-right" />
-        </CartProvider>
-      </AuthProvider>
-    </QueryClientProvider>
+    <ErrorProvider>
+      <QueryClientProvider client={queryClient}>
+        <CookieConsentProvider>
+          <AuthProvider>
+            <CartProvider>
+              {children}
+              <Toaster richColors position="top-right" />
+            </CartProvider>
+          </AuthProvider>
+        </CookieConsentProvider>
+      </QueryClientProvider>
+    </ErrorProvider>
   )
 }

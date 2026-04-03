@@ -3,6 +3,7 @@
 import type React from "react"
 import { usePathname } from "next/navigation"
 import PageLayout from "@/src/components/layout/PageLayout"
+import CookieConsentBanner from "@/src/components/layout/CookieConsentBanner"
 
 /**
  * NavbarShell — single persistent navbar instance mounted at the root layout.
@@ -35,7 +36,12 @@ export default function NavbarShell({ children }: { children: React.ReactNode })
   const pathname = usePathname()
 
   if (needsNavbar(pathname)) {
-    return <PageLayout>{children}</PageLayout>
+    return (
+      <>
+        <PageLayout>{children}</PageLayout>
+        <CookieConsentBanner />
+      </>
+    )
   }
 
   return <>{children}</>
