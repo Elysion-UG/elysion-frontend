@@ -8,9 +8,20 @@ vi.mock("@/src/lib/api-client", () => ({
 
 const mockApiRequest = apiClient.apiRequest as ReturnType<typeof vi.fn>
 
+const emptyApiCart = {
+  id: "cart-1",
+  ownershipType: "AUTHENTICATED",
+  totalQuantity: 0,
+  subtotal: 0,
+  currency: "EUR",
+  items: [],
+  createdAt: "2026-01-01T00:00:00Z",
+  updatedAt: "2026-01-01T00:00:00Z",
+}
+
 beforeEach(() => {
   mockApiRequest.mockReset()
-  mockApiRequest.mockResolvedValue({ items: [] })
+  mockApiRequest.mockResolvedValue(emptyApiCart)
 })
 
 describe("CartService.addItem — backend API contract", () => {
@@ -71,6 +82,71 @@ describe("CartService.get", () => {
     await CartService.get()
 
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/cart")
+  })
+
+  it("normalizes nested product/variant fields to flat CartItem fields", async () => {
+    mockApiRequest.mockResolvedValue({
+      ...emptyApiCart,
+      id: "cart-abc",
+      subtotal: 29.9,
+      items: [
+        {
+          id: "item-1",
+          product: {
+            id: "prod-1",
+            slug: "my-shirt",
+            name: "My Shirt",
+            primaryImage: "https://example.com/img.jpg",
+          },
+          variant: { id: "var-L", sku: "SKU-L" },
+          quantity: 2,
+          unitPrice: 29.9,
+          currency: "EUR",
+          lineTotal: 59.8,
+          createdAt: "2026-01-01T00:00:00Z",
+          updatedAt: "2026-01-01T00:00:00Z",
+        },
+      ],
+    })
+
+    const cart = await CartService.get()
+
+    expect(cart.id).toBe("cart-abc")
+    expect(cart.totalAmount).toBe(29.9)
+    expect(cart.items).toHaveLength(1)
+    const item = cart.items[0]
+    expect(item.productId).toBe("prod-1")
+    expect(item.productName).toBe("My Shirt")
+    expect(item.productSlug).toBe("my-shirt")
+    expect(item.imageUrl).toBe("https://example.com/img.jpg")
+    expect(item.variantId).toBe("var-L")
+    expect(item.priceSnapshot).toBe(29.9)
+    expect(item.quantity).toBe(2)
+  })
+
+  it("handles null primaryImage and missing variant", async () => {
+    mockApiRequest.mockResolvedValue({
+      ...emptyApiCart,
+      items: [
+        {
+          id: "item-2",
+          product: { id: "prod-2", slug: "no-img", name: "No Image", primaryImage: null },
+          variant: null,
+          quantity: 1,
+          unitPrice: 10,
+          currency: "EUR",
+          lineTotal: 10,
+          createdAt: "2026-01-01T00:00:00Z",
+          updatedAt: "2026-01-01T00:00:00Z",
+        },
+      ],
+    })
+
+    const cart = await CartService.get()
+    const item = cart.items[0]
+
+    expect(item.imageUrl).toBeUndefined()
+    expect(item.variantId).toBeUndefined()
   })
 })
 

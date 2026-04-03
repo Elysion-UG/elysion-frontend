@@ -40,7 +40,7 @@ export default function Cart() {
   if (!mounted || isLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-sage-600" />
       </div>
     )
   }
@@ -48,12 +48,16 @@ export default function Cart() {
   if (!cart || cart.items.length === 0) {
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4 text-center">
-        <PackageOpen className="h-16 w-16 text-slate-300" />
-        <h2 className="text-2xl font-bold text-slate-700">Dein Warenkorb ist leer</h2>
-        <p className="text-slate-500">Entdecke unsere nachhaltigen Produkte.</p>
+        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-stone-100">
+          <PackageOpen className="h-10 w-10 text-stone-300" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-stone-800">Dein Warenkorb ist leer</h2>
+          <p className="mt-1 text-sm text-stone-500">Entdecke unsere nachhaltigen Produkte.</p>
+        </div>
         <a
           href="/"
-          className="rounded-lg bg-teal-600 px-6 py-2 font-medium text-white transition-colors hover:bg-teal-700"
+          className="rounded-xl bg-sage-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sage-700"
         >
           Zum Shop
         </a>
@@ -74,10 +78,15 @@ export default function Cart() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <h1 className="mb-8 flex items-center gap-3 text-3xl font-bold text-slate-800">
-        <ShoppingCart className="h-8 w-8 text-teal-600" />
-        Warenkorb
-      </h1>
+      <div className="mb-8 flex items-center gap-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sage-100">
+          <ShoppingCart className="h-6 w-6 text-sage-600" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-stone-900">Warenkorb</h1>
+          <p className="text-sm text-stone-500">{cart.items.length} Artikel</p>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
@@ -95,9 +104,9 @@ export default function Cart() {
             return (
               <div
                 key={item.id}
-                className="flex gap-4 rounded-xl border border-slate-200 bg-white p-4"
+                className="flex gap-4 rounded-xl border border-stone-200 bg-white p-4 shadow-sm"
               >
-                <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-sage-50">
                   {item.imageUrl ? (
                     <img
                       src={item.imageUrl}
@@ -105,7 +114,7 @@ export default function Cart() {
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-slate-300">
+                    <div className="flex h-full w-full items-center justify-center text-stone-300">
                       <PackageOpen className="h-8 w-8" />
                     </div>
                   )}
@@ -115,33 +124,33 @@ export default function Cart() {
                   {item.productSlug ? (
                     <a
                       href={`/product?slug=${item.productSlug}`}
-                      className="block truncate font-semibold text-slate-800 hover:text-teal-700"
+                      className="block truncate text-sm font-semibold text-stone-800 hover:text-sage-700"
                     >
                       {item.productName ?? "Produkt"}
                     </a>
                   ) : (
-                    <span className="block truncate font-semibold text-slate-800">
+                    <span className="block truncate font-semibold text-stone-800">
                       {item.productName ?? "Produkt"}
                     </span>
                   )}
                   {(item.variantOptions?.length ?? 0) > 0 && (
-                    <p className="mt-0.5 text-sm text-slate-500">
+                    <p className="mt-0.5 text-sm text-stone-500">
                       {item.variantOptions?.map((o) => `${o.name}: ${o.value}`).join(", ")}
                     </p>
                   )}
-                  <p className="mt-1 text-sm text-slate-500">{formatEuro(unitPrice)} / Stück</p>
+                  <p className="mt-1 text-sm text-stone-500">{formatEuro(unitPrice)} / Stück</p>
 
                   <div className="mt-3 flex items-center gap-2">
                     <button
                       onClick={() => handleUpdateQty(item.id, item.quantity - 1)}
                       disabled={isItemLoading || item.quantity <= 1}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-300 hover:bg-slate-100 disabled:opacity-40"
+                      className="flex h-7 w-7 items-center justify-center rounded-full border border-stone-200 text-stone-500 transition-colors hover:border-sage-300 hover:bg-sage-50 hover:text-sage-700 disabled:opacity-40"
                     >
                       <Minus className="h-3 w-3" />
                     </button>
-                    <span className="w-8 text-center font-medium text-slate-800">
+                    <span className="w-8 text-center text-sm font-semibold text-stone-800">
                       {isItemLoading ? (
-                        <Loader2 className="mx-auto h-4 w-4 animate-spin" />
+                        <Loader2 className="mx-auto h-4 w-4 animate-spin text-sage-500" />
                       ) : (
                         item.quantity
                       )}
@@ -149,7 +158,7 @@ export default function Cart() {
                     <button
                       onClick={() => handleUpdateQty(item.id, item.quantity + 1)}
                       disabled={isItemLoading}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-300 hover:bg-slate-100 disabled:opacity-40"
+                      className="flex h-7 w-7 items-center justify-center rounded-full border border-stone-200 text-stone-500 transition-colors hover:border-sage-300 hover:bg-sage-50 hover:text-sage-700 disabled:opacity-40"
                     >
                       <Plus className="h-3 w-3" />
                     </button>
@@ -160,11 +169,11 @@ export default function Cart() {
                   <button
                     onClick={() => handleRemove(item.id, item.productName ?? "")}
                     disabled={isItemLoading}
-                    className="text-slate-400 transition-colors hover:text-red-500"
+                    className="text-stone-400 transition-colors hover:text-red-500"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
-                  <span className="font-semibold text-slate-800">{formatEuro(totalPrice)}</span>
+                  <span className="font-semibold text-stone-800">{formatEuro(totalPrice)}</span>
                 </div>
               </div>
             )
@@ -172,25 +181,25 @@ export default function Cart() {
         </div>
 
         <div className="lg:col-span-1">
-          <div className="sticky top-24 rounded-xl border border-slate-200 bg-white p-6">
-            <h2 className="mb-4 text-lg font-semibold text-slate-800">Zusammenfassung</h2>
-            <div className="space-y-2 text-sm text-slate-600">
+          <div className="sticky top-24 rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-sm font-semibold text-stone-700">Zusammenfassung</h2>
+            <div className="space-y-2.5 text-sm text-stone-500">
               <div className="flex justify-between">
                 <span>Zwischensumme</span>
-                <span>{formatEuro(subtotal)}</span>
+                <span className="text-stone-700">{formatEuro(subtotal)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Versand</span>
-                <span className="text-slate-400">wird berechnet</span>
+                <span className="text-stone-400">wird berechnet</span>
               </div>
             </div>
-            <div className="mt-4 flex justify-between border-t border-slate-200 pt-4 font-semibold text-slate-800">
+            <div className="mt-4 flex justify-between border-t border-stone-100 pt-4 text-base font-bold text-stone-900">
               <span>Gesamt</span>
               <span>{formatEuro(subtotal)}</span>
             </div>
             <a
               href="/checkout"
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 py-3 font-medium text-white transition-colors hover:bg-teal-700"
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sage-700"
             >
               Zur Kasse
               <ArrowRight className="h-4 w-4" />

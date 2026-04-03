@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   User,
@@ -27,22 +28,85 @@ import { toast } from "sonner"
 import { toCountryName } from "@/src/lib/country"
 import { useUserProfile, useAddresses } from "@/src/hooks/useProfile"
 
+function DeleteAccountDialog({
+  onCancel,
+  onConfirm,
+  isDeleting,
+}: {
+  onCancel: () => void
+  onConfirm: () => void
+  isDeleting: boolean
+}) {
+  const modalRef = useFocusTrap(onCancel)
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="delete-dialog-title"
+        className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl"
+      >
+        <div className="mb-4 flex items-start gap-3">
+          <div className="flex-shrink-0 rounded-lg bg-red-100 p-2">
+            <AlertTriangle className="h-5 w-5 text-red-600" />
+          </div>
+          <div>
+            <h3 id="delete-dialog-title" className="text-lg font-bold text-stone-800">
+              Konto wirklich löschen?
+            </h3>
+            <p className="mt-1 text-sm text-stone-600">
+              Durch das Löschen Ihres Kontos werden alle Ihre persönlichen Daten, Bestellungen und
+              gespeicherten Adressen unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig
+              gemacht werden (Art. 17 DSGVO).
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 rounded-lg border border-stone-300 py-2.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50"
+          >
+            Abbrechen
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+          >
+            {isDeleting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Wird gelöscht...
+              </>
+            ) : (
+              "Konto endgültig löschen"
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ProfileSkeleton() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-8">
-        <div className="mb-2 h-9 w-44 animate-pulse rounded bg-slate-200" />
-        <div className="h-4 w-80 animate-pulse rounded bg-slate-200" />
+        <div className="mb-2 h-9 w-44 animate-pulse rounded bg-stone-200" />
+        <div className="h-4 w-80 animate-pulse rounded bg-stone-200" />
       </div>
       <div className="space-y-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div
+            key={i}
+            className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm"
+          >
             <div className="flex items-center justify-between p-5">
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 animate-pulse rounded-lg bg-slate-200" />
-                <div className="h-5 w-36 animate-pulse rounded bg-slate-200" />
+                <div className="h-9 w-9 animate-pulse rounded-lg bg-sage-100" />
+                <div className="h-5 w-36 animate-pulse rounded bg-stone-200" />
               </div>
-              <div className="h-5 w-5 animate-pulse rounded bg-slate-200" />
+              <div className="h-5 w-5 animate-pulse rounded bg-stone-200" />
             </div>
           </div>
         ))}
@@ -191,18 +255,18 @@ export default function Profil() {
   }) => (
     <button
       onClick={() => toggleSection(id)}
-      className="flex w-full items-center justify-between p-5 transition-colors hover:bg-slate-50"
+      className="flex w-full items-center justify-between p-5 transition-colors hover:bg-stone-50"
     >
       <div className="flex items-center gap-3">
-        <div className="rounded-lg bg-teal-100 p-2">
-          <Icon className="h-5 w-5 text-teal-600" />
+        <div className="rounded-lg bg-sage-100 p-2">
+          <Icon className="h-5 w-5 text-sage-600" />
         </div>
-        <span className="text-lg font-semibold text-slate-800">{label}</span>
+        <span className="text-lg font-semibold text-stone-800">{label}</span>
       </div>
       {expandedSections[id] ? (
-        <ChevronDown className="h-5 w-5 text-slate-400" />
+        <ChevronDown className="h-5 w-5 text-stone-400" />
       ) : (
-        <ChevronRight className="h-5 w-5 text-slate-400" />
+        <ChevronRight className="h-5 w-5 text-stone-400" />
       )}
     </button>
   )
@@ -214,61 +278,66 @@ export default function Profil() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <div className="mb-8">
-        <h1 className="mb-2 text-3xl font-bold text-slate-800">Mein Profil</h1>
-        <p className="text-slate-600">Verwalten Sie Ihre persönlichen Daten und Einstellungen.</p>
+      <div className="mb-8 flex items-center gap-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sage-100">
+          <User className="h-6 w-6 text-sage-600" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-stone-900">Mein Profil</h1>
+          <p className="text-sm text-stone-500">Persönliche Daten und Einstellungen verwalten</p>
+        </div>
       </div>
 
       <div className="space-y-4">
         {/* Persönliche Daten */}
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
           <SectionHeader id="personal" icon={User} label="Persönliche Daten" />
           {expandedSections.personal && (
             <div className="space-y-4 px-5 pb-5">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-600">Vorname</label>
+                  <label className="mb-1 block text-sm font-medium text-stone-600">Vorname</label>
                   <input
                     type="text"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full rounded-lg border border-stone-200 px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-sage-500"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-slate-600">Nachname</label>
+                  <label className="mb-1 block text-sm font-medium text-stone-600">Nachname</label>
                   <input
                     type="text"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full rounded-lg border border-stone-200 px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-sage-500"
                   />
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">
-                  E-Mail <span className="text-slate-400">(nicht änderbar)</span>
+                <label className="mb-1 block text-sm font-medium text-stone-600">
+                  E-Mail <span className="text-stone-400">(nicht änderbar)</span>
                 </label>
                 <input
                   type="email"
                   value={user?.email ?? ""}
                   disabled
-                  className="w-full cursor-not-allowed rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-slate-500"
+                  className="w-full cursor-not-allowed rounded-lg border border-stone-200 bg-stone-100 px-3 py-2 text-stone-500"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-slate-600">Telefon</label>
+                <label className="mb-1 block text-sm font-medium text-stone-600">Telefon</label>
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                  className="w-full rounded-lg border border-stone-200 px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-sage-500"
                 />
               </div>
               <button
                 onClick={handleSaveProfile}
                 disabled={isSavingProfile}
-                className="mt-2 flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
+                className="mt-2 flex items-center gap-2 rounded-lg bg-sage-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-sage-700 disabled:opacity-50"
               >
                 {isSavingProfile ? (
                   <>
@@ -283,37 +352,37 @@ export default function Profil() {
         </div>
 
         {/* Adressen */}
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
           <SectionHeader id="address" icon={MapPin} label="Liefer- & Adresseinstellungen" />
           {expandedSections.address && (
             <div className="space-y-4 px-5 pb-5">
               {isLoadingAddresses && addresses.length === 0 ? (
                 <div className="space-y-3 py-2">
                   {[1, 2].map((i) => (
-                    <div key={i} className="h-24 animate-pulse rounded-lg bg-slate-100" />
+                    <div key={i} className="h-24 animate-pulse rounded-lg bg-stone-100" />
                   ))}
                 </div>
               ) : addresses.length === 0 ? (
-                <p className="py-4 text-center text-sm text-slate-500">Keine Adressen vorhanden.</p>
+                <p className="py-4 text-center text-sm text-stone-500">Keine Adressen vorhanden.</p>
               ) : (
                 addresses.map((addr) => (
-                  <div key={addr.id} className="relative rounded-lg border border-slate-200 p-4">
+                  <div key={addr.id} className="relative rounded-lg border border-stone-200 p-4">
                     {addr.isDefault && (
-                      <span className="absolute right-2 top-2 flex items-center gap-1 rounded bg-teal-100 px-2 py-0.5 text-xs text-teal-700">
+                      <span className="absolute right-2 top-2 flex items-center gap-1 rounded bg-sage-100 px-2 py-0.5 text-xs text-sage-700">
                         <Star className="h-3 w-3" /> Standard
                       </span>
                     )}
-                    <p className="font-medium text-slate-800">
+                    <p className="font-medium text-stone-800">
                       {addr.firstName} {addr.lastName}
                     </p>
-                    <p className="text-sm text-slate-600">
+                    <p className="text-sm text-stone-600">
                       {addr.street} {addr.houseNumber}
                     </p>
-                    <p className="text-sm text-slate-600">
+                    <p className="text-sm text-stone-600">
                       {addr.postalCode} {addr.city}
                     </p>
-                    <p className="text-sm text-slate-600">{toCountryName(addr.country)}</p>
-                    <p className="mt-1 text-xs text-slate-400">
+                    <p className="text-sm text-stone-600">{toCountryName(addr.country)}</p>
+                    <p className="mt-1 text-xs text-stone-400">
                       {addr.type === "SHIPPING" ? "Lieferadresse" : "Rechnungsadresse"}
                     </p>
                     <div className="mt-3 flex items-center gap-3">
@@ -322,14 +391,14 @@ export default function Profil() {
                           setEditingAddress(addr)
                           setAddressFormOpen(true)
                         }}
-                        className="flex items-center gap-1 text-sm text-teal-600 hover:text-teal-700"
+                        className="flex items-center gap-1 text-sm text-sage-600 hover:text-sage-700"
                       >
                         <Edit2 className="h-3 w-3" /> Bearbeiten
                       </button>
                       {!addr.isDefault && (
                         <button
                           onClick={() => handleSetDefault(addr.id)}
-                          className="flex items-center gap-1 text-sm text-slate-600 hover:text-teal-700"
+                          className="flex items-center gap-1 text-sm text-stone-600 hover:text-sage-700"
                         >
                           <Star className="h-3 w-3" /> Als Standard
                         </button>
@@ -349,7 +418,7 @@ export default function Profil() {
                   setEditingAddress(null)
                   setAddressFormOpen(true)
                 }}
-                className="flex items-center gap-2 text-sm font-medium text-teal-600 hover:text-teal-700"
+                className="flex items-center gap-2 text-sm font-medium text-sage-600 hover:text-sage-700"
               >
                 <Plus className="h-4 w-4" /> Neue Adresse hinzufügen
               </button>
@@ -358,25 +427,25 @@ export default function Profil() {
         </div>
 
         {/* Zahlungsmethoden */}
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
           <SectionHeader id="payment" icon={CreditCard} label="Zahlungsmethoden" />
           {expandedSections.payment && (
             <div className="space-y-4 px-5 pb-5">
-              <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
+              <div className="flex items-center justify-between rounded-lg border border-stone-200 p-4">
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-12 items-center justify-center rounded bg-slate-800 text-xs font-bold text-white">
                     VISA
                   </div>
                   <div>
-                    <p className="font-medium text-slate-800">{"•••• •••• •••• 4242"}</p>
-                    <p className="text-sm text-slate-500">Gültig bis 12/26</p>
+                    <p className="font-medium text-stone-800">{"•••• •••• •••• 4242"}</p>
+                    <p className="text-sm text-stone-500">Gültig bis 12/26</p>
                   </div>
                 </div>
-                <span className="rounded bg-teal-100 px-2 py-0.5 text-xs text-teal-700">
+                <span className="rounded bg-sage-100 px-2 py-0.5 text-xs text-sage-700">
                   Standard
                 </span>
               </div>
-              <button className="flex items-center gap-2 text-sm font-medium text-teal-600 hover:text-teal-700">
+              <button className="flex items-center gap-2 text-sm font-medium text-sage-600 hover:text-sage-700">
                 <Plus className="h-4 w-4" /> Zahlungsmethode hinzufügen
               </button>
             </div>
@@ -384,7 +453,7 @@ export default function Profil() {
         </div>
 
         {/* Benachrichtigungen */}
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
           <SectionHeader id="notifications" icon={Bell} label="Benachrichtigungen" />
           {expandedSections.notifications && (
             <div className="space-y-4 px-5 pb-5">
@@ -403,8 +472,8 @@ export default function Profil() {
               ].map((item) => (
                 <div key={item.label} className="flex items-center justify-between py-2">
                   <div>
-                    <p className="font-medium text-slate-800">{item.label}</p>
-                    <p className="text-sm text-slate-500">{item.desc}</p>
+                    <p className="font-medium text-stone-800">{item.label}</p>
+                    <p className="text-sm text-stone-500">{item.desc}</p>
                   </div>
                   <label className="relative inline-flex cursor-pointer items-center">
                     <input
@@ -412,7 +481,7 @@ export default function Profil() {
                       defaultChecked={item.defaultOn}
                       className="peer sr-only"
                     />
-                    <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-teal-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none" />
+                    <div className="peer h-6 w-11 rounded-full bg-stone-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-stone-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-sage-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none" />
                   </label>
                 </div>
               ))}
@@ -421,19 +490,19 @@ export default function Profil() {
         </div>
 
         {/* Sicherheit */}
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
           <SectionHeader id="security" icon={Shield} label="Sicherheit" />
           {expandedSections.security && (
             <div className="space-y-4 px-5 pb-5">
-              <div className="flex items-center justify-between rounded-lg border border-slate-200 p-4">
+              <div className="flex items-center justify-between rounded-lg border border-stone-200 p-4">
                 <div>
-                  <p className="font-medium text-slate-800">Passwort</p>
-                  <p className="text-sm text-slate-500">Zuletzt geändert vor 3 Monaten</p>
+                  <p className="font-medium text-stone-800">Passwort</p>
+                  <p className="text-sm text-stone-500">Zuletzt geändert vor 3 Monaten</p>
                 </div>
                 <button
                   onClick={handlePasswordReset}
                   disabled={isSendingPasswordReset}
-                  className="flex items-center gap-2 rounded-lg border border-teal-600 px-4 py-2 text-sm text-teal-600 transition-colors hover:bg-teal-50 disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-lg border border-sage-600 px-4 py-2 text-sm text-sage-600 transition-colors hover:bg-sage-50 disabled:opacity-50"
                 >
                   {isSendingPasswordReset ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ändern"}
                 </button>
@@ -472,46 +541,12 @@ export default function Profil() {
         address={editingAddress}
       />
 
-      {/* Delete Account Confirmation Dialog */}
       {deleteDialogOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-            <div className="mb-4 flex items-start gap-3">
-              <div className="flex-shrink-0 rounded-lg bg-red-100 p-2">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-800">Konto wirklich löschen?</h3>
-                <p className="mt-1 text-sm text-slate-600">
-                  Durch das Löschen Ihres Kontos werden alle Ihre persönlichen Daten, Bestellungen
-                  und gespeicherten Adressen unwiderruflich gelöscht. Diese Aktion kann nicht
-                  rückgängig gemacht werden (Art. 17 DSGVO).
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteDialogOpen(false)}
-                className="flex-1 rounded-lg border border-slate-300 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
-              >
-                Abbrechen
-              </button>
-              <button
-                onClick={handleDeleteAccount}
-                disabled={isDeletingAccount}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
-              >
-                {isDeletingAccount ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" /> Wird gelöscht...
-                  </>
-                ) : (
-                  "Konto endgültig löschen"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteAccountDialog
+          onCancel={() => setDeleteDialogOpen(false)}
+          onConfirm={handleDeleteAccount}
+          isDeleting={isDeletingAccount}
+        />
       )}
     </div>
   )

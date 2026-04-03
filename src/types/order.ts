@@ -84,6 +84,17 @@ export interface OrderDetail {
   currency?: string
 }
 
+/** Shipping address — only included by the backend for CONFIRMED/PROCESSING/SHIPPED orders. */
+export interface ShippingAddress {
+  firstName: string
+  lastName: string
+  street: string
+  houseNumber: string
+  postalCode: string
+  city: string
+  country: string
+}
+
 export interface OrderGroupDetail {
   orderGroupId: string
   orderId: string
@@ -111,6 +122,8 @@ export interface OrderGroupDetail {
   currency?: string
   shipment?: { trackingNumber: string; carrier?: string } | null
   buyer?: { userId?: string; guestEmail?: string | null }
+  /** Provided by backend only for shippable order states. DSGVO: use only for shipping, not marketing. */
+  shippingAddress?: ShippingAddress
   createdAt: string
 }
 
@@ -129,17 +142,17 @@ export interface ShipOrderDTO {
 
 // ── Settlements ───────────────────────────────────────────────────────
 export interface Settlement {
-  id: string
-  sellerId: string
+  settlementId: string
   orderGroupId?: string
-  periodStart: string
-  periodEnd: string
-  grossAmountCents: number
-  platformFeeCents: number
-  netAmountCents: number
-  amount?: number
-  status: "PENDING" | "PAID"
-  paidAt?: string
+  sellerId: string
+  grossAmount: number
+  platformFeeAmount: number
+  netAmount: number
+  refundedAmount?: number
+  currency?: string
+  status: string
+  adjustmentRequired?: boolean
+  eligibleAt?: string
   createdAt: string
 }
 

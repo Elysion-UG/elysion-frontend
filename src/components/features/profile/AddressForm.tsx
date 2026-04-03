@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import { X, Loader2 } from "lucide-react"
 import type { Address, AddressDTO, AddressType } from "@/src/types"
 import { toCountryCode, toCountryName } from "@/src/lib/country"
+import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 
 interface AddressFormProps {
   isOpen: boolean
@@ -70,25 +71,33 @@ export default function AddressForm({ isOpen, onClose, onSave, address }: Addres
     }
   }
 
+  const modalRef = useFocusTrap(onClose)
+
   if (!isOpen) return null
 
   const inputClass =
-    "w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 text-slate-800 text-sm"
-  const labelClass = "block text-sm font-medium text-slate-700 mb-1"
+    "w-full px-3 py-2.5 border border-stone-200 rounded-lg focus:ring-2 focus:ring-sage-100 focus:border-sage-400 text-stone-800 text-sm outline-none"
+  const labelClass = "block text-sm font-medium text-stone-600 mb-1"
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white shadow-2xl">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={address ? "Adresse bearbeiten" : "Neue Adresse hinzufügen"}
+        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white shadow-2xl"
+      >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 text-slate-400 hover:text-slate-600"
+          className="absolute right-4 top-4 text-stone-400 hover:text-stone-600"
           aria-label="Schliessen"
         >
           <X className="h-5 w-5" />
         </button>
 
         <div className="p-6">
-          <h2 className="mb-4 text-xl font-bold text-slate-800">
+          <h2 className="mb-4 text-xl font-bold text-stone-800">
             {address ? "Adresse bearbeiten" : "Neue Adresse hinzufügen"}
           </h2>
 
@@ -100,14 +109,14 @@ export default function AddressForm({ isOpen, onClose, onSave, address }: Addres
                 <button
                   type="button"
                   onClick={() => setType("SHIPPING")}
-                  className={`rounded-lg border-2 py-2 text-sm font-medium transition-colors ${type === "SHIPPING" ? "border-teal-600 bg-teal-50 text-teal-700" : "border-slate-200 text-slate-600"}`}
+                  className={`rounded-lg border-2 py-2 text-sm font-medium transition-colors ${type === "SHIPPING" ? "border-sage-600 bg-sage-50 text-sage-700" : "border-slate-200 text-stone-600"}`}
                 >
                   Lieferadresse
                 </button>
                 <button
                   type="button"
                   onClick={() => setType("BILLING")}
-                  className={`rounded-lg border-2 py-2 text-sm font-medium transition-colors ${type === "BILLING" ? "border-teal-600 bg-teal-50 text-teal-700" : "border-slate-200 text-slate-600"}`}
+                  className={`rounded-lg border-2 py-2 text-sm font-medium transition-colors ${type === "BILLING" ? "border-sage-600 bg-sage-50 text-sage-700" : "border-slate-200 text-stone-600"}`}
                 >
                   Rechnungsadresse
                 </button>
@@ -220,23 +229,23 @@ export default function AddressForm({ isOpen, onClose, onSave, address }: Addres
                 type="checkbox"
                 checked={isDefault}
                 onChange={(e) => setIsDefault(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+                className="h-4 w-4 rounded border-stone-300 text-sage-600 focus:ring-sage-500"
               />
-              <span className="text-sm text-slate-700">Als Standardadresse festlegen</span>
+              <span className="text-sm text-stone-700">Als Standardadresse festlegen</span>
             </label>
 
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-lg border border-slate-300 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                className="flex-1 rounded-lg border border-stone-300 py-2.5 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50"
               >
                 Abbrechen
               </button>
               <button
                 type="submit"
                 disabled={isSaving}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
+                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-sage-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-sage-700 disabled:opacity-50"
               >
                 {isSaving ? (
                   <>

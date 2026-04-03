@@ -5,7 +5,11 @@ import type {
   AdminUserListParams,
   AccountStatus,
   SellerStatus,
+  PagedResponse,
+  AdminUserListItem,
+  SellerProfile,
 } from "@/src/types"
+import { AdminService } from "@/src/services/admin.service"
 
 export const UserService = {
   // ── Profile ────────────────────────────────────────────────────────
@@ -28,116 +32,76 @@ export const UserService = {
     await apiRequest<{ userId: string }>("/api/v1/users/me", { method: "DELETE" })
   },
 
-  // ── Admin: User Management (mock — use AdminService for real calls) ─
+  // ── Admin: User Management ─────────────────────────────────────────
   async getUsers(params: AdminUserListParams): Promise<PaginatedResponse<User>> {
-    const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms))
-    await delay()
-    const mockUsers: User[] = [
-      {
-        id: "usr_1",
-        email: "max.mustermann@email.de",
-        firstName: "Max",
-        lastName: "Mustermann",
-        role: "BUYER",
-        status: "ACTIVE",
-        emailVerified: true,
-        createdAt: "2024-01-15T10:00:00Z",
-      },
-      {
-        id: "usr_2",
-        email: "anna.schmidt@email.de",
-        firstName: "Anna",
-        lastName: "Schmidt",
-        role: "SELLER",
-        emailVerified: true,
-        status: "ACTIVE",
-        sellerProfile: {
-          id: "sp_1",
-          companyName: "GreenGoods GmbH",
-          vatId: "DE123456789",
-          iban: "DE89370400440532013000",
-          status: "APPROVED",
-        },
-        createdAt: "2024-02-20T14:30:00Z",
-      },
-      {
-        id: "usr_3",
-        email: "peter.meier@email.de",
-        firstName: "Peter",
-        lastName: "Meier",
-        role: "SELLER",
-        emailVerified: true,
-        status: "ACTIVE",
-        sellerProfile: {
-          id: "sp_2",
-          companyName: "EcoStyle",
-          vatId: "DE987654321",
-          iban: "DE02120300000000202051",
-          status: "PENDING",
-        },
-        createdAt: "2024-03-10T09:15:00Z",
-      },
-      {
-        id: "usr_4",
-        email: "lisa.weber@email.de",
-        firstName: "Lisa",
-        lastName: "Weber",
-        role: "BUYER",
-        emailVerified: true,
-        status: "SUSPENDED",
-        createdAt: "2024-01-22T11:45:00Z",
-      },
-      {
-        id: "usr_5",
-        email: "admin@elysion.de",
-        firstName: "Admin",
-        lastName: "User",
-        role: "ADMIN",
-        emailVerified: true,
-        status: "ACTIVE",
-        createdAt: "2023-12-01T08:00:00Z",
-      },
-    ]
-
-    let filtered = [...mockUsers]
-    if (params.search) {
-      const q = params.search.toLowerCase()
-      filtered = filtered.filter(
-        (u) =>
-          u.firstName.toLowerCase().includes(q) ||
-          u.lastName.toLowerCase().includes(q) ||
-          u.email.toLowerCase().includes(q)
-      )
-    }
-    if (params.role) filtered = filtered.filter((u) => u.role === params.role)
-    if (params.status) filtered = filtered.filter((u) => u.status === params.status)
-
-    const start = (params.page - 1) * params.pageSize
-    const page = filtered.slice(start, start + params.pageSize)
-
-    return {
-      data: page,
-      total: filtered.length,
+    const res = await AdminService.listUsers({
       page: params.page,
       pageSize: params.pageSize,
-      totalPages: Math.ceil(filtered.length / params.pageSize),
+      search: params.search,
+      role: params.role,
+      status: params.status,
+    })
+    // Backend returns PagedResponse with userId (not id) per API spec.
+    type RichItem = AdminUserListItem & {
+      userId: string
+      firstName?: string
+      lastName?: string
+      phone?: string
+      sellerProfile?: SellerProfile
+    }
+    const paged = res as PagedResponse<RichItem>
+    return {
+      data: paged.items.map((item) => ({
+        id: item.userId,
+        email: item.email,
+        firstName: item.firstName ?? "",
+        lastName: item.lastName ?? "",
+        phone: item.phone,
+        role: item.role,
+        status: item.status,
+        emailVerified: item.emailVerified,
+        sellerProfile: item.sellerProfile,
+        createdAt: item.createdAt,
+      })),
+      total: paged.totalItems,
+      page: params.page,
+      pageSize: params.pageSize,
+      totalPages: paged.totalPages,
     }
   },
 
   async getUserById(id: string): Promise<User> {
-    const allUsers = (await UserService.getUsers({ page: 1, pageSize: 100 })).data
-    const user = allUsers.find((u) => u.id === id)
-    if (!user) throw new Error("User not found")
-    return user
+    const details = await AdminService.getUser(id)
+    return {
+      id: details.id,
+      email: details.email,
+      firstName: details.firstName ?? "",
+      lastName: details.lastName ?? "",
+      phone: details.phone,
+      role: details.role,
+      status: details.status,
+      emailVerified: details.emailVerified,
+      sellerProfile: details.sellerProfile,
+      createdAt: details.createdAt,
+    }
   },
 
   async updateUserStatus(userId: string, status: AccountStatus): Promise<void> {
-    void userId
-    void status
+    if (status === "SUSPENDED") {
+      await AdminService.suspendUser(userId)
+    } else {
+      await AdminService.activateUser(userId)
+    }
   },
 
-  async updateSellerStatus(userId: string, sellerStatus: SellerStatus): Promise<void> {
-    void userId
-    void sellerStatus
+  // sellerProfileId is the seller profile's own ID (not the user ID)
+  async updateSellerStatus(sellerProfileId: string, sellerStatus: SellerStatus): Promise<void> {
+    if (sellerStatus === "APPROVED") {
+      await AdminService.approveSellerProfile(sellerProfileId)
+    } else if (sellerStatus === "REJECTED") {
+      await AdminService.rejectSellerProfile(sellerProfileId, "")
+    } else if (sellerStatus === "SUSPENDED") {
+      await AdminService.suspendSellerProfile(sellerProfileId, "")
+    }
   },
 }

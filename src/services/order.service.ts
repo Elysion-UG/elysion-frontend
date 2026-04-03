@@ -132,7 +132,11 @@ export const OrderService = {
     if (params.size !== undefined) search.set("size", String(params.size))
     if (params.status) search.set("status", params.status)
     const qs = search.toString()
-    return apiRequest<Order[]>(`/api/v1/orders${qs ? `?${qs}` : ""}`)
+    // Backend returns a paginated envelope { items, page, totalElements, totalPages }
+    const res = await apiRequest<{ items?: Order[] } | Order[]>(
+      `/api/v1/orders${qs ? `?${qs}` : ""}`
+    )
+    return Array.isArray(res) ? res : ((res as { items?: Order[] }).items ?? [])
   },
 
   async getById(id: string): Promise<OrderDetail> {

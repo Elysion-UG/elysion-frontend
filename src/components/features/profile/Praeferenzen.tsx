@@ -113,17 +113,17 @@ function PraeferenzenSkeleton() {
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-8">
-        <div className="mb-2 h-9 w-40 animate-pulse rounded bg-slate-200" />
-        <div className="h-4 w-96 animate-pulse rounded bg-slate-200" />
+        <div className="mb-2 h-9 w-40 animate-pulse rounded bg-stone-200" />
+        <div className="h-4 w-96 animate-pulse rounded bg-stone-200" />
       </div>
       {/* Profile type switcher skeleton */}
-      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-5">
-        <div className="mb-3 h-4 w-24 animate-pulse rounded bg-slate-200" />
+      <div className="mb-6 rounded-xl border border-stone-200 bg-white p-5">
+        <div className="mb-3 h-4 w-24 animate-pulse rounded bg-stone-200" />
         <div className="grid grid-cols-3 gap-3">
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-16 animate-pulse rounded-lg border-2 border-slate-200 bg-slate-100"
+              className="h-16 animate-pulse rounded-lg border-2 border-stone-200 bg-stone-100"
             />
           ))}
         </div>
@@ -131,13 +131,13 @@ function PraeferenzenSkeleton() {
       {/* Category skeletons */}
       <div className="space-y-4">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="rounded-xl border border-slate-200 bg-white p-5">
+          <div key={i} className="rounded-xl border border-stone-200 bg-white p-5">
             <div className="flex items-center gap-3">
-              <div className="h-9 w-9 animate-pulse rounded-lg bg-slate-200" />
-              <div className="h-5 w-40 animate-pulse rounded bg-slate-200" />
-              <div className="ml-auto h-4 w-8 animate-pulse rounded bg-slate-200" />
+              <div className="h-9 w-9 animate-pulse rounded-lg bg-stone-200" />
+              <div className="h-5 w-40 animate-pulse rounded bg-stone-200" />
+              <div className="ml-auto h-4 w-8 animate-pulse rounded bg-stone-200" />
             </div>
-            <div className="mt-4 h-2 animate-pulse rounded-lg bg-slate-200" />
+            <div className="mt-4 h-2 animate-pulse rounded-lg bg-stone-200" />
           </div>
         ))}
       </div>
@@ -209,17 +209,21 @@ export default function Praeferenzen() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="mb-8">
-        <h1 className="mb-2 text-3xl font-bold text-slate-800">Präferenzen</h1>
-        <p className="text-slate-600">
-          Passen Sie Ihre Nachhaltigkeitspräferenzen an. Diese Werte beeinflussen die
-          Produktempfehlungen.
-        </p>
+      <div className="mb-8 flex items-center gap-4">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sage-100">
+          <Leaf className="h-6 w-6 text-sage-600" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-stone-900">Präferenzen</h1>
+          <p className="text-sm text-stone-500">
+            Nachhaltigkeitswerte festlegen — beeinflusst Produktempfehlungen
+          </p>
+        </div>
       </div>
 
       {/* Profile type switcher */}
-      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-5">
-        <label className="mb-3 block text-sm font-medium text-slate-700">Profiltyp</label>
+      <div className="mb-6 rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
+        <label className="mb-3 block text-sm font-medium text-stone-700">Profiltyp</label>
         <div className="grid grid-cols-3 gap-3">
           {[
             {
@@ -235,16 +239,16 @@ export default function Praeferenzen() {
               onClick={() => setProfileType(opt.value)}
               className={`rounded-lg border-2 p-3 text-left transition-colors ${
                 profileType === opt.value
-                  ? "border-teal-600 bg-teal-50"
-                  : "border-slate-200 hover:border-slate-300"
+                  ? "border-sage-600 bg-sage-50"
+                  : "border-stone-200 hover:border-slate-300"
               }`}
             >
               <span
-                className={`block text-sm font-semibold ${profileType === opt.value ? "text-teal-700" : "text-slate-700"}`}
+                className={`block text-sm font-semibold ${profileType === opt.value ? "text-sage-700" : "text-stone-700"}`}
               >
                 {opt.label}
               </span>
-              <span className="mt-0.5 block text-xs text-slate-500">{opt.desc}</span>
+              <span className="mt-0.5 block text-xs text-stone-500">{opt.desc}</span>
             </button>
           ))}
         </div>
@@ -252,10 +256,13 @@ export default function Praeferenzen() {
 
       {/* None selected */}
       {profileType === "none" && (
-        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
-          <p className="text-slate-600">
-            Sie haben aktuell kein Werteprofil aktiv. Produkte werden ohne Nachhaltigkeitsgewichtung
-            angezeigt.
+        <div className="rounded-xl border border-stone-100 bg-stone-50 p-10 text-center shadow-sm">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-stone-100">
+            <Leaf className="h-6 w-6 text-stone-300" />
+          </div>
+          <p className="font-medium text-stone-700">Kein Werteprofil aktiv</p>
+          <p className="mt-1 text-sm text-stone-400">
+            Produkte werden ohne Nachhaltigkeitsgewichtung angezeigt.
           </p>
         </div>
       )}
@@ -266,13 +273,16 @@ export default function Praeferenzen() {
           {CATEGORIES.map((category) => {
             const Icon = category.icon
             return (
-              <div key={category.id} className="rounded-xl border border-slate-200 bg-white p-5">
+              <div
+                key={category.id}
+                className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm"
+              >
                 <div className="mb-3 flex items-center gap-3">
-                  <div className="rounded-lg bg-teal-100 p-2">
-                    <Icon className="h-5 w-5 text-teal-600" />
+                  <div className="rounded-lg bg-sage-100 p-2">
+                    <Icon className="h-5 w-5 text-sage-600" />
                   </div>
-                  <span className="text-lg font-semibold text-slate-800">{category.title}</span>
-                  <span className="ml-auto text-sm font-bold text-teal-600">
+                  <span className="text-lg font-semibold text-stone-800">{category.title}</span>
+                  <span className="ml-auto text-sm font-bold text-sage-600">
                     {simpleWeights[category.id]}%
                   </span>
                 </div>
@@ -284,9 +294,9 @@ export default function Praeferenzen() {
                   onChange={(e) =>
                     setSimpleWeights((prev) => ({ ...prev, [category.id]: Number(e.target.value) }))
                   }
-                  className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-teal-600"
+                  className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-stone-200 accent-sage-600"
                 />
-                <div className="mt-1 flex justify-between text-xs text-slate-400">
+                <div className="mt-1 flex justify-between text-xs text-stone-400">
                   <span>0</span>
                   <span>100</span>
                 </div>
@@ -311,24 +321,24 @@ export default function Praeferenzen() {
             return (
               <div
                 key={category.id}
-                className="overflow-hidden rounded-xl border border-slate-200 bg-white"
+                className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm"
               >
                 <button
                   onClick={() => toggleCategory(category.id)}
-                  className="flex w-full items-center justify-between p-5 transition-colors hover:bg-slate-50"
+                  className="flex w-full items-center justify-between p-5 transition-colors hover:bg-stone-50"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-teal-100 p-2">
-                      <Icon className="h-5 w-5 text-teal-600" />
+                    <div className="rounded-lg bg-sage-100 p-2">
+                      <Icon className="h-5 w-5 text-sage-600" />
                     </div>
-                    <span className="text-lg font-semibold text-slate-800">{category.title}</span>
+                    <span className="text-lg font-semibold text-stone-800">{category.title}</span>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="text-sm font-bold text-teal-600">Gesamt: {avg}%</span>
+                    <span className="text-sm font-bold text-sage-600">Gesamt: {avg}%</span>
                     {isExpanded ? (
-                      <ChevronDown className="h-5 w-5 text-slate-400" />
+                      <ChevronDown className="h-5 w-5 text-stone-400" />
                     ) : (
-                      <ChevronRight className="h-5 w-5 text-slate-400" />
+                      <ChevronRight className="h-5 w-5 text-stone-400" />
                     )}
                   </div>
                 </button>
@@ -336,11 +346,11 @@ export default function Praeferenzen() {
                 {isExpanded && (
                   <div className="space-y-5 px-5 pb-5">
                     {/* Overall bar */}
-                    <div className="flex h-3 overflow-hidden rounded-full bg-slate-200">
+                    <div className="flex h-3 overflow-hidden rounded-full bg-stone-200">
                       {category.subs.map((sub, i) => (
                         <div
                           key={sub.id}
-                          className={`transition-all duration-300 ${i === 0 ? "bg-teal-500" : i === 1 ? "bg-teal-300" : "bg-teal-200"}`}
+                          className={`transition-all duration-300 ${i === 0 ? "bg-sage-500" : i === 1 ? "bg-sage-300" : "bg-sage-200"}`}
                           style={{ width: `${catWeights[sub.id] / category.subs.length}%` }}
                         />
                       ))}
@@ -349,11 +359,11 @@ export default function Praeferenzen() {
                     {category.subs.map((sub, i) => (
                       <div key={sub.id} className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <label className="flex-1 pr-4 text-sm font-medium text-slate-700">
+                          <label className="flex-1 pr-4 text-sm font-medium text-stone-700">
                             {sub.label}
                           </label>
                           <span
-                            className={`w-12 text-right text-sm font-bold ${i === 0 ? "text-teal-600" : "text-teal-400"}`}
+                            className={`w-12 text-right text-sm font-bold ${i === 0 ? "text-sage-600" : "text-teal-400"}`}
                           >
                             {catWeights[sub.id]}%
                           </span>
@@ -372,7 +382,7 @@ export default function Praeferenzen() {
                               },
                             }))
                           }
-                          className={`h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 ${i === 0 ? "accent-teal-600" : "accent-teal-300"}`}
+                          className={`h-2 w-full cursor-pointer appearance-none rounded-lg bg-stone-200 ${i === 0 ? "accent-sage-600" : "accent-sage-300"}`}
                         />
                       </div>
                     ))}
@@ -389,7 +399,7 @@ export default function Praeferenzen() {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className="flex items-center gap-2 rounded-lg bg-teal-600 px-8 py-3 font-semibold text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-lg bg-sage-600 px-8 py-3 font-semibold text-white transition-colors hover:bg-sage-700 disabled:opacity-50"
         >
           {isSaving ? (
             <>

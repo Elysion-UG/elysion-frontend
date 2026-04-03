@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { Plus, Award, RefreshCw, Loader2, ExternalLink } from "lucide-react"
+import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import { CertificateService } from "@/src/services/certificate.service"
 import type { Certificate, CertificateType } from "@/src/types"
 import { toast } from "sonner"
@@ -44,10 +45,20 @@ function CertForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
     }
   }
 
+  const modalRef = useFocusTrap(onClose)
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-        <h3 className="mb-4 text-lg font-semibold text-slate-800">Neues Zertifikat</h3>
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cert-form-title"
+        className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+      >
+        <h3 id="cert-form-title" className="mb-4 text-lg font-semibold text-slate-800">
+          Neues Zertifikat
+        </h3>
         <div className="space-y-3">
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600">Typ</label>

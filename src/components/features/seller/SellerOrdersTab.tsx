@@ -11,6 +11,7 @@ import {
   X,
   DollarSign,
 } from "lucide-react"
+import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import { SellerOrderService } from "@/src/services/seller-order.service"
 import type { OrderGroupDetail } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
@@ -44,17 +45,28 @@ function OrderDetailDrawer({
   const hasActions =
     group.status === "CONFIRMED" || group.status === "PROCESSING" || group.status === "SHIPPED"
 
+  const drawerRef = useFocusTrap(onClose)
+
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/30" onClick={onClose} />
-      <div className="fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col bg-white shadow-2xl">
+      <div
+        ref={drawerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="order-drawer-title"
+        className="fixed inset-y-0 right-0 z-50 flex w-full max-w-lg flex-col bg-white shadow-2xl"
+      >
         {/* Header */}
         <div className="flex items-start justify-between border-b border-slate-200 p-5">
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-slate-400">
               Bestellung
             </p>
-            <h2 className="mt-0.5 font-mono text-sm font-semibold text-slate-800">
+            <h2
+              id="order-drawer-title"
+              className="mt-0.5 font-mono text-sm font-semibold text-slate-800"
+            >
               {group.orderId}
             </h2>
             <p className="mt-1 text-xs text-slate-500">{formattedDate}</p>
@@ -67,6 +79,7 @@ function OrderDetailDrawer({
             </span>
             <button
               onClick={onClose}
+              aria-label="Schliessen"
               className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             >
               <X className="h-5 w-5" />
@@ -89,6 +102,31 @@ function OrderDetailDrawer({
               )}
             </div>
           </section>
+
+          {/* Shipping address — only shown when backend provides it (CONFIRMED+) */}
+          {group.shippingAddress && (
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                Lieferadresse
+              </h3>
+              <div className="rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                <p className="font-medium">
+                  {group.shippingAddress.firstName} {group.shippingAddress.lastName}
+                </p>
+                <p>
+                  {group.shippingAddress.street} {group.shippingAddress.houseNumber}
+                </p>
+                <p>
+                  {group.shippingAddress.postalCode} {group.shippingAddress.city}
+                </p>
+                <p>{group.shippingAddress.country}</p>
+              </div>
+              <p className="mt-1.5 text-xs text-slate-400">
+                Diese Adresse darf ausschließlich für den Versand dieser Bestellung verwendet werden
+                (DSGVO Art. 5 Abs. 1 lit. b).
+              </p>
+            </section>
+          )}
 
           {/* Items */}
           <section>
@@ -234,10 +272,20 @@ function ShipModal({
     }
   }
 
+  const modalRef = useFocusTrap(onClose)
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-        <h3 className="mb-4 text-lg font-semibold text-slate-800">Versanddetails</h3>
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ship-modal-title"
+        className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+      >
+        <h3 id="ship-modal-title" className="mb-4 text-lg font-semibold text-slate-800">
+          Versanddetails
+        </h3>
         <div className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">

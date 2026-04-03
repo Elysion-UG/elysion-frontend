@@ -9,6 +9,7 @@ import {
   CreditCard,
   ChevronRight,
   ShieldAlert,
+  FileText,
 } from "lucide-react"
 import { AddressService } from "@/src/services/address.service"
 import { CheckoutService } from "@/src/services/checkout.service"
@@ -37,6 +38,7 @@ export default function Checkout() {
   const [preview, setPreview] = useState<CheckoutStartResponse | null>(null)
   const [result, setResult] = useState<CheckoutCompleteResponse | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [agbAccepted, setAgbAccepted] = useState(false)
 
   // Product display data (name + image) for checkout items.
   // Seed from localStorage cache (populated by addItem). When items are missing
@@ -248,21 +250,64 @@ export default function Checkout() {
           </div>
         )}
 
-        <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6">
+        <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6">
           <div className="space-y-2 text-sm text-slate-600">
             <div className="flex justify-between">
-              <span>Zwischensumme</span>
-              <span>{formatEuro(preview.subtotal ?? 0)}</span>
+              <span>Zwischensumme (netto)</span>
+              <span>{formatEuro((preview.subtotal ?? 0) - (preview.tax ?? 0))}</span>
             </div>
+            {(preview.tax ?? 0) > 0 && (
+              <div className="flex justify-between">
+                <span>Enthaltene MwSt.</span>
+                <span>{formatEuro(preview.tax ?? 0)}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span>Versand</span>
-              <span>Kostenlos</span>
+              <span>
+                {(preview.shippingCost ?? 0) > 0
+                  ? formatEuro(preview.shippingCost ?? 0)
+                  : "Kostenlos"}
+              </span>
             </div>
           </div>
           <div className="mt-3 flex justify-between border-t border-slate-200 pt-3 font-bold text-slate-800">
-            <span>Gesamt</span>
+            <span>Gesamt (inkl. MwSt.)</span>
             <span>{formatEuro(preview.subtotal ?? 0)}</span>
           </div>
+        </div>
+
+        {/* AGB + Widerruf Checkbox — § 312j BGB */}
+        <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              type="checkbox"
+              checked={agbAccepted}
+              onChange={(e) => setAgbAccepted(e.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-teal-600"
+            />
+            <span className="text-sm text-slate-700">
+              Ich habe die{" "}
+              <a
+                href="/agb"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-teal-700 underline underline-offset-2 hover:text-teal-900"
+              >
+                AGB
+              </a>{" "}
+              und die{" "}
+              <a
+                href="/widerruf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-teal-700 underline underline-offset-2 hover:text-teal-900"
+              >
+                Widerrufsbelehrung
+              </a>{" "}
+              gelesen und akzeptiere diese. *
+            </span>
+          </label>
         </div>
 
         <div className="flex gap-3">
@@ -274,14 +319,15 @@ export default function Checkout() {
           </button>
           <button
             onClick={handleComplete}
-            disabled={isLoading}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-teal-600 py-3 font-medium text-white transition-colors hover:bg-teal-700 disabled:opacity-60"
+            disabled={isLoading || !agbAccepted}
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-teal-600 py-3 font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                Jetzt bestellen <ChevronRight className="h-4 w-4" />
+                <FileText className="h-4 w-4" />
+                Zahlungspflichtig bestellen
               </>
             )}
           </button>

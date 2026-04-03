@@ -80,8 +80,8 @@ export const CertificateService = {
     return apiRequest(`/api/v1/products/${productId}/certificates`)
   },
 
-  /** Admin: list all certificates across all sellers */
+  /** Admin: list all certificates across all sellers (same endpoint, admins see all) */
   async listAll(): Promise<Certificate[]> {
-    return apiRequest(`/api/v1/admin/certificates`)
+    return apiRequest(`/api/v1/certificates`)
   },
 }

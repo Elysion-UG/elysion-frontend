@@ -32,8 +32,12 @@ export interface CheckoutStartResponse {
     currency?: string
   }>
   shippingAddress?: CheckoutAddressDTO
-  /** Validated subtotal in euro (decimal). Backend has no separate shippingCost or total. */
+  /** Validated subtotal in euro (decimal) — includes tax. */
   subtotal?: number
+  /** Shipping cost in euro (decimal). May be absent if not provided by backend. */
+  shippingCost?: number
+  /** Total tax amount in euro (decimal). May be absent if not provided by backend. */
+  tax?: number
   totalQuantity?: number
   currency?: string
   readyToProceed?: boolean

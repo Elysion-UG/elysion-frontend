@@ -42,6 +42,7 @@ interface ApiProductListItem {
   seller: { id: string; companyName: string } | null
   createdAt: string
   matchScore: number | null
+  status?: string
 }
 
 interface ApiProductPage {
@@ -119,10 +120,12 @@ export const ProductService = {
         id: item.id,
         slug: item.slug,
         name: item.name,
+        title: item.name,
         price: item.price,
         currency: item.currency,
+        status: item.status,
         imageUrls: item.primaryImage ? [item.primaryImage] : undefined,
-        seller: item.seller
+        seller: item.seller?.id
           ? { userId: item.seller.id, companyName: item.seller.companyName }
           : undefined,
         createdAt: item.createdAt,
