@@ -52,11 +52,11 @@ describe("SustainableShop — sustainability sliders", () => {
 
     const { container } = render(<SustainableShop />)
 
-    // Sustainability sliders are range inputs with max="4" (price slider has max="300")
-    const sliders = container.querySelectorAll<HTMLInputElement>('input[type="range"][max="4"]')
+    // Sustainability sliders are range inputs with max="5" (price slider has max="300")
+    const sliders = container.querySelectorAll<HTMLInputElement>('input[type="range"][max="5"]')
     expect(sliders.length).toBeGreaterThan(0)
     sliders.forEach((slider) => {
-      expect(slider.value).toBe("2")
+      expect(slider.value).toBe("3")
     })
   })
 
@@ -66,10 +66,10 @@ describe("SustainableShop — sustainability sliders", () => {
 
     const { container } = render(<SustainableShop />)
 
-    const sliders = container.querySelectorAll<HTMLInputElement>('input[type="range"][max="4"]')
+    const sliders = container.querySelectorAll<HTMLInputElement>('input[type="range"][max="5"]')
     expect(sliders.length).toBeGreaterThan(0)
     sliders.forEach((slider) => {
-      expect(slider.value).toBe("2")
+      expect(slider.value).toBe("3")
     })
   })
 
@@ -78,10 +78,10 @@ describe("SustainableShop — sustainability sliders", () => {
     mockUseBuyerValueProfile.mockReturnValue({
       data: {
         simpleProfile: {
-          // 0 → 1, 33 → 2, 67 → 3, 100 → 4
-          produktqualitaet: 100, // → "4"
-          oekologisch: 67, // → "3"
-          oekonomisch: 33, // → "2"
+          // 0 → 1, 25 → 2, 50 → 3, 75 → 4, 100 → 5
+          produktqualitaet: 100, // → "5"
+          oekologisch: 75, // → "4"
+          oekonomisch: 25, // → "2"
           sozial: 0, // → "1"
           kulturell: 50,
           politisch: 50,
@@ -95,10 +95,10 @@ describe("SustainableShop — sustainability sliders", () => {
 
     // Sliders are rendered in sustainabilityFilters key order:
     // produktqualitaet, oekologisch, oekonomisch, sozial, …
-    const sliders = container.querySelectorAll<HTMLInputElement>('input[type="range"][max="4"]')
-    expect(sliders[0].value).toBe("4") // produktqualitaet: 100
-    expect(sliders[1].value).toBe("3") // oekologisch: 67
-    expect(sliders[2].value).toBe("2") // oekonomisch: 33
+    const sliders = container.querySelectorAll<HTMLInputElement>('input[type="range"][max="5"]')
+    expect(sliders[0].value).toBe("5") // produktqualitaet: 100
+    expect(sliders[1].value).toBe("4") // oekologisch: 75
+    expect(sliders[2].value).toBe("2") // oekonomisch: 25
     expect(sliders[3].value).toBe("1") // sozial: 0
   })
 
@@ -132,7 +132,7 @@ describe("SustainableShop — sustainability sliders", () => {
     const { container } = render(<SustainableShop />)
 
     // Sliders are only rendered when the section is expanded
-    const sliders = container.querySelectorAll('input[type="range"][max="4"]')
+    const sliders = container.querySelectorAll('input[type="range"][max="5"]')
     expect(sliders.length).toBeGreaterThan(0)
   })
 })
@@ -153,8 +153,8 @@ describe("profileWeightToSlider mapping", () => {
 
     const { container } = render(<SustainableShop />)
 
-    const sliders = container.querySelectorAll<HTMLInputElement>('input[type="range"][max="4"]')
+    const sliders = container.querySelectorAll<HTMLInputElement>('input[type="range"][max="5"]')
     expect(sliders[0].value).toBe("1") // 0 → 1
-    expect(sliders[1].value).toBe("4") // 100 → 4
+    expect(sliders[1].value).toBe("5") // 100 → 5
   })
 })

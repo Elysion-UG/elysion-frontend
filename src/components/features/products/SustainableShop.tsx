@@ -97,18 +97,19 @@ const sustainabilityFilters: Record<string, SustainabilityFilter> = {
 
 const importanceScale = [
   { value: "1", label: "Unwichtig" },
-  { value: "2", label: "Etwas wichtig" },
-  { value: "3", label: "Wichtig" },
-  { value: "4", label: "Sehr wichtig" },
+  { value: "2", label: "Wenig wichtig" },
+  { value: "3", label: "Neutral" },
+  { value: "4", label: "Wichtig" },
+  { value: "5", label: "Sehr wichtig" },
 ]
 
-// Maps a profile weight (0–100) to a slider step (1–4).
+// Maps a profile weight (0–100) to a slider step (1–5).
 function profileWeightToSlider(weight: number): string {
-  return String(Math.min(4, Math.max(1, Math.round((weight / 100) * 3 + 1))))
+  return String(Math.min(5, Math.max(1, Math.round((weight / 100) * 4 + 1))))
 }
 
 const MIDDLE_IMPORTANCE: Record<string, string> = Object.keys(sustainabilityFilters).reduce(
-  (acc, key) => ({ ...acc, [key]: "2" }),
+  (acc, key) => ({ ...acc, [key]: "3" }),
   {}
 )
 
@@ -322,7 +323,7 @@ export default function SustainableShop() {
                         <input
                           type="range"
                           min="1"
-                          max="4"
+                          max="5"
                           value={sustainabilityImportance[key]}
                           onChange={(e) => handleImportanceChange(key, e.target.value)}
                           className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-stone-200 accent-sage-600"
