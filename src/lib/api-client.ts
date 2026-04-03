@@ -18,14 +18,17 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"
 
 export const AUTH_SESSION_KEY = "auth_session"
 
+export type AuthPortal = "customer" | "seller" | "admin"
+
 export interface PersistedAuthSession {
   token: string
   user: unknown
+  portal: AuthPortal
 }
 
-export function saveAuthSession(token: string, user: unknown): void {
+export function saveAuthSession(token: string, user: unknown, portal: AuthPortal): void {
   try {
-    window.sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ token, user }))
+    window.sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ token, user, portal }))
   } catch {}
 }
 

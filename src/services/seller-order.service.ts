@@ -1,5 +1,5 @@
 import { apiRequest } from "@/src/lib/api-client"
-import type { OrderGroupDetail, OrderGroupsPage, ShipOrderDTO, SettlementsPage } from "@/src/types"
+import type { OrderGroupDetail, ShipOrderDTO, SettlementsPage } from "@/src/types"
 
 export interface SellerOrderListParams {
   page?: number
@@ -8,13 +8,13 @@ export interface SellerOrderListParams {
 }
 
 export const SellerOrderService = {
-  async list(params: SellerOrderListParams = {}): Promise<OrderGroupsPage> {
+  async list(params: SellerOrderListParams = {}): Promise<OrderGroupDetail[]> {
     const search = new URLSearchParams()
     if (params.page !== undefined) search.set("page", String(params.page))
     if (params.size !== undefined) search.set("size", String(params.size))
     if (params.status) search.set("status", params.status)
     const qs = search.toString()
-    return apiRequest<OrderGroupsPage>(`/api/v1/seller/orders${qs ? `?${qs}` : ""}`)
+    return apiRequest<OrderGroupDetail[]>(`/api/v1/seller/orders${qs ? `?${qs}` : ""}`)
   },
 
   async getById(orderGroupId: string): Promise<OrderGroupDetail> {

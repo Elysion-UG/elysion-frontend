@@ -265,7 +265,7 @@ export default function SustainableShop() {
                         className="flex w-full items-center justify-between text-left"
                       >
                         <div className="flex items-center gap-2">
-                          <Icon className="h-3.5 w-3.5 text-emerald-700" />
+                          <Icon className="h-3.5 w-3.5 text-sage-600" />
                           <span className="text-sm text-stone-600">{filter.label}</span>
                         </div>
                         {expandedFilters[key] ? (
@@ -292,7 +292,7 @@ export default function SustainableShop() {
                           max="4"
                           value={sustainabilityImportance[key]}
                           onChange={(e) => handleImportanceChange(key, e.target.value)}
-                          className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-stone-200 accent-emerald-700"
+                          className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-stone-200 accent-sage-600"
                         />
                         <span className="w-20 shrink-0 text-right text-xs text-stone-400">
                           {getImportanceLabel(sustainabilityImportance[key])}
@@ -358,7 +358,7 @@ export default function SustainableShop() {
                     setPriceRange((prev) => ({ ...prev, max: Number(e.target.value) }))
                     setCurrentPage(0)
                   }}
-                  className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-stone-200 accent-emerald-700"
+                  className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-stone-200 accent-sage-600"
                 />
               </div>
             )}
@@ -438,7 +438,7 @@ export default function SustainableShop() {
               <p className="text-sm">Produkte konnten nicht geladen werden.</p>
               <button
                 onClick={() => refetch()}
-                className="rounded-lg bg-stone-900 px-4 py-2 text-sm text-white hover:bg-stone-800"
+                className="rounded-lg bg-bark-700 px-4 py-2 text-sm text-white hover:bg-bark-800"
               >
                 Erneut versuchen
               </button>
@@ -478,7 +478,7 @@ export default function SustainableShop() {
                       {sellerName && (
                         <button
                           onClick={(e) => handleSellerClick(e, product.seller?.userId)}
-                          className="text-xs font-medium uppercase tracking-wider text-emerald-700 hover:text-emerald-800 hover:underline"
+                          className="text-xs font-medium uppercase tracking-wider text-sage-600 hover:text-sage-700 hover:underline"
                         >
                           {sellerName}
                         </button>
@@ -522,7 +522,7 @@ export default function SustainableShop() {
                     onClick={() => setCurrentPage(page)}
                     className={`rounded-lg border px-4 py-2 text-sm transition-colors ${
                       page === currentPage
-                        ? "border-stone-900 bg-stone-900 text-white"
+                        ? "border-bark-700 bg-bark-700 text-white"
                         : "border-stone-200 bg-white text-stone-600 hover:bg-stone-50"
                     }`}
                   >

@@ -69,7 +69,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-700">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sage-600">
                 <Leaf className="h-4 w-4 text-white" />
               </div>
               <span className="text-lg font-bold tracking-tight text-stone-900">Elysion</span>
@@ -109,7 +109,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
               >
                 <ShoppingCart className="h-5 w-5" />
                 {mounted && totalItems > 0 && (
-                  <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-700 text-[10px] font-bold text-white">
+                  <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-sage-600 text-[10px] font-bold text-white">
                     {totalItems > 9 ? "9+" : totalItems}
                   </span>
                 )}
@@ -133,7 +133,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
               ) : (
                 <button
                   onClick={() => setIsLoginModalOpen(true)}
-                  className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-stone-800"
+                  className="rounded-lg bg-bark-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-bark-800"
                 >
                   Anmelden
                 </button>
@@ -179,7 +179,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
                 <ShoppingCart className="h-4 w-4" />
                 Warenkorb
                 {mounted && totalItems > 0 && (
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-700 text-[10px] font-bold text-white">
+                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-sage-600 text-[10px] font-bold text-white">
                     {totalItems > 9 ? "9+" : totalItems}
                   </span>
                 )}
@@ -198,7 +198,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
                       setIsLoginModalOpen(true)
                       setMobileMenuOpen(false)
                     }}
-                    className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white"
+                    className="rounded-lg bg-bark-700 px-4 py-2 text-sm font-medium text-white"
                   >
                     Anmelden
                   </button>

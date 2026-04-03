@@ -56,13 +56,13 @@ export default function About() {
   ]
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-12">
         <div className="mb-16 text-center">
           <h1 className="mb-6 text-4xl font-bold text-stone-800 md:text-5xl">
             Building a Sustainable Future, Together
           </h1>
-          <p className="mx-auto max-w-3xl text-xl leading-relaxed text-emerald-700">
+          <p className="mx-auto max-w-3xl text-xl leading-relaxed text-sage-600">
             EcoShop is more than just a marketplace. We're a community of conscious consumers and
             ethical brands working together to create a more sustainable world through mindful
             shopping choices.
@@ -78,8 +78,8 @@ export default function About() {
               every purchase is a vote for the kind of world we want to live in.
             </p>
             <div className="flex items-center justify-center gap-2">
-              <Globe className="h-6 w-6 text-emerald-700" />
-              <span className="font-medium text-emerald-700">
+              <Globe className="h-6 w-6 text-sage-600" />
+              <span className="font-medium text-sage-600">
                 One purchase at a time, we're changing the world
               </span>
             </div>
@@ -96,24 +96,24 @@ export default function About() {
                   key={index}
                   className="rounded-lg border border-stone-200 bg-white p-6 text-center shadow-sm"
                 >
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
-                    <Icon className="h-8 w-8 text-emerald-700" />
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-sage-50">
+                    <Icon className="h-8 w-8 text-sage-600" />
                   </div>
                   <h3 className="mb-3 text-xl font-semibold text-stone-800">{value.title}</h3>
-                  <p className="text-emerald-700">{value.description}</p>
+                  <p className="text-stone-600">{value.description}</p>
                 </div>
               )
             })}
           </div>
         </div>
 
-        <div className="mb-16 rounded-lg bg-emerald-700 p-8">
+        <div className="mb-16 rounded-lg bg-bark-800 p-8">
           <h2 className="mb-12 text-center text-3xl font-bold text-white">Our Impact</h2>
           <div className="grid gap-8 md:grid-cols-4">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
                 <div className="mb-2 text-4xl font-bold text-white">{stat.number}</div>
-                <div className="text-emerald-100">{stat.label}</div>
+                <div className="text-bark-200">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -141,10 +141,10 @@ export default function About() {
               </p>
             </div>
           </div>
-          <div className="rounded-lg bg-emerald-50 p-8 text-center">
-            <Award className="mx-auto mb-4 h-16 w-16 text-emerald-700" />
+          <div className="rounded-lg bg-sage-50 p-8 text-center">
+            <Award className="mx-auto mb-4 h-16 w-16 text-sage-600" />
             <h3 className="mb-2 text-xl font-semibold text-stone-800">Certified B Corporation</h3>
-            <p className="text-emerald-700">
+            <p className="text-stone-600">
               We're proud to be a certified B Corporation, meeting the highest standards of social
               and environmental performance, accountability, and transparency.
             </p>
@@ -166,7 +166,7 @@ export default function About() {
                 />
                 <div className="p-6">
                   <h3 className="mb-1 text-xl font-semibold text-stone-800">{member.name}</h3>
-                  <p className="mb-3 font-medium text-emerald-700">{member.role}</p>
+                  <p className="mb-3 font-medium text-sage-600">{member.role}</p>
                   <p className="text-sm text-stone-700">{member.bio}</p>
                 </div>
               </div>
@@ -176,15 +176,15 @@ export default function About() {
 
         <div className="rounded-lg border border-stone-200 bg-white p-8 text-center shadow-sm">
           <h2 className="mb-4 text-3xl font-bold text-stone-800">Join Our Mission</h2>
-          <p className="mx-auto mb-6 max-w-2xl text-emerald-700">
+          <p className="mx-auto mb-6 max-w-2xl text-stone-600">
             Ready to make a difference with your shopping choices? Explore our curated collection of
             sustainable products and start your journey toward more conscious consumption.
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
-            <button className="rounded-lg bg-emerald-700 px-8 py-3 font-medium text-white transition-colors hover:bg-green-700">
+            <button className="rounded-lg bg-bark-700 px-8 py-3 font-medium text-white transition-colors hover:bg-bark-800">
               Start Shopping
             </button>
-            <button className="rounded-lg border border-green-600 px-8 py-3 font-medium text-emerald-700 transition-colors hover:bg-stone-50">
+            <button className="rounded-lg border border-sage-600 px-8 py-3 font-medium text-sage-600 transition-colors hover:bg-sage-50">
               Become a Partner
             </button>
           </div>

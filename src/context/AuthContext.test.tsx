@@ -8,7 +8,9 @@ import type { LoginDTO, RegisterDTO, User, TokensResponse } from "@/src/types"
 
 vi.mock("@/src/services/auth.service", () => ({
   AuthService: {
-    login: vi.fn(),
+    loginAsCustomer: vi.fn(),
+    loginAsSeller: vi.fn(),
+    loginAsAdmin: vi.fn(),
     logout: vi.fn(),
     register: vi.fn(),
     refresh: vi.fn(),
@@ -44,6 +46,7 @@ const mockUser: User = {
   firstName: "Jane",
   lastName: "Doe",
   role: "BUYER",
+  emailVerified: true,
   status: "ACTIVE",
   createdAt: "2024-01-01T00:00:00Z",
 }
@@ -125,26 +128,26 @@ describe("useAuth", () => {
 describe("login", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(AuthService.login).mockResolvedValue(mockTokensResponse)
+    vi.mocked(AuthService.loginAsCustomer).mockResolvedValue(mockTokensResponse)
   })
 
-  it("calls AuthService.login with the provided credentials", async () => {
+  it("calls AuthService.loginAsCustomer when portal is 'customer'", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
     const dto: LoginDTO = { email: "jane@example.com", password: "secret" }
 
     await act(async () => {
-      await result.current.login(dto)
+      await result.current.login(dto, "customer")
     })
 
-    expect(AuthService.login).toHaveBeenCalledOnce()
-    expect(AuthService.login).toHaveBeenCalledWith(dto)
+    expect(AuthService.loginAsCustomer).toHaveBeenCalledOnce()
+    expect(AuthService.loginAsCustomer).toHaveBeenCalledWith(dto)
   })
 
   it("sets user after a successful login", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     expect(result.current.user).toEqual(mockUser)
@@ -154,7 +157,7 @@ describe("login", () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     expect(result.current.token).toBe("access-token-abc")
@@ -164,7 +167,7 @@ describe("login", () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     expect(result.current.isAuthenticated).toBe(true)
@@ -174,7 +177,7 @@ describe("login", () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     expect(result.current.role).toBe("BUYER")
@@ -184,19 +187,19 @@ describe("login", () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     expect(result.current.isLoading).toBe(false)
   })
 
   it("resets isLoading to false even when login throws", async () => {
-    vi.mocked(AuthService.login).mockRejectedValue(new Error("Invalid credentials"))
+    vi.mocked(AuthService.loginAsCustomer).mockRejectedValue(new Error("Invalid credentials"))
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
       try {
-        await result.current.login({ email: "bad@example.com", password: "wrong" })
+        await result.current.login({ email: "bad@example.com", password: "wrong" }, "customer")
       } catch {
         // expected
       }
@@ -205,27 +208,61 @@ describe("login", () => {
     expect(result.current.isLoading).toBe(false)
   })
 
-  it("propagates errors thrown by AuthService.login", async () => {
+  it("propagates errors thrown by the login service", async () => {
     const loginError = new Error("Invalid credentials")
-    vi.mocked(AuthService.login).mockRejectedValue(loginError)
+    vi.mocked(AuthService.loginAsCustomer).mockRejectedValue(loginError)
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await expect(
       act(async () => {
-        await result.current.login({ email: "bad@example.com", password: "wrong" })
+        await result.current.login({ email: "bad@example.com", password: "wrong" }, "customer")
       })
     ).rejects.toThrow("Invalid credentials")
   })
 
-  it("saves token and user to sessionStorage after login", async () => {
+  it("saves token, user, and portal to sessionStorage after login", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     expect(saveAuthSession).toHaveBeenCalledOnce()
-    expect(saveAuthSession).toHaveBeenCalledWith("access-token-abc", mockUser)
+    expect(saveAuthSession).toHaveBeenCalledWith("access-token-abc", mockUser, "customer")
+  })
+
+  it("calls AuthService.loginAsSeller when portal is 'seller'", async () => {
+    const sellerUser: User = { ...mockUser, role: "SELLER" }
+    vi.mocked(AuthService.loginAsSeller).mockResolvedValue({
+      ...mockTokensResponse,
+      user: sellerUser,
+    })
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    const dto: LoginDTO = { email: "seller@example.com", password: "secret" }
+
+    await act(async () => {
+      await result.current.login(dto, "seller")
+    })
+
+    expect(AuthService.loginAsSeller).toHaveBeenCalledOnce()
+    expect(AuthService.loginAsSeller).toHaveBeenCalledWith(dto)
+  })
+
+  it("calls AuthService.loginAsAdmin when portal is 'admin'", async () => {
+    const adminUser: User = { ...mockUser, role: "ADMIN" }
+    vi.mocked(AuthService.loginAsAdmin).mockResolvedValue({
+      ...mockTokensResponse,
+      user: adminUser,
+    })
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    const dto: LoginDTO = { email: "admin@example.com", password: "secret" }
+
+    await act(async () => {
+      await result.current.login(dto, "admin")
+    })
+
+    expect(AuthService.loginAsAdmin).toHaveBeenCalledOnce()
+    expect(AuthService.loginAsAdmin).toHaveBeenCalledWith(dto)
   })
 
   it("sets sellerStatus from sellerProfile when user is a SELLER", async () => {
@@ -238,7 +275,7 @@ describe("login", () => {
         status: "APPROVED",
       },
     }
-    vi.mocked(AuthService.login).mockResolvedValue({
+    vi.mocked(AuthService.loginAsSeller).mockResolvedValue({
       ...mockTokensResponse,
       user: sellerUser,
     })
@@ -246,7 +283,7 @@ describe("login", () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "seller@example.com", password: "pass" })
+      await result.current.login({ email: "seller@example.com", password: "pass" }, "seller")
     })
 
     expect(result.current.sellerStatus).toBe("APPROVED")
@@ -258,7 +295,7 @@ describe("login", () => {
 describe("logout", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(AuthService.login).mockResolvedValue(mockTokensResponse)
+    vi.mocked(AuthService.loginAsCustomer).mockResolvedValue(mockTokensResponse)
     vi.mocked(AuthService.logout).mockResolvedValue(undefined)
   })
 
@@ -266,7 +303,7 @@ describe("logout", () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
     await act(async () => {
       await result.current.logout()
@@ -279,7 +316,7 @@ describe("logout", () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     expect(result.current.user).not.toBeNull()
@@ -295,7 +332,7 @@ describe("logout", () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     expect(result.current.token).not.toBeNull()
@@ -311,7 +348,7 @@ describe("logout", () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
     await act(async () => {
       await result.current.logout()
@@ -324,7 +361,7 @@ describe("logout", () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
     await act(async () => {
       await result.current.logout()
@@ -337,7 +374,7 @@ describe("logout", () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     expect(saveAuthSession).toHaveBeenCalled()
@@ -354,7 +391,7 @@ describe("logout", () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     await act(async () => {
@@ -529,7 +566,11 @@ describe("session restore on mount — sessionStorage hit (page navigation)", ()
   beforeEach(() => {
     vi.clearAllMocks()
     // Simulate a previously saved session: loadAuthSession() returns the persisted data
-    vi.mocked(loadAuthSession).mockReturnValue({ token: "access-token-abc", user: mockUser })
+    vi.mocked(loadAuthSession).mockReturnValue({
+      token: "access-token-abc",
+      user: mockUser,
+      portal: "customer",
+    })
     vi.mocked(refreshSession).mockRejectedValue(new Error("no cookie"))
   })
 

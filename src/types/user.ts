@@ -10,6 +10,7 @@ export interface User {
   lastName: string
   phone?: string
   role: UserRole
+  emailVerified: boolean
   status: AccountStatus
   sellerProfile?: SellerProfile
   createdAt: string
@@ -66,10 +67,11 @@ export interface LoginResponse {
   user: User
 }
 
-/** Returned by /auth/login and /auth/refresh */
+/** Returned by /auth/{portal}/login and /auth/refresh */
 export interface TokensResponse {
   accessToken: string
-  user: User
+  /** Present on login, null on refresh */
+  user: User | null
   expiresIn: number
 }
 

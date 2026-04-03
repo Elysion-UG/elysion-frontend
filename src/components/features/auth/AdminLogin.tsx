@@ -24,12 +24,7 @@ export default function AdminLogin() {
     e.preventDefault()
     setError("")
     try {
-      const result = await login({ email, password })
-      const role = (result as unknown as { role?: string })?.role
-      if (role !== "ADMIN") {
-        setError("Zugriff verweigert. Nur Administratoren können sich hier anmelden.")
-        return
-      }
+      await login({ email, password }, "admin")
       toast.success("Admin-Anmeldung erfolgreich.")
       window.location.href = "/admin/users"
     } catch {

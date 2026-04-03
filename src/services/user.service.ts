@@ -40,6 +40,7 @@ export const UserService = {
         lastName: "Mustermann",
         role: "BUYER",
         status: "ACTIVE",
+        emailVerified: true,
         createdAt: "2024-01-15T10:00:00Z",
       },
       {
@@ -48,6 +49,7 @@ export const UserService = {
         firstName: "Anna",
         lastName: "Schmidt",
         role: "SELLER",
+        emailVerified: true,
         status: "ACTIVE",
         sellerProfile: {
           id: "sp_1",
@@ -64,6 +66,7 @@ export const UserService = {
         firstName: "Peter",
         lastName: "Meier",
         role: "SELLER",
+        emailVerified: true,
         status: "ACTIVE",
         sellerProfile: {
           id: "sp_2",
@@ -80,6 +83,7 @@ export const UserService = {
         firstName: "Lisa",
         lastName: "Weber",
         role: "BUYER",
+        emailVerified: true,
         status: "SUSPENDED",
         createdAt: "2024-01-22T11:45:00Z",
       },
@@ -89,6 +93,7 @@ export const UserService = {
         firstName: "Admin",
         lastName: "User",
         role: "ADMIN",
+        emailVerified: true,
         status: "ACTIVE",
         createdAt: "2023-12-01T08:00:00Z",
       },
