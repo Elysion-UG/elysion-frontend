@@ -2,13 +2,14 @@
  * CategoryService — API calls for product categories.
  *
  * Public:
- *   GET /api/v1/categories       — flat list of active categories (wrapped ApiResponse)
- *   GET /api/v1/categories/tree  — nested tree of active categories (wrapped ApiResponse)
+ *   GET /api/v1/categories            — flat list of active categories (wrapped ApiResponse)
+ *   GET /api/v1/categories/tree       — nested tree of active categories (wrapped ApiResponse)
  *
  * Admin-only:
- *   POST   /api/v1/categories            — create category
- *   PATCH  /api/v1/categories/{id}       — update category
- *   PATCH  /api/v1/categories/{id}/status — change status (activate/deactivate)
+ *   POST   /api/v1/categories              — create category
+ *   PATCH  /api/v1/categories/{id}         — update category
+ *   PATCH  /api/v1/categories/{id}/activate   — activate category
+ *   PATCH  /api/v1/categories/{id}/deactivate — deactivate category
  */
 import { apiRequest } from "@/src/lib/api-client"
 import type {
@@ -16,7 +17,6 @@ import type {
   CategoryTreeNode,
   CategoryCreateDTO,
   CategoryUpdateDTO,
-  CategoryStatus,
 } from "@/src/types"
 
 export const CategoryService = {
@@ -46,10 +46,15 @@ export const CategoryService = {
     })
   },
 
-  async updateStatus(id: string, status: CategoryStatus): Promise<Category> {
-    return apiRequest(`/api/v1/categories/${id}/status`, {
+  async activate(id: string): Promise<Category> {
+    return apiRequest(`/api/v1/categories/${id}/activate`, {
       method: "PATCH",
-      body: JSON.stringify({ status }),
+    })
+  },
+
+  async deactivate(id: string): Promise<Category> {
+    return apiRequest(`/api/v1/categories/${id}/deactivate`, {
+      method: "PATCH",
     })
   },
 }
