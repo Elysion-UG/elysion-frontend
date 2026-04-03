@@ -2,6 +2,42 @@ import type { UserRole, AccountStatus, SellerProfile, SellerStatus } from "./use
 import type { OrderStatus } from "./order"
 import type { ProductStatus } from "./product"
 
+// ── Admin Dashboard ──────────────────────────────────────────────────
+
+export interface AdminDashboardUserMetrics {
+  total: number
+  buyers: number
+  sellers: number
+  admins: number
+}
+
+export interface AdminDashboardProductMetrics {
+  total: number
+  active: number
+  review: number
+}
+
+export interface AdminDashboardOrderMetrics {
+  total: number
+  pending: number
+  processing: number
+  shipped: number
+}
+
+export interface AdminDashboardCertificateMetrics {
+  total: number
+  pending: number
+  verified: number
+  rejected: number
+}
+
+export interface AdminDashboardData {
+  users: AdminDashboardUserMetrics
+  products: AdminDashboardProductMetrics
+  orders: AdminDashboardOrderMetrics
+  certificates: AdminDashboardCertificateMetrics
+}
+
 // ── Admin Types ────────────────────────────────────────────────────
 
 /** Frontend-shaped paginated response (used by components) */
