@@ -119,11 +119,14 @@ describe("CartService", () => {
 
   it("addItem calls POST /api/v1/cart/items", async () => {
     mockApiRequest.mockResolvedValue({ items: [] })
-    const dto = { productId: "p1", quantity: 2 }
+    const dto = { productId: "p1", variantId: "v1", quantity: 2 }
     await CartService.addItem(dto)
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/cart/items",
-      expect.objectContaining({ method: "POST", body: JSON.stringify(dto) })
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ variantId: "v1", quantity: 2 }),
+      })
     )
   })
 
