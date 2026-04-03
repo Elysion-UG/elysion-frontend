@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query"
 import { BuyerValueProfileService } from "@/src/services/buyer-value-profile.service"
 import { ApiError } from "@/src/lib/api-client"
 
-export function useBuyerValueProfile() {
+export function useBuyerValueProfile(enabled = true) {
   return useQuery({
     queryKey: ["buyerValueProfile"],
     queryFn: async () => {
@@ -15,5 +15,6 @@ export function useBuyerValueProfile() {
       }
     },
     staleTime: 5 * 60 * 1000,
+    enabled,
   })
 }

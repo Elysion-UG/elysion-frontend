@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
   Leaf,
@@ -14,10 +14,13 @@ import {
   Loader2,
   AlertCircle,
   Search,
+  UserCircle,
 } from "lucide-react"
 import { formatEuro } from "@/src/lib/currency"
 import type { ProductDetail } from "@/src/types"
 import { useProducts, PRODUCTS_PAGE_SIZE } from "@/src/hooks/useProducts"
+import { useAuth } from "@/src/context/AuthContext"
+import { useBuyerValueProfile } from "@/src/hooks/useBuyerValueProfile"
 
 // ── Sustainability filter config (frontend weighting, displayed only) ─────────
 
@@ -99,6 +102,16 @@ const importanceScale = [
   { value: "4", label: "Sehr wichtig" },
 ]
 
+// Maps a profile weight (0–100) to a slider step (1–4).
+function profileWeightToSlider(weight: number): string {
+  return String(Math.min(4, Math.max(1, Math.round((weight / 100) * 3 + 1))))
+}
+
+const MIDDLE_IMPORTANCE: Record<string, string> = Object.keys(sustainabilityFilters).reduce(
+  (acc, key) => ({ ...acc, [key]: "2" }),
+  {}
+)
+
 // ── Sort options ──────────────────────────────────────────────────────────────
 
 const sortOptions = [
@@ -111,26 +124,39 @@ const sortOptions = [
 
 export default function SustainableShop() {
   const router = useRouter()
+  const { isAuthenticated } = useAuth()
+  const { data: valueProfile } = useBuyerValueProfile(isAuthenticated)
+
   // ── Filter state ───────────────────────────────────────────────────
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [priceRange, setPriceRange] = useState({ min: 0, max: 300 })
   const [sortBy, setSortBy] = useState("newest")
   const [currentPage, setCurrentPage] = useState(0)
-  const [sustainabilityImportance, setSustainabilityImportance] = useState<Record<string, string>>({
-    produktqualitaet: "4",
-    oekologisch: "4",
-    oekonomisch: "3",
-    sozial: "3",
-    kulturell: "2",
-    politisch: "2",
-    technologisch: "3",
-    institutionell: "2",
-  })
+  const [sustainabilityImportance, setSustainabilityImportance] =
+    useState<Record<string, string>>(MIDDLE_IMPORTANCE)
+
+  // Sync slider values with the user's value profile whenever it loads or
+  // the auth state changes. Falls back to MIDDLE_IMPORTANCE when not logged in
+  // or when no profile has been saved yet.
+  useEffect(() => {
+    if (!isAuthenticated || !valueProfile?.simpleProfile) {
+      setSustainabilityImportance(MIDDLE_IMPORTANCE)
+      return
+    }
+    const fromProfile = Object.keys(sustainabilityFilters).reduce<Record<string, string>>(
+      (acc, key) => {
+        const weight = valueProfile.simpleProfile![key]
+        return { ...acc, [key]: weight != null ? profileWeightToSlider(weight) : "2" }
+      },
+      {}
+    )
+    setSustainabilityImportance(fromProfile)
+  }, [valueProfile, isAuthenticated])
 
   // ── UI state ───────────────────────────────────────────────────────
   const [expandedSections, setExpandedSections] = useState({
-    sustainability: false,
+    sustainability: true,
     categories: false,
   })
   const [expandedFilters, setExpandedFilters] = useState<Record<string, boolean>>({})
@@ -253,9 +279,16 @@ export default function SustainableShop() {
             </button>
             {expandedSections.sustainability && (
               <div className="space-y-4 px-4 pb-4">
-                <p className="text-xs text-stone-400">
-                  Wie wichtig ist Ihnen jeder Nachhaltigkeitsaspekt?
-                </p>
+                {isAuthenticated && valueProfile?.simpleProfile ? (
+                  <div className="flex items-center gap-1.5 text-xs text-sage-600">
+                    <UserCircle className="h-3.5 w-3.5" />
+                    <span>Aus deinem Werteprofil</span>
+                  </div>
+                ) : (
+                  <p className="text-xs text-stone-400">
+                    Wie wichtig ist dir jeder Nachhaltigkeitsaspekt?
+                  </p>
+                )}
                 {Object.entries(sustainabilityFilters).map(([key, filter]) => {
                   const Icon = filter.icon
                   return (
