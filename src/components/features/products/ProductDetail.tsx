@@ -164,7 +164,11 @@ export default function ProductDetail() {
     if (match) setSelectedVariant(match)
   }
 
-  const inStock = selectedVariant ? (selectedVariant.stock ?? 0) > 0 : true
+  // stock == null means the API returned no stock info → treat as available.
+  // Only mark unavailable when stock is explicitly 0.
+  const inStock = selectedVariant
+    ? selectedVariant.stock == null || selectedVariant.stock > 0
+    : true
 
   return (
     <div className="min-h-screen bg-slate-50">

@@ -181,16 +181,63 @@ describe("ProductService", () => {
   // ── getBySlug ────────────────────────────────────────────────────────
 
   describe("getBySlug", () => {
+    const rawDetail = {
+      id: "prod_1",
+      name: "Eco Shirt",
+      slug: "eco-shirt",
+      shortDescription: "A great shirt",
+      price: 29.99,
+      images: [{ url: "https://example.com/img.jpg", altText: "shirt", order: 0 }],
+      variants: [
+        {
+          id: "var_1",
+          sku: "SKU-L",
+          price: 29.99,
+          options: [{ type: "Größe", value: "L" }],
+        },
+      ],
+      seller: { id: "seller-uuid", companyName: "Eco Store" },
+      category: { id: "cat_1", name: "Clothing", slug: "clothing" },
+    }
+
     it("calls /api/v1/products/{slug}", async () => {
-      mockApiRequest.mockResolvedValue(mockProductDetail)
+      mockApiRequest.mockResolvedValue(rawDetail)
       await ProductService.getBySlug("eco-shirt")
       expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products/eco-shirt")
     })
 
-    it("returns the product detail", async () => {
-      mockApiRequest.mockResolvedValue(mockProductDetail)
+    it("maps shortDescription to shortDesc", async () => {
+      mockApiRequest.mockResolvedValue(rawDetail)
       const result = await ProductService.getBySlug("eco-shirt")
-      expect(result).toEqual(mockProductDetail)
+      expect(result.shortDesc).toBe("A great shirt")
+    })
+
+    it("maps seller.id to seller.userId", async () => {
+      mockApiRequest.mockResolvedValue(rawDetail)
+      const result = await ProductService.getBySlug("eco-shirt")
+      expect(result.seller?.userId).toBe("seller-uuid")
+      expect(result.seller?.companyName).toBe("Eco Store")
+    })
+
+    it("maps images[].order to images[].position", async () => {
+      mockApiRequest.mockResolvedValue(rawDetail)
+      const result = await ProductService.getBySlug("eco-shirt")
+      expect(result.images?.[0]).toEqual({ url: "https://example.com/img.jpg", position: 0 })
+    })
+
+    it("passes through variant fields including stock when present", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...rawDetail,
+        variants: [{ id: "var_1", sku: "SKU-L", price: 29.99, stock: 5 }],
+      })
+      const result = await ProductService.getBySlug("eco-shirt")
+      expect(result.variants?.[0].stock).toBe(5)
+    })
+
+    it("leaves variant stock undefined when API omits it", async () => {
+      mockApiRequest.mockResolvedValue(rawDetail)
+      const result = await ProductService.getBySlug("eco-shirt")
+      expect(result.variants?.[0].stock).toBeUndefined()
     })
   })
 

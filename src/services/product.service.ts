@@ -51,6 +51,40 @@ interface ApiProductPage {
   totalItems: number
   totalPages: number
 }
+
+// ── Raw API types (detail endpoint) ──────────────────────────────────────────
+
+interface ApiProductVariant {
+  id: string
+  sku?: string
+  price?: number | null
+  stock?: number
+  available?: boolean
+  imageUrls?: string[]
+  options?: Array<{ type: string; value: string }>
+  size?: string
+  color?: string
+  material?: string
+}
+
+interface ApiProductDetail {
+  id: string
+  name: string
+  slug: string
+  title?: string
+  description?: string
+  shortDescription?: string // API uses shortDescription, internal type uses shortDesc
+  price?: number
+  basePrice?: number
+  currency?: string
+  taxRate?: number
+  images?: Array<{ url: string; altText?: string; order?: number }>
+  variants?: ApiProductVariant[]
+  seller?: { id: string; companyName?: string; firstName?: string; lastName?: string } | null
+  category?: { id?: string; name: string; slug?: string } | null
+  matchScore?: number | null
+  matchBreakdown?: unknown
+}
 import type {
   ProductPage,
   ProductListParams,
@@ -101,7 +135,41 @@ export const ProductService = {
   },
 
   async getBySlug(slug: string): Promise<ProductDetail> {
-    return apiRequest(`/api/v1/products/${slug}`)
+    const raw = await apiRequest<ApiProductDetail>(`/api/v1/products/${slug}`)
+    return {
+      id: raw.id,
+      name: raw.name,
+      slug: raw.slug,
+      title: raw.title,
+      description: raw.description,
+      shortDesc: raw.shortDescription,
+      price: raw.price,
+      basePrice: raw.basePrice,
+      currency: raw.currency,
+      taxRate: raw.taxRate,
+      images: raw.images?.map((img) => ({ url: img.url, position: img.order })),
+      variants: raw.variants?.map((v) => ({
+        id: v.id,
+        sku: v.sku,
+        price: v.price,
+        stock: v.stock,
+        available: v.available,
+        imageUrls: v.imageUrls,
+        options: v.options,
+        size: v.size,
+        color: v.color,
+        material: v.material,
+      })),
+      seller: raw.seller
+        ? {
+            userId: raw.seller.id,
+            companyName: raw.seller.companyName,
+            firstName: raw.seller.firstName,
+            lastName: raw.seller.lastName,
+          }
+        : undefined,
+      category: raw.category ?? undefined,
+    }
   },
 
   // ── Authenticated ─────────────────────────────────────────────────
