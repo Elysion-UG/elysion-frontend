@@ -64,7 +64,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
   )
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="flex min-h-screen flex-col bg-stone-50">
       <header className="sticky top-0 z-40 border-b border-stone-200 bg-white/95 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
@@ -208,7 +208,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">{children}</main>
+      <main className="container mx-auto flex-1 px-4 py-8">{children}</main>
       <Footer />
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
     </div>
