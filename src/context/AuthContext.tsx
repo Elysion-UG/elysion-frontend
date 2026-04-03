@@ -58,7 +58,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const persisted = loadAuthSession()
     if (!persisted) return // nothing to restore synchronously — Phase 2 handles this
 
-    console.log("[auth] mount — restoring React state from sessionStorage")
     setUser(persisted.user as User)
     setToken(persisted.token)
     setIsLoading(false)
@@ -67,54 +66,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // ── Phase 2: async background work after paint ─────────────────────────────
   //
   // Two cases:
-  //   a) Session existed  → rotate the token in the background (silent, non-blocking)
-  //   b) No session       → cold start; try the HttpOnly refresh cookie once
-  //
-  // Both paths are intentionally async so they never block the first render.
+  //   a) Session existed  → already restored synchronously in Phase 1; nothing to do.
+  //                         The access token is guaranteed valid here: isJwtExpired()
+  //                         at module-load time already cleared any expired session
+  //                         before Phase 1 ran. Background rotation is handled by the
+  //                         periodic timer (every 10 min) and the api-client 401
+  //                         interceptor — no need to call refresh on every page load.
+  //   b) No session       → cold start; try the HttpOnly refresh cookie once.
   useEffect(() => {
     const persisted = loadAuthSession()
 
     if (persisted) {
-      // Background token rotation — fetch fresh user to pick up any status
-      // changes (e.g. seller approval) that happened since last login.
-      refreshSession()
-        .then(async (res) => {
-          const tokens = res as import("@/src/types").TokensResponse
-          setToken(tokens.accessToken)
-          setAccessToken(tokens.accessToken)
-
-          let freshUser: User
-          if (tokens.user) {
-            console.log("[auth] background refresh success — user from response: present")
-            freshUser = tokens.user
-          } else if (persisted.portal === "customer") {
-            // Only customer portal sessions may call /api/v1/users/me
-            console.log(
-              "[auth] background refresh success — user from response: absent, fetching from backend"
-            )
-            const { UserService } = await import("@/src/services/user.service")
-            freshUser = await UserService.getCurrentUser()
-          } else {
-            // Seller/admin portals cannot call /api/v1/users/me — reuse stored user
-            console.log(
-              "[auth] background refresh success — seller/admin portal, reusing stored user"
-            )
-            freshUser = persisted.user as User
-          }
-          setUser(freshUser)
-          saveAuthSession(tokens.accessToken, freshUser, persisted.portal)
-        })
-        .catch(() => {
-          // Refresh failed — keep the sessionStorage token for its remaining TTL.
-        })
+      // Phase 1 already restored the session. Token is valid. Nothing to do.
       return
     }
 
     // No sessionStorage entry — cold start, try the backend refresh cookie.
-    // We cannot know the portal at this point; if refresh succeeds and user is
-    // present in the response we persist with "customer" as best-effort default
-    // (legacy sessions without portal in cookie will be rejected by the backend).
-    console.log("[auth] mount — no sessionStorage, attempting backend refresh")
     refreshSession()
       .then(async (res) => {
         const tokens = res as import("@/src/types").TokensResponse
@@ -131,8 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(tokens.user)
           saveAuthSession(tokens.accessToken, tokens.user, portal)
         } else {
-          // Backend refresh didn't return a user and we have no persisted portal —
-          // fall back to customer portal UserService call.
+          // Backend refresh didn't return a user — fall back to /users/me.
           const { UserService } = await import("@/src/services/user.service")
           const freshUser = await UserService.getCurrentUser()
           const portal: AuthPortal =
@@ -146,7 +112,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch(() => {
-        // No valid session — stay logged out.
+        // No valid refresh cookie — stay logged out.
+        setAccessToken(null)
+        setUser(null)
+        setToken(null)
+        clearAuthSession()
       })
       .finally(() => setIsLoading(false))
   }, [])

@@ -64,7 +64,15 @@ function loadGuestCart(): Cart {
   return emptyCart
 }
 
+const CONSENT_KEY = "elysion_cookie_consent"
+
+function isFunctionalConsentGiven(): boolean {
+  if (typeof window === "undefined") return false
+  return sessionStorage.getItem(CONSENT_KEY) === "accepted"
+}
+
 function saveGuestCart(cart: Cart): void {
+  if (!isFunctionalConsentGiven()) return
   try {
     localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cart))
   } catch {
@@ -130,6 +138,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         saveVariantOptions(dto.variantId, dto.variantOptions)
       }
 
+      // Snapshot previous state for rollback before any optimistic mutation
+      const prevCart = cart
+
       // Optimistic update (always — guest and authenticated users alike)
       setCart((prev) => {
         const existingIdx = prev.items.findIndex(
@@ -162,28 +173,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       try {
         await CartService.addItem(dto)
       } catch (err) {
-        // Revert optimistic update and re-throw so the caller can show an error
-        setCart((prev) => ({
-          ...prev,
-          items: prev.items.filter(
-            (i) => !(i.productId === dto.productId && i.variantId === dto.variantId)
-          ),
-        }))
+        // Revert entire cart to pre-mutation state
+        setCart(prevCart)
         throw err
       }
     },
-    [isAuthenticated]
+    [isAuthenticated, cart]
   )
 
   const updateItem = useCallback(
     async (itemId: string, dto: { quantity: number }) => {
-      // Capture previous quantity for rollback on backend error
-      let previousQuantity: number | undefined
-      setCart((prev) => {
-        const item = prev.items.find((i) => i.id === itemId)
-        previousQuantity = item?.quantity
-        return prev
-      })
+      // Snapshot previous state for rollback
+      const prevCart = cart
 
       // Optimistic update
       if (dto.quantity <= 0) {
@@ -202,23 +203,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       try {
         await CartService.updateItem(itemId, dto)
       } catch (err) {
-        // Revert to previous quantity
-        if (previousQuantity !== undefined) {
-          setCart((prev) => ({
-            ...prev,
-            items: prev.items.map((i) =>
-              i.id === itemId ? { ...i, quantity: previousQuantity! } : i
-            ),
-          }))
-        }
+        // Revert entire cart to pre-mutation state
+        setCart(prevCart)
         throw err
       }
     },
-    [isAuthenticated]
+    [isAuthenticated, cart]
   )
 
   const removeItem = useCallback(
     async (itemId: string) => {
+      // Snapshot previous state for rollback
+      const prevCart = cart
       // Optimistic update
       setCart((prev) => ({ ...prev, items: prev.items.filter((i) => i.id !== itemId) }))
       // Guest users: local-only cart, no backend sync
@@ -227,10 +223,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       try {
         await CartService.removeItem(itemId)
       } catch {
-        // keep optimistic state on failure
+        // Revert to previous state on backend failure
+        setCart(prevCart)
       }
     },
-    [isAuthenticated]
+    [isAuthenticated, cart]
   )
 
   const clearCart = useCallback(() => {

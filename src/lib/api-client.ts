@@ -36,12 +36,7 @@ export function loadAuthSession(): PersistedAuthSession | null {
   if (typeof window === "undefined") return null
   try {
     const raw = window.sessionStorage.getItem(AUTH_SESSION_KEY)
-    const result = raw ? (JSON.parse(raw) as PersistedAuthSession) : null
-    console.log(
-      "[auth] loadAuthSession():",
-      result ? `token present (${result.token.slice(0, 20)}…)` : "null — no session in storage"
-    )
-    return result
+    return raw ? (JSON.parse(raw) as PersistedAuthSession) : null
   } catch {
     return null
   }
@@ -82,20 +77,14 @@ if (typeof window !== "undefined") {
   const persisted = loadAuthSession()
   if (persisted?.token) {
     if (isJwtExpired(persisted.token)) {
-      console.log("[auth] module init — token expired, clearing sessionStorage")
       clearAuthSession()
     } else {
       _accessToken = persisted.token
-      console.log(
-        "[auth] module init — token restored from sessionStorage:",
-        persisted.token.slice(0, 20) + "…"
-      )
     }
   }
 }
 
 export function setAccessToken(token: string | null): void {
-  console.log("[auth] setAccessToken():", token ? token.slice(0, 20) + "…" : "null")
   _accessToken = token
 }
 
@@ -116,6 +105,41 @@ export class ApiError extends Error {
   }
 }
 
+// ── Error reporting (fire-and-forget) ─────────────────────────────────────────
+// Lazy-imports errorStore to avoid circular dependencies.
+
+function reportApiError(
+  path: string,
+  status: number,
+  message: string,
+  category: "api" | "auth" | "network" = "api"
+): void {
+  try {
+    // Dynamic import keeps api-client independent of React/error-store at load time
+    void import("@/src/lib/error-store").then(({ errorStore }) => {
+      const severity =
+        category === "network"
+          ? ("critical" as const)
+          : category === "auth"
+            ? ("high" as const)
+            : status >= 500
+              ? ("high" as const)
+              : status === 403
+                ? ("medium" as const)
+                : ("low" as const)
+
+      errorStore.report({
+        severity,
+        category,
+        message,
+        metadata: { apiPath: path, statusCode: status },
+      })
+    })
+  } catch {
+    // Never let reporting break the request flow
+  }
+}
+
 // Shared in-flight refresh promise — deduplicates concurrent refresh calls.
 // Without this, AuthContext's session-restore and a simultaneous 401 retry would
 // both call POST /auth/refresh with the same cookie. Refresh-token rotation
@@ -127,7 +151,6 @@ let _refreshInFlight: Promise<TokensResponse> | null = null
 
 export async function refreshSession(): Promise<TokensResponse> {
   if (!_refreshInFlight) {
-    console.log("[auth] refreshSession() — starting backend refresh")
     // Chain catch and finally INLINE (not as side-branches off p).
     // Side-branch `.catch()` / `.finally()` off a rejected promise produce a
     // second unhandled-rejection chain that surfaces as "Uncaught (in promise)"
@@ -135,22 +158,9 @@ export async function refreshSession(): Promise<TokensResponse> {
     // rejections flow through to the caller's own .catch() handler.
     _refreshInFlight = import("@/src/services/auth.service")
       .then(({ AuthService }) => AuthService.refresh())
-      .then((res) => {
-        console.log(
-          "[auth] refreshSession() — SUCCESS, new token:",
-          res.accessToken?.slice(0, 20) + "…"
-        )
-        return res
-      })
-      .catch((err) => {
-        console.log("[auth] refreshSession() — FAILED:", err?.message ?? err)
-        throw err
-      })
       .finally(() => {
         _refreshInFlight = null
       })
-  } else {
-    console.log("[auth] refreshSession() — reusing in-flight promise")
   }
   return _refreshInFlight
 }
@@ -170,8 +180,8 @@ async function tryRefreshAndRetry<T>(path: string, options: RequestInit): Promis
     return apiRequest<T>(path, options, true)
   } catch {
     setAccessToken(null)
+    reportApiError(path, 401, "Sitzung abgelaufen", "auth")
     if (hadToken && typeof window !== "undefined") {
-      console.log("[auth] REDIRECT → / — refresh failed after 401, hadToken=true, path:", path)
       const { toast } = await import("sonner")
       toast.error("Sitzung abgelaufen. Bitte erneut anmelden.")
       window.location.href = "/"
@@ -197,19 +207,20 @@ export async function apiRequest<T>(
     headers["Authorization"] = `Bearer ${_accessToken}`
   }
 
-  console.log(
-    "[api]",
-    options.method ?? "GET",
-    path,
-    "| token:",
-    _accessToken ? "present" : "MISSING"
-  )
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-    // Always include cookies so the HttpOnly refreshToken cookie is sent
-    credentials: "include",
-  })
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+      // Always include cookies so the HttpOnly refreshToken cookie is sent
+      credentials: "include",
+    })
+  } catch (err) {
+    // Network failure (offline, DNS, CORS, etc.)
+    const msg = err instanceof Error ? err.message : "Netzwerkfehler"
+    reportApiError(path, 0, msg, "network")
+    throw new ApiError(0, "Netzwerkfehler — bitte Internetverbindung prüfen")
+  }
 
   // 204 No Content
   if (response.status === 204) {
@@ -218,26 +229,15 @@ export async function apiRequest<T>(
 
   // 401 Unauthorized — attempt token refresh once
   if (response.status === 401 && !skipRetry) {
-    console.log("[auth] 401 on", path, "— attempting refresh retry")
     return tryRefreshAndRetry<T>(path, options)
   }
 
   const body = await response.json()
 
   if (!response.ok) {
-    console.log(
-      "[api] ERROR",
-      response.status,
-      path,
-      body?.message ?? "(no message)",
-      "skipRetry:",
-      skipRetry
-    )
-    throw new ApiError(
-      response.status,
-      body?.message ?? `Request failed (${response.status})`,
-      body
-    )
+    const message = body?.message ?? `Request failed (${response.status})`
+    reportApiError(path, response.status, message)
+    throw new ApiError(response.status, message, body)
   }
 
   return body.data as T
@@ -260,18 +260,24 @@ export async function apiRequestRaw<T>(
     headers["Authorization"] = `Bearer ${_accessToken}`
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-    credentials: "include",
-  })
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+      credentials: "include",
+    })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Netzwerkfehler"
+    reportApiError(path, 0, msg, "network")
+    throw new ApiError(0, "Netzwerkfehler — bitte Internetverbindung prüfen")
+  }
 
   if (response.status === 204) {
     return null as T
   }
 
   if (response.status === 401 && !skipRetry) {
-    console.log("[auth] 401 on", path, "— attempting refresh retry (raw)")
     const hadToken = _accessToken != null
     const hasPersistedSession = typeof window !== "undefined" && loadAuthSession() != null
     if (!hadToken && !hasPersistedSession) {
@@ -283,8 +289,8 @@ export async function apiRequestRaw<T>(
       return apiRequestRaw<T>(path, options, true)
     } catch {
       setAccessToken(null)
+      reportApiError(path, 401, "Sitzung abgelaufen", "auth")
       if (hadToken && typeof window !== "undefined") {
-        console.log("[auth] REDIRECT → / — refresh failed after 401 (raw), path:", path)
         const { toast } = await import("sonner")
         toast.error("Sitzung abgelaufen. Bitte erneut anmelden.")
         window.location.href = "/"
@@ -296,11 +302,9 @@ export async function apiRequestRaw<T>(
   const body = await response.json()
 
   if (!response.ok) {
-    throw new ApiError(
-      response.status,
-      body?.message ?? `Request failed (${response.status})`,
-      body
-    )
+    const message = body?.message ?? `Request failed (${response.status})`
+    reportApiError(path, response.status, message)
+    throw new ApiError(response.status, message, body)
   }
 
   return body as T

@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/src/context/AuthContext"
 import { Loader2 } from "lucide-react"
 
@@ -13,20 +14,21 @@ import { Loader2 } from "lucide-react"
  */
 export default function BuyerGuard({ children }: { children: React.ReactNode }) {
   const { role, isLoading } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
     if (isLoading) return
     if (role === "SELLER") {
-      window.location.replace("/seller-dashboard")
+      router.replace("/seller-dashboard")
     } else if (role === "ADMIN") {
-      window.location.replace("/admin/users")
+      router.replace("/admin/users")
     }
-  }, [role, isLoading])
+  }, [role, isLoading, router])
 
   if (isLoading || role === "SELLER" || role === "ADMIN") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+      <div className="flex min-h-screen items-center justify-center bg-stone-50">
+        <Loader2 className="h-8 w-8 animate-spin text-sage-600" />
       </div>
     )
   }
