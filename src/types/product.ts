@@ -134,8 +134,9 @@ export interface ProductCommandResponse {
 }
 
 export interface ProductImageCreateDTO {
-  imageUrl: string
-  position?: number
+  fileId: string
+  altText?: string
+  order?: number
 }
 
 export interface ProductImageReorderDTO {

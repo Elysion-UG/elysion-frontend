@@ -9,9 +9,11 @@ import type {
   ProductCreateDTO,
   ProductUpdateDTO,
   ProductCommandResponse,
+  ProductImage,
   Category,
 } from "@/src/types"
 import { toast } from "sonner"
+import ProductImageManager from "./ProductImageManager"
 
 interface ProductFormProps {
   /** If provided, form is in edit mode */
@@ -26,6 +28,8 @@ interface ProductFormProps {
     taxRate?: number
     currency?: string
   }
+  /** Product images for the image manager (edit mode only) */
+  initialImages?: ProductImage[]
   onClose: () => void
   onSaved: (result: ProductCommandResponse) => void
 }
@@ -33,6 +37,7 @@ interface ProductFormProps {
 export default function ProductForm({
   productId,
   initialValues,
+  initialImages,
   onClose,
   onSaved,
 }: ProductFormProps) {
@@ -214,7 +219,9 @@ export default function ProductForm({
             </select>
           </div>
 
-          {!isEdit && (
+          {isEdit && productId ? (
+            <ProductImageManager productId={productId} initialImages={initialImages ?? []} />
+          ) : (
             <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-700">
               Das Produkt wird als <strong>Entwurf</strong> erstellt. Nach dem Erstellen können Sie
               Bilder hinzufügen und das Produkt zur Prüfung einreichen.

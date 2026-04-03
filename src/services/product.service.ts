@@ -12,6 +12,7 @@
  *   POST   /api/v1/products                              — create product
  *   PATCH  /api/v1/products/{id}                         — update product
  *   PATCH  /api/v1/products/{id}/status                  — status transition
+ *   DELETE /api/v1/products/{id}                         — delete product
  *   POST   /api/v1/products/{id}/images                  — add image
  *   DELETE /api/v1/products/{id}/images/{imageId}        — remove image
  *   PATCH  /api/v1/products/{id}/images/order            — reorder images
@@ -79,7 +80,7 @@ interface ApiProductDetail {
   basePrice?: number
   currency?: string
   taxRate?: number
-  images?: Array<{ url: string; altText?: string; order?: number }>
+  images?: Array<{ id?: string; url: string; altText?: string; order?: number }>
   variants?: ApiProductVariant[]
   seller?: { id: string; companyName?: string; firstName?: string; lastName?: string } | null
   category?: { id?: string; name: string; slug?: string } | null
@@ -150,7 +151,7 @@ export const ProductService = {
       basePrice: raw.basePrice,
       currency: raw.currency,
       taxRate: raw.taxRate,
-      images: raw.images?.map((img) => ({ url: img.url, position: img.order })),
+      images: raw.images?.map((img) => ({ id: img.id, url: img.url, position: img.order })),
       variants: raw.variants?.map((v) => ({
         id: v.id,
         sku: v.sku,
@@ -256,6 +257,10 @@ export const ProductService = {
       method: "POST",
       body: JSON.stringify({ quantity }),
     })
+  },
+
+  async delete(id: string): Promise<void> {
+    return apiRequest(`/api/v1/products/${id}`, { method: "DELETE" })
   },
 
   async getProductCertificates(productId: string): Promise<unknown[]> {
