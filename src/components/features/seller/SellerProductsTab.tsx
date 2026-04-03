@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Plus, Edit, Package, RefreshCw, Loader2, CheckCircle2, Clock } from "lucide-react"
+import { Plus, Edit, Package, RefreshCw, Loader2, CheckCircle2, Clock, Trash2 } from "lucide-react"
 import { ProductService } from "@/src/services/product.service"
 import ProductForm from "@/src/components/features/products/ProductForm"
 import type { ProductListItem, ProductStatus } from "@/src/types"
@@ -45,6 +45,22 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
       fetchProducts()
     } catch {
       toast.error("Status konnte nicht geändert werden.")
+    }
+  }
+
+  const handleDelete = async (productId: string, productName: string | undefined) => {
+    const confirmed = window.confirm(
+      `Möchten Sie "${productName ?? "dieses Produkt"}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`
+    )
+    if (!confirmed) return
+
+    try {
+      await ProductService.delete(productId)
+      toast.success("Produkt gelöscht.")
+      fetchProducts()
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Produkt konnte nicht gelöscht werden."
+      toast.error(msg)
     }
   }
 
@@ -197,6 +213,15 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                               Aktivieren
                             </button>
                           )}
+                          {status === "DRAFT" && (
+                            <button
+                              onClick={() => handleDelete(product.id, product.title)}
+                              className="text-red-500 transition-colors hover:text-red-700"
+                              title="Produkt löschen"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -214,6 +239,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
           initialValues={
             editProduct ? { name: editProduct.title, basePrice: editProduct.price } : undefined
           }
+          initialImages={editProduct?.images}
           onClose={() => {
             setShowProductForm(false)
             setEditProduct(null)
