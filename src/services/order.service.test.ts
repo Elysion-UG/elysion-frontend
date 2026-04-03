@@ -15,11 +15,54 @@ const mockOrders = [
   { id: "ord_2", status: "SHIPPED", total: 29.99 },
 ]
 
-const mockOrderDetail = {
+/** Raw shape as returned by the backend */
+const rawOrderDetail = {
   id: "ord_1",
+  orderNumber: "ORD-001",
   status: "PENDING",
   total: 59.99,
-  items: [{ productId: "prod_1", quantity: 2, price: 29.99 }],
+  subtotal: 55.0,
+  shipping: 4.99,
+  tax: null,
+  createdAt: "2026-01-01T10:00:00Z",
+  shippingAddress: {
+    firstName: "Max",
+    lastName: "Mustermann",
+    street: "Musterstraße",
+    houseNumber: "1",
+    postalCode: "12345",
+    city: "Berlin",
+    country: "DE",
+  },
+  groups: [
+    {
+      id: "grp_1",
+      seller: { id: "seller-uuid" },
+      status: "PENDING",
+      subtotal: 55.0,
+      shipping: 4.99,
+      shipment: null,
+      items: [
+        {
+          id: "item_1",
+          variantId: "var_1",
+          quantity: 2,
+          unitPrice: 27.5,
+          lineTotal: 55.0,
+          product: {
+            id: "prod-uuid",
+            name: "Eco Shirt",
+            slug: "eco-shirt",
+            seller: { id: "seller-uuid" },
+            variantId: "var_1",
+            sku: "SKU-L",
+            options: [{ type: "Größe", value: "L" }],
+            currency: "EUR",
+          },
+        },
+      ],
+    },
+  ],
 }
 
 describe("OrderService", () => {
@@ -78,15 +121,58 @@ describe("OrderService", () => {
 
   describe("getById", () => {
     it("calls /api/v1/orders/{id}", async () => {
-      mockApiRequest.mockResolvedValue(mockOrderDetail)
+      mockApiRequest.mockResolvedValue(rawOrderDetail)
       await OrderService.getById("ord_1")
       expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/orders/ord_1")
     })
 
-    it("returns the order detail", async () => {
-      mockApiRequest.mockResolvedValue(mockOrderDetail)
+    it("maps product → productSnapshot with id→productId, name→productName, slug→productSlug", async () => {
+      mockApiRequest.mockResolvedValue(rawOrderDetail)
       const result = await OrderService.getById("ord_1")
-      expect(result).toEqual(mockOrderDetail)
+      const snap = result.groups?.[0].items[0].productSnapshot
+      expect(snap?.productId).toBe("prod-uuid")
+      expect(snap?.productName).toBe("Eco Shirt")
+      expect(snap?.productSlug).toBe("eco-shirt")
+    })
+
+    it("maps seller.id → sellerId on productSnapshot", async () => {
+      mockApiRequest.mockResolvedValue(rawOrderDetail)
+      const result = await OrderService.getById("ord_1")
+      expect(result.groups?.[0].items[0].productSnapshot?.sellerId).toBe("seller-uuid")
+    })
+
+    it("maps unitPrice → pricePerUnit and lineTotal → subtotal on items", async () => {
+      mockApiRequest.mockResolvedValue(rawOrderDetail)
+      const result = await OrderService.getById("ord_1")
+      const item = result.groups?.[0].items[0]
+      expect(item?.pricePerUnit).toBe(27.5)
+      expect(item?.subtotal).toBe(55.0)
+    })
+
+    it("maps shipping → shippingCost on order", async () => {
+      mockApiRequest.mockResolvedValue(rawOrderDetail)
+      const result = await OrderService.getById("ord_1")
+      expect(result.shippingCost).toBe(4.99)
+    })
+
+    it("maps seller.id → sellerId on group", async () => {
+      mockApiRequest.mockResolvedValue(rawOrderDetail)
+      const result = await OrderService.getById("ord_1")
+      expect(result.groups?.[0].sellerId).toBe("seller-uuid")
+    })
+
+    it("maps shipping → shippingCost on group", async () => {
+      mockApiRequest.mockResolvedValue(rawOrderDetail)
+      const result = await OrderService.getById("ord_1")
+      expect(result.groups?.[0].shippingCost).toBe(4.99)
+    })
+
+    it("passes through item options", async () => {
+      mockApiRequest.mockResolvedValue(rawOrderDetail)
+      const result = await OrderService.getById("ord_1")
+      expect(result.groups?.[0].items[0].productSnapshot?.options).toEqual([
+        { type: "Größe", value: "L" },
+      ])
     })
 
     it("propagates errors from apiRequest", async () => {
