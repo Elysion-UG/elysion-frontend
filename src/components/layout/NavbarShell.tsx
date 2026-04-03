@@ -22,7 +22,6 @@ const NO_NAVBAR_PREFIXES = [
   "/login",
   "/reset-password",
   "/verify-email",
-  "/dev",
   "/seller-dashboard",
 ]
 

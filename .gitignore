@@ -25,6 +25,7 @@ docs/*.docx
 
 # Build artifacts
 tsconfig.tsbuildinfo
+package-lock.json
 # Test coverage output
 coverage/
 *.tsbuildinfo
