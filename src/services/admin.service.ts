@@ -6,13 +6,13 @@
  * User moderation:
  *   GET   /api/v1/admin/users                         — list users (paginated)
  *   GET   /api/v1/admin/users/{id}                    — get user details
- *   PATCH /api/v1/admin/users/{id}/suspend             — suspend user
- *   PATCH /api/v1/admin/users/{id}/activate            — reactivate user
+ *   POST  /api/v1/admin/users/{id}/suspend             — suspend user
+ *   POST  /api/v1/admin/users/{id}/unsuspend           — reactivate user
  *
  * Seller profile review:
- *   POST  /api/v1/admin/seller-profiles/{id}/approve  — approve seller profile
- *   POST  /api/v1/admin/seller-profiles/{id}/reject   — reject seller profile
- *   POST  /api/v1/admin/seller-profiles/{id}/suspend  — suspend seller profile
+ *   POST  /api/v1/admin/sellers/{id}/approve  — approve seller profile
+ *   POST  /api/v1/admin/sellers/{id}/reject   — reject seller profile
+ *   POST  /api/v1/admin/sellers/{id}/suspend  — suspend seller profile
  *
  * Certificate verification:
  *   PATCH /api/v1/admin/certificates/{id}/verify      — verify certificate
@@ -27,8 +27,11 @@ import type {
   AdminUserDetails,
   AdminUserListParams,
   AdminOrderListItem,
+  AdminOrderDetail,
   AdminProductListItem,
+  AdminProductDetail,
   AdminSellerListItem,
+  AdminSellerDetail,
   AdminPaymentItem,
   AdminRefundItem,
   AdminPayoutItem,
@@ -43,7 +46,7 @@ export const AdminService = {
     params: Partial<AdminUserListParams> = {}
   ): Promise<PagedResponse<AdminUserListItem>> {
     const query = new URLSearchParams()
-    if (params.page !== undefined) query.set("page", String(params.page))
+    if (params.page !== undefined) query.set("page", String(params.page - 1))
     if (params.pageSize !== undefined) query.set("size", String(params.pageSize))
     if (params.search) query.set("search", params.search)
     if (params.role) query.set("role", params.role)
@@ -57,35 +60,29 @@ export const AdminService = {
   },
 
   async suspendUser(id: string): Promise<{ userId: string; status: string }> {
-    return apiRequest(`/api/v1/admin/users/${id}/suspend`, {
-      method: "PATCH",
-      body: "{}",
-    })
+    return apiRequest(`/api/v1/admin/users/${id}/suspend`, { method: "POST" })
   },
 
   async activateUser(id: string): Promise<{ userId: string; status: string }> {
-    return apiRequest(`/api/v1/admin/users/${id}/activate`, {
-      method: "PATCH",
-      body: "{}",
-    })
+    return apiRequest(`/api/v1/admin/users/${id}/unsuspend`, { method: "POST" })
   },
 
   async approveSellerProfile(sellerProfileId: string): Promise<SellerProfile> {
-    return apiRequest(`/api/v1/admin/seller-profiles/${sellerProfileId}/approve`, {
+    return apiRequest(`/api/v1/admin/sellers/${sellerProfileId}/approve`, {
       method: "POST",
       body: "{}",
     })
   },
 
   async rejectSellerProfile(sellerProfileId: string, reason: string): Promise<SellerProfile> {
-    return apiRequest(`/api/v1/admin/seller-profiles/${sellerProfileId}/reject`, {
+    return apiRequest(`/api/v1/admin/sellers/${sellerProfileId}/reject`, {
       method: "POST",
       body: JSON.stringify({ reason }),
     })
   },
 
   async suspendSellerProfile(sellerProfileId: string, reason: string): Promise<SellerProfile> {
-    return apiRequest(`/api/v1/admin/seller-profiles/${sellerProfileId}/suspend`, {
+    return apiRequest(`/api/v1/admin/sellers/${sellerProfileId}/suspend`, {
       method: "POST",
       body: JSON.stringify({ reason }),
     })
@@ -119,6 +116,10 @@ export const AdminService = {
     })
   },
 
+  async getSeller(sellerId: string): Promise<AdminSellerDetail> {
+    return apiRequest(`/api/v1/admin/sellers/${sellerId}`)
+  },
+
   async listSellers(
     params: { page?: number; size?: number; status?: string } = {}
   ): Promise<PagedResponse<AdminSellerListItem>> {
@@ -127,7 +128,11 @@ export const AdminService = {
     if (params.size !== undefined) q.set("size", String(params.size))
     if (params.status) q.set("status", params.status)
     const qs = q.toString()
-    return apiRequest(`/api/v1/admin/seller-profiles${qs ? `?${qs}` : ""}`)
+    return apiRequest(`/api/v1/admin/sellers${qs ? `?${qs}` : ""}`)
+  },
+
+  async getOrder(orderId: string): Promise<AdminOrderDetail> {
+    return apiRequest(`/api/v1/admin/orders/${orderId}`)
   },
 
   async listOrders(
@@ -152,12 +157,16 @@ export const AdminService = {
     return apiRequest(`/api/v1/admin/products${qs ? `?${qs}` : ""}`)
   },
 
+  async getProduct(productId: string): Promise<AdminProductDetail> {
+    return apiRequest(`/api/v1/admin/products/${productId}`)
+  },
+
   async activateProduct(productId: string): Promise<{ id: string; status: string }> {
-    return apiRequest(`/api/v1/admin/products/${productId}/activate`, { method: "PATCH" })
+    return apiRequest(`/api/v1/admin/products/${productId}/activate`, { method: "POST" })
   },
 
   async deactivateProduct(productId: string): Promise<{ id: string; status: string }> {
-    return apiRequest(`/api/v1/admin/products/${productId}/deactivate`, { method: "PATCH" })
+    return apiRequest(`/api/v1/admin/products/${productId}/deactivate`, { method: "POST" })
   },
 
   async listPayments(

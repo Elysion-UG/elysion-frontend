@@ -18,7 +18,7 @@ export interface PagedResponse<T> {
   items: T[]
   page: number
   size: number
-  totalElements: number
+  totalItems: number
   totalPages: number
 }
 
@@ -31,7 +31,7 @@ export interface AdminUserListParams {
 }
 
 export interface AdminUserListItem {
-  id: string
+  userId: string
   email: string
   role: UserRole
   status: AccountStatus
@@ -60,52 +60,104 @@ export interface AdminOrderListItem {
   status: OrderStatus
   paymentStatus: string
   total: number
+  currency?: string
   createdAt: string
+}
+
+export interface AdminOrderGroup {
+  id: string
+  sellerId: string
+  status: OrderStatus
+  subtotal: number
+  shipping: number
+  total: number
+  trackingNumber?: string | null
+  carrier?: string | null
+  shippedAt?: string | null
+  deliveredAt?: string | null
+  createdAt: string
+}
+
+export interface AdminOrderDetail extends AdminOrderListItem {
+  subtotal: number
+  shipping: number
+  tax: number
+  shippingAddress?: Record<string, unknown>
+  billingAddress?: Record<string, unknown>
+  orderGroups: AdminOrderGroup[]
 }
 
 export interface AdminProductListItem {
   id: string
-  title: string
+  name: string
+  slug: string
   sellerId: string
-  sellerName?: string | null
-  price: number
   status: ProductStatus
   createdAt: string
+}
+
+export interface AdminProductDetail extends AdminProductListItem {
+  verifiedCertificateCount: number
+  updatedAt: string
 }
 
 export interface AdminSellerListItem {
   id: string
   userId: string
+  userEmail: string
   companyName: string
-  user: { email: string }
   vatId?: string | null
   status: SellerStatus
   createdAt: string
 }
 
-export interface AdminPaymentItem {
+export interface AdminSellerDetail {
   id: string
+  userId: string
+  userEmail: string
+  companyName: string
+  status: SellerStatus
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface AdminPaymentItem {
+  paymentId: string
   orderId: string
   orderNumber?: string | null
+  userId?: string | null
+  provider?: string | null
+  amount: number
+  currency?: string
   status: string
-  amountCents: number
+  refundedAmount?: number
   createdAt: string
+  succeededAt?: string | null
+  failedAt?: string | null
 }
 
 export interface AdminRefundItem {
-  id: string
+  refundId: string
   paymentId: string
-  amountCents: number
-  reason?: string | null
+  orderId?: string | null
+  orderGroupId?: string | null
+  amount: number
+  currency?: string
   status: string
   createdAt: string
+  succeededAt?: string | null
+  failedAt?: string | null
 }
 
 export interface AdminPayoutItem {
-  id: string
+  payoutId: string
   sellerId: string
   sellerName?: string | null
-  amountCents: number
+  amount: number
+  currency?: string
+  provider?: string | null
   status: string
   createdAt: string
+  succeededAt?: string | null
+  failedAt?: string | null
 }

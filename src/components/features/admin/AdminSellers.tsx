@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import {
   CheckCircle2,
   XCircle,
@@ -10,8 +11,8 @@ import {
   Search,
   Loader2,
   RefreshCw,
-  Eye,
 } from "lucide-react"
+import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import { AdminService } from "@/src/services/admin.service"
 import type { AdminSellerListItem, SellerStatus } from "@/src/types"
 import { toast } from "sonner"
@@ -24,10 +25,10 @@ const statusLabel: Record<SellerStatus, string> = {
 }
 
 const statusColor: Record<SellerStatus, string> = {
-  PENDING: "bg-yellow-100 text-yellow-800",
-  APPROVED: "bg-emerald-100 text-emerald-700",
-  REJECTED: "bg-red-100 text-red-700",
-  SUSPENDED: "bg-slate-100 text-slate-600",
+  PENDING: "bg-yellow-900/40 text-yellow-400 ring-1 ring-yellow-700/40",
+  APPROVED: "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40",
+  REJECTED: "bg-red-900/40 text-red-400 ring-1 ring-red-700/40",
+  SUSPENDED: "bg-slate-800 text-slate-500",
 }
 
 function RejectModal({
@@ -59,29 +60,42 @@ function RejectModal({
     }
   }
 
+  const modalRef = useFocusTrap(onClose)
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-        <h3 className="mb-1 text-lg font-semibold text-slate-800">Verkäufer ablehnen</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reject-seller-title"
+        className="w-full max-w-md rounded-xl border border-slate-800/60 bg-slate-900 p-6 shadow-2xl"
+      >
+        <h3
+          id="reject-seller-title"
+          className="mb-1 font-mono text-lg font-semibold text-slate-100"
+        >
+          Verkäufer ablehnen
+        </h3>
         <p className="mb-4 text-sm text-slate-500">{seller.companyName}</p>
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           placeholder="Ablehnungsgrund..."
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
         />
         <div className="mt-4 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="flex-1 rounded-lg border border-slate-700/60 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800/60"
           >
             Abbrechen
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-600 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-700 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-60"
           >
             {loading && <Loader2 className="h-3 w-3 animate-spin" />} Ablehnen
           </button>
@@ -116,29 +130,42 @@ function SuspendModal({
     }
   }
 
+  const modalRef = useFocusTrap(onClose)
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-        <h3 className="mb-1 text-lg font-semibold text-slate-800">Verkäufer sperren</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+      <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="suspend-seller-title"
+        className="w-full max-w-md rounded-xl border border-slate-800/60 bg-slate-900 p-6 shadow-2xl"
+      >
+        <h3
+          id="suspend-seller-title"
+          className="mb-1 font-mono text-lg font-semibold text-slate-100"
+        >
+          Verkäufer sperren
+        </h3>
         <p className="mb-4 text-sm text-slate-500">{seller.companyName}</p>
         <textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           placeholder="Grund (optional)..."
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+          className="w-full rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
         />
         <div className="mt-4 flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="flex-1 rounded-lg border border-slate-700/60 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800/60"
           >
             Abbrechen
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-orange-600 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-60"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-orange-700 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
           >
             {loading && <Loader2 className="h-3 w-3 animate-spin" />} Sperren
           </button>
@@ -149,6 +176,7 @@ function SuspendModal({
 }
 
 export default function AdminSellers() {
+  const router = useRouter()
   const [sellers, setSellers] = useState<AdminSellerListItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [page, setPage] = useState(0)
@@ -199,164 +227,171 @@ export default function AdminSellers() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-6xl px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">Verkäufer-Verwaltung</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Prüfung und Moderation von Verkäuferprofilen
-          </p>
-        </div>
+    <div>
+      <div className="mb-6">
+        <h1 className="font-mono text-2xl font-bold tracking-wide text-slate-100">
+          Verkäufer-Verwaltung
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">Prüfung und Moderation von Verkäuferprofilen</p>
+      </div>
 
-        {/* Filters */}
-        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-4">
-          <div className="relative min-w-48 flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Firma oder E-Mail suchen..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-            />
+      {/* Filters */}
+      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-slate-800/60 bg-slate-900/60 p-4">
+        <div className="relative min-w-48 flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
+          <input
+            type="text"
+            placeholder="Firma oder E-Mail suchen..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full rounded-lg border border-slate-700/60 bg-slate-800/60 py-2 pl-9 pr-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value as SellerStatus | "")
+            setPage(0)
+          }}
+          className="rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
+        >
+          <option value="">Alle Status</option>
+          {(["PENDING", "APPROVED", "REJECTED", "SUSPENDED"] as SellerStatus[]).map((s) => (
+            <option key={s} value={s}>
+              {statusLabel[s]}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={load}
+          className="flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-400 hover:text-slate-200"
+        >
+          <RefreshCw className="h-4 w-4" /> Aktualisieren
+        </button>
+      </div>
+
+      {/* Table */}
+      <div className="overflow-hidden rounded-xl border border-slate-800/60 bg-slate-900/60">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-cyber-500" />
           </div>
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value as SellerStatus | "")
-              setPage(0)
-            }}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-          >
-            <option value="">Alle Status</option>
-            {(["PENDING", "APPROVED", "REJECTED", "SUSPENDED"] as SellerStatus[]).map((s) => (
-              <option key={s} value={s}>
-                {statusLabel[s]}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={load}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:text-slate-800"
-          >
-            <RefreshCw className="h-4 w-4" /> Aktualisieren
-          </button>
-        </div>
-
-        {/* Table */}
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
-            </div>
-          ) : sellers.length === 0 ? (
-            <div className="py-16 text-center text-slate-500">Keine Verkäufer gefunden.</div>
-          ) : (
-            <table className="w-full text-sm">
-              <thead className="border-b border-slate-200 bg-slate-50">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium text-slate-600">Firma</th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-600">E-Mail</th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-600">USt-ID</th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-600">Status</th>
-                  <th className="px-4 py-3 text-left font-medium text-slate-600">Registriert</th>
-                  <th className="px-4 py-3 text-right font-medium text-slate-600">Aktionen</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {sellers.map((seller) => (
-                  <tr key={seller.id} className="transition-colors hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium text-slate-800">{seller.companyName}</td>
-                    <td className="px-4 py-3 text-slate-600">{seller.user?.email ?? "–"}</td>
-                    <td className="px-4 py-3 text-slate-500">{seller.vatId ?? "–"}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColor[seller.status]}`}
-                      >
-                        {statusLabel[seller.status]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-500">
-                      {new Date(seller.createdAt).toLocaleDateString("de-DE")}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-2">
-                        <a
-                          href={`/admin/sellers/${seller.userId}`}
-                          className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-teal-50 hover:text-teal-600"
-                          title="Detail"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </a>
-                        {seller.status === "PENDING" && (
-                          <>
-                            <button
-                              onClick={() => handleApprove(seller)}
-                              className="rounded-lg p-1.5 text-emerald-600 transition-colors hover:bg-emerald-50"
-                              title="Genehmigen"
-                            >
-                              <CheckCircle2 className="h-4 w-4" />
-                            </button>
-                            <button
-                              onClick={() => setRejectTarget(seller)}
-                              className="rounded-lg p-1.5 text-red-600 transition-colors hover:bg-red-50"
-                              title="Ablehnen"
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </button>
-                          </>
-                        )}
-                        {seller.status === "APPROVED" && (
-                          <button
-                            onClick={() => setSuspendTarget(seller)}
-                            className="rounded-lg p-1.5 text-orange-600 transition-colors hover:bg-orange-50"
-                            title="Sperren"
-                          >
-                            <Ban className="h-4 w-4" />
-                          </button>
-                        )}
-                        {seller.status === "SUSPENDED" && (
+        ) : sellers.length === 0 ? (
+          <div className="py-16 text-center text-slate-500">Keine Verkäufer gefunden.</div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead className="border-b border-slate-800/60 bg-slate-800/30">
+              <tr>
+                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
+                  Firma
+                </th>
+                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
+                  E-Mail
+                </th>
+                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
+                  USt-ID
+                </th>
+                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
+                  Registriert
+                </th>
+                <th className="px-4 py-3 text-right font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
+                  Aktionen
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60">
+              {sellers.map((seller) => (
+                <tr
+                  key={seller.id}
+                  onClick={() => router.push(`/admin/sellers/${seller.id}`)}
+                  className="cursor-pointer transition-colors hover:bg-slate-800/30"
+                >
+                  <td className="px-4 py-3 font-medium text-slate-200">{seller.companyName}</td>
+                  <td className="px-4 py-3 text-slate-400">{seller.userEmail ?? "–"}</td>
+                  <td className="px-4 py-3 text-slate-500">{seller.vatId ?? "–"}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColor[seller.status]}`}
+                    >
+                      {statusLabel[seller.status]}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-slate-500">
+                    {new Date(seller.createdAt).toLocaleDateString("de-DE")}
+                  </td>
+                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-2">
+                      {seller.status === "PENDING" && (
+                        <>
                           <button
                             onClick={() => handleApprove(seller)}
-                            className="rounded-lg p-1.5 text-emerald-600 transition-colors hover:bg-emerald-50"
-                            title="Entsperren"
+                            className="rounded-lg p-1.5 text-emerald-500 transition-colors hover:bg-emerald-900/40"
+                            title="Genehmigen"
                           >
                             <CheckCircle2 className="h-4 w-4" />
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                          <button
+                            onClick={() => setRejectTarget(seller)}
+                            className="rounded-lg p-1.5 text-red-500 transition-colors hover:bg-red-900/40"
+                            title="Ablehnen"
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </button>
+                        </>
+                      )}
+                      {seller.status === "APPROVED" && (
+                        <button
+                          onClick={() => setSuspendTarget(seller)}
+                          className="rounded-lg p-1.5 text-orange-500 transition-colors hover:bg-orange-900/40"
+                          title="Sperren"
+                        >
+                          <Ban className="h-4 w-4" />
+                        </button>
+                      )}
+                      {seller.status === "SUSPENDED" && (
+                        <button
+                          onClick={() => handleApprove(seller)}
+                          className="rounded-lg p-1.5 text-emerald-500 transition-colors hover:bg-emerald-900/40"
+                          title="Entsperren"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3">
-              <span className="text-sm text-slate-500">
-                Seite {page + 1} von {totalPages}
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
-                  disabled={page === 0}
-                  className="rounded-lg border border-slate-200 p-1.5 hover:bg-slate-50 disabled:opacity-40"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                  disabled={page >= totalPages - 1}
-                  className="rounded-lg border border-slate-200 p-1.5 hover:bg-slate-50 disabled:opacity-40"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between border-t border-slate-800/60 px-4 py-3">
+            <span className="text-sm text-slate-500">
+              Seite {page + 1} von {totalPages}
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+                className="rounded-lg border border-slate-700/60 bg-slate-800/60 p-1.5 text-slate-400 hover:bg-slate-700/60 disabled:opacity-40"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                disabled={page >= totalPages - 1}
+                className="rounded-lg border border-slate-700/60 bg-slate-800/60 p-1.5 text-slate-400 hover:bg-slate-700/60 disabled:opacity-40"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {rejectTarget && (
