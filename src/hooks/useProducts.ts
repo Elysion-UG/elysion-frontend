@@ -11,7 +11,7 @@ interface FetchProductsParams {
   currentPage: number
 }
 
-async function fetchAndEnrichProducts(params: FetchProductsParams) {
+async function fetchProducts(params: FetchProductsParams) {
   const page = await ProductService.list({
     search: params.search || undefined,
     minPrice: params.priceRange.min > 0 ? params.priceRange.min : undefined,
@@ -21,21 +21,8 @@ async function fetchAndEnrichProducts(params: FetchProductsParams) {
     size: PRODUCTS_PAGE_SIZE,
   })
 
-  // The list endpoint returns no images — enrich each item in parallel via slug.
-  const enriched = await Promise.all(
-    page.content.map(async (item) => {
-      if (!item.slug) return item
-      try {
-        const detail = await ProductService.getBySlug(item.slug)
-        return { ...item, images: detail.images, imageUrls: detail.imageUrls }
-      } catch {
-        return item
-      }
-    })
-  )
-
   return {
-    products: enriched as ProductDetail[],
+    products: page.content as ProductDetail[],
     totalElements: page.totalElements,
     totalPages: page.totalPages,
   }
@@ -44,7 +31,7 @@ async function fetchAndEnrichProducts(params: FetchProductsParams) {
 export function useProducts(params: FetchProductsParams) {
   return useQuery({
     queryKey: ["products", params],
-    queryFn: () => fetchAndEnrichProducts(params),
+    queryFn: () => fetchProducts(params),
     // Serve cached results for 2 minutes — instant re-render on page revisit.
     staleTime: 2 * 60 * 1000,
     // Keep previous page data visible while a new page/filter is loading.

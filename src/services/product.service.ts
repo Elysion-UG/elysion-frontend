@@ -2,11 +2,11 @@
  * ProductService — API calls for products.
  *
  * Public endpoints (no auth):
- *   GET /api/v1/products            — paginated list (Spring Page format, NOT wrapped)
+ *   GET /api/v1/products            — paginated list (wrapped ApiResponse, custom pagination)
  *   GET /api/v1/products/{slug}     — public storefront detail (wrapped ApiResponse)
  *
  * Authenticated:
- *   GET /api/v1/products/{id}       — internal UUID detail (raw, NOT wrapped)
+ *   GET /api/v1/products/by-id/{id} — internal UUID detail (wrapped ApiResponse)
  *
  * Seller-only:
  *   POST   /api/v1/products                              — create product
@@ -20,11 +20,37 @@
  *   DELETE /api/v1/products/{id}/variants/{variantId}    — delete variant
  *
  * Note on response styles:
- *   - Product list and internal UUID detail return raw objects (no ApiResponse wrapper)
- *     → use apiRequestRaw (returns body as-is) instead of apiRequest (which extracts body.data)
- *   - All other endpoints return wrapped ApiResponse → apiRequest unwraps to data field
+ *   - All endpoints return a wrapped ApiResponse { status, message, data }
+ *     → use apiRequest (extracts body.data) for all calls
+ *   - The list endpoint uses a custom pagination shape:
+ *     data.items (not content), data.totalItems (not totalElements), data.page (not number)
+ *     → ProductService.list() normalises this to the internal ProductPage type
  */
-import { apiRequest, apiRequestRaw } from "@/src/lib/api-client"
+import { apiRequest } from "@/src/lib/api-client"
+
+// ── Raw API types (list endpoint) ─────────────────────────────────────────────
+// These reflect the actual JSON the backend returns inside data{}.
+// They are normalised to internal types before leaving this module.
+
+interface ApiProductListItem {
+  id: string
+  slug: string
+  name: string
+  price: number
+  currency: string
+  primaryImage: string | null
+  seller: { id: string; companyName: string } | null
+  createdAt: string
+  matchScore: number | null
+}
+
+interface ApiProductPage {
+  items: ApiProductListItem[]
+  page: number
+  size: number
+  totalItems: number
+  totalPages: number
+}
 import type {
   ProductPage,
   ProductListParams,
@@ -53,7 +79,25 @@ export const ProductService = {
     if (params.page !== undefined) query.set("page", String(params.page))
     if (params.size !== undefined) query.set("size", String(params.size))
     const qs = query.toString()
-    return apiRequestRaw(`/api/v1/products${qs ? `?${qs}` : ""}`)
+    const raw = await apiRequest<ApiProductPage>(`/api/v1/products${qs ? `?${qs}` : ""}`)
+    return {
+      content: raw.items.map((item) => ({
+        id: item.id,
+        slug: item.slug,
+        name: item.name,
+        price: item.price,
+        currency: item.currency,
+        imageUrls: item.primaryImage ? [item.primaryImage] : undefined,
+        seller: item.seller
+          ? { userId: item.seller.id, companyName: item.seller.companyName }
+          : undefined,
+        createdAt: item.createdAt,
+      })),
+      totalElements: raw.totalItems,
+      totalPages: raw.totalPages,
+      size: raw.size,
+      number: raw.page,
+    }
   },
 
   async getBySlug(slug: string): Promise<ProductDetail> {
