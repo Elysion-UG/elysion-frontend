@@ -11,6 +11,13 @@
 
 const CACHE_KEY = "product_display_cache"
 const VARIANT_OPTIONS_CACHE_KEY = "variant_options_cache"
+const CONSENT_KEY = "elysion_cookie_consent"
+
+/** TTDSG § 25: nur schreiben wenn Nutzer funktionale Cookies akzeptiert hat */
+function isFunctionalConsentGiven(): boolean {
+  if (typeof window === "undefined") return false
+  return sessionStorage.getItem(CONSENT_KEY) === "accepted"
+}
 
 export interface ProductDisplayEntry {
   name: string
@@ -31,6 +38,7 @@ function readCache(): CacheMap {
 }
 
 function writeCache(map: CacheMap): void {
+  if (!isFunctionalConsentGiven()) return
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(map))
   } catch {
@@ -73,6 +81,7 @@ function readVariantOptionsCache(): VariantOptionsMap {
 
 export function saveVariantOptions(variantId: string, options: VariantOption[]): void {
   if (!variantId || options.length === 0) return
+  if (!isFunctionalConsentGiven()) return
   try {
     const cache = readVariantOptionsCache()
     localStorage.setItem(
