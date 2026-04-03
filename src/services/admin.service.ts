@@ -20,9 +20,13 @@
  *
  * Note: Certificate verify/reject are also in CertificateService.
  * Use either service — they hit the same endpoint.
+ *
+ * Dashboard:
+ *   GET   /api/v1/admin/dashboard                       — operational overview stats
  */
 import { apiRequest } from "@/src/lib/api-client"
 import type {
+  AdminDashboardData,
   AdminUserListItem,
   AdminUserDetails,
   AdminUserListParams,
@@ -42,6 +46,10 @@ import type {
 } from "@/src/types"
 
 export const AdminService = {
+  async getDashboard(): Promise<AdminDashboardData> {
+    return apiRequest("/api/v1/admin/dashboard")
+  },
+
   async listUsers(
     params: Partial<AdminUserListParams> = {}
   ): Promise<PagedResponse<AdminUserListItem>> {
