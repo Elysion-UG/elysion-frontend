@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { Package, Truck, CheckCircle2, Loader2, ChevronLeft, MapPin } from "lucide-react"
 import { OrderService } from "@/src/services/order.service"
 import { ProductService } from "@/src/services/product.service"
-import type { OrderDetail as OrderDetailType, OrderStatus, OrderGroupStatus } from "@/src/types"
+import type { OrderDetail as OrderDetailType } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
 import { toCountryName } from "@/src/lib/country"
 import {
@@ -18,6 +18,7 @@ import {
   BUYER_ORDER_GROUP_STATUS_LABEL as groupStatusLabel,
   BUYER_ORDER_GROUP_STATUS_COLOR as groupStatusColor,
 } from "@/src/lib/constants"
+import { StatusBadge } from "@/src/components/shared"
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("de-DE", {
@@ -154,11 +155,11 @@ export default function OrderDetail() {
         >
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-stone-700">Verkäufer-Paket</h2>
-            <span
-              className={`rounded-full px-2.5 py-1 text-xs font-medium ${groupStatusColor[group.status]}`}
-            >
-              {groupStatusLabel[group.status]}
-            </span>
+            <StatusBadge
+              label={groupStatusLabel[group.status]}
+              colorClasses={groupStatusColor[group.status]}
+              className="px-2.5 py-1"
+            />
           </div>
 
           {group.shipment?.trackingNumber && (

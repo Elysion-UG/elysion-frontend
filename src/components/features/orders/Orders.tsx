@@ -1,13 +1,13 @@
 "use client"
 
-import { Package, ChevronRight, Loader2, PackageOpen } from "lucide-react"
+import { Package, ChevronRight, PackageOpen } from "lucide-react"
 import Link from "next/link"
-import type { OrderStatus } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
 import {
   BUYER_ORDER_STATUS_LABEL as statusLabel,
   BUYER_ORDER_STATUS_COLOR as statusColor,
 } from "@/src/lib/constants"
+import { StatusBadge } from "@/src/components/shared"
 import { useOrders } from "@/src/hooks/useOrders"
 
 function formatDate(iso: string) {
@@ -110,11 +110,11 @@ export default function Orders() {
                 <p className="mt-0.5 text-sm text-stone-400">{formatDate(order.createdAt)}</p>
               </div>
               <div className="flex items-center gap-3">
-                <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusColor[order.status]}`}
-                >
-                  {statusLabel[order.status]}
-                </span>
+                <StatusBadge
+                  label={statusLabel[order.status]}
+                  colorClasses={statusColor[order.status]}
+                  className="px-2.5 py-1"
+                />
                 <ChevronRight className="h-5 w-5 text-stone-300 transition-transform group-hover:translate-x-0.5 group-hover:text-sage-500" />
               </div>
             </div>
