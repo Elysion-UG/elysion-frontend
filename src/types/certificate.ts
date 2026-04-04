@@ -5,17 +5,17 @@ export type CertificateType = "ORGANIC" | "FAIR_TRADE" | "RECYCLED" | "VEGAN"
 export interface Certificate {
   id: string
   sellerId: string
-  /** Display title shown in UI */
   title: string
-  name?: string
   certificateType: CertificateType
   issuerName: string
   issuingBody?: string
   certificateNumber?: string
-  validFrom: string
+  /** Issue date — backend may return `validFrom` or `issueDate`; use `issueDate ?? validFrom` */
   issueDate?: string
-  validUntil?: string
+  validFrom?: string
+  /** Expiry date — backend may return `validUntil` or `expiryDate`; use `expiryDate ?? validUntil` */
   expiryDate?: string
+  validUntil?: string
   status: CertificateStatus
   rejectionReason?: string
   documentUrl?: string
@@ -30,14 +30,11 @@ export interface Certificate {
 
 export interface CertificateCreateDTO {
   title?: string
-  name?: string
   certificateType?: CertificateType
   issuingBody?: string
   issuerName?: string
   certificateNumber?: string
-  validFrom?: string
   issueDate?: string
-  validUntil?: string
   expiryDate?: string
   documentUrl?: string
   notes?: string
@@ -45,11 +42,10 @@ export interface CertificateCreateDTO {
 
 export interface CertificateUpdateDTO {
   title?: string
-  name?: string
   issuingBody?: string
   certificateNumber?: string
-  validFrom?: string
-  validUntil?: string
+  issueDate?: string
+  expiryDate?: string
   documentUrl?: string
 }
 
@@ -79,12 +75,12 @@ export interface SellerCertificateCreateDTO {
 export interface PublicCertificate {
   id: string
   title?: string
-  name?: string
   issuingBody?: string
   issuerName?: string
+  issueDate?: string
   validFrom?: string
-  validUntil?: string
   expiryDate?: string
+  validUntil?: string
   status: CertificateStatus
   certificateType?: CertificateType
 }

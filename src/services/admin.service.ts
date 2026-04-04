@@ -24,7 +24,7 @@
  * Dashboard:
  *   GET   /api/v1/admin/dashboard                       — operational overview stats
  */
-import { apiRequest } from "@/src/lib/api-client"
+import { apiRequest, buildQuery } from "@/src/lib/api-client"
 import type {
   AdminDashboardData,
   AdminUserListItem,
@@ -53,14 +53,15 @@ export const AdminService = {
   async listUsers(
     params: Partial<AdminUserListParams> = {}
   ): Promise<PagedResponse<AdminUserListItem>> {
-    const query = new URLSearchParams()
-    if (params.page !== undefined) query.set("page", String(params.page - 1))
-    if (params.pageSize !== undefined) query.set("size", String(params.pageSize))
-    if (params.search) query.set("search", params.search)
-    if (params.role) query.set("role", params.role)
-    if (params.status) query.set("status", params.status)
-    const qs = query.toString()
-    return apiRequest(`/api/v1/admin/users${qs ? `?${qs}` : ""}`)
+    return apiRequest(
+      `/api/v1/admin/users${buildQuery({
+        page: params.page !== undefined ? params.page - 1 : undefined,
+        size: params.pageSize,
+        search: params.search,
+        role: params.role,
+        status: params.status,
+      })}`
+    )
   },
 
   async getUser(id: string): Promise<AdminUserDetails> {
@@ -131,12 +132,9 @@ export const AdminService = {
   async listSellers(
     params: { page?: number; size?: number; status?: string } = {}
   ): Promise<PagedResponse<AdminSellerListItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    if (params.status) q.set("status", params.status)
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/sellers${qs ? `?${qs}` : ""}`)
+    return apiRequest(
+      `/api/v1/admin/sellers${buildQuery({ page: params.page, size: params.size, status: params.status })}`
+    )
   },
 
   async getOrder(orderId: string): Promise<AdminOrderDetail> {
@@ -146,24 +144,17 @@ export const AdminService = {
   async listOrders(
     params: { page?: number; size?: number; status?: OrderStatus } = {}
   ): Promise<PagedResponse<AdminOrderListItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    if (params.status) q.set("status", params.status)
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/orders${qs ? `?${qs}` : ""}`)
+    return apiRequest(
+      `/api/v1/admin/orders${buildQuery({ page: params.page, size: params.size, status: params.status })}`
+    )
   },
 
   async listProducts(
     params: { page?: number; size?: number; search?: string; status?: string } = {}
   ): Promise<PagedResponse<AdminProductListItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    if (params.search) q.set("search", params.search)
-    if (params.status) q.set("status", params.status)
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/products${qs ? `?${qs}` : ""}`)
+    return apiRequest(
+      `/api/v1/admin/products${buildQuery({ page: params.page, size: params.size, search: params.search, status: params.status })}`
+    )
   },
 
   async getProduct(productId: string): Promise<AdminProductDetail> {
@@ -181,41 +172,33 @@ export const AdminService = {
   async listPayments(
     params: { page?: number; size?: number } = {}
   ): Promise<PagedResponse<AdminPaymentItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/payments${qs ? `?${qs}` : ""}`)
+    return apiRequest(
+      `/api/v1/admin/payments${buildQuery({ page: params.page, size: params.size })}`
+    )
   },
 
   async listRefunds(
     params: { page?: number; size?: number } = {}
   ): Promise<PagedResponse<AdminRefundItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/refunds${qs ? `?${qs}` : ""}`)
+    return apiRequest(
+      `/api/v1/admin/refunds${buildQuery({ page: params.page, size: params.size })}`
+    )
   },
 
   async listSettlements(
     params: { page?: number; size?: number } = {}
   ): Promise<PagedResponse<Settlement>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/settlements${qs ? `?${qs}` : ""}`)
+    return apiRequest(
+      `/api/v1/admin/settlements${buildQuery({ page: params.page, size: params.size })}`
+    )
   },
 
   async listPayouts(
     params: { page?: number; size?: number } = {}
   ): Promise<PagedResponse<AdminPayoutItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/payouts${qs ? `?${qs}` : ""}`)
+    return apiRequest(
+      `/api/v1/admin/payouts${buildQuery({ page: params.page, size: params.size })}`
+    )
   },
 
   async cleanupRefreshTokens(): Promise<{ deletedCount: number }> {

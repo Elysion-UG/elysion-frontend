@@ -51,6 +51,26 @@ export function clearAuthSession(): void {
   } catch {}
 }
 
+// ── Query string builder ───────────────────────────────────────────────────────
+
+/**
+ * Builds a URL query string from a plain object.
+ * Skips undefined, null, and empty-string values; includes 0 and false.
+ * Returns "?key=val&..." or "" when nothing to include.
+ */
+export function buildQuery(
+  params: Record<string, string | number | boolean | undefined | null>
+): string {
+  const q = new URLSearchParams()
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== "") {
+      q.set(key, String(value))
+    }
+  }
+  const qs = q.toString()
+  return qs ? `?${qs}` : ""
+}
+
 // ── Token store ────────────────────────────────────────────────────────────────
 // _accessToken lives in module memory for XSS safety.
 //

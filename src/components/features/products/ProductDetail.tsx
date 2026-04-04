@@ -462,7 +462,7 @@ export default function ProductDetail() {
                         </div>
                         <div>
                           <h4 className="text-sm font-semibold text-stone-800">
-                            {cert.title ?? cert.name ?? cert.certificateType}
+                            {cert.title ?? cert.certificateType}
                           </h4>
                           {cert.issuerName && (
                             <p className="mt-0.5 text-xs text-stone-500">

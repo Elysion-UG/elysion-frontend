@@ -1,4 +1,4 @@
-import { apiRequest } from "@/src/lib/api-client"
+import { apiRequest, buildQuery } from "@/src/lib/api-client"
 import type {
   OrderGroupDetail,
   OrderGroupStatus,
@@ -71,18 +71,15 @@ function normalizeOrderGroup(raw: ApiOrderGroup): OrderGroupDetail {
 
 export const SellerOrderService = {
   async list(params: SellerOrderListParams = {}): Promise<OrderGroupsPage> {
-    const search = new URLSearchParams()
-    if (params.page !== undefined) search.set("page", String(params.page))
-    if (params.size !== undefined) search.set("size", String(params.size))
-    if (params.status) search.set("status", params.status)
-    const qs = search.toString()
     const raw = await apiRequest<{
       items: ApiOrderGroup[]
       page: number
       size: number
       totalItems: number
       totalPages: number
-    }>(`/api/v1/seller/orders${qs ? `?${qs}` : ""}`)
+    }>(
+      `/api/v1/seller/orders${buildQuery({ page: params.page, size: params.size, status: params.status })}`
+    )
     return {
       items: raw.items.map(normalizeOrderGroup),
       page: raw.page,

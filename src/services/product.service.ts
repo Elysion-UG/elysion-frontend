@@ -27,7 +27,7 @@
  *     data.items (not content), data.totalItems (not totalElements), data.page (not number)
  *     → ProductService.list() normalises this to the internal ProductPage type
  */
-import { apiRequest } from "@/src/lib/api-client"
+import { apiRequest, buildQuery } from "@/src/lib/api-client"
 
 // ── Raw API types (list endpoint) ─────────────────────────────────────────────
 // These reflect the actual JSON the backend returns inside data{}.
@@ -105,17 +105,18 @@ export const ProductService = {
   // ── Public ────────────────────────────────────────────────────────
 
   async list(params: ProductListParams = {}): Promise<ProductPage> {
-    const query = new URLSearchParams()
-    if (params.search) query.set("search", params.search)
-    if (params.categoryId) query.set("categoryId", params.categoryId)
-    if (params.sellerId) query.set("sellerId", params.sellerId)
-    if (params.minPrice !== undefined) query.set("minPrice", String(params.minPrice))
-    if (params.maxPrice !== undefined) query.set("maxPrice", String(params.maxPrice))
-    if (params.sort) query.set("sort", params.sort)
-    if (params.page !== undefined) query.set("page", String(params.page))
-    if (params.size !== undefined) query.set("size", String(params.size))
-    const qs = query.toString()
-    const raw = await apiRequest<ApiProductPage>(`/api/v1/products${qs ? `?${qs}` : ""}`)
+    const raw = await apiRequest<ApiProductPage>(
+      `/api/v1/products${buildQuery({
+        search: params.search,
+        categoryId: params.categoryId,
+        sellerId: params.sellerId,
+        minPrice: params.minPrice,
+        maxPrice: params.maxPrice,
+        sort: params.sort,
+        page: params.page,
+        size: params.size,
+      })}`
+    )
     return {
       content: raw.items.map((item) => ({
         id: item.id,
