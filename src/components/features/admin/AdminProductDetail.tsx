@@ -13,23 +13,11 @@ import {
 } from "lucide-react"
 import { AdminService } from "@/src/services/admin.service"
 import type { AdminProductDetail, AdminSellerDetail, ProductStatus } from "@/src/types"
+import {
+  ADMIN_PRODUCT_STATUS_LABEL as statusLabel,
+  ADMIN_PRODUCT_STATUS_COLOR as statusColor,
+} from "@/src/lib/constants"
 import { toast } from "sonner"
-
-const statusLabel: Record<ProductStatus, string> = {
-  DRAFT: "Entwurf",
-  REVIEW: "In Prüfung",
-  ACTIVE: "Aktiv",
-  INACTIVE: "Inaktiv",
-  REJECTED: "Abgelehnt",
-}
-
-const statusColor: Record<ProductStatus, string> = {
-  DRAFT: "bg-slate-800 text-slate-400",
-  REVIEW: "bg-amber-900/40 text-amber-400 ring-1 ring-amber-700/40",
-  ACTIVE: "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40",
-  INACTIVE: "bg-slate-800 text-slate-500",
-  REJECTED: "bg-red-900/40 text-red-400 ring-1 ring-red-700/40",
-}
 
 export default function AdminProductDetailView() {
   const { id } = useParams<{ id: string }>()

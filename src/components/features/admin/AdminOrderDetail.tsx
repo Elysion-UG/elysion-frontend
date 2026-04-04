@@ -15,6 +15,10 @@ import {
 import { AdminService } from "@/src/services/admin.service"
 import type { AdminOrderDetail, AdminOrderGroup, OrderStatus } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
+import {
+  ADMIN_ORDER_STATUS_LABEL as statusLabel,
+  ADMIN_ORDER_GROUP_STATUS_LABEL as groupStatusLabel,
+} from "@/src/lib/constants"
 import { toast } from "sonner"
 
 // Ordered steps for the progress track (excludes terminal states CANCELLED/REFUNDED)
@@ -27,27 +31,6 @@ const ORDER_STEPS: OrderStatus[] = [
   "SHIPPED",
   "DELIVERED",
 ]
-
-const statusLabel: Record<OrderStatus, string> = {
-  PENDING_PAYMENT: "Zahlung ausstehend",
-  PENDING: "Ausstehend",
-  PAID: "Bezahlt",
-  CONFIRMED: "Bestätigt",
-  PROCESSING: "In Bearbeitung",
-  SHIPPED: "Versandt",
-  DELIVERED: "Geliefert",
-  CANCELLED: "Storniert",
-  REFUNDED: "Erstattet",
-}
-
-const groupStatusLabel: Record<string, string> = {
-  PENDING: "Ausstehend",
-  CONFIRMED: "Bestätigt",
-  PROCESSING: "In Bearbeitung",
-  SHIPPED: "Versandt",
-  DELIVERED: "Geliefert",
-  CANCELLED: "Storniert",
-}
 
 function OrderProgress({ status }: { status: OrderStatus }) {
   const isTerminal = status === "CANCELLED" || status === "REFUNDED"

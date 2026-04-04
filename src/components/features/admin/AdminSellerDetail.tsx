@@ -11,37 +11,13 @@ import type {
   SellerStatus,
   ProductStatus,
 } from "@/src/types"
+import {
+  ADMIN_SELLER_STATUS_LABEL as sellerStatusLabel,
+  ADMIN_SELLER_DETAIL_STATUS_COLOR as sellerStatusColor,
+  ADMIN_PRODUCT_STATUS_LABEL as productStatusLabel,
+  ADMIN_PRODUCT_STATUS_COLOR as productStatusColor,
+} from "@/src/lib/constants"
 import { toast } from "sonner"
-
-const sellerStatusLabel: Record<SellerStatus, string> = {
-  PENDING: "Ausstehend",
-  APPROVED: "Genehmigt",
-  REJECTED: "Abgelehnt",
-  SUSPENDED: "Gesperrt",
-}
-
-const sellerStatusColor: Record<SellerStatus, string> = {
-  PENDING: "bg-amber-900/40 text-amber-400 ring-1 ring-amber-700/40",
-  APPROVED: "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40",
-  REJECTED: "bg-red-900/40 text-red-400 ring-1 ring-red-700/40",
-  SUSPENDED: "bg-slate-800 text-slate-500 ring-1 ring-slate-700/40",
-}
-
-const productStatusLabel: Record<ProductStatus, string> = {
-  DRAFT: "Entwurf",
-  REVIEW: "In Prüfung",
-  ACTIVE: "Aktiv",
-  INACTIVE: "Inaktiv",
-  REJECTED: "Abgelehnt",
-}
-
-const productStatusColor: Record<ProductStatus, string> = {
-  DRAFT: "bg-slate-800 text-slate-400",
-  REVIEW: "bg-amber-900/40 text-amber-400 ring-1 ring-amber-700/40",
-  ACTIVE: "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40",
-  INACTIVE: "bg-slate-800 text-slate-500",
-  REJECTED: "bg-red-900/40 text-red-400 ring-1 ring-red-700/40",
-}
 
 export default function AdminSellerDetailView() {
   const { id } = useParams<{ id: string }>()

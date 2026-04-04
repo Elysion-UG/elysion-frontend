@@ -13,23 +13,13 @@ import {
 import { AdminService } from "@/src/services/admin.service"
 import type { AdminPaymentItem, AdminRefundItem, Settlement, AdminPayoutItem } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
+import {
+  ADMIN_PAYMENT_STATUS_COLOR as paymentStatusColor,
+  ADMIN_SETTLEMENT_STATUS_COLOR as settlementStatusColor,
+} from "@/src/lib/constants"
 import { toast } from "sonner"
 
 type Tab = "payments" | "refunds" | "settlements" | "payouts" | "maintenance"
-
-const paymentStatusColor: Record<string, string> = {
-  PENDING: "bg-yellow-900/40 text-yellow-400 ring-1 ring-yellow-700/40",
-  SUCCEEDED: "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40",
-  FAILED: "bg-red-900/40 text-red-400 ring-1 ring-red-700/40",
-  REFUNDED: "bg-slate-800 text-slate-500",
-}
-
-const settlementStatusColor: Record<string, string> = {
-  PENDING: "bg-yellow-900/40 text-yellow-400 ring-1 ring-yellow-700/40",
-  PROCESSING: "bg-blue-900/40 text-blue-400 ring-1 ring-blue-700/40",
-  PAID: "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40",
-  FAILED: "bg-red-900/40 text-red-400 ring-1 ring-red-700/40",
-}
 
 export default function AdminFinance() {
   const [tab, setTab] = useState<Tab>("payments")

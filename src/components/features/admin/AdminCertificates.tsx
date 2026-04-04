@@ -5,21 +5,11 @@ import { CheckCircle2, XCircle, RefreshCw, Loader2, ExternalLink } from "lucide-
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import { CertificateService } from "@/src/services/certificate.service"
 import type { Certificate, CertificateStatus } from "@/src/types"
+import {
+  ADMIN_CERTIFICATE_STATUS_LABEL as statusLabel,
+  ADMIN_CERTIFICATE_STATUS_COLOR as statusColor,
+} from "@/src/lib/constants"
 import { toast } from "sonner"
-
-const statusLabel: Record<CertificateStatus, string> = {
-  PENDING: "Ausstehend",
-  VERIFIED: "Verifiziert",
-  REJECTED: "Abgelehnt",
-  EXPIRED: "Abgelaufen",
-}
-
-const statusColor: Record<CertificateStatus, string> = {
-  PENDING: "bg-yellow-900/40 text-yellow-400 ring-1 ring-yellow-700/40",
-  VERIFIED: "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40",
-  REJECTED: "bg-red-900/40 text-red-400 ring-1 ring-red-700/40",
-  EXPIRED: "bg-slate-800 text-slate-500",
-}
 
 function RejectModal({
   cert,

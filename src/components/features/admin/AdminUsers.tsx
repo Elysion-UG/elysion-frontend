@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation"
 import { Search, ChevronLeft, ChevronRight, Loader2 } from "lucide-react"
 import type { User, UserRole, AccountStatus } from "@/src/types"
 import { UserService } from "@/src/services/user.service"
+import {
+  ADMIN_ACCOUNT_STATUS_LABEL,
+  ADMIN_ACCOUNT_STATUS_COLOR,
+  ADMIN_ROLE_COLOR,
+} from "@/src/lib/constants"
 import { toast } from "sonner"
 
 export default function AdminUsers() {
@@ -44,35 +49,22 @@ export default function AdminUsers() {
   }, [loadUsers])
 
   const getStatusBadge = (status: AccountStatus) => {
-    const styles: Record<AccountStatus, string> = {
-      PENDING: "bg-yellow-900/40 text-yellow-400 ring-1 ring-yellow-700/40",
-      PENDING_VERIFICATION: "bg-yellow-900/40 text-yellow-500 ring-1 ring-yellow-700/40",
-      ACTIVE: "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40",
-      SUSPENDED: "bg-red-900/40 text-red-400 ring-1 ring-red-700/40",
-      DELETED: "bg-slate-800 text-slate-500",
-    }
-    const labels: Record<AccountStatus, string> = {
-      PENDING: "Ausstehend",
-      PENDING_VERIFICATION: "Nicht verifiziert",
-      ACTIVE: "Aktiv",
-      SUSPENDED: "Gesperrt",
-      DELETED: "Gelöscht",
-    }
     return (
-      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${styles[status]}`}>
-        {labels[status]}
+      <span
+        className={`rounded-full px-2 py-0.5 text-xs font-medium ${ADMIN_ACCOUNT_STATUS_COLOR[status]}`}
+      >
+        {ADMIN_ACCOUNT_STATUS_LABEL[status]}
       </span>
     )
   }
 
   const getRoleBadge = (role: UserRole) => {
-    const styles: Record<UserRole, string> = {
-      BUYER: "bg-slate-800 text-slate-400",
-      SELLER: "bg-cyber-900/50 text-cyber-400 ring-1 ring-cyber-700/40",
-      ADMIN: "bg-indigo-900/50 text-indigo-400 ring-1 ring-indigo-700/40",
-    }
     return (
-      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${styles[role]}`}>{role}</span>
+      <span
+        className={`rounded-full px-2 py-0.5 text-xs font-medium ${ADMIN_ROLE_COLOR[role]}`}
+      >
+        {role}
+      </span>
     )
   }
 

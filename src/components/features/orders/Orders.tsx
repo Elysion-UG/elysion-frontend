@@ -4,31 +4,11 @@ import { Package, ChevronRight, Loader2, PackageOpen } from "lucide-react"
 import Link from "next/link"
 import type { OrderStatus } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
+import {
+  BUYER_ORDER_STATUS_LABEL as statusLabel,
+  BUYER_ORDER_STATUS_COLOR as statusColor,
+} from "@/src/lib/constants"
 import { useOrders } from "@/src/hooks/useOrders"
-
-const statusLabel: Record<OrderStatus, string> = {
-  PENDING_PAYMENT: "Zahlung ausstehend",
-  PENDING: "Ausstehend",
-  PAID: "Bezahlt",
-  CONFIRMED: "Bestätigt",
-  PROCESSING: "In Bearbeitung",
-  SHIPPED: "Versandt",
-  DELIVERED: "Geliefert",
-  CANCELLED: "Storniert",
-  REFUNDED: "Erstattet",
-}
-
-const statusColor: Record<OrderStatus, string> = {
-  PENDING_PAYMENT: "bg-yellow-100 text-yellow-800",
-  PENDING: "bg-yellow-100 text-yellow-700",
-  PAID: "bg-blue-100 text-blue-800",
-  CONFIRMED: "bg-blue-100 text-blue-800",
-  PROCESSING: "bg-orange-100 text-orange-800",
-  SHIPPED: "bg-purple-100 text-purple-800",
-  DELIVERED: "bg-green-100 text-green-800",
-  CANCELLED: "bg-red-100 text-red-800",
-  REFUNDED: "bg-stone-100 text-stone-600",
-}
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("de-DE", {

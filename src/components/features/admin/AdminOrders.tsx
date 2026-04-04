@@ -6,31 +6,11 @@ import { ChevronLeft, ChevronRight, Search, Loader2, RefreshCw } from "lucide-re
 import { AdminService } from "@/src/services/admin.service"
 import type { AdminOrderListItem, OrderStatus } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
+import {
+  ADMIN_ORDER_STATUS_LABEL as statusLabel,
+  ADMIN_ORDER_STATUS_COLOR as statusColor,
+} from "@/src/lib/constants"
 import { toast } from "sonner"
-
-const statusLabel: Record<OrderStatus, string> = {
-  PENDING_PAYMENT: "Zahlung ausstehend",
-  PENDING: "Ausstehend",
-  PAID: "Bezahlt",
-  CONFIRMED: "Bestätigt",
-  PROCESSING: "In Bearbeitung",
-  SHIPPED: "Versandt",
-  DELIVERED: "Geliefert",
-  CANCELLED: "Storniert",
-  REFUNDED: "Erstattet",
-}
-
-const statusColor: Record<OrderStatus, string> = {
-  PENDING_PAYMENT: "bg-yellow-900/40 text-yellow-400 ring-1 ring-yellow-700/40",
-  PENDING: "bg-yellow-900/40 text-yellow-500 ring-1 ring-yellow-700/40",
-  PAID: "bg-blue-900/40 text-blue-400 ring-1 ring-blue-700/40",
-  CONFIRMED: "bg-blue-900/40 text-blue-400 ring-1 ring-blue-700/40",
-  PROCESSING: "bg-orange-900/40 text-orange-400 ring-1 ring-orange-700/40",
-  SHIPPED: "bg-purple-900/40 text-purple-400 ring-1 ring-purple-700/40",
-  DELIVERED: "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40",
-  CANCELLED: "bg-red-900/40 text-red-400 ring-1 ring-red-700/40",
-  REFUNDED: "bg-slate-800 text-slate-500",
-}
 
 export default function AdminOrders() {
   const router = useRouter()

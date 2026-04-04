@@ -15,21 +15,11 @@ import {
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import { AdminService } from "@/src/services/admin.service"
 import type { AdminSellerListItem, SellerStatus } from "@/src/types"
+import {
+  ADMIN_SELLER_STATUS_LABEL as statusLabel,
+  ADMIN_SELLER_STATUS_COLOR as statusColor,
+} from "@/src/lib/constants"
 import { toast } from "sonner"
-
-const statusLabel: Record<SellerStatus, string> = {
-  PENDING: "Ausstehend",
-  APPROVED: "Genehmigt",
-  REJECTED: "Abgelehnt",
-  SUSPENDED: "Gesperrt",
-}
-
-const statusColor: Record<SellerStatus, string> = {
-  PENDING: "bg-yellow-900/40 text-yellow-400 ring-1 ring-yellow-700/40",
-  APPROVED: "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40",
-  REJECTED: "bg-red-900/40 text-red-400 ring-1 ring-red-700/40",
-  SUSPENDED: "bg-slate-800 text-slate-500",
-}
 
 function RejectModal({
   seller,

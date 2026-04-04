@@ -13,36 +13,11 @@ import {
   saveProductDisplay,
   type ProductDisplayEntry,
 } from "@/src/lib/product-display-cache"
-
-const orderStatusLabel: Record<OrderStatus, string> = {
-  PENDING_PAYMENT: "Zahlung ausstehend",
-  PENDING: "Ausstehend",
-  PAID: "Bezahlt",
-  CONFIRMED: "Bestätigt",
-  PROCESSING: "In Bearbeitung",
-  SHIPPED: "Versandt",
-  DELIVERED: "Geliefert",
-  CANCELLED: "Storniert",
-  REFUNDED: "Erstattet",
-}
-
-const groupStatusLabel: Record<OrderGroupStatus, string> = {
-  PENDING: "Ausstehend",
-  CONFIRMED: "Bestätigt",
-  PROCESSING: "In Bearbeitung",
-  SHIPPED: "Versandt",
-  DELIVERED: "Geliefert",
-  CANCELLED: "Storniert",
-}
-
-const groupStatusColor: Record<OrderGroupStatus, string> = {
-  PENDING: "bg-yellow-100 text-yellow-800",
-  CONFIRMED: "bg-blue-100 text-blue-800",
-  PROCESSING: "bg-orange-100 text-orange-800",
-  SHIPPED: "bg-purple-100 text-purple-800",
-  DELIVERED: "bg-green-100 text-green-800",
-  CANCELLED: "bg-red-100 text-red-800",
-}
+import {
+  BUYER_ORDER_STATUS_LABEL as orderStatusLabel,
+  BUYER_ORDER_GROUP_STATUS_LABEL as groupStatusLabel,
+  BUYER_ORDER_GROUP_STATUS_COLOR as groupStatusColor,
+} from "@/src/lib/constants"
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("de-DE", {
