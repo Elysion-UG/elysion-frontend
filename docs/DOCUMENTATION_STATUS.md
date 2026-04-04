@@ -7,16 +7,17 @@
 
 ## Aktive Dokumentation
 
-| Datei                     | Inhalt                                                                          | Status     |
-| ------------------------- | ------------------------------------------------------------------------------- | ---------- |
-| `README.md`               | Projekt-Übersicht, Setup, Architektur, implementierte Module                    | ✅ Aktuell |
-| `CONTRIBUTING.md`         | Branch-Strategie, Commit-Konventionen, PR-Prozess, CI-Übersicht                 | ✅ Aktuell |
-| `docs/api-integration.md` | Vollständige API-Integrations-Referenz (alle Endpoints, DTOs, Fehlerbehandlung) | ✅ Aktuell |
-| `docs/BACKEND_QUIRKS.md`  | Bekannte Abweichungen Backend-Response vs. Frontend-Typen                       | ✅ Aktuell |
-| `docs/CODE_STANDARDS.md`  | Namenskonventionen, Architekturmuster, Code-Review-Checkliste                   | ✅ Aktuell |
-| `docs/CICD_PIPELINE.md`   | GitHub Actions Workflows, Quality Gates, Pre-commit Hooks                       | ✅ Aktuell |
-| `docs/ROADMAP.md`         | Entwicklungs-Roadmap — Phase 1 abgeschlossen, Phase 2 geplant                   | ✅ Aktuell |
-| `docs/INDEX.md`           | Topic → SSOT Referenzkarte für Mitwirkende                                      | ✅ Aktuell |
+| Datei                     | Inhalt                                                                           | Status     |
+| ------------------------- | -------------------------------------------------------------------------------- | ---------- |
+| `README.md`               | Projekt-Übersicht, Setup, Architektur, implementierte Module                     | ✅ Aktuell |
+| `CONTRIBUTING.md`         | Branch-Strategie, Commit-Konventionen, PR-Prozess, CI-Übersicht                  | ✅ Aktuell |
+| `docs/api-integration.md` | Vollständige API-Integrations-Referenz (alle Endpoints, DTOs, Fehlerbehandlung)  | ✅ Aktuell |
+| `docs/BACKEND_QUIRKS.md`  | Bekannte Abweichungen Backend-Response vs. Frontend-Typen                        | ✅ Aktuell |
+| `docs/CODE_STANDARDS.md`  | Namenskonventionen, Architekturmuster, Code-Review-Checkliste                    | ✅ Aktuell |
+| `docs/CICD_PIPELINE.md`   | GitHub Actions Workflows, Quality Gates, Pre-commit Hooks                        | ✅ Aktuell |
+| `docs/ROADMAP.md`         | Entwicklungs-Roadmap — Phase 1 abgeschlossen, Phase 2 geplant                    | ✅ Aktuell |
+| `docs/INDEX.md`           | Topic → SSOT Referenzkarte für Mitwirkende                                       | ✅ Aktuell |
+| `docs/monitoring-api.md`  | Spezifikation: Backend-Persistenz für Frontend-Fehler (noch nicht implementiert) | 📋 Geplant |
 
 ---
 

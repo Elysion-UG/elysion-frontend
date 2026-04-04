@@ -27,19 +27,21 @@ quality ──┐
 test    ──┘
 ```
 
+Uses **Bun** as package manager.
+
 ### Job 1: Quality
 
 | Step         | Command                |
 | ------------ | ---------------------- |
-| Lint         | `npm run lint`         |
-| Format check | `npm run format:check` |
-| Type check   | `npm run typecheck`    |
+| Lint         | `bun run lint`         |
+| Format check | `bun run format:check` |
+| Type check   | `bun run typecheck`    |
 
 ### Job 2: Unit Tests
 
 | Step                 | Command                          |
 | -------------------- | -------------------------------- |
-| Run tests + coverage | `npm run test:coverage`          |
+| Run tests + coverage | `bun run test:coverage`          |
 | Upload artifact      | `coverage/` retained for 14 days |
 
 ### Job 3: Build
@@ -48,7 +50,7 @@ Runs only after Quality and Unit Tests pass.
 
 | Step            | Command                      |
 | --------------- | ---------------------------- |
-| Build           | `npm run build`              |
+| Build           | `bun run build`              |
 | Upload artifact | `.next/` retained for 3 days |
 
 Build uses `NEXT_PUBLIC_API_URL=https://marketplace-backend-1-1w30.onrender.com`.
@@ -57,7 +59,9 @@ Build uses `NEXT_PUBLIC_API_URL=https://marketplace-backend-1-1w30.onrender.com`
 
 ## PR Check Workflow (`pr-check.yml`)
 
-Runs additionally on every PR targeting `main` or `develop`. Adds a security audit job:
+Runs additionally on every PR targeting `main` or `develop`. Adds a security audit job.
+
+> **Hinweis:** Dieser Workflow nutzt noch **npm** (nicht Bun). Der Security-Audit-Job erfordert `npm audit`.
 
 | Job            | Steps                                                                     |
 | -------------- | ------------------------------------------------------------------------- |

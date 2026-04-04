@@ -1,6 +1,6 @@
 # Compliance-Plan — Elysion Marketplace (Deutsches Recht / EU-Recht)
 
-**Stand:** April 2026 | **Codebase:** Next.js 14 Frontend, TypeScript
+**Stand:** April 2026 | **Codebase:** Next.js 16 Frontend, TypeScript
 
 ---
 

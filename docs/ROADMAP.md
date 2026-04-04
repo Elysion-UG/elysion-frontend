@@ -68,7 +68,7 @@ Alle Kernfeatures sind implementiert und ins Backend integriert.
 - [x] Session-Wiederherstellung nach Page-Reload (sessionStorage + useLayoutEffect, kein Auth-Flash)
 - [x] Next.js `router.push()` / `<Link>` statt `window.location.href`
 - [ ] `/dev`-Routen in Produktion absichern (Env-Guard)
-- [ ] E2E-Tests mit Playwright für kritische User-Flows
+- [x] E2E-Tests mit Playwright für kritische User-Flows
 
 ---
 

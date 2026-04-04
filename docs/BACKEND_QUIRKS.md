@@ -4,31 +4,33 @@ Known discrepancies between what the frontend types suggest and what the backend
 
 ---
 
-## Product List — Spring Page response
+## Product List — custom pagination response
 
 **Endpoint:** `GET /api/v1/products`
 
-The backend returns a raw Spring `Page<>` object, **not** the generic `ApiResponse` wrapper.
+The backend returns a **wrapped** `ApiResponse` with a custom pagination shape — **not** a Spring `Page<>` object and not the generic `PagedResponse<T>`.
 
 ```typescript
-// WRONG — do not use
-const data = await apiRequest<PagedResponse<Product>>("/api/v1/products")
+// WRONG — Spring Page shape doesn't apply here
+const data = await apiRequest<{ content: Product[]; totalElements: number }>("/api/v1/products")
 
-// CORRECT — use ProductPage
-const data = await apiRequest<ProductPage>("/api/v1/products")
+// CORRECT — use ProductPage (normalized by ProductService.list())
+const data = await ProductService.list(params)
 ```
 
-`ProductPage` shape:
+Raw backend response shape (before normalization):
 
 ```typescript
-interface ProductPage {
-  content: Product[]
-  totalElements: number
+{
+  items: ProductListItem[]   // not "content"
+  totalItems: number         // not "totalElements"
+  page: number               // not "number"
   totalPages: number
   size: number
-  number: number // current page index (0-based)
 }
 ```
+
+`ProductService.list()` normalizes this internally to `ProductPage`. Each item contains `primaryImage: string | null` (mapped to `imageUrls: [primaryImage]`) and `seller.id` (mapped to `seller.userId`). There is no `basePrice` — only `price`.
 
 ---
 

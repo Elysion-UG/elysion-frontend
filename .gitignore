@@ -30,6 +30,11 @@ package-lock.json
 coverage/
 *.tsbuildinfo
 
+# Playwright
+playwright-report/
+test-results/
+e2e/.auth/
+
 # Local integration tests (not for CI/CD)
 vitest.integration.config.ts
 src/__integration__/
