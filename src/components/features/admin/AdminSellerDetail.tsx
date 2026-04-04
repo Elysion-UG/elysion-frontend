@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Loader2, CheckCircle2, XCircle, Ban, ExternalLink } from "lucide-react"
+import { Loader2, CheckCircle2, XCircle, Ban, ExternalLink } from "lucide-react"
 import { AdminService } from "@/src/services/admin.service"
 import type {
   AdminSellerDetail,
@@ -17,6 +17,7 @@ import {
   ADMIN_PRODUCT_STATUS_LABEL as productStatusLabel,
   ADMIN_PRODUCT_STATUS_COLOR as productStatusColor,
 } from "@/src/lib/constants"
+import { BackButton, LoadingFullPage, StatusBadge } from "@/src/components/shared"
 import { toast } from "sonner"
 
 export default function AdminSellerDetailView() {
@@ -103,11 +104,7 @@ export default function AdminSellerDetailView() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-cyber-500" />
-      </div>
-    )
+    return <LoadingFullPage />
   }
 
   if (!seller) {
@@ -116,12 +113,7 @@ export default function AdminSellerDetailView() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-300"
-      >
-        <ArrowLeft className="h-4 w-4" /> Zurück
-      </button>
+      <BackButton />
 
       {/* Seller Info */}
       <div className="rounded-xl border border-slate-800/60 bg-slate-900/60 p-6">
@@ -130,11 +122,11 @@ export default function AdminSellerDetailView() {
             <h1 className="font-mono text-xl font-bold text-slate-100">{seller.companyName}</h1>
             <p className="mt-1 text-sm text-slate-500">{seller.userEmail}</p>
           </div>
-          <span
-            className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${sellerStatusColor[seller.status]}`}
-          >
-            {sellerStatusLabel[seller.status]}
-          </span>
+          <StatusBadge
+            label={sellerStatusLabel[seller.status]}
+            colorClasses={sellerStatusColor[seller.status]}
+            className="shrink-0 px-3 py-1"
+          />
         </div>
 
         <dl className="divide-y divide-slate-800/60">
@@ -279,11 +271,10 @@ export default function AdminSellerDetailView() {
                     </div>
                   </td>
                   <td className="px-5 py-3">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${productStatusColor[p.status]}`}
-                    >
-                      {productStatusLabel[p.status]}
-                    </span>
+                    <StatusBadge
+                      label={productStatusLabel[p.status]}
+                      colorClasses={productStatusColor[p.status]}
+                    />
                   </td>
                   <td className="px-5 py-3 text-slate-500">
                     {new Date(p.createdAt).toLocaleDateString("de-DE")}

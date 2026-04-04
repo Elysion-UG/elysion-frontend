@@ -1,9 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import {
-  ArrowLeft,
   Loader2,
   User,
   Mail,
@@ -18,11 +17,18 @@ import {
 } from "lucide-react"
 import type { User as UserType } from "@/src/types"
 import { UserService } from "@/src/services/user.service"
+import {
+  ADMIN_ACCOUNT_STATUS_LABEL,
+  ADMIN_ACCOUNT_STATUS_COLOR,
+  ADMIN_ROLE_COLOR,
+  ADMIN_SELLER_STATUS_LABEL,
+  ADMIN_SELLER_DETAIL_STATUS_COLOR,
+} from "@/src/lib/constants"
+import { BackButton, LoadingFullPage, StatusBadge } from "@/src/components/shared"
 import { toast } from "sonner"
 
 export default function AdminUserDetail() {
   const { id } = useParams<{ id: string }>()
-  const router = useRouter()
   const [user, setUser] = useState<UserType | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
@@ -76,11 +82,7 @@ export default function AdminUserDetail() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-cyber-500" />
-      </div>
-    )
+    return <LoadingFullPage className="min-h-[60vh]" />
   }
 
   if (!user) {
@@ -94,14 +96,10 @@ export default function AdminUserDetail() {
 
   return (
     <div className="max-w-3xl">
-      <button
-        onClick={() => {
-          router.back()
-        }}
-        className="mb-6 flex items-center gap-2 text-sm text-slate-500 transition-colors hover:text-cyber-400"
-      >
-        <ArrowLeft className="h-4 w-4" /> Zurück zur Übersicht
-      </button>
+      <BackButton
+        label="Zurück zur Übersicht"
+        className="mb-6 transition-colors hover:text-cyber-400"
+      />
 
       <div className="overflow-hidden rounded-xl border border-slate-800/60 bg-slate-900/60">
         {/* Header */}
@@ -115,32 +113,11 @@ export default function AdminUserDetail() {
                 {user.firstName} {user.lastName}
               </h1>
               <div className="mt-1 flex items-center gap-3">
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    user.role === "ADMIN"
-                      ? "bg-indigo-900/50 text-indigo-400 ring-1 ring-indigo-700/40"
-                      : user.role === "SELLER"
-                        ? "bg-cyber-900/50 text-cyber-400 ring-1 ring-cyber-700/40"
-                        : "bg-slate-800 text-slate-400"
-                  }`}
-                >
-                  {user.role}
-                </span>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    user.status === "ACTIVE"
-                      ? "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40"
-                      : user.status === "SUSPENDED"
-                        ? "bg-red-900/40 text-red-400 ring-1 ring-red-700/40"
-                        : "bg-amber-900/40 text-amber-400 ring-1 ring-amber-700/40"
-                  }`}
-                >
-                  {user.status === "ACTIVE"
-                    ? "Aktiv"
-                    : user.status === "SUSPENDED"
-                      ? "Gesperrt"
-                      : "Ausstehend"}
-                </span>
+                <StatusBadge label={user.role} colorClasses={ADMIN_ROLE_COLOR[user.role]} />
+                <StatusBadge
+                  label={ADMIN_ACCOUNT_STATUS_LABEL[user.status]}
+                  colorClasses={ADMIN_ACCOUNT_STATUS_COLOR[user.status]}
+                />
               </div>
             </div>
           </div>
@@ -188,17 +165,10 @@ export default function AdminUserDetail() {
                 </div>
                 <div>
                   <span className="text-slate-500">Status:</span>{" "}
-                  <span
-                    className={`font-medium ${
-                      user.sellerProfile.status === "APPROVED"
-                        ? "text-emerald-400"
-                        : user.sellerProfile.status === "PENDING"
-                          ? "text-amber-400"
-                          : "text-red-400"
-                    }`}
-                  >
-                    {user.sellerProfile.status}
-                  </span>
+                  <StatusBadge
+                    label={ADMIN_SELLER_STATUS_LABEL[user.sellerProfile.status]}
+                    colorClasses={ADMIN_SELLER_DETAIL_STATUS_COLOR[user.sellerProfile.status]}
+                  />
                 </div>
               </div>
             </div>

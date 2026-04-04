@@ -1,27 +1,20 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import Link from "next/link"
-import {
-  ArrowLeft,
-  ExternalLink,
-  Loader2,
-  ToggleLeft,
-  ToggleRight,
-  ShieldCheck,
-} from "lucide-react"
+import { ExternalLink, Loader2, ToggleLeft, ToggleRight, ShieldCheck } from "lucide-react"
 import { AdminService } from "@/src/services/admin.service"
 import type { AdminProductDetail, AdminSellerDetail, ProductStatus } from "@/src/types"
 import {
   ADMIN_PRODUCT_STATUS_LABEL as statusLabel,
   ADMIN_PRODUCT_STATUS_COLOR as statusColor,
 } from "@/src/lib/constants"
+import { BackButton, LoadingFullPage, StatusBadge } from "@/src/components/shared"
 import { toast } from "sonner"
 
 export default function AdminProductDetailView() {
   const { id } = useParams<{ id: string }>()
-  const router = useRouter()
   const [product, setProduct] = useState<AdminProductDetail | null>(null)
   const [seller, setSeller] = useState<AdminSellerDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -78,11 +71,7 @@ export default function AdminProductDetailView() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-cyber-500" />
-      </div>
-    )
+    return <LoadingFullPage />
   }
 
   if (!product) {
@@ -91,12 +80,7 @@ export default function AdminProductDetailView() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <button
-        onClick={() => router.back()}
-        className="mb-6 flex items-center gap-2 text-sm text-slate-500 hover:text-slate-300"
-      >
-        <ArrowLeft className="h-4 w-4" /> Zurück zur Liste
-      </button>
+      <BackButton label="Zurück zur Liste" className="mb-6" />
 
       <div className="rounded-xl border border-slate-800/60 bg-slate-900/60 p-6">
         {/* Header */}
@@ -105,11 +89,11 @@ export default function AdminProductDetailView() {
             <h1 className="truncate font-mono text-xl font-bold text-slate-100">{product.name}</h1>
             <p className="mt-1 font-mono text-xs text-slate-500">{product.slug}</p>
           </div>
-          <span
-            className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${statusColor[product.status]}`}
-          >
-            {statusLabel[product.status]}
-          </span>
+          <StatusBadge
+            label={statusLabel[product.status]}
+            colorClasses={statusColor[product.status]}
+            className="shrink-0 px-3 py-1"
+          />
         </div>
 
         {/* Details */}
