@@ -68,7 +68,7 @@ Alle Services werden aus `src/services/index.ts` re-exportiert.
 | Service                     | Endpoints                                                                                                      |
 | --------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `AuthService`               | register, login, logout, refresh, verifyEmail, forgotPassword, resetPassword                                   |
-| `UserService`               | getCurrentUser, updateProfile, deleteAccount _(noch Mocks — P1-2)_                                             |
+| `UserService`               | getCurrentUser, updateProfile, deleteAccount                                                                   |
 | `AddressService`            | list, create, update, setDefault, delete                                                                       |
 | `AdminService`              | listUsers, getUser, suspendUser, activateUser, approveSellerProfile, rejectSellerProfile, suspendSellerProfile |
 | `SellerProfileService`      | get, update                                                                                                    |
@@ -81,6 +81,7 @@ Alle Services werden aus `src/services/index.ts` re-exportiert.
 | `CheckoutService`           | preview, complete                                                                                              |
 | `OrderService`              | list, getById                                                                                                  |
 | `SellerOrderService`        | list, getById, updateStatus, ship, deliver, listSettlements                                                    |
+| `SellerProductService`      | list (Seller-eigene Produkte mit Status-Filter)                                                                |
 | `PaymentService`            | createIntent, getStatus                                                                                        |
 | `FileService`               | upload, getMetadata, getContentUrl, delete, link, unlink, uploadAndLink                                        |
 | `RecommendationService`     | getRecommendations                                                                                             |
@@ -133,7 +134,7 @@ Registrierung als SELLER
 User.role = "BUYER" (!) — noch nicht SELLER!
 User.sellerProfile.status = "PENDING"
         ↓
-Admin genehmigt → POST /api/v1/admin/seller-profiles/{id}/approve
+Admin genehmigt → POST /api/v1/admin/sellers/{id}/approve
         ↓
 User.role = "SELLER"
 User.sellerProfile.status = "APPROVED"
@@ -162,16 +163,36 @@ PATCH /api/v1/users/me/seller-profile   → SellerProfile
 GET  /api/v1/users/me/seller/value-profile → SellerValueProfile
 PUT  /api/v1/users/me/seller/value-profile → SellerValueProfile
 
-GET  /api/v1/admin/users                → PagedResponse<AdminUserListItem>
-GET  /api/v1/admin/users/{id}           → AdminUserDetails
-PATCH /api/v1/admin/users/{id}/suspend  → { userId, status }
-PATCH /api/v1/admin/users/{id}/activate → { userId, status }
+GET  /api/v1/admin/users                    → PagedResponse<AdminUserListItem>
+GET  /api/v1/admin/users/{id}               → AdminUserDetails
+POST /api/v1/admin/users/{id}/suspend       → { userId, status }
+POST /api/v1/admin/users/{id}/unsuspend     → { userId, status }
 
-POST /api/v1/admin/seller-profiles/{id}/approve  → SellerProfile
-POST /api/v1/admin/seller-profiles/{id}/reject   → SellerProfile
-POST /api/v1/admin/seller-profiles/{id}/suspend  → SellerProfile
+GET  /api/v1/admin/sellers                  → PagedResponse<AdminSellerListItem>
+GET  /api/v1/admin/sellers/{id}             → AdminSellerDetail
+POST /api/v1/admin/sellers/{id}/approve     → SellerProfile
+POST /api/v1/admin/sellers/{id}/reject      → SellerProfile
+POST /api/v1/admin/sellers/{id}/suspend     → SellerProfile
 
-GET  /api/v1/products                   → ProductPage (Spring Page)
+GET  /api/v1/admin/orders                   → PagedResponse<AdminOrderListItem>
+GET  /api/v1/admin/orders/{id}              → AdminOrderDetail
+
+GET  /api/v1/admin/products                 → PagedResponse<AdminProductListItem>
+GET  /api/v1/admin/products/{id}            → AdminProductDetail
+POST /api/v1/admin/products/{id}/activate   → { id, status }
+POST /api/v1/admin/products/{id}/deactivate → { id, status }
+
+GET  /api/v1/admin/payments                 → PagedResponse<AdminPaymentItem>
+GET  /api/v1/admin/refunds                  → PagedResponse<AdminRefundItem>
+GET  /api/v1/admin/settlements              → PagedResponse<Settlement>
+GET  /api/v1/admin/payouts                  → PagedResponse<AdminPayoutItem>
+
+GET  /api/v1/admin/dashboard                → AdminDashboardData
+
+POST /api/v1/admin/maintenance/cleanup-refresh-tokens → { deletedCount }
+POST /api/v1/admin/maintenance/expire-pending-orders  → { expiredCount }
+
+GET  /api/v1/products                   → ProductPage (custom pagination: items[], totalItems, page)
 GET  /api/v1/products/{slug}            → ProductDetail
 POST /api/v1/products                   → ProductCommandResponse
 PATCH /api/v1/products/{id}             → ProductCommandResponse

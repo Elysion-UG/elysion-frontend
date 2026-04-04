@@ -10,7 +10,14 @@ import {
   useLayoutEffect,
   useRef,
 } from "react"
-import type { User, LoginDTO, RegisterDTO, UserRole, SellerStatus } from "@/src/types"
+import type {
+  User,
+  LoginDTO,
+  RegisterDTO,
+  UserRole,
+  SellerStatus,
+  TokensResponse,
+} from "@/src/types"
 import { AuthService } from "@/src/services/auth.service"
 import {
   setAccessToken,
@@ -20,6 +27,14 @@ import {
   clearAuthSession,
   type AuthPortal,
 } from "@/src/lib/api-client"
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function isValidUser(value: unknown): value is User {
+  if (!value || typeof value !== "object") return false
+  const u = value as Record<string, unknown>
+  return typeof u.id === "string" && typeof u.email === "string" && typeof u.role === "string"
+}
 
 // ── Context ────────────────────────────────────────────────────────────────────
 
@@ -58,7 +73,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const persisted = loadAuthSession()
     if (!persisted) return // nothing to restore synchronously — Phase 2 handles this
 
-    setUser(persisted.user as User)
+    if (isValidUser(persisted.user)) {
+      setUser(persisted.user)
+    }
     setToken(persisted.token)
     setIsLoading(false)
   }, [])
@@ -84,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // No sessionStorage entry — cold start, try the backend refresh cookie.
     refreshSession()
       .then(async (res) => {
-        const tokens = res as import("@/src/types").TokensResponse
+        const tokens = res as TokensResponse
         setToken(tokens.accessToken)
         setAccessToken(tokens.accessToken)
 

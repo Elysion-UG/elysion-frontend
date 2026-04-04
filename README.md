@@ -28,14 +28,14 @@ Next.js 16 frontend for **Elysion**, a marketplace for sustainably certified tex
 
 ```bash
 # 1. Install dependencies
-npm install
+bun install
 
 # 2. Configure environment
 cp .env.example .env.local
 # Edit .env.local — set NEXT_PUBLIC_API_URL
 
 # 3. Start dev server
-npm run dev
+bun run dev
 # → http://localhost:3000
 ```
 
@@ -53,13 +53,13 @@ NEXT_PUBLIC_API_URL=http://localhost:8080                               # local 
 
 | Command                 | Description                  |
 | ----------------------- | ---------------------------- |
-| `npm run dev`           | Dev server (localhost:3000)  |
-| `npm run build`         | Production build             |
-| `npm run lint`          | ESLint                       |
-| `npm run format:check`  | Prettier check               |
-| `npm run typecheck`     | TypeScript type check        |
-| `npm run test`          | Unit tests (Vitest)          |
-| `npm run test:coverage` | Unit tests + coverage report |
+| `bun run dev`           | Dev server (localhost:3000)  |
+| `bun run build`         | Production build             |
+| `bun run lint`          | ESLint                       |
+| `bun run format:check`  | Prettier check               |
+| `bun run typecheck`     | TypeScript type check        |
+| `bun run test`          | Unit tests (Vitest)          |
+| `bun run test:coverage` | Unit tests + coverage report |
 
 ---
 
@@ -165,8 +165,8 @@ All backend modules are fully integrated:
 ## Testing
 
 ```bash
-npm run test             # run all tests
-npm run test:coverage    # with coverage report
+bun run test             # run all tests
+bun run test:coverage    # with coverage report
 ```
 
 - **Framework:** Vitest + @testing-library/react
