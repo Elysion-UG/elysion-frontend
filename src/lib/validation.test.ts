@@ -12,7 +12,7 @@ describe("validation utils", () => {
 
   describe("validatePassword", () => {
     it("returns valid for strong password", () => {
-      const result = validatePassword("Secure123")
+      const result = validatePassword("Secure123!")
       expect(result.valid).toBe(true)
     })
 

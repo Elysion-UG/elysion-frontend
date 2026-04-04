@@ -2,11 +2,10 @@ import { vi, describe, it, expect, beforeEach } from "vitest"
 import { apiRequest } from "@/src/lib/api-client"
 import { OrderService } from "./order.service"
 
-vi.mock("@/src/lib/api-client", () => ({
-  apiRequest: vi.fn(),
-  apiRequestRaw: vi.fn(),
-  apiUpload: vi.fn(),
-}))
+vi.mock("@/src/lib/api-client", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/src/lib/api-client")>()
+  return { ...actual, apiRequest: vi.fn(), apiRequestRaw: vi.fn(), apiUpload: vi.fn() }
+})
 
 const mockApiRequest = vi.mocked(apiRequest)
 

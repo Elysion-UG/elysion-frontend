@@ -3,9 +3,10 @@ import { apiRequest } from "@/src/lib/api-client"
 import { AdminService } from "./admin.service"
 import type { PagedResponse, AdminUserListItem } from "@/src/types"
 
-vi.mock("@/src/lib/api-client", () => ({
-  apiRequest: vi.fn(),
-}))
+vi.mock("@/src/lib/api-client", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/src/lib/api-client")>()
+  return { ...actual, apiRequest: vi.fn() }
+})
 
 const mockApiRequest = vi.mocked(apiRequest)
 
