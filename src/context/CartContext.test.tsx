@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, type MockedFunction } from "vitest"
+import { describe, it, expect, vi, beforeEach, afterEach, type MockedFunction } from "vitest"
 import { renderHook, act } from "@testing-library/react"
 import React from "react"
 import { CartProvider, useCart } from "./CartContext"
@@ -9,7 +9,7 @@ import type { AddToCartDTO, Cart } from "@/src/types"
 
 vi.mock("@/src/services/cart.service", () => ({
   CartService: {
-    get: vi.fn().mockResolvedValue(null),
+    get: vi.fn().mockResolvedValue({ items: [] }),
     addItem: vi.fn().mockResolvedValue(undefined),
     updateItem: vi.fn().mockResolvedValue(undefined),
     removeItem: vi.fn().mockResolvedValue(undefined),
@@ -27,7 +27,7 @@ vi.mock("@/src/lib/product-display-cache", () => ({
 // CartProvider calls useAuth() — provide a default guest context for all tests.
 // Individual tests can override this mock as needed.
 vi.mock("@/src/context/AuthContext", () => ({
-  useAuth: vi.fn().mockReturnValue({ isAuthenticated: false, isLoading: false }),
+  useAuth: vi.fn().mockReturnValue({ isAuthenticated: false, isLoading: false, role: null }),
 }))
 
 // ── Wrapper ────────────────────────────────────────────────────────────────────
@@ -36,33 +36,63 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
   <CartProvider>{children}</CartProvider>
 )
 
-// Clear localStorage before every test so the persistence effect in CartContext
-// does not leak state between tests.
 beforeEach(() => {
   localStorage.clear()
+  ;(CartService.get as MockedFunction<typeof CartService.get>).mockResolvedValue({ items: [] })
+  ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockResolvedValue(undefined)
+  ;(CartService.updateItem as MockedFunction<typeof CartService.updateItem>).mockResolvedValue(
+    undefined
+  )
+  ;(CartService.removeItem as MockedFunction<typeof CartService.removeItem>).mockResolvedValue(
+    undefined
+  )
 })
 
 // ── Initial state ──────────────────────────────────────────────────────────────
 
 describe("CartContext — initial state", () => {
-  it("starts with an empty cart", () => {
+  it("starts with an empty cart", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
     expect(result.current.cart.items).toHaveLength(0)
   })
 
-  it("starts with isLoading false", () => {
+  it("starts with isLoading true until backend fetch completes", () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    // isLoading is true before the initial CartService.get() resolves
+    expect(result.current.isLoading).toBe(true)
+  })
+
+  it("isLoading becomes false after initial fetch", async () => {
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
     expect(result.current.isLoading).toBe(false)
   })
 
-  it("starts with totalItems = 0", () => {
+  it("starts with totalItems = 0", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
     expect(result.current.totalItems).toBe(0)
   })
 
-  it("starts with totalPrice = 0", () => {
+  it("starts with totalPrice = 0", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
     expect(result.current.totalPrice).toBe(0)
+  })
+
+  it("fetches cart from backend on mount (guest)", async () => {
+    ;(CartService.get as MockedFunction<typeof CartService.get>).mockClear()
+    renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+    expect(CartService.get).toHaveBeenCalledTimes(1)
+  })
+
+  it("removes legacy localStorage guest_cart on mount", async () => {
+    localStorage.setItem("guest_cart", JSON.stringify({ items: [] }))
+    renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+    expect(localStorage.getItem("guest_cart")).toBeNull()
   })
 })
 
@@ -70,7 +100,6 @@ describe("CartContext — initial state", () => {
 
 describe("useCart", () => {
   it("throws when used outside CartProvider", () => {
-    // Suppress the expected error output from React
     const consoleError = console.error
     console.error = () => {}
     expect(() => renderHook(() => useCart())).toThrow("useCart must be used within CartProvider")
@@ -81,22 +110,24 @@ describe("useCart", () => {
 // ── addItem ────────────────────────────────────────────────────────────────────
 
 describe("addItem", () => {
-  it("adds a new item to an empty cart", async () => {
+  it("adds a new item to an empty cart and calls backend", async () => {
+    ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockClear()
     const { result } = renderHook(() => useCart(), { wrapper })
-    const dto: AddToCartDTO = { productId: "prod-1", quantity: 2 }
+    await act(async () => {})
 
     await act(async () => {
-      await result.current.addItem(dto)
+      await result.current.addItem({ productId: "prod-1", quantity: 2 })
     })
 
     expect(result.current.cart.items).toHaveLength(1)
-    const item = result.current.cart.items[0]
-    expect(item.productId).toBe("prod-1")
-    expect(item.quantity).toBe(2)
+    expect(result.current.cart.items[0].productId).toBe("prod-1")
+    expect(result.current.cart.items[0].quantity).toBe(2)
+    expect(CartService.addItem).toHaveBeenCalledTimes(1)
   })
 
   it("stores display fields (productName, productSlug, imageUrl, unitPriceCents) on the new item", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({
@@ -116,29 +147,9 @@ describe("addItem", () => {
     expect(item.unitPriceCents).toBe(2999)
   })
 
-  it("persists display fields to localStorage for guest users", async () => {
-    const { result } = renderHook(() => useCart(), { wrapper })
-
-    await act(async () => {
-      await result.current.addItem({
-        productId: "prod-1",
-        quantity: 2,
-        productName: "Öko-Jeans",
-        productSlug: "oeko-jeans",
-        unitPriceCents: 7900,
-      })
-    })
-
-    const stored = JSON.parse(localStorage.getItem("guest_cart")!)
-    expect(stored.items[0].productName).toBe("Öko-Jeans")
-    expect(stored.items[0].productSlug).toBe("oeko-jeans")
-    expect(stored.items[0].unitPriceCents).toBe(7900)
-  })
-
   it("stores productSlug undefined when no slug is provided (caller must pass URL slug)", async () => {
-    // Regression: if caller forgets to pass productSlug, item still lands in cart
-    // but slug is undefined — Cart component must render a graceful fallback.
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 1, productName: "Bio-Shirt" })
@@ -152,6 +163,7 @@ describe("addItem", () => {
 
   it("adds a second distinct item alongside an existing one", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 1 })
@@ -165,6 +177,7 @@ describe("addItem", () => {
 
   it("merges quantity when same productId and no variantId is added twice", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
     const dto: AddToCartDTO = { productId: "prod-1", quantity: 2 }
 
     await act(async () => {
@@ -180,6 +193,7 @@ describe("addItem", () => {
 
   it("merges quantity when same productId and same variantId", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", variantId: "var-A", quantity: 1 })
@@ -194,6 +208,7 @@ describe("addItem", () => {
 
   it("does NOT merge when same productId but different variantIds", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", variantId: "var-A", quantity: 1 })
@@ -207,6 +222,7 @@ describe("addItem", () => {
 
   it("stores variantId on the new item", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", variantId: "var-XL", quantity: 1 })
@@ -217,6 +233,7 @@ describe("addItem", () => {
 
   it("generates a unique id for the new item", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 1 })
@@ -225,13 +242,35 @@ describe("addItem", () => {
     expect(result.current.cart.items[0].id).toBeTruthy()
     expect(typeof result.current.cart.items[0].id).toBe("string")
   })
+
+  it("reverts optimistic update on backend error (guest)", async () => {
+    ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockRejectedValueOnce(
+      new Error("409 Stock limit")
+    )
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    let thrown: unknown
+    await act(async () => {
+      try {
+        await result.current.addItem({ productId: "prod-1", quantity: 10 })
+      } catch (e) {
+        thrown = e
+      }
+    })
+
+    expect(thrown).toBeInstanceOf(Error)
+    expect(result.current.cart.items).toHaveLength(0)
+  })
 })
 
 // ── updateItem ─────────────────────────────────────────────────────────────────
 
 describe("updateItem", () => {
-  it("updates the quantity of an existing item", async () => {
+  it("updates the quantity of an existing item and calls backend", async () => {
+    ;(CartService.updateItem as MockedFunction<typeof CartService.updateItem>).mockClear()
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 2 })
@@ -245,10 +284,12 @@ describe("updateItem", () => {
 
     expect(result.current.cart.items[0].quantity).toBe(10)
     expect(result.current.cart.items).toHaveLength(1)
+    expect(CartService.updateItem).toHaveBeenCalled()
   })
 
   it("removes the item when quantity is set to 0", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 3 })
@@ -265,6 +306,7 @@ describe("updateItem", () => {
 
   it("removes the item when quantity is negative", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 3 })
@@ -281,6 +323,7 @@ describe("updateItem", () => {
 
   it("only updates the targeted item, leaving others unchanged", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 1 })
@@ -306,8 +349,10 @@ describe("updateItem", () => {
 // ── removeItem ─────────────────────────────────────────────────────────────────
 
 describe("removeItem", () => {
-  it("removes the specified item by id", async () => {
+  it("removes the specified item by id and calls backend", async () => {
+    ;(CartService.removeItem as MockedFunction<typeof CartService.removeItem>).mockClear()
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 1 })
@@ -320,10 +365,12 @@ describe("removeItem", () => {
     })
 
     expect(result.current.cart.items).toHaveLength(0)
+    expect(CartService.removeItem).toHaveBeenCalled()
   })
 
   it("only removes the targeted item, leaving others intact", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 2 })
@@ -344,6 +391,7 @@ describe("removeItem", () => {
 
   it("is a no-op when the id does not exist in the cart", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 1 })
@@ -362,6 +410,7 @@ describe("removeItem", () => {
 describe("clearCart", () => {
   it("removes all items from the cart", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 1 })
@@ -378,8 +427,9 @@ describe("clearCart", () => {
     expect(result.current.cart.items).toHaveLength(0)
   })
 
-  it("is safe to call on an already-empty cart", () => {
+  it("is safe to call on an already-empty cart", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     act(() => {
       result.current.clearCart()
@@ -394,6 +444,7 @@ describe("clearCart", () => {
 describe("totalItems", () => {
   it("sums quantities across all items", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 3 })
@@ -405,6 +456,7 @@ describe("totalItems", () => {
 
   it("decreases when an item is removed", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 5 })
@@ -421,6 +473,7 @@ describe("totalItems", () => {
 
   it("updates after clearCart", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 4 })
@@ -439,6 +492,7 @@ describe("totalItems", () => {
 describe("totalPrice", () => {
   it("is 0 when items have no unitPriceCents", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 5 })
@@ -447,36 +501,10 @@ describe("totalPrice", () => {
     expect(result.current.totalPrice).toBe(0)
   })
 
-  it("computes total price from unitPriceCents and quantity", async () => {
-    const { result } = renderHook(() => useCart(), { wrapper })
-
-    await act(async () => {
-      await result.current.addItem({ productId: "prod-1", quantity: 2 })
-    })
-
-    // Manually patch the cart item to include a price (simulating a hydrated cart)
-    const itemId = result.current.cart.items[0].id
-    act(() => {
-      // Use updateItem then assert — but since addItem doesn't set price, we patch
-      // via setCart indirectly by removing + re-adding with a price-patched item.
-      // Instead, verify totalPrice correctly aggregates unitPriceCents from items
-      // by testing the computed value formula: (unitPriceCents * quantity) / 100
-    })
-
-    // The cart starts with items that have no unitPriceCents, so totalPrice is 0
-    expect(result.current.totalPrice).toBe(0)
-    expect(itemId).toBeTruthy() // ensure item was added
-  })
-
   it("sums (unitPriceCents * quantity) / 100 across items that have a price", async () => {
-    // We test the computation logic by examining the formula directly.
-    // CartContext computes: sum + (unitPriceCents != null ? (unitPriceCents * quantity) / 100 : 0)
-    // For a 1000-cent item (€10) with quantity 3, expect totalPrice = 30
-    // We can verify this by inspecting what the formula would produce.
-
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
-    // Add two items (no price — totalPrice stays 0 for freshly-added items)
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 3 })
       await result.current.addItem({ productId: "prod-2", quantity: 2 })
@@ -489,6 +517,7 @@ describe("totalPrice", () => {
 
   it("resets to 0 after clearCart", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 1 })
@@ -502,77 +531,25 @@ describe("totalPrice", () => {
   })
 })
 
-// ── Guest cart (unauthenticated) — regression tests ───────────────────────────
-// Regression: addItem as a guest used to revert the optimistic update because
-// CartService.addItem() threw a 401, leaving the cart empty after navigation.
-// Additionally, the guest cart must be persisted to localStorage so that a full
-// page reload (caused by <a href="/cart">) does not wipe the cart.
+// ── Guest cart — backend-synced ─────────────────────────────────────────────────
 
-describe("guest cart — unauthenticated user", () => {
-  it("addItem keeps the item in the cart without calling the backend", async () => {
+describe("guest cart — backend-synced", () => {
+  it("addItem calls CartService.addItem for guest users", async () => {
     ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockClear()
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 2 })
     })
 
-    expect(result.current.cart.items).toHaveLength(1)
-    expect(result.current.cart.items[0].productId).toBe("prod-1")
-    expect(result.current.cart.items[0].quantity).toBe(2)
-    expect(CartService.addItem as MockedFunction<typeof CartService.addItem>).not.toHaveBeenCalled()
+    expect(CartService.addItem).toHaveBeenCalledTimes(1)
   })
 
-  it("addItem does NOT revert when the backend would return 401", async () => {
-    ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockRejectedValueOnce(
-      new Error("401 Unauthorized")
-    )
-
-    const { result } = renderHook(() => useCart(), { wrapper })
-
-    await act(async () => {
-      await result.current.addItem({ productId: "prod-1", quantity: 1 })
-    })
-
-    // Item must still be in the cart — the 401 must NOT trigger a revert
-    expect(result.current.cart.items).toHaveLength(1)
-  })
-
-  it("persists cart to localStorage after addItem so page reloads don't wipe items", async () => {
-    const { result } = renderHook(() => useCart(), { wrapper })
-
-    await act(async () => {
-      await result.current.addItem({ productId: "prod-1", quantity: 3 })
-    })
-
-    const stored = localStorage.getItem("guest_cart")
-    expect(stored).not.toBeNull()
-    const parsed = JSON.parse(stored!)
-    expect(parsed.items).toHaveLength(1)
-    expect(parsed.items[0].productId).toBe("prod-1")
-    expect(parsed.items[0].quantity).toBe(3)
-  })
-
-  it("restores cart from localStorage on mount (simulates page reload)", async () => {
-    // Pre-populate localStorage as if items were added before a page reload
-    localStorage.setItem(
-      "guest_cart",
-      JSON.stringify({
-        items: [{ id: "x-1", productId: "prod-42", quantity: 2, variantOptions: [] }],
-      })
-    )
-
-    const { result } = renderHook(() => useCart(), { wrapper })
-    await act(async () => {})
-
-    expect(result.current.cart.items).toHaveLength(1)
-    expect(result.current.cart.items[0].productId).toBe("prod-42")
-    expect(result.current.cart.items[0].quantity).toBe(2)
-  })
-
-  it("updateItem works locally without backend call", async () => {
+  it("updateItem calls CartService.updateItem for guest users", async () => {
     ;(CartService.updateItem as MockedFunction<typeof CartService.updateItem>).mockClear()
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 1 })
@@ -583,15 +560,13 @@ describe("guest cart — unauthenticated user", () => {
       await result.current.updateItem(itemId, { quantity: 5 })
     })
 
-    expect(result.current.cart.items[0].quantity).toBe(5)
-    expect(
-      CartService.updateItem as MockedFunction<typeof CartService.updateItem>
-    ).not.toHaveBeenCalled()
+    expect(CartService.updateItem).toHaveBeenCalledTimes(1)
   })
 
-  it("removeItem works locally without backend call", async () => {
+  it("removeItem calls CartService.removeItem for guest users", async () => {
     ;(CartService.removeItem as MockedFunction<typeof CartService.removeItem>).mockClear()
     const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.addItem({ productId: "prod-1", quantity: 1 })
@@ -602,70 +577,124 @@ describe("guest cart — unauthenticated user", () => {
       await result.current.removeItem(itemId)
     })
 
-    expect(result.current.cart.items).toHaveLength(0)
-    expect(
-      CartService.removeItem as MockedFunction<typeof CartService.removeItem>
-    ).not.toHaveBeenCalled()
+    expect(CartService.removeItem).toHaveBeenCalledTimes(1)
   })
 
-  it("does NOT fetch the backend cart on mount", async () => {
+  it("fetches backend cart on mount for guests", async () => {
     ;(CartService.get as MockedFunction<typeof CartService.get>).mockClear()
     renderHook(() => useCart(), { wrapper })
     await act(async () => {})
-    expect(CartService.get as MockedFunction<typeof CartService.get>).not.toHaveBeenCalled()
+    expect(CartService.get).toHaveBeenCalledTimes(1)
   })
 
-  it("clears localStorage and fetches backend cart when the user logs in", async () => {
+  it("cart refetch on login transition", async () => {
     ;(CartService.get as MockedFunction<typeof CartService.get>).mockClear()
-    localStorage.setItem(
-      "guest_cart",
-      JSON.stringify({
-        items: [{ id: "g1", productId: "prod-1", quantity: 1, variantOptions: [] }],
-      })
-    )
     const mockUseAuth = useAuth as MockedFunction<typeof useAuth>
 
     // Start as guest
-    mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: false } as ReturnType<
-      typeof useAuth
-    >)
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: false,
+      isLoading: false,
+      role: null,
+    } as ReturnType<typeof useAuth>)
     const { rerender } = renderHook(() => useCart(), { wrapper })
     await act(async () => {})
-    expect(CartService.get as MockedFunction<typeof CartService.get>).not.toHaveBeenCalled()
+    expect(CartService.get).toHaveBeenCalledTimes(1)
 
     // Simulate login
-    mockUseAuth.mockReturnValue({ isAuthenticated: true, isLoading: false } as ReturnType<
-      typeof useAuth
-    >)
+    ;(CartService.get as MockedFunction<typeof CartService.get>).mockClear()
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      isLoading: false,
+      role: "BUYER",
+    } as ReturnType<typeof useAuth>)
     rerender()
     await act(async () => {})
 
-    expect(CartService.get as MockedFunction<typeof CartService.get>).toHaveBeenCalledTimes(1)
-    expect(localStorage.getItem("guest_cart")).toBeNull()
+    expect(CartService.get).toHaveBeenCalledTimes(1)
 
-    // Restore default mock for subsequent tests
-    mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: false } as ReturnType<
-      typeof useAuth
-    >)
+    // Restore default mock
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: false,
+      isLoading: false,
+      role: null,
+    } as ReturnType<typeof useAuth>)
+  })
+
+  it("sets empty cart when backend fetch fails", async () => {
+    ;(CartService.get as MockedFunction<typeof CartService.get>).mockRejectedValueOnce(
+      new Error("Network error")
+    )
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    expect(result.current.cart.items).toHaveLength(0)
+    expect(result.current.isLoading).toBe(false)
   })
 })
 
-// ── Regression: authenticated cart — backend API shape change ─────────────────
-// The backend POST /api/v1/cart/items now only accepts { variantId, quantity }.
-// Sending productId or display fields used to cause silent failures or 400s.
+// ── Seller/Admin portal — no cart ───────────────────────────────────────────────
+
+describe("seller/admin portal — no cart fetch", () => {
+  it("does not fetch cart for seller portal", async () => {
+    const mockUseAuth = useAuth as MockedFunction<typeof useAuth>
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      isLoading: false,
+      role: "SELLER",
+    } as ReturnType<typeof useAuth>)
+    ;(CartService.get as MockedFunction<typeof CartService.get>).mockClear()
+
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    expect(CartService.get).not.toHaveBeenCalled()
+    expect(result.current.cart.items).toHaveLength(0)
+
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: false,
+      isLoading: false,
+      role: null,
+    } as ReturnType<typeof useAuth>)
+  })
+
+  it("does not fetch cart for admin portal", async () => {
+    const mockUseAuth = useAuth as MockedFunction<typeof useAuth>
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      isLoading: false,
+      role: "ADMIN",
+    } as ReturnType<typeof useAuth>)
+    ;(CartService.get as MockedFunction<typeof CartService.get>).mockClear()
+
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    expect(CartService.get).not.toHaveBeenCalled()
+    expect(result.current.cart.items).toHaveLength(0)
+
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: false,
+      isLoading: false,
+      role: null,
+    } as ReturnType<typeof useAuth>)
+  })
+})
+
+// ── Authenticated cart — backend API shape (regression) ─────────────────────────
 
 describe("authenticated cart — backend API contract (regression)", () => {
   const mockUseAuth = useAuth as MockedFunction<typeof useAuth>
 
   beforeEach(() => {
-    mockUseAuth.mockReturnValue({ isAuthenticated: true, isLoading: false } as ReturnType<
-      typeof useAuth
-    >)
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      isLoading: false,
+      role: "BUYER",
+    } as ReturnType<typeof useAuth>)
     ;(CartService.get as MockedFunction<typeof CartService.get>).mockResolvedValue({
       items: [],
     } as Cart)
-    // mockReset clears both call history AND pending mock implementations
-    // (e.g. mockRejectedValueOnce from previous describe blocks)
     ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockReset()
     ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockResolvedValue(
       undefined
@@ -673,9 +702,11 @@ describe("authenticated cart — backend API contract (regression)", () => {
   })
 
   afterEach(() => {
-    mockUseAuth.mockReturnValue({ isAuthenticated: false, isLoading: false } as ReturnType<
-      typeof useAuth
-    >)
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: false,
+      isLoading: false,
+      role: null,
+    } as ReturnType<typeof useAuth>)
   })
 
   it("addItem sends only variantId and quantity to the backend", async () => {
@@ -693,10 +724,6 @@ describe("authenticated cart — backend API contract (regression)", () => {
       })
     })
 
-    // Context passes the full AddToCartDTO to CartService.addItem.
-    // The service layer then strips it to { variantId, quantity } for the HTTP body.
-    // Verify the context calls the service with the correct DTO (service-level stripping
-    // is covered by cart.service.test.ts).
     expect(CartService.addItem).toHaveBeenCalledTimes(1)
     expect(
       (CartService.addItem as MockedFunction<typeof CartService.addItem>).mock.calls[0][0]
@@ -704,9 +731,6 @@ describe("authenticated cart — backend API contract (regression)", () => {
   })
 
   it("addItem result: item retains display fields from the optimistic update after backend sync", async () => {
-    // POST /api/v1/cart/items returns CartItemResponse (void from our perspective),
-    // so cart state is never replaced with the backend response — the optimistic
-    // update with full display fields is what persists.
     const { result } = renderHook(() => useCart(), { wrapper })
     await act(async () => {})
 
@@ -730,8 +754,6 @@ describe("authenticated cart — backend API contract (regression)", () => {
   })
 
   it("restores variantOptions from cache after backend cart load (regression: options lost on reload)", async () => {
-    // Backend never returns variantOptions — they must be restored from the
-    // variant-options cache that was populated at add-to-cart time.
     const cachedOptions = [{ name: "Größe", value: "XL" }]
     ;(
       productDisplayCache.getVariantOptions as MockedFunction<
@@ -855,11 +877,6 @@ describe("authenticated cart — backend API contract (regression)", () => {
   })
 
   it("item stays in cart after quantity decrease (regression: PATCH returns CartItemResponse not Cart)", async () => {
-    // Bug: CartService.updateItem used to return Promise<Cart>, but the backend
-    // PATCH endpoint returns CartItemResponse (a single item). normalizeCart received
-    // an object without an `items` field → items became [] → cart appeared empty.
-    // Fix: CartService.updateItem now returns Promise<void>; context never calls
-    // setCart with the PATCH response.
     ;(CartService.updateItem as MockedFunction<typeof CartService.updateItem>).mockResolvedValue(
       undefined
     )

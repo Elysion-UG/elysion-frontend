@@ -179,6 +179,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(res.accessToken)
       setAccessToken(res.accessToken)
       saveAuthSession(res.accessToken, loggedInUser, portal)
+
+      if (res.guestCartMerged) {
+        const { toast } = await import("sonner")
+        toast.info("Dein Warenkorb wurde mit deinem Konto zusammengeführt.")
+      }
+
       return loggedInUser.role
     } finally {
       setIsLoading(false)

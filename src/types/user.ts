@@ -70,6 +70,8 @@ export interface TokensResponse {
   /** Present on login, null on refresh */
   user: User | null
   expiresIn: number
+  /** True when a guest cart was merged into the user cart during login */
+  guestCartMerged?: boolean
 }
 
 // ── Address Types ──────────────────────────────────────────────────

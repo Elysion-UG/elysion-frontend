@@ -25,7 +25,6 @@ interface CartContextValue {
 }
 
 const emptyCart: Cart = { items: [] }
-const GUEST_CART_KEY = "guest_cart"
 
 // Ensures a cart object from the backend always has a defined items array.
 // Also converts priceSnapshot (decimal EUR from backend) to unitPriceCents and
@@ -53,81 +52,48 @@ function normalizeCart(data: Cart): Cart {
   return { ...data, items }
 }
 
-function loadGuestCart(): Cart {
-  if (typeof window === "undefined") return emptyCart
-  try {
-    const stored = localStorage.getItem(GUEST_CART_KEY)
-    if (stored) return normalizeCart(JSON.parse(stored) as Cart)
-  } catch {
-    // ignore corrupt data
-  }
-  return emptyCart
-}
-
-const CONSENT_KEY = "elysion_cookie_consent"
-
-function isFunctionalConsentGiven(): boolean {
-  if (typeof window === "undefined") return false
-  return sessionStorage.getItem(CONSENT_KEY) === "accepted"
-}
-
-function saveGuestCart(cart: Cart): void {
-  if (!isFunctionalConsentGiven()) return
-  try {
-    localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cart))
-  } catch {
-    // ignore storage errors (e.g. private browsing quota)
-  }
-}
-
-function clearGuestCart(): void {
-  try {
-    localStorage.removeItem(GUEST_CART_KEY)
-  } catch {}
-}
-
 export const CartContext = createContext<CartContextValue | null>(null)
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  // Lazily initialize from localStorage so the guest cart survives full-page
-  // navigation (the <a href="/cart"> link causes a page reload, not a client-
-  // side transition, which would otherwise reset React state).
-  const [cart, setCart] = useState<Cart>(() => loadGuestCart())
-  const [isLoading, setIsLoading] = useState(false)
+  const [cart, setCart] = useState<Cart>(emptyCart)
+  const [isInitializing, setIsInitializing] = useState(true)
   const { isAuthenticated, isLoading: authLoading, role } = useAuth()
 
   // Only BUYER users (customer portal) have a backend cart.
   // Seller/Admin tokens are bound to a different portal and would get 403.
   const isCustomerPortal = role === "BUYER" || role === null
 
-  // Sync cart with auth state:
-  //   - authenticated customer → fetch from backend, clear localStorage guest cart
-  //   - authenticated seller/admin → ignore (no cart in those portals)
-  //   - unauthenticated (incl. after logout) → load from localStorage
+  // One-time cleanup: remove legacy localStorage guest cart from before the
+  // backend-sync migration. Harmless if the key doesn't exist.
+  useEffect(() => {
+    try {
+      localStorage.removeItem("guest_cart")
+    } catch {}
+  }, [])
+
+  // Sync cart with backend on auth state changes:
+  //   - guest (unauthenticated) → backend resolves via cartSessionId cookie
+  //   - authenticated customer → backend resolves via Authorization header
+  //   - authenticated seller/admin → no cart (skip fetch)
   useEffect(() => {
     if (authLoading) return
-    if (!isAuthenticated || !isCustomerPortal) {
-      // Reload from localStorage to pick up any pre-existing guest cart after
-      // logout (localStorage will be empty if it was cleared on login).
-      // For seller/admin portals, just keep whatever is in local state.
-      if (!isAuthenticated) setCart(loadGuestCart())
+
+    if (isAuthenticated && !isCustomerPortal) {
+      setCart(emptyCart)
+      setIsInitializing(false)
       return
     }
-    // Authenticated customer: backend is authoritative; drop the local guest cart.
-    clearGuestCart()
+
+    setIsInitializing(true)
     CartService.get()
       .then((data) => {
         if (data != null) setCart(normalizeCart(data))
       })
-      .catch(() => {})
+      .catch(() => {
+        setCart(emptyCart)
+      })
+      .finally(() => setIsInitializing(false))
   }, [isAuthenticated, authLoading, isCustomerPortal])
-
-  // Persist guest cart to localStorage on every change so page reloads don't
-  // wipe items for unauthenticated users.
-  useEffect(() => {
-    if (isAuthenticated) return
-    saveGuestCart(cart)
-  }, [cart, isAuthenticated])
 
   const addItem = useCallback(
     async (dto: AddToCartDTO) => {
@@ -147,7 +113,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       // Snapshot previous state for rollback before any optimistic mutation
       const prevCart = cart
 
-      // Optimistic update (always — guest and authenticated users alike)
+      // Optimistic update
       setCart((prev) => {
         const existingIdx = prev.items.findIndex(
           (i) => i.productId === dto.productId && i.variantId === dto.variantId
@@ -171,25 +137,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }
         return { ...prev, items: [...prev.items, newItem] }
       })
-      // Guest users: local-only cart, no backend sync
-      if (!isAuthenticated) return
-      // Sync with backend — POST returns CartItemResponse (single item), not the
-      // full Cart. Optimistic update above is already correct, so we only await
-      // the call to surface errors; we never overwrite state with the response.
+
+      // Sync with backend
       try {
         await CartService.addItem(dto)
       } catch (err) {
-        // Revert entire cart to pre-mutation state
         setCart(prevCart)
         throw err
       }
     },
-    [isAuthenticated, cart]
+    [cart]
   )
 
   const updateItem = useCallback(
     async (itemId: string, dto: { quantity: number }) => {
-      // Snapshot previous state for rollback
       const prevCart = cart
 
       // Optimistic update
@@ -201,39 +162,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           items: prev.items.map((i) => (i.id === itemId ? { ...i, quantity: dto.quantity } : i)),
         }))
       }
-      // Guest users: local-only cart, no backend sync
-      if (!isAuthenticated) return
-      // Sync with backend — PATCH returns CartItemResponse (single item), not the
-      // full Cart. On failure, revert the optimistic update and re-throw so the
-      // caller (Cart.tsx) can show an error toast.
+
+      // Sync with backend
       try {
         await CartService.updateItem(itemId, dto)
       } catch (err) {
-        // Revert entire cart to pre-mutation state
         setCart(prevCart)
         throw err
       }
     },
-    [isAuthenticated, cart]
+    [cart]
   )
 
   const removeItem = useCallback(
     async (itemId: string) => {
-      // Snapshot previous state for rollback
       const prevCart = cart
       // Optimistic update
       setCart((prev) => ({ ...prev, items: prev.items.filter((i) => i.id !== itemId) }))
-      // Guest users: local-only cart, no backend sync
-      if (!isAuthenticated) return
       // Sync with backend
       try {
         await CartService.removeItem(itemId)
       } catch {
-        // Revert to previous state on backend failure
         setCart(prevCart)
       }
     },
-    [isAuthenticated, cart]
+    [cart]
   )
 
   const clearCart = useCallback(() => {
@@ -259,7 +212,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     <CartContext.Provider
       value={{
         cart,
-        isLoading,
+        isLoading: isInitializing,
         addItem,
         updateItem,
         removeItem,
