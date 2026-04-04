@@ -4,6 +4,7 @@ import {
   AUTH_SESSION_KEY,
   setAccessToken,
   getAccessToken,
+  buildQuery,
   apiRequest,
   apiRequestRaw,
   apiUpload,
@@ -30,6 +31,34 @@ function mockFetchResponse(status: number, body: unknown, ok?: boolean): Respons
     json: vi.fn().mockResolvedValue(body),
   } as unknown as Response
 }
+
+// ── buildQuery ────────────────────────────────────────────────────────────────
+
+describe("buildQuery", () => {
+  it("returns empty string when all values are undefined", () => {
+    expect(buildQuery({ page: undefined, size: undefined })).toBe("")
+  })
+
+  it("returns empty string for empty object", () => {
+    expect(buildQuery({})).toBe("")
+  })
+
+  it("builds a query string for a single param", () => {
+    expect(buildQuery({ page: 0 })).toBe("?page=0")
+  })
+
+  it("includes 0 and false but skips undefined, null, and empty string", () => {
+    expect(buildQuery({ a: 0, b: false, c: undefined, d: null, e: "" })).toBe("?a=0&b=false")
+  })
+
+  it("builds a query string for multiple params", () => {
+    expect(buildQuery({ page: 1, size: 20, search: "test" })).toBe("?page=1&size=20&search=test")
+  })
+
+  it("stringifies numbers and booleans", () => {
+    expect(buildQuery({ active: true, count: 42 })).toBe("?active=true&count=42")
+  })
+})
 
 // ── ApiError ───────────────────────────────────────────────────────────────────
 
@@ -589,5 +618,241 @@ describe("regression — guest user 401 must not attempt token refresh", () => {
       status: 401,
       message: "Nicht autorisiert",
     })
+  })
+})
+
+// ── apiRequestRaw — success paths ─────────────────────────────────────────────
+
+describe("apiRequestRaw", () => {
+  beforeEach(() => {
+    setAccessToken(null)
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    setAccessToken(null)
+  })
+
+  it("returns raw body on 200", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { items: [1, 2, 3] }))
+    vi.stubGlobal("fetch", mockFetch)
+
+    const result = await apiRequestRaw("/api/v1/items")
+    expect(result).toEqual({ items: [1, 2, 3] })
+  })
+
+  it("returns null on 204", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ status: 204, ok: true, json: vi.fn() }))
+    const result = await apiRequestRaw("/api/v1/items/1")
+    expect(result).toBeNull()
+  })
+
+  it("throws ApiError on network failure", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Network Error")))
+    await expect(apiRequestRaw("/api/v1/items")).rejects.toMatchObject({
+      status: 0,
+      message: "Netzwerkfehler — bitte Internetverbindung prüfen",
+    })
+  })
+
+  it("throws ApiError on 500", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockFetchResponse(500, {}, false)))
+    await expect(apiRequestRaw("/api/v1/items")).rejects.toMatchObject({ status: 500 })
+  })
+
+  it("includes Authorization header when token is set", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, {}))
+    vi.stubGlobal("fetch", mockFetch)
+    setAccessToken("raw-token")
+
+    await apiRequestRaw("/api/v1/items")
+
+    const [, options] = mockFetch.mock.calls[0]
+    expect((options.headers as Record<string, string>)["Authorization"]).toBe("Bearer raw-token")
+  })
+})
+
+// ── apiUpload ──────────────────────────────────────────────────────────────────
+
+describe("apiUpload", () => {
+  beforeEach(() => {
+    setAccessToken(null)
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    setAccessToken(null)
+  })
+
+  it("returns data on 200", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { data: { id: "f1" } }))
+    vi.stubGlobal("fetch", mockFetch)
+
+    const form = new FormData()
+    const result = await apiUpload("/api/v1/files", form)
+    expect(result).toEqual({ id: "f1" })
+  })
+
+  it("throws ApiError on 400", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(mockFetchResponse(400, { message: "Bad file" }, false))
+    )
+    const form = new FormData()
+    await expect(apiUpload("/api/v1/files", form)).rejects.toMatchObject({
+      status: 400,
+      message: "Bad file",
+    })
+  })
+
+  it("throws ApiError on network failure", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")))
+    await expect(apiUpload("/api/v1/files", new FormData())).rejects.toMatchObject({ status: 0 })
+  })
+
+  it("includes Authorization header when token is set", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { data: {} }))
+    vi.stubGlobal("fetch", mockFetch)
+    setAccessToken("upload-token")
+
+    await apiUpload("/api/v1/files", new FormData())
+
+    const [, options] = mockFetch.mock.calls[0]
+    expect((options.headers as Record<string, string>)["Authorization"]).toBe("Bearer upload-token")
+  })
+})
+
+// ── Authenticated user 401 — refresh-and-retry ─────────────────────────────────
+//
+// These tests cover the tryRefreshAndRetry() happy path and the failure path.
+// An authenticated user (has access token) gets a 401 → the client should call
+// AuthService.refresh() → on success, retry the request; on failure, throw
+// ApiError(401, "Sitzung abgelaufen").
+
+describe("authenticated user 401 — refresh-and-retry", () => {
+  const refreshedTokensResponse = {
+    accessToken: "refreshed-access-token",
+    user: { id: "u1", email: "test@example.com", role: "BUYER" as const },
+    expiresIn: 3600,
+  }
+
+  beforeEach(async () => {
+    setAccessToken("valid-but-expired-token")
+    vi.stubGlobal("fetch", vi.fn())
+    const { AuthService } = await import("@/src/services/auth.service")
+
+    vi.mocked(AuthService.refresh).mockResolvedValue(refreshedTokensResponse as any)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    setAccessToken(null)
+    window.sessionStorage.removeItem(AUTH_SESSION_KEY)
+  })
+
+  it("apiRequest: network failure throws ApiError(0)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Network Error")))
+    await expect(apiRequest("/api/v1/items")).rejects.toMatchObject({
+      status: 0,
+      message: "Netzwerkfehler — bitte Internetverbindung prüfen",
+    })
+  })
+
+  it("apiRequest: 401 → refresh succeeds → retries and returns data", async () => {
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce(mockFetchResponse(401, { message: "Unauthorized" }, false))
+      .mockResolvedValueOnce(mockFetchResponse(200, { data: { id: "item-1" } }))
+    vi.stubGlobal("fetch", mockFetch)
+
+    const result = await apiRequest<{ id: string }>("/api/v1/items")
+    expect(result).toEqual({ id: "item-1" })
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+  })
+
+  it("apiRequest: 401 → refresh fails → throws ApiError(401, 'Sitzung abgelaufen')", async () => {
+    const { AuthService } = await import("@/src/services/auth.service")
+    vi.mocked(AuthService.refresh).mockRejectedValue(new Error("Refresh failed"))
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(mockFetchResponse(401, { message: "Unauthorized" }, false))
+    )
+
+    await expect(apiRequest("/api/v1/items")).rejects.toMatchObject({
+      status: 401,
+      message: "Sitzung abgelaufen",
+    })
+  })
+
+  it("apiRequestRaw: 401 → refresh succeeds → retries and returns raw body", async () => {
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce(mockFetchResponse(401, { message: "Unauthorized" }, false))
+      .mockResolvedValueOnce(mockFetchResponse(200, { items: [1, 2, 3] }))
+    vi.stubGlobal("fetch", mockFetch)
+
+    const result = await apiRequestRaw<{ items: number[] }>("/api/v1/items")
+    expect(result).toEqual({ items: [1, 2, 3] })
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+  })
+
+  it("apiRequestRaw: 401 → refresh fails → throws ApiError(401, 'Sitzung abgelaufen')", async () => {
+    const { AuthService } = await import("@/src/services/auth.service")
+    vi.mocked(AuthService.refresh).mockRejectedValue(new Error("Refresh failed"))
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(mockFetchResponse(401, { message: "Unauthorized" }, false))
+    )
+
+    await expect(apiRequestRaw("/api/v1/items")).rejects.toMatchObject({
+      status: 401,
+      message: "Sitzung abgelaufen",
+    })
+  })
+
+  it("apiUpload: 401 → refresh succeeds → retries and returns data", async () => {
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce(mockFetchResponse(401, { message: "Unauthorized" }, false))
+      .mockResolvedValueOnce(mockFetchResponse(200, { data: { fileId: "f1" } }))
+    vi.stubGlobal("fetch", mockFetch)
+
+    const result = await apiUpload<{ fileId: string }>("/api/v1/files", new FormData())
+    expect(result).toEqual({ fileId: "f1" })
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+  })
+
+  it("apiUpload: 401 → refresh fails → throws ApiError(401, 'Sitzung abgelaufen')", async () => {
+    const { AuthService } = await import("@/src/services/auth.service")
+    vi.mocked(AuthService.refresh).mockRejectedValue(new Error("Refresh failed"))
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(mockFetchResponse(401, { message: "Unauthorized" }, false))
+    )
+
+    await expect(apiUpload("/api/v1/files", new FormData())).rejects.toMatchObject({
+      status: 401,
+      message: "Sitzung abgelaufen",
+    })
+  })
+
+  it("apiUpload: guest with persisted session, 401 → refresh succeeds → retries", async () => {
+    // No access token but has a persisted session (e.g. after page reload before Phase 2)
+    setAccessToken(null)
+    window.sessionStorage.setItem(
+      AUTH_SESSION_KEY,
+      JSON.stringify({ user: { id: "u1", email: "a@b.com", role: "BUYER" }, portal: "customer" })
+    )
+
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce(mockFetchResponse(401, { message: "Unauthorized" }, false))
+      .mockResolvedValueOnce(mockFetchResponse(200, { data: { fileId: "f2" } }))
+    vi.stubGlobal("fetch", mockFetch)
+
+    const result = await apiUpload<{ fileId: string }>("/api/v1/files", new FormData())
+    expect(result).toEqual({ fileId: "f2" })
+    expect(mockFetch).toHaveBeenCalledTimes(2)
   })
 })
