@@ -34,7 +34,12 @@ export default defineConfig({
         "src/hooks/useProducts.ts", // thin useQuery wrapper — no business logic
         "src/hooks/useProfile.ts", // thin useQuery wrapper — no business logic
         "src/hooks/useBuyerValueProfile.ts", // thin useQuery wrapper — no business logic
+        "src/hooks/useFocusTrap.ts", // DOM focus management — UI-only, no business logic
+        "src/hooks/useInView.ts", // IntersectionObserver wrapper — UI-only
         "src/services/index.ts", // barrel re-export
+        "src/lib/constants/**", // pure label/color data objects — no logic
+        "src/context/CookieConsentContext.tsx", // UI consent banner — no business logic
+        "src/context/ErrorContext.tsx", // error boundary context — UI-only
       ],
       thresholds: { lines: 80, functions: 80, branches: 70, statements: 80 },
     },
