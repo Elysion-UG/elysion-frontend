@@ -234,7 +234,7 @@ describe("login", () => {
     })
 
     expect(saveAuthSession).toHaveBeenCalledOnce()
-    expect(saveAuthSession).toHaveBeenCalledWith("access-token-abc", mockUser, "customer")
+    expect(saveAuthSession).toHaveBeenCalledWith(mockUser, "customer")
   })
 
   it("calls AuthService.loginAsSeller when portal is 'seller'", async () => {
@@ -577,59 +577,59 @@ describe("session restore on mount — cold start (no sessionStorage)", () => {
 describe("session restore on mount — sessionStorage hit (page navigation)", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // Simulate a previously saved session: loadAuthSession() returns the persisted data
+    // Simulate a previously saved session — no token stored (H-S3)
     vi.mocked(loadAuthSession).mockReturnValue({
-      token: "access-token-abc",
       user: mockUser,
       portal: "customer",
     })
-    vi.mocked(refreshSession).mockRejectedValue(new Error("no cookie"))
   })
 
-  it("restores user and token immediately without waiting for the network", () => {
-    // refreshSession never resolves — but the session is already restored
+  it("restores user optimistically from sessionStorage before network completes", () => {
+    // refreshSession never resolves — Phase 2 still in flight
     vi.mocked(refreshSession).mockReturnValue(new Promise(() => {}))
 
     const { result } = renderHook(() => useAuth(), { wrapper })
 
-    expect(result.current.isAuthenticated).toBe(true)
+    // User is available immediately; token comes via Phase 2
     expect(result.current.user).toEqual(mockUser)
-    expect(result.current.token).toBe("access-token-abc")
+    expect(result.current.token).toBeNull()
+    expect(result.current.isAuthenticated).toBe(false)
   })
 
-  it("sets isLoading=false immediately when sessionStorage has data", () => {
+  it("isLoading stays true until Phase 2 (refreshSession) completes", () => {
     vi.mocked(refreshSession).mockReturnValue(new Promise(() => {}))
 
     const { result } = renderHook(() => useAuth(), { wrapper })
 
-    expect(result.current.isLoading).toBe(false)
+    expect(result.current.isLoading).toBe(true)
   })
 
-  it("does not call refreshSession when sessionStorage has data (Phase 2 short-circuits)", async () => {
+  it("always calls refreshSession to obtain a fresh access token", async () => {
     vi.mocked(refreshSession).mockResolvedValue(mockTokensResponse as never)
 
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {})
 
-    // Phase 2 returns early when persisted session exists — refreshSession is NOT called.
-    // Token rotation happens via the 10-minute interval, not on mount.
-    expect(refreshSession).not.toHaveBeenCalled()
+    // Phase 2 always runs — token never lives in sessionStorage
+    expect(refreshSession).toHaveBeenCalledOnce()
     expect(result.current.token).toBe("access-token-abc")
     expect(result.current.isAuthenticated).toBe(true)
+    expect(result.current.isLoading).toBe(false)
   })
 
-  it("keeps existing session when background refreshSession fails", async () => {
+  it("clears user and session when refreshSession fails (refresh cookie expired)", async () => {
     vi.mocked(refreshSession).mockRejectedValue(new Error("no cookie"))
 
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {})
 
-    // Session from loadAuthSession is preserved
-    expect(result.current.isAuthenticated).toBe(true)
-    expect(result.current.token).toBe("access-token-abc")
+    expect(result.current.isAuthenticated).toBe(false)
+    expect(result.current.user).toBeNull()
+    expect(result.current.token).toBeNull()
     expect(result.current.isLoading).toBe(false)
+    expect(clearAuthSession).toHaveBeenCalled()
   })
 })
 

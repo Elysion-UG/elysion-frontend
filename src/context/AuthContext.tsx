@@ -62,43 +62,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // ── Phase 1: synchronous sessionStorage restore (before first paint) ──────────
   //
-  // useLayoutEffect runs after DOM mutations but before the browser paints.
-  // If a session exists in sessionStorage we can resolve auth state here,
-  // which means the navbar renders in the correct logged-in/out state on the
-  // very first frame — no spinner flash for returning users.
-  //
-  // _accessToken is already seeded at module-load time by api-client.ts, so
-  // we only need to sync the React state (user, token, isLoading).
+  // Restores the user object optimistically so components that depend on
+  // user identity (e.g. personalised greetings) can render without waiting
+  // for the network. The access token is intentionally NOT stored in
+  // sessionStorage (H-S3) — Phase 2 always fetches a fresh one via the
+  // HttpOnly refresh cookie. isLoading stays true until Phase 2 completes.
   useLayoutEffect(() => {
     const persisted = loadAuthSession()
-    if (!persisted) return // nothing to restore synchronously — Phase 2 handles this
-
+    if (!persisted) return
     if (isValidUser(persisted.user)) {
       setUser(persisted.user)
     }
-    setToken(persisted.token)
-    setIsLoading(false)
   }, [])
 
-  // ── Phase 2: async background work after paint ─────────────────────────────
+  // ── Phase 2: async token fetch on every page load ──────────────────────────
   //
-  // Two cases:
-  //   a) Session existed  → already restored synchronously in Phase 1; nothing to do.
-  //                         The access token is guaranteed valid here: isJwtExpired()
-  //                         at module-load time already cleared any expired session
-  //                         before Phase 1 ran. Background rotation is handled by the
-  //                         periodic timer (every 10 min) and the api-client 401
-  //                         interceptor — no need to call refresh on every page load.
-  //   b) No session       → cold start; try the HttpOnly refresh cookie once.
+  // Always runs — even when Phase 1 restored a user from sessionStorage —
+  // because the access token is never persisted. A fresh token is obtained
+  // from the HttpOnly refresh cookie on every cold start / page reload.
   useEffect(() => {
-    const persisted = loadAuthSession()
-
-    if (persisted) {
-      // Phase 1 already restored the session. Token is valid. Nothing to do.
-      return
-    }
-
-    // No sessionStorage entry — cold start, try the backend refresh cookie.
     refreshSession()
       .then(async (res) => {
         const tokens = res as TokensResponse
@@ -113,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 ? "admin"
                 : "customer"
           setUser(tokens.user)
-          saveAuthSession(tokens.accessToken, tokens.user, portal)
+          saveAuthSession(tokens.user, portal)
         } else {
           // Backend refresh didn't return a user — fall back to /users/me.
           const { UserService } = await import("@/src/services/user.service")
@@ -125,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 ? "admin"
                 : "customer"
           setUser(freshUser)
-          saveAuthSession(tokens.accessToken, freshUser, portal)
+          saveAuthSession(freshUser, portal)
         }
       })
       .catch(() => {
@@ -156,7 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               if (user) {
                 const persisted = loadAuthSession()
                 const portal = persisted?.portal ?? "customer"
-                saveAuthSession(res.accessToken, user, portal)
+                saveAuthSession(user, portal)
               }
               return // success — exit
             } catch {
@@ -195,7 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(loggedInUser)
       setToken(res.accessToken)
       setAccessToken(res.accessToken)
-      saveAuthSession(res.accessToken, loggedInUser, portal)
+      saveAuthSession(loggedInUser, portal)
 
       if (res.guestCartMerged) {
         const { toast } = await import("sonner")
@@ -243,7 +225,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (user) {
         const persisted = loadAuthSession()
         const portal = persisted?.portal ?? "customer"
-        saveAuthSession(res.accessToken, user, portal)
+        saveAuthSession(user, portal)
       }
     } catch {
       setUser(null)
@@ -258,7 +240,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (token) {
         const persisted = loadAuthSession()
         const portal = persisted?.portal ?? "customer"
-        saveAuthSession(token, u, portal)
+        saveAuthSession(u, portal)
       }
     },
     [token]

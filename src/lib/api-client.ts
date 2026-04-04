@@ -24,14 +24,16 @@ export const AUTH_SESSION_KEY = "auth_session"
 export type AuthPortal = "customer" | "seller" | "admin"
 
 export interface PersistedAuthSession {
-  token: string
   user: User
   portal: AuthPortal
+  // token intentionally omitted — access tokens must not be stored in
+  // JS-readable storage (XSS risk). A fresh token is always obtained via
+  // the HttpOnly refresh cookie on every page load (H-S3).
 }
 
-export function saveAuthSession(token: string, user: User, portal: AuthPortal): void {
+export function saveAuthSession(user: User, portal: AuthPortal): void {
   try {
-    window.sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ token, user, portal }))
+    window.sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ user, portal }))
   } catch {}
 }
 
@@ -100,16 +102,9 @@ function isJwtExpired(token: string): boolean {
   return jwtSecondsRemaining(token) <= 0
 }
 
-if (typeof window !== "undefined") {
-  const persisted = loadAuthSession()
-  if (persisted?.token) {
-    if (isJwtExpired(persisted.token)) {
-      clearAuthSession()
-    } else {
-      _accessToken = persisted.token
-    }
-  }
-}
+// Access token is no longer seeded from sessionStorage at module-load time
+// (H-S3: tokens must not be stored in JS-readable storage).
+// AuthContext Phase 2 always fetches a fresh token via the HttpOnly refresh cookie.
 
 export function setAccessToken(token: string | null): void {
   _accessToken = token
@@ -230,13 +225,18 @@ export async function apiRequest<T>(
     ...((options.headers as Record<string, string>) ?? {}),
   }
 
-  // Proactive refresh: if the JWT expires within 2 minutes, refresh before sending
-  if (_accessToken && !skipRetry && jwtSecondsRemaining(_accessToken) < 120) {
-    try {
-      const tokens = await refreshSession()
-      setAccessToken(tokens.accessToken)
-    } catch {
-      // ignore — will get 401 and retry normally
+  // Proactive refresh: if the JWT expires within 2 minutes, refresh before sending.
+  // Only fires when remaining > 0 — malformed/tampered tokens return -1 and must
+  // not trigger a refresh (they will 401 normally and be retried via tryRefreshAndRetry).
+  if (_accessToken && !skipRetry) {
+    const remaining = jwtSecondsRemaining(_accessToken)
+    if (remaining > 0 && remaining < 120) {
+      try {
+        const tokens = await refreshSession()
+        setAccessToken(tokens.accessToken)
+      } catch {
+        // ignore — will get 401 and retry normally
+      }
     }
   }
 
@@ -349,13 +349,16 @@ export async function apiRequestRaw<T>(
 
 // Multipart upload
 export async function apiUpload<T>(path: string, form: FormData, skipRetry = false): Promise<T> {
-  // Proactive refresh: if the JWT expires within 2 minutes, refresh before sending
-  if (_accessToken && !skipRetry && jwtSecondsRemaining(_accessToken) < 120) {
-    try {
-      const tokens = await refreshSession()
-      setAccessToken(tokens.accessToken)
-    } catch {
-      // ignore — will get 401 and retry normally
+  // Proactive refresh: same guard as apiRequest — only fires for valid, near-expiry tokens
+  if (_accessToken && !skipRetry) {
+    const remaining = jwtSecondsRemaining(_accessToken)
+    if (remaining > 0 && remaining < 120) {
+      try {
+        const tokens = await refreshSession()
+        setAccessToken(tokens.accessToken)
+      } catch {
+        // ignore — will get 401 and retry normally
+      }
     }
   }
 
