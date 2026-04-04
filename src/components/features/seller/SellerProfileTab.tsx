@@ -72,7 +72,7 @@ export default function SellerProfileTab() {
       const data = await SellerValueProfileService.get()
       setValueProfile({
         level: data.level,
-        payload: data.payload ?? "",
+        payload: (data.payload as string) ?? "",
         score: data.score ?? null,
       })
       setHasValueProfile(true)
@@ -116,7 +116,7 @@ export default function SellerProfileTab() {
       })
       setValueProfile({
         level: updated.level,
-        payload: updated.payload ?? "",
+        payload: (updated.payload as string) ?? "",
         score: updated.score ?? null,
       })
       setHasValueProfile(true)

@@ -135,4 +135,3 @@ export const ADMIN_SETTLEMENT_STATUS_COLOR: Record<string, string> = {
   PAID: "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40",
   FAILED: "bg-red-900/40 text-red-400 ring-1 ring-red-700/40",
 }
-

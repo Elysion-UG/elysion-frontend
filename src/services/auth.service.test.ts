@@ -55,20 +55,20 @@ describe("AuthService", () => {
     expect(result).toEqual({ userId: "u-new", email: "new@example.com" })
   })
 
-  it("loginAsCustomer — calls POST /api/v1/auth/login with credentials and returns tokens", async () => {
+  it("loginAsCustomer — calls POST /api/v1/auth/customer/login with credentials and returns tokens", async () => {
     const dto: LoginDTO = { email: "buyer@example.com", password: "hunter2" }
     mockApiRequest.mockResolvedValue(mockTokensResponse)
 
     const result = await AuthService.loginAsCustomer(dto)
 
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/auth/login",
+      "/api/v1/auth/customer/login",
       expect.objectContaining({ method: "POST", body: JSON.stringify(dto) })
     )
     expect(result).toEqual(mockTokensResponse)
   })
 
-  it("loginAsSeller — calls POST /api/v1/auth/login with credentials and returns tokens", async () => {
+  it("loginAsSeller — calls POST /api/v1/auth/seller/login with credentials and returns tokens", async () => {
     const dto: LoginDTO = { email: "seller@example.com", password: "hunter2" }
     const sellerResponse: TokensResponse = {
       ...mockTokensResponse,
@@ -79,13 +79,13 @@ describe("AuthService", () => {
     const result = await AuthService.loginAsSeller(dto)
 
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/auth/login",
+      "/api/v1/auth/seller/login",
       expect.objectContaining({ method: "POST", body: JSON.stringify(dto) })
     )
     expect(result).toEqual(sellerResponse)
   })
 
-  it("loginAsAdmin — calls POST /api/v1/auth/login with credentials and returns tokens", async () => {
+  it("loginAsAdmin — calls POST /api/v1/auth/admin/login with credentials and returns tokens", async () => {
     const dto: LoginDTO = { email: "admin@example.com", password: "hunter2" }
     const adminResponse: TokensResponse = {
       ...mockTokensResponse,
@@ -96,7 +96,7 @@ describe("AuthService", () => {
     const result = await AuthService.loginAsAdmin(dto)
 
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/auth/login",
+      "/api/v1/auth/admin/login",
       expect.objectContaining({ method: "POST", body: JSON.stringify(dto) })
     )
     expect(result).toEqual(adminResponse)

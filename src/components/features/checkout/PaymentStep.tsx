@@ -187,11 +187,11 @@ export default function PaymentStep({
       try {
         const intent = await PaymentService.createIntent({
           orderId,
-          amount: totalAmount,
+          provider: "STRIPE",
         })
         if (!cancelled) {
           setClientSecret(intent.clientSecret)
-          setPaymentId(intent.id)
+          setPaymentId(intent.paymentId)
           setLoading(false)
         }
       } catch {

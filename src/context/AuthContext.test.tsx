@@ -128,6 +128,7 @@ describe("useAuth", () => {
 describe("login", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(refreshSession).mockRejectedValue(new Error("no session"))
     vi.mocked(AuthService.loginAsCustomer).mockResolvedValue(mockTokensResponse)
   })
 
@@ -145,6 +146,7 @@ describe("login", () => {
 
   it("sets user after a successful login", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {}) // flush Phase 2 (refreshSession settle)
 
     await act(async () => {
       await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
@@ -155,6 +157,7 @@ describe("login", () => {
 
   it("sets token after a successful login", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
@@ -165,6 +168,7 @@ describe("login", () => {
 
   it("sets isAuthenticated to true after login", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
@@ -175,6 +179,7 @@ describe("login", () => {
 
   it("sets role from the returned user", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
@@ -185,6 +190,7 @@ describe("login", () => {
 
   it("resets isLoading to false after login completes", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
@@ -281,6 +287,7 @@ describe("login", () => {
     })
 
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.login({ email: "seller@example.com", password: "pass" }, "seller")
@@ -295,12 +302,14 @@ describe("login", () => {
 describe("logout", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(refreshSession).mockRejectedValue(new Error("no session"))
     vi.mocked(AuthService.loginAsCustomer).mockResolvedValue(mockTokensResponse)
     vi.mocked(AuthService.logout).mockResolvedValue(undefined)
   })
 
   it("calls AuthService.logout", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
@@ -314,6 +323,7 @@ describe("logout", () => {
 
   it("clears user after logout", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
@@ -330,6 +340,7 @@ describe("logout", () => {
 
   it("clears token after logout", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
       await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
@@ -413,6 +424,7 @@ describe("logout", () => {
 describe("register", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(refreshSession).mockRejectedValue(new Error("no session"))
     vi.mocked(AuthService.register).mockResolvedValue({
       userId: "new-user-001",
       email: "new@example.com",
@@ -593,18 +605,17 @@ describe("session restore on mount — sessionStorage hit (page navigation)", ()
     expect(result.current.isLoading).toBe(false)
   })
 
-  it("updates token when background refreshSession succeeds", async () => {
-    const freshResponse = {
-      ...mockTokensResponse,
-      accessToken: "fresh-token-xyz",
-    }
-    vi.mocked(refreshSession).mockResolvedValue(freshResponse as never)
+  it("does not call refreshSession when sessionStorage has data (Phase 2 short-circuits)", async () => {
+    vi.mocked(refreshSession).mockResolvedValue(mockTokensResponse as never)
 
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {})
 
-    expect(result.current.token).toBe("fresh-token-xyz")
+    // Phase 2 returns early when persisted session exists — refreshSession is NOT called.
+    // Token rotation happens via the 10-minute interval, not on mount.
+    expect(refreshSession).not.toHaveBeenCalled()
+    expect(result.current.token).toBe("access-token-abc")
     expect(result.current.isAuthenticated).toBe(true)
   })
 
@@ -627,6 +638,7 @@ describe("session restore on mount — sessionStorage hit (page navigation)", ()
 describe("setUser", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(refreshSession).mockRejectedValue(new Error("no session"))
   })
 
   it("replaces the current user", async () => {

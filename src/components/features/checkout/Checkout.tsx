@@ -181,7 +181,7 @@ export default function Checkout() {
   if (step === "payment" && result) {
     return (
       <PaymentStep
-        orderId={result.orderId ?? result.completionId ?? ""}
+        orderId={result.orderId ?? ""}
         totalAmount={result.checkout?.subtotal ?? preview?.subtotal ?? 0}
         onSuccess={handlePaymentSuccess}
         onError={handlePaymentError}

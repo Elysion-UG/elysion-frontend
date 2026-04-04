@@ -73,7 +73,7 @@ export const UserService = {
   async getUserById(id: string): Promise<User> {
     const details = await AdminService.getUser(id)
     return {
-      id: details.id,
+      id: details.userId,
       email: details.email,
       firstName: details.firstName ?? "",
       lastName: details.lastName ?? "",

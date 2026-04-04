@@ -10,6 +10,7 @@ import {
 describe("product display cache", () => {
   beforeEach(() => {
     localStorage.clear()
+    sessionStorage.setItem("elysion_cookie_consent", "accepted")
   })
 
   it("returns null for unknown productId", () => {
@@ -64,6 +65,7 @@ describe("product display cache", () => {
 describe("variant options cache", () => {
   beforeEach(() => {
     localStorage.clear()
+    sessionStorage.setItem("elysion_cookie_consent", "accepted")
   })
 
   it("returns null for unknown variantId", () => {

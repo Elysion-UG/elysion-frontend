@@ -125,7 +125,7 @@ describe("CartService", () => {
       "/api/v1/cart/items",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ variantId: "v1", quantity: 2 }),
+        body: JSON.stringify({ quantity: 2, variantId: "v1" }),
       })
     )
   })
@@ -184,12 +184,21 @@ describe("CategoryService", () => {
     )
   })
 
-  it("updateStatus calls PATCH on status endpoint", async () => {
+  it("activate calls PATCH on activate endpoint", async () => {
     mockApiRequest.mockResolvedValue({ id: "c1" })
-    await CategoryService.updateStatus("c1", "INACTIVE")
+    await CategoryService.activate("c1")
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/categories/c1/status",
-      expect.objectContaining({ method: "PATCH", body: JSON.stringify({ status: "INACTIVE" }) })
+      "/api/v1/categories/c1/activate",
+      expect.objectContaining({ method: "PATCH" })
+    )
+  })
+
+  it("deactivate calls PATCH on deactivate endpoint", async () => {
+    mockApiRequest.mockResolvedValue({ id: "c1" })
+    await CategoryService.deactivate("c1")
+    expect(mockApiRequest).toHaveBeenCalledWith(
+      "/api/v1/categories/c1/deactivate",
+      expect.objectContaining({ method: "PATCH" })
     )
   })
 })
@@ -273,9 +282,9 @@ describe("CertificateService", () => {
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products/p1/certificates")
   })
 
-  it("listAll calls admin certificates endpoint", async () => {
+  it("adminListAll calls admin certificates endpoint", async () => {
     mockApiRequest.mockResolvedValue([])
-    await CertificateService.listAll()
+    await CertificateService.adminListAll()
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/certificates")
   })
 })
@@ -496,10 +505,10 @@ describe("SellerOrderService", () => {
     )
   })
 
-  it("listSettlements calls correct endpoint with params", async () => {
-    mockApiRequest.mockResolvedValue({ items: [] })
-    await SellerOrderService.listSettlements({ page: 0, size: 20 })
-    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/seller/settlements?page=0&size=20")
+  it("listSettlements calls correct endpoint", async () => {
+    mockApiRequest.mockResolvedValue([])
+    await SellerOrderService.listSettlements()
+    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/seller/settlements")
   })
 })
 
