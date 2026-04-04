@@ -1,10 +1,19 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react"
+import { ExternalLink } from "lucide-react"
 import type { FrontendErrorEvent, ErrorSeverity, ErrorCategory } from "@/src/types/error"
 import { getSeverityBadge, getCategoryBadge } from "./badge-helpers"
 import ErrorDetailSheet from "./ErrorDetailSheet"
+import { AdminTablePagination, ADMIN_TR_CLICKABLE_CLASS } from "@/src/components/shared"
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/src/components/ui/table"
 
 interface ErrorListProps {
   events: readonly FrontendErrorEvent[]
@@ -52,72 +61,50 @@ export default function ErrorList({ events, filterSeverity, filterCategory }: Er
         </div>
       ) : (
         <>
-          {/* Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-500">
-                  <th className="px-6 py-3 font-mono font-semibold">Zeitpunkt</th>
-                  <th className="px-6 py-3 font-mono font-semibold">Schweregrad</th>
-                  <th className="px-6 py-3 font-mono font-semibold">Kategorie</th>
-                  <th className="px-6 py-3 font-mono font-semibold">Nachricht</th>
-                  <th className="px-6 py-3 font-mono font-semibold">URL</th>
-                  <th className="px-3 py-3" />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/50">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-500">
+                  <TableHead className="px-6 py-3 font-mono font-semibold">Zeitpunkt</TableHead>
+                  <TableHead className="px-6 py-3 font-mono font-semibold">Schweregrad</TableHead>
+                  <TableHead className="px-6 py-3 font-mono font-semibold">Kategorie</TableHead>
+                  <TableHead className="px-6 py-3 font-mono font-semibold">Nachricht</TableHead>
+                  <TableHead className="px-6 py-3 font-mono font-semibold">URL</TableHead>
+                  <TableHead className="px-3 py-3" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {pageEvents.map((event) => (
-                  <tr
+                  <TableRow
                     key={event.id}
-                    className="cursor-pointer transition-colors hover:bg-slate-800/40"
+                    className={ADMIN_TR_CLICKABLE_CLASS}
                     onClick={() => handleOpenDetail(event)}
                   >
-                    <td className="whitespace-nowrap px-6 py-3 font-mono text-xs text-slate-400">
+                    <TableCell className="whitespace-nowrap px-6 py-3 font-mono text-xs text-slate-400">
                       {new Date(event.timestamp).toLocaleTimeString("de-DE", {
                         hour: "2-digit",
                         minute: "2-digit",
                         second: "2-digit",
                       })}
-                    </td>
-                    <td className="px-6 py-3">{getSeverityBadge(event.severity)}</td>
-                    <td className="px-6 py-3">{getCategoryBadge(event.category)}</td>
-                    <td className="max-w-xs truncate px-6 py-3 text-slate-300">{event.message}</td>
-                    <td className="max-w-[180px] truncate px-6 py-3 font-mono text-xs text-slate-500">
+                    </TableCell>
+                    <TableCell className="px-6 py-3">{getSeverityBadge(event.severity)}</TableCell>
+                    <TableCell className="px-6 py-3">{getCategoryBadge(event.category)}</TableCell>
+                    <TableCell className="max-w-xs truncate px-6 py-3 text-slate-300">
+                      {event.message}
+                    </TableCell>
+                    <TableCell className="max-w-[180px] truncate px-6 py-3 font-mono text-xs text-slate-500">
                       {event.metadata.apiPath ?? event.metadata.url ?? "—"}
-                    </td>
-                    <td className="px-3 py-3">
+                    </TableCell>
+                    <TableCell className="px-3 py-3">
                       <ExternalLink className="h-3.5 w-3.5 text-slate-600" />
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-slate-800 px-6 py-3">
-              <p className="font-mono text-xs text-slate-500">
-                Seite {page} von {totalPages}
-              </p>
-              <div className="flex gap-1">
-                <button
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => p - 1)}
-                  className="rounded-md p-1.5 text-slate-500 hover:bg-slate-800 hover:text-slate-300 disabled:opacity-30"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                  className="rounded-md p-1.5 text-slate-500 hover:bg-slate-800 hover:text-slate-300 disabled:opacity-30"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
+          <AdminTablePagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </>
       )}
 

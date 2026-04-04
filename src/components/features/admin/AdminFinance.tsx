@@ -1,15 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
-import {
-  DollarSign,
-  RefreshCw,
-  Loader2,
-  CreditCard,
-  ArrowDownLeft,
-  Banknote,
-  Wrench,
-} from "lucide-react"
+import { DollarSign, Loader2, CreditCard, ArrowDownLeft, Banknote, Wrench } from "lucide-react"
 import { AdminService } from "@/src/services/admin.service"
 import type { AdminPaymentItem, AdminRefundItem, Settlement, AdminPayoutItem } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
@@ -17,6 +9,23 @@ import {
   ADMIN_PAYMENT_STATUS_COLOR as paymentStatusColor,
   ADMIN_SETTLEMENT_STATUS_COLOR as settlementStatusColor,
 } from "@/src/lib/constants"
+import {
+  PageHeader,
+  RefreshButton,
+  LoadingFullPage,
+  ADMIN_TH_CLASS,
+  ADMIN_THEAD_CLASS,
+  ADMIN_TR_CLASS,
+} from "@/src/components/shared"
+import StatusBadge from "@/src/components/shared/StatusBadge"
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/src/components/ui/table"
 import { toast } from "sonner"
 
 type Tab = "payments" | "refunds" | "settlements" | "payouts" | "maintenance"
@@ -85,16 +94,11 @@ export default function AdminFinance() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="font-mono text-2xl font-bold tracking-wide text-slate-100">
-          Finanzen & Wartung
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Zahlungen, Erstattungen, Abrechnungen und System-Wartung
-        </p>
-      </div>
+      <PageHeader
+        title="Finanzen & Wartung"
+        subtitle="Zahlungen, Erstattungen, Abrechnungen und System-Wartung"
+      />
 
-      {/* Tabs */}
       <div className="overflow-hidden rounded-xl border border-slate-800/60 bg-slate-900/60">
         <div className="flex overflow-x-auto border-b border-slate-800/60">
           {tabs.map((t) => (
@@ -115,19 +119,12 @@ export default function AdminFinance() {
         <div className="p-6">
           {tab !== "maintenance" && (
             <div className="mb-4 flex justify-end">
-              <button
-                onClick={load}
-                className="flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-400 hover:text-slate-200"
-              >
-                <RefreshCw className="h-4 w-4" /> Aktualisieren
-              </button>
+              <RefreshButton onClick={load} />
             </div>
           )}
 
           {isLoading && tab !== "maintenance" ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-cyber-500" />
-            </div>
+            <LoadingFullPage />
           ) : (
             <>
               {/* Payments */}
@@ -136,52 +133,43 @@ export default function AdminFinance() {
                   {payments.length === 0 ? (
                     <p className="py-8 text-center text-slate-500">Keine Zahlungen gefunden.</p>
                   ) : (
-                    <table className="w-full text-sm">
-                      <thead className="border-b border-slate-800/60 bg-slate-800/30">
-                        <tr>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            ID
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Bestellung
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Status
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Betrag
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Datum
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/60">
+                    <Table>
+                      <TableHeader className={ADMIN_THEAD_CLASS}>
+                        <TableRow>
+                          <TableHead className={ADMIN_TH_CLASS}>ID</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Bestellung</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Status</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Betrag</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Datum</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {payments.map((p) => (
-                          <tr key={p.paymentId} className="transition-colors hover:bg-slate-800/30">
-                            <td className="px-3 py-2.5 font-mono text-xs text-slate-500">
+                          <TableRow key={p.paymentId} className={ADMIN_TR_CLASS}>
+                            <TableCell className="px-3 py-2.5 font-mono text-xs text-slate-500">
                               {p.paymentId.slice(0, 12)}…
-                            </td>
-                            <td className="px-3 py-2.5 text-slate-300">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-slate-300">
                               {p.orderNumber ?? p.orderId?.slice(0, 8) ?? "–"}
-                            </td>
-                            <td className="px-3 py-2.5">
-                              <span
-                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${paymentStatusColor[p.status] ?? "bg-slate-800 text-slate-500"}`}
-                              >
-                                {p.status}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2.5 font-medium text-slate-200">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5">
+                              <StatusBadge
+                                label={p.status}
+                                colorClasses={
+                                  paymentStatusColor[p.status] ?? "bg-slate-800 text-slate-500"
+                                }
+                              />
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 font-medium text-slate-200">
                               {formatEuro(p.amount)}
-                            </td>
-                            <td className="px-3 py-2.5 text-slate-500">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-slate-500">
                               {new Date(p.createdAt).toLocaleDateString("de-DE")}
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   )}
                 </div>
               )}
@@ -192,50 +180,40 @@ export default function AdminFinance() {
                   {refunds.length === 0 ? (
                     <p className="py-8 text-center text-slate-500">Keine Erstattungen gefunden.</p>
                   ) : (
-                    <table className="w-full text-sm">
-                      <thead className="border-b border-slate-800/60 bg-slate-800/30">
-                        <tr>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            ID
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Payment-ID
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Betrag
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Grund
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Status
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Datum
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/60">
+                    <Table>
+                      <TableHeader className={ADMIN_THEAD_CLASS}>
+                        <TableRow>
+                          <TableHead className={ADMIN_TH_CLASS}>ID</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Payment-ID</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Betrag</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Grund</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Status</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Datum</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {refunds.map((r) => (
-                          <tr key={r.refundId} className="transition-colors hover:bg-slate-800/30">
-                            <td className="px-3 py-2.5 font-mono text-xs text-slate-500">
+                          <TableRow key={r.refundId} className={ADMIN_TR_CLASS}>
+                            <TableCell className="px-3 py-2.5 font-mono text-xs text-slate-500">
                               {r.refundId.slice(0, 12)}…
-                            </td>
-                            <td className="px-3 py-2.5 font-mono text-xs text-slate-500">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 font-mono text-xs text-slate-500">
                               {r.paymentId.slice(0, 12)}…
-                            </td>
-                            <td className="px-3 py-2.5 font-medium text-slate-200">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 font-medium text-slate-200">
                               {formatEuro(r.amount)}
-                            </td>
-                            <td className="px-3 py-2.5 text-slate-500">–</td>
-                            <td className="px-3 py-2.5 text-xs text-slate-400">{r.status}</td>
-                            <td className="px-3 py-2.5 text-slate-500">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-slate-500">–</TableCell>
+                            <TableCell className="px-3 py-2.5 text-xs text-slate-400">
+                              {r.status}
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-slate-500">
                               {new Date(r.createdAt).toLocaleDateString("de-DE")}
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   )}
                 </div>
               )}
@@ -246,63 +224,49 @@ export default function AdminFinance() {
                   {settlements.length === 0 ? (
                     <p className="py-8 text-center text-slate-500">Keine Abrechnungen gefunden.</p>
                   ) : (
-                    <table className="w-full text-sm">
-                      <thead className="border-b border-slate-800/60 bg-slate-800/30">
-                        <tr>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Verkäufer
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Zeitraum
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Brutto
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Gebühr
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Netto
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/60">
+                    <Table>
+                      <TableHeader className={ADMIN_THEAD_CLASS}>
+                        <TableRow>
+                          <TableHead className={ADMIN_TH_CLASS}>Verkäufer</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Zeitraum</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Brutto</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Gebühr</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Netto</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {settlements.map((s) => (
-                          <tr
-                            key={s.settlementId}
-                            className="transition-colors hover:bg-slate-800/30"
-                          >
-                            <td className="px-3 py-2.5 font-mono text-xs text-slate-500">
+                          <TableRow key={s.settlementId} className={ADMIN_TR_CLASS}>
+                            <TableCell className="px-3 py-2.5 font-mono text-xs text-slate-500">
                               {s.sellerId.slice(0, 8)}…
-                            </td>
-                            <td className="px-3 py-2.5 text-xs text-slate-400">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-xs text-slate-400">
                               {s.eligibleAt
                                 ? new Date(s.eligibleAt).toLocaleDateString("de-DE")
                                 : "–"}
-                            </td>
-                            <td className="px-3 py-2.5 text-slate-300">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-slate-300">
                               {formatEuro(s.grossAmount)}
-                            </td>
-                            <td className="px-3 py-2.5 text-red-400">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-red-400">
                               -{formatEuro(s.platformFeeAmount)}
-                            </td>
-                            <td className="px-3 py-2.5 font-medium text-emerald-400">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 font-medium text-emerald-400">
                               {formatEuro(s.netAmount)}
-                            </td>
-                            <td className="px-3 py-2.5">
-                              <span
-                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${settlementStatusColor[s.status] ?? "bg-slate-800 text-slate-500"}`}
-                              >
-                                {s.status}
-                              </span>
-                            </td>
-                          </tr>
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5">
+                              <StatusBadge
+                                label={s.status}
+                                colorClasses={
+                                  settlementStatusColor[s.status] ?? "bg-slate-800 text-slate-500"
+                                }
+                              />
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   )}
                 </div>
               )}
@@ -313,40 +277,34 @@ export default function AdminFinance() {
                   {payouts.length === 0 ? (
                     <p className="py-8 text-center text-slate-500">Keine Auszahlungen gefunden.</p>
                   ) : (
-                    <table className="w-full text-sm">
-                      <thead className="border-b border-slate-800/60 bg-slate-800/30">
-                        <tr>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Verkäufer
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Betrag
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Status
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Datum
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/60">
+                    <Table>
+                      <TableHeader className={ADMIN_THEAD_CLASS}>
+                        <TableRow>
+                          <TableHead className={ADMIN_TH_CLASS}>Verkäufer</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Betrag</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Status</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Datum</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {payouts.map((p) => (
-                          <tr key={p.payoutId} className="transition-colors hover:bg-slate-800/30">
-                            <td className="px-3 py-2.5 text-slate-300">
+                          <TableRow key={p.payoutId} className={ADMIN_TR_CLASS}>
+                            <TableCell className="px-3 py-2.5 text-slate-300">
                               {p.sellerName ?? p.sellerId.slice(0, 8)}
-                            </td>
-                            <td className="px-3 py-2.5 font-medium text-slate-200">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 font-medium text-slate-200">
                               {formatEuro(p.amount)}
-                            </td>
-                            <td className="px-3 py-2.5 text-xs text-slate-400">{p.status}</td>
-                            <td className="px-3 py-2.5 text-slate-500">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-xs text-slate-400">
+                              {p.status}
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-slate-500">
                               {new Date(p.createdAt).toLocaleDateString("de-DE")}
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   )}
                 </div>
               )}

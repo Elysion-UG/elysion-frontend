@@ -2,16 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import {
-  CheckCircle2,
-  XCircle,
-  Ban,
-  ChevronLeft,
-  ChevronRight,
-  Search,
-  Loader2,
-  RefreshCw,
-} from "lucide-react"
+import { CheckCircle2, XCircle, Ban, Loader2 } from "lucide-react"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import { AdminService } from "@/src/services/admin.service"
 import type { AdminSellerListItem, SellerStatus } from "@/src/types"
@@ -19,6 +10,28 @@ import {
   ADMIN_SELLER_STATUS_LABEL as statusLabel,
   ADMIN_SELLER_STATUS_COLOR as statusColor,
 } from "@/src/lib/constants"
+import {
+  PageHeader,
+  AdminFilterBar,
+  SearchInput,
+  RefreshButton,
+  AdminTableContainer,
+  AdminTablePagination,
+  ADMIN_TH_CLASS,
+  ADMIN_THEAD_CLASS,
+  ADMIN_TR_CLICKABLE_CLASS,
+  ADMIN_SELECT_CLASS,
+} from "@/src/components/shared"
+import { cn } from "@/src/lib/utils"
+import StatusBadge from "@/src/components/shared/StatusBadge"
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/src/components/ui/table"
 import { toast } from "sonner"
 
 function RejectModal({
@@ -190,7 +203,7 @@ export default function AdminSellers() {
           ? items.filter(
               (s) =>
                 s.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                s.user?.email?.toLowerCase().includes(searchQuery.toLowerCase())
+                s.userEmail?.toLowerCase().includes(searchQuery.toLowerCase())
             )
           : items
       )
@@ -218,32 +231,24 @@ export default function AdminSellers() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="font-mono text-2xl font-bold tracking-wide text-slate-100">
-          Verkäufer-Verwaltung
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">Prüfung und Moderation von Verkäuferprofilen</p>
-      </div>
+      <PageHeader
+        title="Verkäufer-Verwaltung"
+        subtitle="Prüfung und Moderation von Verkäuferprofilen"
+      />
 
-      {/* Filters */}
-      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-slate-800/60 bg-slate-900/60 p-4">
-        <div className="relative min-w-48 flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
-          <input
-            type="text"
-            placeholder="Firma oder E-Mail suchen..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-lg border border-slate-700/60 bg-slate-800/60 py-2 pl-9 pr-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
-          />
-        </div>
+      <AdminFilterBar>
+        <SearchInput
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="Firma oder E-Mail suchen..."
+        />
         <select
           value={statusFilter}
           onChange={(e) => {
             setStatusFilter(e.target.value as SellerStatus | "")
             setPage(0)
           }}
-          className="rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
+          className={ADMIN_SELECT_CLASS}
         >
           <option value="">Alle Status</option>
           {(["PENDING", "APPROVED", "REJECTED", "SUSPENDED"] as SellerStatus[]).map((s) => (
@@ -252,137 +257,99 @@ export default function AdminSellers() {
             </option>
           ))}
         </select>
-        <button
-          onClick={load}
-          className="flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-400 hover:text-slate-200"
-        >
-          <RefreshCw className="h-4 w-4" /> Aktualisieren
-        </button>
-      </div>
+        <RefreshButton onClick={load} />
+      </AdminFilterBar>
 
-      {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-slate-800/60 bg-slate-900/60">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-cyber-500" />
-          </div>
-        ) : sellers.length === 0 ? (
-          <div className="py-16 text-center text-slate-500">Keine Verkäufer gefunden.</div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b border-slate-800/60 bg-slate-800/30">
-              <tr>
-                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                  Firma
-                </th>
-                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                  E-Mail
-                </th>
-                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                  USt-ID
-                </th>
-                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                  Registriert
-                </th>
-                <th className="px-4 py-3 text-right font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                  Aktionen
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {sellers.map((seller) => (
-                <tr
-                  key={seller.id}
-                  onClick={() => router.push(`/admin/sellers/${seller.id}`)}
-                  className="cursor-pointer transition-colors hover:bg-slate-800/30"
-                >
-                  <td className="px-4 py-3 font-medium text-slate-200">{seller.companyName}</td>
-                  <td className="px-4 py-3 text-slate-400">{seller.userEmail ?? "–"}</td>
-                  <td className="px-4 py-3 text-slate-500">{seller.vatId ?? "–"}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColor[seller.status]}`}
-                    >
-                      {statusLabel[seller.status]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-slate-500">
-                    {new Date(seller.createdAt).toLocaleDateString("de-DE")}
-                  </td>
-                  <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-end gap-2">
-                      {seller.status === "PENDING" && (
-                        <>
-                          <button
-                            onClick={() => handleApprove(seller)}
-                            className="rounded-lg p-1.5 text-emerald-500 transition-colors hover:bg-emerald-900/40"
-                            title="Genehmigen"
-                          >
-                            <CheckCircle2 className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => setRejectTarget(seller)}
-                            className="rounded-lg p-1.5 text-red-500 transition-colors hover:bg-red-900/40"
-                            title="Ablehnen"
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </button>
-                        </>
-                      )}
-                      {seller.status === "APPROVED" && (
-                        <button
-                          onClick={() => setSuspendTarget(seller)}
-                          className="rounded-lg p-1.5 text-orange-500 transition-colors hover:bg-orange-900/40"
-                          title="Sperren"
-                        >
-                          <Ban className="h-4 w-4" />
-                        </button>
-                      )}
-                      {seller.status === "SUSPENDED" && (
+      <AdminTableContainer
+        isLoading={isLoading}
+        isEmpty={sellers.length === 0}
+        emptyMessage="Keine Verkäufer gefunden."
+      >
+        <Table>
+          <TableHeader className={ADMIN_THEAD_CLASS}>
+            <TableRow>
+              <TableHead className={ADMIN_TH_CLASS}>Firma</TableHead>
+              <TableHead className={ADMIN_TH_CLASS}>E-Mail</TableHead>
+              <TableHead className={ADMIN_TH_CLASS}>USt-ID</TableHead>
+              <TableHead className={ADMIN_TH_CLASS}>Status</TableHead>
+              <TableHead className={ADMIN_TH_CLASS}>Registriert</TableHead>
+              <TableHead className={cn(ADMIN_TH_CLASS, "text-right")}>Aktionen</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sellers.map((seller) => (
+              <TableRow
+                key={seller.id}
+                onClick={() => router.push(`/admin/sellers/${seller.id}`)}
+                className={ADMIN_TR_CLICKABLE_CLASS}
+              >
+                <TableCell className="px-4 py-3 font-medium text-slate-200">
+                  {seller.companyName}
+                </TableCell>
+                <TableCell className="px-4 py-3 text-slate-400">
+                  {seller.userEmail ?? "–"}
+                </TableCell>
+                <TableCell className="px-4 py-3 text-slate-500">{seller.vatId ?? "–"}</TableCell>
+                <TableCell className="px-4 py-3">
+                  <StatusBadge
+                    label={statusLabel[seller.status]}
+                    colorClasses={statusColor[seller.status]}
+                  />
+                </TableCell>
+                <TableCell className="px-4 py-3 text-slate-500">
+                  {new Date(seller.createdAt).toLocaleDateString("de-DE")}
+                </TableCell>
+                <TableCell className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-end gap-2">
+                    {seller.status === "PENDING" && (
+                      <>
                         <button
                           onClick={() => handleApprove(seller)}
                           className="rounded-lg p-1.5 text-emerald-500 transition-colors hover:bg-emerald-900/40"
-                          title="Entsperren"
+                          title="Genehmigen"
                         >
                           <CheckCircle2 className="h-4 w-4" />
                         </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+                        <button
+                          onClick={() => setRejectTarget(seller)}
+                          className="rounded-lg p-1.5 text-red-500 transition-colors hover:bg-red-900/40"
+                          title="Ablehnen"
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
+                    {seller.status === "APPROVED" && (
+                      <button
+                        onClick={() => setSuspendTarget(seller)}
+                        className="rounded-lg p-1.5 text-orange-500 transition-colors hover:bg-orange-900/40"
+                        title="Sperren"
+                      >
+                        <Ban className="h-4 w-4" />
+                      </button>
+                    )}
+                    {seller.status === "SUSPENDED" && (
+                      <button
+                        onClick={() => handleApprove(seller)}
+                        className="rounded-lg p-1.5 text-emerald-500 transition-colors hover:bg-emerald-900/40"
+                        title="Entsperren"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-800/60 px-4 py-3">
-            <span className="text-sm text-slate-500">
-              Seite {page + 1} von {totalPages}
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0}
-                className="rounded-lg border border-slate-700/60 bg-slate-800/60 p-1.5 text-slate-400 hover:bg-slate-700/60 disabled:opacity-40"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                disabled={page >= totalPages - 1}
-                className="rounded-lg border border-slate-700/60 bg-slate-800/60 p-1.5 text-slate-400 hover:bg-slate-700/60 disabled:opacity-40"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+        <AdminTablePagination
+          page={page + 1}
+          totalPages={totalPages}
+          onPageChange={(p) => setPage(p - 1)}
+        />
+      </AdminTableContainer>
 
       {rejectTarget && (
         <RejectModal

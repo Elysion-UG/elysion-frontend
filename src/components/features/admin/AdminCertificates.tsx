@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { CheckCircle2, XCircle, RefreshCw, Loader2, ExternalLink } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { CheckCircle2, XCircle, Loader2, ExternalLink } from "lucide-react"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import { CertificateService } from "@/src/services/certificate.service"
 import type { Certificate, CertificateStatus } from "@/src/types"
@@ -9,6 +10,26 @@ import {
   ADMIN_CERTIFICATE_STATUS_LABEL as statusLabel,
   ADMIN_CERTIFICATE_STATUS_COLOR as statusColor,
 } from "@/src/lib/constants"
+import {
+  PageHeader,
+  AdminFilterBar,
+  RefreshButton,
+  AdminTableContainer,
+  ADMIN_TH_CLASS,
+  ADMIN_THEAD_CLASS,
+  ADMIN_TR_CLICKABLE_CLASS,
+  ADMIN_SELECT_CLASS,
+} from "@/src/components/shared"
+import { cn } from "@/src/lib/utils"
+import StatusBadge from "@/src/components/shared/StatusBadge"
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/src/components/ui/table"
 import { toast } from "sonner"
 
 function RejectModal({
@@ -83,6 +104,7 @@ function RejectModal({
 }
 
 export default function AdminCertificates() {
+  const router = useRouter()
   const [certs, setCerts] = useState<Certificate[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filter, setFilter] = useState<CertificateStatus | "">("")
@@ -91,7 +113,7 @@ export default function AdminCertificates() {
   const load = useCallback(async () => {
     setIsLoading(true)
     try {
-      const all = await CertificateService.listAll()
+      const all = await CertificateService.adminListAll()
       setCerts(filter ? all.filter((c) => c.status === filter) : all)
     } catch {
       toast.error("Fehler beim Laden der Zertifikate.")
@@ -116,20 +138,16 @@ export default function AdminCertificates() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="font-mono text-2xl font-bold tracking-wide text-slate-100">
-          Zertifikat-Prüfung
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Nachhaltigkeitszertifikate prüfen und freigeben
-        </p>
-      </div>
+      <PageHeader
+        title="Zertifikat-Prüfung"
+        subtitle="Nachhaltigkeitszertifikate prüfen und freigeben"
+      />
 
-      <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-slate-800/60 bg-slate-900/60 p-4">
+      <AdminFilterBar>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value as CertificateStatus | "")}
-          className="rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
+          className={ADMIN_SELECT_CLASS}
         >
           <option value="">Alle Status</option>
           {(["PENDING", "VERIFIED", "REJECTED", "EXPIRED"] as CertificateStatus[]).map((s) => (
@@ -138,109 +156,98 @@ export default function AdminCertificates() {
             </option>
           ))}
         </select>
-        <button
-          onClick={load}
-          className="flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-400 hover:text-slate-200"
-        >
-          <RefreshCw className="h-4 w-4" /> Aktualisieren
-        </button>
-      </div>
+        <RefreshButton onClick={load} />
+      </AdminFilterBar>
 
-      <div className="overflow-hidden rounded-xl border border-slate-800/60 bg-slate-900/60">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-cyber-500" />
-          </div>
-        ) : certs.length === 0 ? (
-          <div className="py-16 text-center text-slate-500">Keine Zertifikate gefunden.</div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b border-slate-800/60 bg-slate-800/30">
-              <tr>
-                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                  Titel
-                </th>
-                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                  Typ
-                </th>
-                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                  Aussteller
-                </th>
-                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                  Gültig bis
-                </th>
-                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                  Dokument
-                </th>
-                <th className="px-4 py-3 text-right font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                  Aktionen
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {certs.map((cert) => (
-                <tr key={cert.id} className="transition-colors hover:bg-slate-800/30">
-                  <td className="px-4 py-3 font-medium text-slate-200">{cert.title}</td>
-                  <td className="px-4 py-3 text-xs text-slate-500">{cert.certificateType}</td>
-                  <td className="px-4 py-3 text-slate-500">{cert.issuerName ?? "–"}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColor[cert.status]}`}
+      <AdminTableContainer
+        isLoading={isLoading}
+        isEmpty={certs.length === 0}
+        emptyMessage="Keine Zertifikate gefunden."
+      >
+        <Table>
+          <TableHeader className={ADMIN_THEAD_CLASS}>
+            <TableRow>
+              <TableHead className={ADMIN_TH_CLASS}>Titel</TableHead>
+              <TableHead className={ADMIN_TH_CLASS}>Typ</TableHead>
+              <TableHead className={ADMIN_TH_CLASS}>Aussteller</TableHead>
+              <TableHead className={ADMIN_TH_CLASS}>Status</TableHead>
+              <TableHead className={ADMIN_TH_CLASS}>Gültig bis</TableHead>
+              <TableHead className={ADMIN_TH_CLASS}>Dokument</TableHead>
+              <TableHead className={cn(ADMIN_TH_CLASS, "text-right")}>Aktionen</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {certs.map((cert) => (
+              <TableRow
+                key={cert.id}
+                onClick={() => router.push(`/admin/certificates/${cert.id}`)}
+                className={ADMIN_TR_CLICKABLE_CLASS}
+              >
+                <TableCell className="px-4 py-3 font-medium text-slate-200">{cert.title}</TableCell>
+                <TableCell className="px-4 py-3 text-xs text-slate-500">
+                  {cert.certificateType}
+                </TableCell>
+                <TableCell className="px-4 py-3 text-slate-500">{cert.issuerName ?? "–"}</TableCell>
+                <TableCell className="px-4 py-3">
+                  <StatusBadge
+                    label={statusLabel[cert.status]}
+                    colorClasses={statusColor[cert.status]}
+                  />
+                  {cert.rejectionReason && (
+                    <p className="mt-0.5 text-xs text-red-400">{cert.rejectionReason}</p>
+                  )}
+                </TableCell>
+                <TableCell className="px-4 py-3 text-sm text-slate-500">
+                  {cert.expiryDate ? new Date(cert.expiryDate).toLocaleDateString("de-DE") : "–"}
+                </TableCell>
+                <TableCell className="px-4 py-3">
+                  {cert.documentUrl ? (
+                    <a
+                      href={cert.documentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center gap-1 text-xs text-cyber-500 hover:text-cyber-400"
                     >
-                      {statusLabel[cert.status]}
-                    </span>
-                    {cert.rejectionReason && (
-                      <p className="mt-0.5 text-xs text-red-400">{cert.rejectionReason}</p>
+                      <ExternalLink className="h-3 w-3" /> Dokument
+                    </a>
+                  ) : (
+                    <span className="text-xs text-slate-600">–</span>
+                  )}
+                </TableCell>
+                <TableCell className="px-4 py-3">
+                  <div className="flex items-center justify-end gap-2">
+                    {cert.status === "PENDING" && (
+                      <>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleVerify(cert)
+                          }}
+                          className="rounded-lg p-1.5 text-emerald-500 transition-colors hover:bg-emerald-900/40"
+                          title="Verifizieren"
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setRejectTarget(cert)
+                          }}
+                          className="rounded-lg p-1.5 text-red-500 transition-colors hover:bg-red-900/40"
+                          title="Ablehnen"
+                        >
+                          <XCircle className="h-4 w-4" />
+                        </button>
+                      </>
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-slate-500">
-                    {cert.expiryDate ? new Date(cert.expiryDate).toLocaleDateString("de-DE") : "–"}
-                  </td>
-                  <td className="px-4 py-3">
-                    {cert.documentUrl ? (
-                      <a
-                        href={cert.documentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-xs text-cyber-500 hover:text-cyber-400"
-                      >
-                        <ExternalLink className="h-3 w-3" /> Dokument
-                      </a>
-                    ) : (
-                      <span className="text-xs text-slate-600">–</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      {cert.status === "PENDING" && (
-                        <>
-                          <button
-                            onClick={() => handleVerify(cert)}
-                            className="rounded-lg p-1.5 text-emerald-500 transition-colors hover:bg-emerald-900/40"
-                            title="Verifizieren"
-                          >
-                            <CheckCircle2 className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => setRejectTarget(cert)}
-                            className="rounded-lg p-1.5 text-red-500 transition-colors hover:bg-red-900/40"
-                            title="Ablehnen"
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </AdminTableContainer>
 
       {rejectTarget && (
         <RejectModal
