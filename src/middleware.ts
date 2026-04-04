@@ -11,9 +11,7 @@ const SELLER_PUBLIC = ["/login/seller", "/reset-password", "/verify-email"]
 const ADMIN_PROTECTED = ["/admin"]
 const ADMIN_PUBLIC = ["/login/admin", "/reset-password", "/verify-email"]
 
-// Buyer / main shop
-const BUYER_PROTECTED = ["/profil", "/onboarding"]
-const BUYER_ONLY = ["/cart", "/checkout", "/orders", "/praeferenzen"]
+// Buyer auth is handled client-side by AuthGuard (see src/app/(buyer)/layout.tsx)
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -127,15 +125,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Normal auth checks for buyer routes
-  const isProtected =
-    BUYER_PROTECTED.some((r) => pathname.startsWith(r)) ||
-    BUYER_ONLY.some((r) => pathname.startsWith(r))
-
-  if (isProtected && !hasSession(request)) {
-    return NextResponse.redirect(new URL("/", request.url))
-  }
-
+  // Buyer auth is handled client-side by AuthGuard in the (buyer) layout.
+  // The middleware cookie check was unreliable because the backend's HttpOnly
+  // refreshToken cookie may not be visible here (wrong Path/Domain attributes
+  // after proxying). Client-side guards use sessionStorage + AuthContext which
+  // is always in sync with the actual auth state.
   return NextResponse.next()
 }
 

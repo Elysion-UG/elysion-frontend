@@ -35,10 +35,14 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
     headers: { "Content-Type": upstream.headers.get("content-type") ?? "application/json" },
   })
 
-  // Forward Set-Cookie headers (refresh token set/rotate/clear) back to the browser
+  // Forward Set-Cookie headers (refresh token set/rotate/clear) back to the browser.
+  // Rewrite Path to "/" so the cookie is visible to the Next.js middleware on ALL
+  // routes (e.g. /profil, /orders). The backend typically sets Path=/api/v1/auth
+  // which would make the cookie invisible to non-API navigation requests.
   const setCookies = upstream.headers.getSetCookie()
   for (const sc of setCookies) {
-    res.headers.append("Set-Cookie", sc)
+    const rewritten = sc.replace(/Path=\/[^;]*/i, "Path=/")
+    res.headers.append("Set-Cookie", rewritten)
   }
 
   return res
