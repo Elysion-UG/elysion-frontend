@@ -81,7 +81,6 @@ Alle Services werden aus `src/services/index.ts` re-exportiert.
 | `CheckoutService`           | preview, complete                                                                                              |
 | `OrderService`              | list, getById                                                                                                  |
 | `SellerOrderService`        | list, getById, updateStatus, ship, deliver, listSettlements                                                    |
-| `SellerProductService`      | list (Seller-eigene Produkte mit Status-Filter)                                                                |
 | `PaymentService`            | createIntent, getStatus                                                                                        |
 | `FileService`               | upload, getMetadata, getContentUrl, delete, link, unlink, uploadAndLink                                        |
 | `RecommendationService`     | getRecommendations                                                                                             |

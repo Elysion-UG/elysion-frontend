@@ -31,7 +31,10 @@ function readCache(): CacheMap {
   if (typeof window === "undefined") return {}
   try {
     const raw = localStorage.getItem(CACHE_KEY)
-    return raw ? (JSON.parse(raw) as CacheMap) : {}
+    if (!raw) return {}
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {}
+    return parsed as CacheMap
   } catch {
     return {}
   }
@@ -73,7 +76,10 @@ function readVariantOptionsCache(): VariantOptionsMap {
   if (typeof window === "undefined") return {}
   try {
     const raw = localStorage.getItem(VARIANT_OPTIONS_CACHE_KEY)
-    return raw ? (JSON.parse(raw) as VariantOptionsMap) : {}
+    if (!raw) return {}
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {}
+    return parsed as VariantOptionsMap
   } catch {
     return {}
   }

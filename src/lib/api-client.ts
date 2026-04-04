@@ -69,10 +69,10 @@ let _accessToken: string | null = null
 function jwtSecondsRemaining(token: string): number {
   try {
     const payload = JSON.parse(atob(token.split(".")[1])) as { exp?: number }
-    if (!payload.exp) return Infinity
+    if (!payload.exp) return -1
     return payload.exp - Math.floor(Date.now() / 1000)
   } catch {
-    return Infinity // unparseable — let the server decide
+    return -1 // unparseable or tampered — treat as expired
   }
 }
 

@@ -1,5 +1,5 @@
 import type { UserRole, AccountStatus, SellerProfile, SellerStatus } from "./user"
-import type { OrderStatus } from "./order"
+import type { OrderStatus, OrderGroupStatus } from "./order"
 import type { ProductStatus } from "./product"
 
 // ── Admin Dashboard ──────────────────────────────────────────────────
@@ -103,7 +103,7 @@ export interface AdminOrderListItem {
 export interface AdminOrderGroup {
   id: string
   sellerId: string
-  status: OrderStatus
+  status: OrderGroupStatus
   subtotal: number
   shipping: number
   total: number

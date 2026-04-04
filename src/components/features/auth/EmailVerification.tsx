@@ -11,7 +11,14 @@ export default function EmailVerification() {
   const [status, setStatus] = useState<VerifyStatus>("awaiting")
   const [isResending, setIsResending] = useState(false)
   const [resendCount, setResendCount] = useState(0)
+  const [lastResendAt, setLastResendAt] = useState<number | null>(null)
   const [email, setEmail] = useState("")
+
+  const MAX_RESENDS = 3
+  const RESEND_COOLDOWN_MS = 60_000 // 60 seconds between resends
+
+  const resendBlocked = resendCount >= MAX_RESENDS
+  const resendCoolingDown = lastResendAt !== null && Date.now() - lastResendAt < RESEND_COOLDOWN_MS
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -33,10 +40,19 @@ export default function EmailVerification() {
       toast.error("Bitte geben Sie Ihre E-Mail-Adresse ein.")
       return
     }
+    if (resendBlocked) {
+      toast.error("Maximale Anzahl an Versuchen erreicht. Bitte prüfen Sie Ihren Spam-Ordner.")
+      return
+    }
+    if (resendCoolingDown) {
+      toast.error("Bitte warten Sie 60 Sekunden, bevor Sie erneut senden.")
+      return
+    }
     setIsResending(true)
     try {
       await AuthService.resendVerification(email.trim())
       setResendCount((c) => c + 1)
+      setLastResendAt(Date.now())
       toast.success("Verifizierungs-E-Mail wurde erneut gesendet!")
     } catch {
       toast.error("Fehler beim erneuten Senden.")
@@ -97,7 +113,7 @@ export default function EmailVerification() {
             />
             <button
               onClick={handleResendEmail}
-              disabled={isResending || !email.trim()}
+              disabled={isResending || !email.trim() || resendBlocked || resendCoolingDown}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 py-2.5 font-semibold text-white transition-colors hover:bg-sage-700 disabled:opacity-50"
             >
               {isResending ? (
@@ -152,7 +168,7 @@ export default function EmailVerification() {
               />
               <button
                 onClick={handleResendEmail}
-                disabled={isResending || !email.trim()}
+                disabled={isResending || !email.trim() || resendBlocked || resendCoolingDown}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 py-2.5 font-semibold text-white transition-colors hover:bg-sage-700 disabled:opacity-50"
               >
                 {isResending ? (
