@@ -26,6 +26,7 @@ import type {
   CertificateAdminActionResponse,
   CertificateLinkResponse,
   PublicCertificate,
+  SellerCertificateCreateDTO,
 } from "@/src/types"
 
 export const CertificateService = {
@@ -73,6 +74,38 @@ export const CertificateService = {
     return apiRequest(`/api/v1/admin/certificates/${certificateId}/reject`, {
       method: "PATCH",
       body: JSON.stringify({ reason }),
+    })
+  },
+
+  // ── Seller-specific endpoints (/api/v1/seller/certificates) ──────────
+
+  async sellerList(): Promise<Certificate[]> {
+    return apiRequest("/api/v1/seller/certificates")
+  },
+
+  async sellerGetById(id: string): Promise<Certificate> {
+    return apiRequest(`/api/v1/seller/certificates/${id}`)
+  },
+
+  async sellerCreate(dto: SellerCertificateCreateDTO): Promise<Certificate> {
+    return apiRequest("/api/v1/seller/certificates", {
+      method: "POST",
+      body: JSON.stringify(dto),
+    })
+  },
+
+  async sellerLinkToProduct(
+    certificateId: string,
+    productId: string
+  ): Promise<CertificateLinkResponse> {
+    return apiRequest(`/api/v1/seller/certificates/${certificateId}/products/${productId}`, {
+      method: "POST",
+    })
+  },
+
+  async sellerUnlinkFromProduct(certificateId: string, productId: string): Promise<null> {
+    return apiRequest(`/api/v1/seller/certificates/${certificateId}/products/${productId}`, {
+      method: "DELETE",
     })
   },
 

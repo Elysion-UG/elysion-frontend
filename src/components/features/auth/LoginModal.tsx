@@ -14,12 +14,12 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
-  AlertTriangle,
 } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
 import { validatePassword, isValidEmail } from "@/src/lib/validation"
 import { sellerUrl } from "@/src/lib/seller-url"
 import { toast } from "sonner"
+import { ErrorAlert } from "@/src/components/shared"
 
 interface LoginModalProps {
   isOpen: boolean
@@ -176,12 +176,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             </div>
             <p className="mb-6 text-stone-500">Melden Sie sich an, um fortzufahren.</p>
 
-            {error && (
-              <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
+            {error && <ErrorAlert message={error} className="mb-4" />}
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
@@ -278,12 +273,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
             </div>
             <p className="mb-6 text-stone-500">Starten Sie Ihre nachhaltige Reise.</p>
 
-            {error && (
-              <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
+            {error && <ErrorAlert message={error} className="mb-4" />}
 
             <form onSubmit={handleRegister} className="space-y-4">
               <div>

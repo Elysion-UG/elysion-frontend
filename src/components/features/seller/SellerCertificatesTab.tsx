@@ -16,6 +16,7 @@ function CertForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
   const [title, setTitle] = useState("")
   const [issuerName, setIssuerName] = useState("")
   const [certNumber, setCertNumber] = useState("")
+  const [documentUrl, setDocumentUrl] = useState("")
   const [issueDate, setIssueDate] = useState("")
   const [expiryDate, setExpiryDate] = useState("")
   const [notes, setNotes] = useState("")
@@ -26,13 +27,22 @@ function CertForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
       toast.error("Bitte Titel eingeben.")
       return
     }
+    if (!issuerName.trim()) {
+      toast.error("Bitte Aussteller eingeben.")
+      return
+    }
+    if (!documentUrl.trim()) {
+      toast.error("Bitte Dokument-URL eingeben.")
+      return
+    }
     setIsSaving(true)
     try {
-      await CertificateService.create({
+      await CertificateService.sellerCreate({
         certificateType: certType,
         title: title.trim(),
-        issuerName: issuerName.trim() || undefined,
+        issuerName: issuerName.trim(),
         certificateNumber: certNumber.trim() || undefined,
+        documentUrl: documentUrl.trim(),
         issueDate: issueDate || undefined,
         expiryDate: expiryDate || undefined,
         notes: notes.trim() || undefined,
@@ -88,7 +98,7 @@ function CertForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600">Aussteller</label>
+              <label className="mb-1 block text-xs font-medium text-slate-600">Aussteller *</label>
               <input
                 type="text"
                 value={issuerName}
@@ -107,6 +117,16 @@ function CertForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-600">Dokument-URL *</label>
+            <input
+              type="url"
+              value={documentUrl}
+              onChange={(e) => setDocumentUrl(e.target.value)}
+              placeholder="https://example.com/zertifikat.pdf"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -170,7 +190,7 @@ export default function SellerCertificatesTab() {
   const fetchCerts = useCallback(async () => {
     setCertsLoading(true)
     try {
-      const data = await CertificateService.list()
+      const data = await CertificateService.sellerList()
       setCerts(Array.isArray(data) ? data : [])
     } catch {
       toast.error("Zertifikate konnten nicht geladen werden.")

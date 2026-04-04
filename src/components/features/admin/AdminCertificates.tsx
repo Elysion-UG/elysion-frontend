@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle2, XCircle, Loader2, ExternalLink } from "lucide-react"
+import { CheckCircle2, XCircle, ExternalLink } from "lucide-react"
 import { CertificateService } from "@/src/services/certificate.service"
 import type { Certificate, CertificateStatus } from "@/src/types"
 import {
@@ -14,6 +14,7 @@ import {
   AdminFilterBar,
   RefreshButton,
   AdminTableContainer,
+  GenericRejectModal,
   ADMIN_TH_CLASS,
   ADMIN_THEAD_CLASS,
   ADMIN_TR_CLICKABLE_CLASS,
@@ -29,81 +30,7 @@ import {
   TableHead,
   TableCell,
 } from "@/src/components/ui/table"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/src/components/ui/dialog"
-import { Textarea } from "@/src/components/ui/textarea"
 import { toast } from "sonner"
-
-function RejectModal({
-  cert,
-  onClose,
-  onDone,
-}: {
-  cert: Certificate
-  onClose: () => void
-  onDone: () => void
-}) {
-  const [reason, setReason] = useState("")
-  const [loading, setLoading] = useState(false)
-
-  const handleSubmit = async () => {
-    if (!reason.trim()) {
-      toast.error("Bitte Ablehnungsgrund angeben.")
-      return
-    }
-    setLoading(true)
-    try {
-      await CertificateService.reject(cert.id, reason)
-      toast.success("Zertifikat abgelehnt.")
-      onDone()
-    } catch {
-      toast.error("Fehler beim Ablehnen.")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md rounded-xl border border-slate-800/60 bg-slate-900 p-6 shadow-2xl">
-        <DialogHeader>
-          <DialogTitle className="font-mono text-lg font-semibold text-slate-100">
-            Zertifikat ablehnen
-          </DialogTitle>
-          <DialogDescription className="text-sm text-slate-500">{cert.title}</DialogDescription>
-        </DialogHeader>
-        <Textarea
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          rows={3}
-          placeholder="Ablehnungsgrund..."
-          className="w-full rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
-        />
-        <DialogFooter className="mt-4 flex gap-3 sm:flex-row">
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-lg border border-slate-700/60 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800/60"
-          >
-            Abbrechen
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-700 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-60"
-          >
-            {loading && <Loader2 className="h-3 w-3 animate-spin" />} Ablehnen
-          </button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
 
 export default function AdminCertificates() {
   const router = useRouter()
@@ -252,13 +179,16 @@ export default function AdminCertificates() {
       </AdminTableContainer>
 
       {rejectTarget && (
-        <RejectModal
-          cert={rejectTarget}
-          onClose={() => setRejectTarget(null)}
-          onDone={() => {
+        <GenericRejectModal
+          title="Zertifikat ablehnen"
+          description={rejectTarget.title}
+          onSubmit={async (reason) => {
+            await CertificateService.reject(rejectTarget.id, reason)
+            toast.success("Zertifikat abgelehnt.")
             setRejectTarget(null)
             load()
           }}
+          onClose={() => setRejectTarget(null)}
         />
       )}
     </div>

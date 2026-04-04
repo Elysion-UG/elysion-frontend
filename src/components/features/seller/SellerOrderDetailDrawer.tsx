@@ -4,6 +4,7 @@ import { Truck, CheckCircle2, X } from "lucide-react"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import type { OrderGroupDetail } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
+import { StatusBadge } from "@/src/components/shared"
 import { orderStatusLabel, orderStatusColor } from "./sellerDashboard.constants"
 
 export interface SellerOrderDetailDrawerProps {
@@ -59,11 +60,11 @@ export default function SellerOrderDetailDrawer({
             <p className="mt-1 text-xs text-slate-500">{formattedDate}</p>
           </div>
           <div className="flex items-center gap-3">
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-medium ${orderStatusColor[group.status]}`}
-            >
-              {orderStatusLabel[group.status]}
-            </span>
+            <StatusBadge
+              label={orderStatusLabel[group.status]}
+              colorClasses={orderStatusColor[group.status]}
+              className="px-3 py-1"
+            />
             <button
               onClick={onClose}
               aria-label="Schliessen"

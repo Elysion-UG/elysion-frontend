@@ -27,6 +27,36 @@ import AddressForm from "@/src/components/features/profile/AddressForm"
 import { toast } from "sonner"
 import { toCountryName } from "@/src/lib/country"
 import { useUserProfile, useAddresses } from "@/src/hooks/useProfile"
+import { useAsyncAction } from "@/src/hooks/useAsyncAction"
+
+interface SectionHeaderProps {
+  id: string
+  icon: React.ElementType
+  label: string
+  expanded: boolean
+  onToggle: (id: string) => void
+}
+
+function SectionHeader({ id, icon: Icon, label, expanded, onToggle }: SectionHeaderProps) {
+  return (
+    <button
+      onClick={() => onToggle(id)}
+      className="flex w-full items-center justify-between p-5 transition-colors hover:bg-stone-50"
+    >
+      <div className="flex items-center gap-3">
+        <div className="rounded-lg bg-sage-100 p-2">
+          <Icon className="h-5 w-5 text-sage-600" />
+        </div>
+        <span className="text-lg font-semibold text-stone-800">{label}</span>
+      </div>
+      {expanded ? (
+        <ChevronDown className="h-5 w-5 text-stone-400" />
+      ) : (
+        <ChevronRight className="h-5 w-5 text-stone-400" />
+      )}
+    </button>
+  )
+}
 
 function DeleteAccountDialog({
   onCancel,
@@ -122,24 +152,14 @@ export default function Profil() {
   const { data: profileData, isLoading: isLoadingProfile } = useUserProfile()
   const { data: addresses = [], isLoading: isLoadingAddresses } = useAddresses()
 
-  // Form state — initialised from fetched profile data.
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
   const [phone, setPhone] = useState("")
-  const [isSavingProfile, setIsSavingProfile] = useState(false)
 
-  // Address state
   const [addressFormOpen, setAddressFormOpen] = useState(false)
   const [editingAddress, setEditingAddress] = useState<Address | null>(null)
-
-  // Password reset state
-  const [isSendingPasswordReset, setIsSendingPasswordReset] = useState(false)
-
-  // Delete account state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
 
-  // Sections
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     personal: true,
     address: false,
@@ -148,7 +168,10 @@ export default function Profil() {
     security: false,
   })
 
-  // Sync form fields and AuthContext whenever profile data arrives (first load or refetch).
+  const { isLoading: isSavingProfile, execute: executeProfileSave } = useAsyncAction()
+  const { isLoading: isSendingPasswordReset, execute: executePasswordReset } = useAsyncAction()
+  const { isLoading: isDeletingAccount, execute: executeDeleteAccount } = useAsyncAction()
+
   useEffect(() => {
     if (!profileData) return
     setUser(profileData)
@@ -161,24 +184,21 @@ export default function Profil() {
     setExpandedSections((prev) => ({ ...prev, [id]: !prev[id] }))
   }
 
-  const handleSaveProfile = async () => {
-    setIsSavingProfile(true)
-    try {
-      const updated = await UserService.updateProfile({ firstName, lastName, phone })
-      setUser({
-        ...user!,
-        firstName: updated.firstName,
-        lastName: updated.lastName,
-        phone: updated.phone,
-      })
-      await queryClient.invalidateQueries({ queryKey: ["profile"] })
-      toast.success("Profil gespeichert!")
-    } catch {
-      toast.error("Fehler beim Speichern.")
-    } finally {
-      setIsSavingProfile(false)
-    }
-  }
+  const handleSaveProfile = () =>
+    executeProfileSave(
+      async () => {
+        const updated = await UserService.updateProfile({ firstName, lastName, phone })
+        setUser({
+          ...user!,
+          firstName: updated.firstName,
+          lastName: updated.lastName,
+          phone: updated.phone,
+        })
+        await queryClient.invalidateQueries({ queryKey: ["profile"] })
+        toast.success("Profil gespeichert!")
+      },
+      { errorMessage: "Fehler beim Speichern." }
+    )
 
   const handleSaveAddress = async (dto: Parameters<typeof AddressService.create>[0]) => {
     try {
@@ -196,82 +216,45 @@ export default function Profil() {
     }
   }
 
-  const handleDeleteAddress = async (id: string) => {
-    try {
-      await AddressService.remove(id)
-      await queryClient.invalidateQueries({ queryKey: ["addresses"] })
-      toast.success("Adresse gelöscht.")
-    } catch {
-      toast.error("Fehler beim Löschen.")
-    }
-  }
+  const handleDeleteAddress = (id: string) =>
+    executeProfileSave(
+      async () => {
+        await AddressService.remove(id)
+        await queryClient.invalidateQueries({ queryKey: ["addresses"] })
+        toast.success("Adresse gelöscht.")
+      },
+      { errorMessage: "Fehler beim Löschen." }
+    )
 
-  const handleSetDefault = async (id: string) => {
-    try {
-      await AddressService.setDefault(id)
-      await queryClient.invalidateQueries({ queryKey: ["addresses"] })
-      toast.success("Standardadresse gesetzt.")
-    } catch {
-      toast.error("Fehler.")
-    }
-  }
+  const handleSetDefault = (id: string) =>
+    executeProfileSave(
+      async () => {
+        await AddressService.setDefault(id)
+        await queryClient.invalidateQueries({ queryKey: ["addresses"] })
+        toast.success("Standardadresse gesetzt.")
+      },
+      { errorMessage: "Fehler." }
+    )
 
-  const handlePasswordReset = async () => {
+  const handlePasswordReset = () => {
     if (!user?.email) return
-    setIsSendingPasswordReset(true)
-    try {
-      await AuthService.forgotPassword(user.email)
-      toast.success("Reset-E-Mail wurde gesendet. Bitte überprüfen Sie Ihr Postfach.")
-    } catch {
-      toast.error("Fehler beim Senden der Reset-E-Mail.")
-    } finally {
-      setIsSendingPasswordReset(false)
-    }
+    executePasswordReset(
+      async () => {
+        await AuthService.forgotPassword(user.email)
+        toast.success("Reset-E-Mail wurde gesendet. Bitte überprüfen Sie Ihr Postfach.")
+      },
+      { errorMessage: "Fehler beim Senden der Reset-E-Mail." }
+    )
   }
 
-  const handleDeleteAccount = async () => {
-    setIsDeletingAccount(true)
-    try {
+  const handleDeleteAccount = () =>
+    executeDeleteAccount(async () => {
       await UserService.deleteAccount()
       await logout()
       toast.success("Konto wurde gelöscht.")
       window.location.href = "/"
-    } catch {
-      toast.error("Fehler beim Löschen des Kontos.")
-    } finally {
-      setIsDeletingAccount(false)
-      setDeleteDialogOpen(false)
-    }
-  }
+    })
 
-  const SectionHeader = ({
-    id,
-    icon: Icon,
-    label,
-  }: {
-    id: string
-    icon: typeof User
-    label: string
-  }) => (
-    <button
-      onClick={() => toggleSection(id)}
-      className="flex w-full items-center justify-between p-5 transition-colors hover:bg-stone-50"
-    >
-      <div className="flex items-center gap-3">
-        <div className="rounded-lg bg-sage-100 p-2">
-          <Icon className="h-5 w-5 text-sage-600" />
-        </div>
-        <span className="text-lg font-semibold text-stone-800">{label}</span>
-      </div>
-      {expandedSections[id] ? (
-        <ChevronDown className="h-5 w-5 text-stone-400" />
-      ) : (
-        <ChevronRight className="h-5 w-5 text-stone-400" />
-      )}
-    </button>
-  )
-
-  // Show skeleton only on first load (no cached data available yet).
   if (isLoadingProfile && !profileData) {
     return <ProfileSkeleton />
   }
@@ -291,7 +274,13 @@ export default function Profil() {
       <div className="space-y-4">
         {/* Persönliche Daten */}
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
-          <SectionHeader id="personal" icon={User} label="Persönliche Daten" />
+          <SectionHeader
+            id="personal"
+            icon={User}
+            label="Persönliche Daten"
+            expanded={expandedSections.personal}
+            onToggle={toggleSection}
+          />
           {expandedSections.personal && (
             <div className="space-y-4 px-5 pb-5">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -353,7 +342,13 @@ export default function Profil() {
 
         {/* Adressen */}
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
-          <SectionHeader id="address" icon={MapPin} label="Liefer- & Adresseinstellungen" />
+          <SectionHeader
+            id="address"
+            icon={MapPin}
+            label="Liefer- & Adresseinstellungen"
+            expanded={expandedSections.address}
+            onToggle={toggleSection}
+          />
           {expandedSections.address && (
             <div className="space-y-4 px-5 pb-5">
               {isLoadingAddresses && addresses.length === 0 ? (
@@ -428,7 +423,13 @@ export default function Profil() {
 
         {/* Zahlungsmethoden */}
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
-          <SectionHeader id="payment" icon={CreditCard} label="Zahlungsmethoden" />
+          <SectionHeader
+            id="payment"
+            icon={CreditCard}
+            label="Zahlungsmethoden"
+            expanded={expandedSections.payment}
+            onToggle={toggleSection}
+          />
           {expandedSections.payment && (
             <div className="space-y-4 px-5 pb-5">
               <div className="flex items-center justify-between rounded-lg border border-stone-200 p-4">
@@ -454,7 +455,13 @@ export default function Profil() {
 
         {/* Benachrichtigungen */}
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
-          <SectionHeader id="notifications" icon={Bell} label="Benachrichtigungen" />
+          <SectionHeader
+            id="notifications"
+            icon={Bell}
+            label="Benachrichtigungen"
+            expanded={expandedSections.notifications}
+            onToggle={toggleSection}
+          />
           {expandedSections.notifications && (
             <div className="space-y-4 px-5 pb-5">
               {[
@@ -491,7 +498,13 @@ export default function Profil() {
 
         {/* Sicherheit */}
         <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
-          <SectionHeader id="security" icon={Shield} label="Sicherheit" />
+          <SectionHeader
+            id="security"
+            icon={Shield}
+            label="Sicherheit"
+            expanded={expandedSections.security}
+            onToggle={toggleSection}
+          />
           {expandedSections.security && (
             <div className="space-y-4 px-5 pb-5">
               <div className="flex items-center justify-between rounded-lg border border-stone-200 p-4">
@@ -508,7 +521,6 @@ export default function Profil() {
                 </button>
               </div>
 
-              {/* Delete Account */}
               <div className="rounded-lg border border-red-200 bg-red-50 p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -530,7 +542,6 @@ export default function Profil() {
         </div>
       </div>
 
-      {/* Address Form Modal */}
       <AddressForm
         isOpen={addressFormOpen}
         onClose={() => {
@@ -544,7 +555,10 @@ export default function Profil() {
       {deleteDialogOpen && (
         <DeleteAccountDialog
           onCancel={() => setDeleteDialogOpen(false)}
-          onConfirm={handleDeleteAccount}
+          onConfirm={() => {
+            setDeleteDialogOpen(false)
+            handleDeleteAccount()
+          }}
           isDeleting={isDeletingAccount}
         />
       )}

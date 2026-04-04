@@ -62,6 +62,18 @@ export interface CertificateAdminActionResponse {
 export interface CertificateLinkResponse {
   certificateId: string
   productId: string
+  createdAt?: string
+}
+
+export interface SellerCertificateCreateDTO {
+  certificateType: CertificateType | string
+  title: string
+  issuerName: string
+  certificateNumber?: string
+  documentUrl: string
+  issueDate?: string
+  expiryDate?: string
+  notes?: string
 }
 
 export interface PublicCertificate {

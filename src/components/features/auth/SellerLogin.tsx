@@ -7,7 +7,6 @@ import {
   Mail,
   Lock,
   Leaf,
-  AlertTriangle,
   CheckCircle2,
   XCircle,
   Loader2,
@@ -19,9 +18,9 @@ import {
 import { useAuth } from "@/src/context/AuthContext"
 import { AuthService } from "@/src/services/auth.service"
 import { validatePassword, isValidEmail } from "@/src/lib/validation"
-
 import { toast } from "sonner"
 import { buyerUrl } from "@/src/lib/seller-url"
+import { ErrorAlert } from "@/src/components/shared"
 
 type View = "login" | "register" | "forgot"
 
@@ -216,11 +215,7 @@ export default function SellerLogin() {
                 Melden Sie sich in Ihrem Verkäufer-Konto an.
               </p>
 
-              {error && (
-                <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {error}
-                </div>
-              )}
+              {error && <ErrorAlert message={error} className="mb-5" />}
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
@@ -304,11 +299,7 @@ export default function SellerLogin() {
                 Verkaufen Sie Ihre nachhaltigen Produkte auf Elysion.
               </p>
 
-              {error && (
-                <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {error}
-                </div>
-              )}
+              {error && <ErrorAlert message={error} className="mb-5" />}
 
               <form onSubmit={handleRegister} className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">

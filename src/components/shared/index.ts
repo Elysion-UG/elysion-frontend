@@ -8,6 +8,8 @@ export { PageHeader } from "./PageHeader"
 export { AdminFilterBar, SearchInput, RefreshButton } from "./AdminFilterBar"
 export { AdminTablePagination } from "./AdminTablePagination"
 export { AdminTableContainer } from "./AdminTableContainer"
+export { ErrorAlert } from "./ErrorAlert"
+export { GenericRejectModal } from "./GenericRejectModal"
 export {
   ADMIN_TH_CLASS,
   ADMIN_THEAD_CLASS,

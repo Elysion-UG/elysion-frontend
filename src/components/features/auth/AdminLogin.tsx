@@ -1,11 +1,12 @@
 "use client"
 
 import React, { useState } from "react"
-import { Eye, EyeOff, Mail, Lock, ShieldCheck, AlertTriangle, Loader2 } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, ShieldCheck, Loader2 } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
 import { buyerUrl } from "@/src/lib/seller-url"
 import { AuthService } from "@/src/services/auth.service"
 import { toast } from "sonner"
+import { ErrorAlert } from "@/src/components/shared"
 
 type View = "login" | "forgot"
 
@@ -78,11 +79,7 @@ export default function AdminLogin() {
               </h1>
               <p className="mb-6 text-sm text-slate-500">Nur für autorisierte Administratoren.</p>
 
-              {error && (
-                <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-900/50 bg-red-950/40 p-3 text-sm text-red-400">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" /> {error}
-                </div>
-              )}
+              {error && <ErrorAlert message={error} variant="dark" className="mb-4" />}
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
