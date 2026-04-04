@@ -1,6 +1,21 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
+// ── Startup guard ──────────────────────────────────────────────────────────
+// Fail fast if portal domains are not configured. Without these, the middleware
+// cannot route correctly and portal isolation silently breaks.
+;(function assertDomainConfig() {
+  const missing = (["SELLER_DOMAIN", "ADMIN_DOMAIN", "BUYER_DOMAIN"] as const).filter(
+    (k) => !process.env[k]
+  )
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing required environment variables: ${missing.join(", ")}. ` +
+        "Set them in .env.local (dev) or your deployment environment (prod)."
+    )
+  }
+})()
+
 // ── Route definitions ──────────────────────────────────────────────────────
 
 // Seller portal: only these paths are reachable on the seller domain
