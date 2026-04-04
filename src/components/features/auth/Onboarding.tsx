@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { ChevronRight, ChevronLeft, Check, Leaf, Heart, Recycle } from "lucide-react"
 
 type SustainabilityPreference = {
@@ -71,12 +72,8 @@ export default function Onboarding() {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1)
     } else {
-      console.log("Onboarding completed:", {
-        preferences: selectedPreferences,
-        budget: budgetRange,
-        frequency: shoppingFrequency,
-      })
-      alert("Onboarding completed! Redirecting to shop...")
+      // TODO: Call API to save user preferences
+      toast.success("Onboarding abgeschlossen!")
     }
   }
 

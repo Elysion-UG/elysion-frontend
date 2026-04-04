@@ -179,7 +179,7 @@ export const ProductService = {
   // ── Authenticated ─────────────────────────────────────────────────
 
   async getById(id: string): Promise<ProductInternalDetail> {
-    return apiRequest(`/api/v1/products/by-id/${id}`)
+    return apiRequest<ProductInternalDetail>(`/api/v1/products/by-id/${id}`)
   },
 
   // ── Seller commands ───────────────────────────────────────────────
@@ -252,18 +252,7 @@ export const ProductService = {
     })
   },
 
-  async reserveVariant(variantId: string, quantity: number): Promise<null> {
-    return apiRequest(`/api/v1/variants/${variantId}/reserve`, {
-      method: "POST",
-      body: JSON.stringify({ quantity }),
-    })
-  },
-
   async delete(id: string): Promise<void> {
     return apiRequest(`/api/v1/products/${id}`, { method: "DELETE" })
-  },
-
-  async getProductCertificates(productId: string): Promise<unknown[]> {
-    return apiRequest(`/api/v1/products/${productId}/certificates`)
   },
 }

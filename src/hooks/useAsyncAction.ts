@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { toast } from "sonner"
 
 interface ExecuteOptions {
@@ -14,16 +14,20 @@ interface ExecuteOptions {
 export function useAsyncAction() {
   const [isLoading, setIsLoading] = useState(false)
 
-  async function execute(fn: () => Promise<void>, options?: ExecuteOptions): Promise<void> {
-    setIsLoading(true)
-    try {
-      await fn()
-    } catch {
-      if (options?.errorMessage) toast.error(options.errorMessage)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  const execute = useCallback(
+    async (fn: () => Promise<void>, options?: ExecuteOptions): Promise<void> => {
+      setIsLoading(true)
+      try {
+        await fn()
+      } catch (err) {
+        if (options?.errorMessage) toast.error(options.errorMessage)
+        throw err
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    []
+  )
 
   return { isLoading, execute }
 }

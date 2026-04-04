@@ -1,5 +1,6 @@
 import { apiRequest } from "@/src/lib/api-client"
-import type { Order, OrderDetail, OrderGroup, OrderItem, OrderProductSnapshot } from "@/src/types"
+import type { Order, OrderDetail, OrderGroup, OrderItem } from "@/src/types"
+import { type ApiOrderProductSnapshot, normalizeSnapshot } from "./_order-normalizers"
 
 export interface OrderListParams {
   page?: number
@@ -8,17 +9,6 @@ export interface OrderListParams {
 }
 
 // ── Raw backend shapes ────────────────────────────────────────────────
-
-interface ApiOrderProductSnapshot {
-  id?: string
-  name?: string
-  slug?: string
-  seller?: { id?: string } | null
-  variantId?: string
-  sku?: string
-  options?: Array<{ type: string; value: string }>
-  currency?: string
-}
 
 interface ApiOrderItem {
   id: string
@@ -69,19 +59,6 @@ interface ApiOrderDetail {
 }
 
 // ── Normalisation helpers ─────────────────────────────────────────────
-
-function normalizeSnapshot(raw: ApiOrderProductSnapshot | undefined | null): OrderProductSnapshot {
-  return {
-    productId: raw?.id,
-    productName: raw?.name,
-    productSlug: raw?.slug,
-    sellerId: raw?.seller?.id,
-    variantId: raw?.variantId,
-    sku: raw?.sku,
-    options: raw?.options,
-    currency: raw?.currency,
-  }
-}
 
 function normalizeItem(raw: ApiOrderItem): OrderItem {
   const rawSnap = raw.product ?? raw.productSnapshot

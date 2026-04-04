@@ -2,10 +2,16 @@ import type {
   AccountStatus,
   UserRole,
   OrderStatus,
+  OrderGroupStatus,
   ProductStatus,
   SellerStatus,
   CertificateStatus,
 } from "@/src/types"
+import {
+  PRODUCT_STATUS_LABEL,
+  ORDER_GROUP_STATUS_LABEL,
+  CERTIFICATE_STATUS_LABEL,
+} from "./status-labels"
 
 // ── Account Status ──────────────────────────────────────────────────
 export const ADMIN_ACCOUNT_STATUS_LABEL: Record<AccountStatus, string> = {
@@ -56,23 +62,11 @@ export const ADMIN_ORDER_STATUS_COLOR: Record<OrderStatus, string> = {
   REFUNDED: "bg-slate-800 text-slate-500",
 }
 
-export const ADMIN_ORDER_GROUP_STATUS_LABEL: Record<string, string> = {
-  PENDING: "Ausstehend",
-  CONFIRMED: "Bestätigt",
-  PROCESSING: "In Bearbeitung",
-  SHIPPED: "Versandt",
-  DELIVERED: "Geliefert",
-  CANCELLED: "Storniert",
-}
+export const ADMIN_ORDER_GROUP_STATUS_LABEL: Record<OrderGroupStatus, string> =
+  ORDER_GROUP_STATUS_LABEL
 
 // ── Product Status ──────────────────────────────────────────────────
-export const ADMIN_PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
-  DRAFT: "Entwurf",
-  REVIEW: "In Prüfung",
-  ACTIVE: "Aktiv",
-  INACTIVE: "Inaktiv",
-  REJECTED: "Abgelehnt",
-}
+export const ADMIN_PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = PRODUCT_STATUS_LABEL
 
 export const ADMIN_PRODUCT_STATUS_COLOR: Record<ProductStatus, string> = {
   DRAFT: "bg-slate-800 text-slate-400",
@@ -106,12 +100,8 @@ export const ADMIN_SELLER_DETAIL_STATUS_COLOR: Record<SellerStatus, string> = {
 }
 
 // ── Certificate Status ──────────────────────────────────────────────
-export const ADMIN_CERTIFICATE_STATUS_LABEL: Record<CertificateStatus, string> = {
-  PENDING: "Ausstehend",
-  VERIFIED: "Verifiziert",
-  REJECTED: "Abgelehnt",
-  EXPIRED: "Abgelaufen",
-}
+export const ADMIN_CERTIFICATE_STATUS_LABEL: Record<CertificateStatus, string> =
+  CERTIFICATE_STATUS_LABEL
 
 export const ADMIN_CERTIFICATE_STATUS_COLOR: Record<CertificateStatus, string> = {
   PENDING: "bg-yellow-900/40 text-yellow-400 ring-1 ring-yellow-700/40",

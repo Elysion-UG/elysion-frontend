@@ -78,15 +78,9 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
     }
   }
 
-  const activeCount = products.filter(
-    (p) => (p as unknown as { status: string }).status === "ACTIVE"
-  ).length
-  const draftCount = products.filter(
-    (p) => (p as unknown as { status: string }).status === "DRAFT"
-  ).length
-  const reviewCount = products.filter(
-    (p) => (p as unknown as { status: string }).status === "REVIEW"
-  ).length
+  const activeCount = products.filter((p) => p.status === "ACTIVE").length
+  const draftCount = products.filter((p) => p.status === "DRAFT").length
+  const reviewCount = products.filter((p) => p.status === "REVIEW").length
 
   return (
     <>
@@ -152,9 +146,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
             </TableHeader>
             <TableBody>
               {products.map((product) => {
-                const status = (product as unknown as { status: ProductStatus }).status as
-                  | ProductStatus
-                  | undefined
+                const status = product.status as ProductStatus | undefined
                 return (
                   <TableRow key={product.id} className="hover:bg-slate-50">
                     <TableCell className={SELLER_TABLE_CELL_CLASS}>

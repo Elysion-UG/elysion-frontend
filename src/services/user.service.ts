@@ -95,13 +95,17 @@ export const UserService = {
   },
 
   // sellerProfileId is the seller profile's own ID (not the user ID)
-  async updateSellerStatus(sellerProfileId: string, sellerStatus: SellerStatus): Promise<void> {
+  async updateSellerStatus(
+    sellerProfileId: string,
+    sellerStatus: SellerStatus,
+    reason: string = ""
+  ): Promise<void> {
     if (sellerStatus === "APPROVED") {
       await AdminService.approveSellerProfile(sellerProfileId)
     } else if (sellerStatus === "REJECTED") {
-      await AdminService.rejectSellerProfile(sellerProfileId, "")
+      await AdminService.rejectSellerProfile(sellerProfileId, reason)
     } else if (sellerStatus === "SUSPENDED") {
-      await AdminService.suspendSellerProfile(sellerProfileId, "")
+      await AdminService.suspendSellerProfile(sellerProfileId, reason)
     }
   },
 }

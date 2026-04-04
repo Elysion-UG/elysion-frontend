@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useState, useCallback, useEffect } from "react"
+import { toast } from "sonner"
 import type { Cart, CartItem, AddToCartDTO } from "@/src/types"
 import { CartService } from "@/src/services/cart.service"
 import { useAuth } from "@/src/context/AuthContext"
@@ -182,8 +183,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       // Sync with backend
       try {
         await CartService.removeItem(itemId)
-      } catch {
+      } catch (err) {
         setCart(prevCart)
+        toast.error("Artikel konnte nicht entfernt werden.")
+        throw err
       }
     },
     [cart]

@@ -1,4 +1,5 @@
 import type { OrderStatus, OrderGroupStatus } from "@/src/types"
+import { ORDER_GROUP_STATUS_LABEL } from "./status-labels"
 
 // ── Buyer Order Status (light theme) ────────────────────────────────
 export const BUYER_ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
@@ -26,14 +27,8 @@ export const BUYER_ORDER_STATUS_COLOR: Record<OrderStatus, string> = {
 }
 
 // ── Buyer Order Group Status (light theme) ──────────────────────────
-export const BUYER_ORDER_GROUP_STATUS_LABEL: Record<OrderGroupStatus, string> = {
-  PENDING: "Ausstehend",
-  CONFIRMED: "Bestätigt",
-  PROCESSING: "In Bearbeitung",
-  SHIPPED: "Versandt",
-  DELIVERED: "Geliefert",
-  CANCELLED: "Storniert",
-}
+export const BUYER_ORDER_GROUP_STATUS_LABEL: Record<OrderGroupStatus, string> =
+  ORDER_GROUP_STATUS_LABEL
 
 export const BUYER_ORDER_GROUP_STATUS_COLOR: Record<OrderGroupStatus, string> = {
   PENDING: "bg-yellow-100 text-yellow-800",

@@ -1,11 +1,21 @@
 /**
+ * Returns true for local development domains (localhost, *.localhost, 127.x.x.x).
+ * More reliable than a substring match which would incorrectly match domains like
+ * "notlocalhost.com".
+ */
+function isLocalDomain(domain: string): boolean {
+  const host = domain.split(":")[0]
+  return host === "localhost" || host.endsWith(".localhost") || host.startsWith("127.")
+}
+
+/**
  * Builds an absolute URL on the seller domain.
  * Falls back to a relative path if NEXT_PUBLIC_SELLER_DOMAIN is not configured.
  */
 export function sellerUrl(path: string = "/"): string {
   const domain = process.env.NEXT_PUBLIC_SELLER_DOMAIN
   if (!domain) return path
-  const protocol = domain.includes("localhost") ? "http" : "https"
+  const protocol = isLocalDomain(domain) ? "http" : "https"
   return `${protocol}://${domain}${path}`
 }
 
@@ -16,7 +26,7 @@ export function sellerUrl(path: string = "/"): string {
 export function buyerUrl(path: string = "/"): string {
   const domain = process.env.NEXT_PUBLIC_BUYER_DOMAIN
   if (!domain) return path
-  const protocol = domain.includes("localhost") ? "http" : "https"
+  const protocol = isLocalDomain(domain) ? "http" : "https"
   return `${protocol}://${domain}${path}`
 }
 
@@ -27,6 +37,6 @@ export function buyerUrl(path: string = "/"): string {
 export function adminUrl(path: string = "/"): string {
   const domain = process.env.NEXT_PUBLIC_ADMIN_DOMAIN
   if (!domain) return path
-  const protocol = domain.includes("localhost") ? "http" : "https"
+  const protocol = isLocalDomain(domain) ? "http" : "https"
   return `${protocol}://${domain}${path}`
 }

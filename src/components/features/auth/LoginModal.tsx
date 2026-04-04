@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
 import { validatePassword, isValidEmail } from "@/src/lib/validation"
+import { AuthService } from "@/src/services"
 import { sellerUrl } from "@/src/lib/seller-url"
 import { toast } from "sonner"
 import { ErrorAlert } from "@/src/components/shared"
@@ -126,7 +127,11 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const handleForgot = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    await new Promise((r) => setTimeout(r, 600))
+    try {
+      await AuthService.forgotPassword(forgotEmail)
+    } catch {
+      // Silently ignore errors to prevent email enumeration
+    }
     setForgotSubmitted(true)
   }
 

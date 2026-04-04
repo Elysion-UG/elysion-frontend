@@ -27,13 +27,6 @@ const mockProductPage = {
   number: 0,
 }
 
-const mockProductDetail = {
-  id: "prod_1",
-  slug: "eco-shirt",
-  name: "Eco Shirt",
-  price: 29.99,
-}
-
 const mockProductInternalDetail = {
   id: "prod_1",
   title: "Eco Shirt",
@@ -397,39 +390,6 @@ describe("ProductService", () => {
         "/api/v1/products/prod_1/variants/var_1",
         expect.objectContaining({ method: "DELETE" })
       )
-    })
-  })
-
-  // ── reserveVariant ───────────────────────────────────────────────────
-
-  describe("reserveVariant", () => {
-    it("POSTs to /api/v1/variants/{variantId}/reserve with quantity", async () => {
-      mockApiRequest.mockResolvedValue(null)
-      await ProductService.reserveVariant("var_1", 3)
-      expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/v1/variants/var_1/reserve",
-        expect.objectContaining({
-          method: "POST",
-          body: JSON.stringify({ quantity: 3 }),
-        })
-      )
-    })
-  })
-
-  // ── getProductCertificates ───────────────────────────────────────────
-
-  describe("getProductCertificates", () => {
-    it("GETs /api/v1/products/{productId}/certificates", async () => {
-      mockApiRequest.mockResolvedValue([])
-      await ProductService.getProductCertificates("prod_1")
-      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products/prod_1/certificates")
-    })
-
-    it("returns the certificates array", async () => {
-      const certs = [{ id: "cert_1", name: "GOTS" }]
-      mockApiRequest.mockResolvedValue(certs)
-      const result = await ProductService.getProductCertificates("prod_1")
-      expect(result).toEqual(certs)
     })
   })
 })

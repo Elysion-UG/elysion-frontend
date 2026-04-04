@@ -63,28 +63,6 @@ export interface OrderGroup {
   items: OrderItem[]
 }
 
-export interface OrderDetail {
-  id?: string
-  orderNumber?: string
-  status?: OrderStatus
-  createdAt?: string
-  shippingAddress?: {
-    firstName: string
-    lastName: string
-    street: string
-    houseNumber: string
-    postalCode: string
-    city: string
-    country: string
-  }
-  groups?: OrderGroup[]
-  subtotal?: number
-  shippingCost?: number
-  tax?: number | null
-  total?: number
-  currency?: string
-}
-
 /** Shipping address — only included by the backend for CONFIRMED/PROCESSING/SHIPPED orders. */
 export interface ShippingAddress {
   firstName: string
@@ -94,6 +72,20 @@ export interface ShippingAddress {
   postalCode: string
   city: string
   country: string
+}
+
+export interface OrderDetail {
+  id?: string
+  orderNumber?: string
+  status?: OrderStatus
+  createdAt?: string
+  shippingAddress?: ShippingAddress
+  groups?: OrderGroup[]
+  subtotal?: number
+  shippingCost?: number
+  tax?: number | null
+  total?: number
+  currency?: string
 }
 
 export interface OrderGroupDetail {
@@ -157,12 +149,4 @@ export interface Settlement {
   adjustmentRequired?: boolean
   eligibleAt?: string
   createdAt: string
-}
-
-export interface SettlementsPage {
-  items: Settlement[]
-  page: number
-  size: number
-  totalElements: number
-  totalPages: number
 }

@@ -7,6 +7,7 @@ import type {
   ShipOrderDTO,
   ShippingAddress,
 } from "@/src/types"
+import { type ApiOrderProductSnapshot, normalizeSnapshot } from "./_order-normalizers"
 
 export interface SellerOrderListParams {
   page?: number
@@ -17,17 +18,6 @@ export interface SellerOrderListParams {
 // ── Raw backend types ─────────────────────────────────────────────────────────
 // Backend sends SellerOrderGroupResponse with different field names than
 // the frontend OrderGroupDetail type. These interfaces reflect the actual JSON.
-
-interface ApiOrderProductSnapshot {
-  id?: string
-  name?: string
-  slug?: string
-  seller?: { id?: string }
-  variantId?: string
-  sku?: string
-  options?: Array<{ type: string; value: string }>
-  currency?: string
-}
 
 interface ApiOrderItem {
   id: string
@@ -74,18 +64,7 @@ function normalizeOrderGroup(raw: ApiOrderGroup): OrderGroupDetail {
       subtotal: item.lineTotal,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
-      productSnapshot: item.product
-        ? {
-            productId: item.product.id,
-            productName: item.product.name,
-            productSlug: item.product.slug,
-            sellerId: item.product.seller?.id,
-            variantId: item.product.variantId,
-            sku: item.product.sku,
-            options: item.product.options,
-            currency: item.product.currency,
-          }
-        : undefined,
+      productSnapshot: item.product ? normalizeSnapshot(item.product) : undefined,
     })),
   }
 }

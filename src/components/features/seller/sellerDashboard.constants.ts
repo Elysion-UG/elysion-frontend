@@ -4,15 +4,15 @@ import type {
   ProductStatus,
   OrderGroupStatus,
 } from "@/src/types"
+import {
+  PRODUCT_STATUS_LABEL,
+  ORDER_GROUP_STATUS_LABEL,
+  CERTIFICATE_STATUS_LABEL,
+} from "@/src/lib/constants/status-labels"
 
 export type Tab = "products" | "orders" | "settlements" | "certificates" | "profile"
 
-export const certStatusLabel: Record<CertificateStatus, string> = {
-  PENDING: "Ausstehend",
-  VERIFIED: "Verifiziert",
-  REJECTED: "Abgelehnt",
-  EXPIRED: "Abgelaufen",
-}
+export const certStatusLabel: Record<CertificateStatus, string> = CERTIFICATE_STATUS_LABEL
 
 export const certStatusColor: Record<CertificateStatus, string> = {
   PENDING: "bg-yellow-100 text-yellow-800",
@@ -23,13 +23,7 @@ export const certStatusColor: Record<CertificateStatus, string> = {
 
 export const CERT_TYPES: CertificateType[] = ["ORGANIC", "FAIR_TRADE", "RECYCLED", "VEGAN"]
 
-export const productStatusLabel: Record<ProductStatus, string> = {
-  DRAFT: "Entwurf",
-  REVIEW: "Wird geprüft",
-  ACTIVE: "Aktiv",
-  INACTIVE: "Inaktiv",
-  REJECTED: "Abgelehnt",
-}
+export const productStatusLabel: Record<ProductStatus, string> = PRODUCT_STATUS_LABEL
 
 export const productStatusColor: Record<ProductStatus, string> = {
   DRAFT: "bg-slate-100 text-slate-600",
@@ -39,14 +33,7 @@ export const productStatusColor: Record<ProductStatus, string> = {
   REJECTED: "bg-red-100 text-red-700",
 }
 
-export const orderStatusLabel: Record<OrderGroupStatus, string> = {
-  PENDING: "Ausstehend",
-  CONFIRMED: "Bestätigt",
-  PROCESSING: "In Bearbeitung",
-  SHIPPED: "Versandt",
-  DELIVERED: "Geliefert",
-  CANCELLED: "Storniert",
-}
+export const orderStatusLabel: Record<OrderGroupStatus, string> = ORDER_GROUP_STATUS_LABEL
 
 export const orderStatusColor: Record<OrderGroupStatus, string> = {
   PENDING: "bg-yellow-100 text-yellow-800",

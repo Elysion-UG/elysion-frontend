@@ -18,14 +18,27 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
   const { path } = await params
   const subpath = path.join("/")
   const url = new URL(request.url)
-  const qs = url.search // includes leading "?"
+  const qs = url.search
+
+  const forwardedFor =
+    request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? "127.0.0.1"
+  const realIp = request.headers.get("x-real-ip") ?? forwardedFor.split(",")[0].trim()
+
+  const outgoingHeaders: Record<string, string> = {
+    "Content-Type": request.headers.get("content-type") ?? "application/json",
+    Cookie: request.headers.get("cookie") ?? "",
+    "X-Forwarded-For": forwardedFor,
+    "X-Real-IP": realIp,
+  }
+
+  const authorization = request.headers.get("authorization")
+  if (authorization) {
+    outgoingHeaders["Authorization"] = authorization
+  }
 
   const upstream = await fetch(`${BACKEND_URL}/api/v1/auth/${subpath}${qs}`, {
     method: request.method,
-    headers: {
-      "Content-Type": request.headers.get("content-type") ?? "application/json",
-      Cookie: request.headers.get("cookie") ?? "",
-    },
+    headers: outgoingHeaders,
     body: ["GET", "HEAD"].includes(request.method) ? undefined : await request.text(),
   })
 
@@ -41,7 +54,7 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
   // which would make the cookie invisible to non-API navigation requests.
   const setCookies = upstream.headers.getSetCookie()
   for (const sc of setCookies) {
-    const rewritten = sc.replace(/Path=\/[^;]*/i, "Path=/")
+    const rewritten = sc.replace(/Path=\/[^;]*/i, "Path=/").replace(/;\s*Domain=[^;]*/i, "")
     res.headers.append("Set-Cookie", rewritten)
   }
 

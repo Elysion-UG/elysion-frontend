@@ -9,7 +9,9 @@
  * Response envelope: { status: "success"|"error", message: string|null, data: T }
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ""
+import type { User } from "@/src/types"
+
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ""
 
 // ── Session persistence ────────────────────────────────────────────────────────
 // Storing { token, user } in sessionStorage lets us survive full-page navigations
@@ -23,11 +25,11 @@ export type AuthPortal = "customer" | "seller" | "admin"
 
 export interface PersistedAuthSession {
   token: string
-  user: unknown
+  user: User
   portal: AuthPortal
 }
 
-export function saveAuthSession(token: string, user: unknown, portal: AuthPortal): void {
+export function saveAuthSession(token: string, user: User, portal: AuthPortal): void {
   try {
     window.sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ token, user, portal }))
   } catch {}
@@ -326,22 +328,62 @@ export async function apiRequestRaw<T>(
 }
 
 // Multipart upload
-export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
+export async function apiUpload<T>(path: string, form: FormData, skipRetry = false): Promise<T> {
+  // Proactive refresh: if the JWT expires within 2 minutes, refresh before sending
+  if (_accessToken && !skipRetry && jwtSecondsRemaining(_accessToken) < 120) {
+    try {
+      const tokens = await refreshSession()
+      setAccessToken(tokens.accessToken)
+    } catch {
+      // ignore — will get 401 and retry normally
+    }
+  }
+
   const headers: Record<string, string> = {}
 
   if (_accessToken) {
     headers["Authorization"] = `Bearer ${_accessToken}`
   }
 
-  const response = await fetch(`${API_BASE}${path}`, {
-    method: "POST",
-    headers,
-    body: form,
-    credentials: "include",
-  })
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      headers,
+      body: form,
+      credentials: "include",
+    })
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Netzwerkfehler"
+    reportApiError(path, 0, msg, "network")
+    throw new ApiError(0, "Netzwerkfehler — bitte Internetverbindung prüfen")
+  }
 
   if (response.status === 204) {
     return null as T
+  }
+
+  // 401 Unauthorized — attempt token refresh once
+  if (response.status === 401 && !skipRetry) {
+    const hadToken = _accessToken != null
+    const hasPersistedSession = typeof window !== "undefined" && loadAuthSession() != null
+    if (!hadToken && !hasPersistedSession) {
+      throw new ApiError(401, "Nicht autorisiert")
+    }
+    try {
+      const tokens = await refreshSession()
+      setAccessToken(tokens.accessToken)
+      return apiUpload<T>(path, form, true)
+    } catch {
+      setAccessToken(null)
+      clearAuthSession()
+      reportApiError(path, 401, "Sitzung abgelaufen", "auth")
+      if (hadToken && typeof window !== "undefined") {
+        const { toast } = await import("sonner")
+        toast.error("Sitzung abgelaufen. Bitte erneut anmelden.")
+      }
+      throw new ApiError(401, "Sitzung abgelaufen")
+    }
   }
 
   const body = await response.json()

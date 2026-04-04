@@ -1,7 +1,5 @@
-import { apiRequest, apiUpload } from "@/src/lib/api-client"
+import { apiRequest, apiUpload, API_BASE } from "@/src/lib/api-client"
 import type { FileCategory, FileLinkTarget, FileUploadResponse, FileMetadata } from "@/src/types"
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"
 
 export const FileService = {
   /**

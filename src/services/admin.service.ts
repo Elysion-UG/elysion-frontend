@@ -161,6 +161,7 @@ export const AdminService = {
     if (params.page !== undefined) q.set("page", String(params.page))
     if (params.size !== undefined) q.set("size", String(params.size))
     if (params.search) q.set("search", params.search)
+    if (params.status) q.set("status", params.status)
     const qs = q.toString()
     return apiRequest(`/api/v1/admin/products${qs ? `?${qs}` : ""}`)
   },

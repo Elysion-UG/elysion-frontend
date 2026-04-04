@@ -24,13 +24,6 @@ export interface SellerProfile {
   iban?: string
 }
 
-export interface AuthState {
-  user: User | null
-  token: string | null
-  isAuthenticated: boolean
-  isLoading: boolean
-}
-
 // ── Registration DTO ───────────────────────────────────────────────
 export interface RegisterBuyerDTO {
   email: string
@@ -57,11 +50,6 @@ export type RegisterDTO = RegisterBuyerDTO | RegisterSellerDTO
 export interface LoginDTO {
   email: string
   password: string
-}
-
-export interface LoginResponse {
-  token: string
-  user: User
 }
 
 /** Returned by /auth/{portal}/login and /auth/refresh */
@@ -104,19 +92,3 @@ export interface AddressDTO {
 
 // ── Values Profile Types ───────────────────────────────────────────
 export type ValuesProfileType = "none" | "simple" | "extended"
-
-export interface SimpleValuesProfile {
-  type: "simple"
-  categories: Record<string, number> // categoryId -> weight 0-100
-}
-
-export interface ExtendedValuesProfile {
-  type: "extended"
-  categories: Record<string, Record<string, number>> // categoryId -> { subId -> weight 0-100 }
-}
-
-export interface NoValuesProfile {
-  type: "none"
-}
-
-export type ValuesProfile = NoValuesProfile | SimpleValuesProfile | ExtendedValuesProfile

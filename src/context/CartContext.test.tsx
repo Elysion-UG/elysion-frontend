@@ -403,6 +403,32 @@ describe("removeItem", () => {
 
     expect(result.current.cart.items).toHaveLength(1)
   })
+
+  it("reverts optimistic update and re-throws on backend error", async () => {
+    ;(
+      CartService.removeItem as MockedFunction<typeof CartService.removeItem>
+    ).mockRejectedValueOnce(new Error("Network error"))
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    await act(async () => {
+      await result.current.addItem({ productId: "prod-1", quantity: 1 })
+    })
+
+    const itemId = result.current.cart.items[0].id
+
+    let thrown: unknown
+    await act(async () => {
+      try {
+        await result.current.removeItem(itemId)
+      } catch (e) {
+        thrown = e
+      }
+    })
+
+    expect(thrown).toBeInstanceOf(Error)
+    expect(result.current.cart.items).toHaveLength(1)
+  })
 })
 
 // ── clearCart ──────────────────────────────────────────────────────────────────
