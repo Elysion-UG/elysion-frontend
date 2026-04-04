@@ -80,8 +80,13 @@ export const CertificateService = {
     return apiRequest(`/api/v1/products/${productId}/certificates`)
   },
 
-  /** Admin: list all certificates across all sellers (same endpoint, admins see all) */
-  async listAll(): Promise<Certificate[]> {
-    return apiRequest(`/api/v1/certificates`)
+  /** Admin: list all certificates across all sellers. */
+  async adminListAll(): Promise<Certificate[]> {
+    return apiRequest("/api/v1/admin/certificates")
+  },
+
+  /** Admin: get a single certificate by ID. */
+  async adminGetById(id: string): Promise<Certificate> {
+    return apiRequest(`/api/v1/admin/certificates/${id}`)
   },
 }

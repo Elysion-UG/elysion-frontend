@@ -17,14 +17,14 @@ const PAGE_META: Record<Tab, { title: string; subtitle: string }> = {
 }
 
 export default function SellerDashboard() {
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
   const searchParams = useSearchParams()
   const activeTab = (searchParams.get("tab") as Tab) ?? "products"
 
   // Backend sets role="SELLER" on approve, role="BUYER" on reject/suspend —
   // so role is the reliable approval signal (sellerProfile.status is not returned by the API).
   const isApproved = user?.role === "SELLER"
-  const isPending = !isApproved
+  const isPending = !isLoading && !isApproved
   const { title, subtitle } = PAGE_META[activeTab] ?? PAGE_META.products
 
   return (

@@ -14,6 +14,7 @@ export interface Order {
   id: string
   orderNumber?: string
   status: OrderStatus
+  paymentStatus?: string
   total?: number
   currency?: string
   createdAt: string
@@ -119,6 +120,8 @@ export interface OrderGroupDetail {
     updatedAt?: string
   }>
   totalAmount: number
+  subtotal?: number
+  shipping?: number
   currency?: string
   shipment?: { trackingNumber: string; carrier?: string } | null
   buyer?: { userId?: string; guestEmail?: string | null }
@@ -131,7 +134,7 @@ export interface OrderGroupsPage {
   items: OrderGroupDetail[]
   page: number
   size: number
-  totalElements: number
+  totalItems: number
   totalPages: number
 }
 

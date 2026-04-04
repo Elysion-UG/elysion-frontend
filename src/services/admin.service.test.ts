@@ -13,7 +13,7 @@ const mockPagedResponse = <T>(items: T[]): PagedResponse<T> => ({
   items,
   page: 0,
   size: 20,
-  totalElements: items.length,
+  totalItems: items.length,
   totalPages: 1,
 })
 

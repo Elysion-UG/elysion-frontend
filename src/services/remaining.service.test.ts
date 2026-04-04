@@ -403,7 +403,7 @@ describe("PaymentService", () => {
       currency: "eur",
       status: "created",
     })
-    await PaymentService.createIntent({ orderId: "o1", amount: 100 })
+    await PaymentService.createIntent({ orderId: "o1", provider: "STRIPE" })
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/payments/create-intent",
       expect.objectContaining({ method: "POST" })

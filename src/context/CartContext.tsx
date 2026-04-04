@@ -94,27 +94,33 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // side transition, which would otherwise reset React state).
   const [cart, setCart] = useState<Cart>(() => loadGuestCart())
   const [isLoading, setIsLoading] = useState(false)
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const { isAuthenticated, isLoading: authLoading, role } = useAuth()
+
+  // Only BUYER users (customer portal) have a backend cart.
+  // Seller/Admin tokens are bound to a different portal and would get 403.
+  const isCustomerPortal = role === "BUYER" || role === null
 
   // Sync cart with auth state:
-  //   - authenticated  → fetch from backend, clear localStorage guest cart
+  //   - authenticated customer → fetch from backend, clear localStorage guest cart
+  //   - authenticated seller/admin → ignore (no cart in those portals)
   //   - unauthenticated (incl. after logout) → load from localStorage
   useEffect(() => {
     if (authLoading) return
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !isCustomerPortal) {
       // Reload from localStorage to pick up any pre-existing guest cart after
       // logout (localStorage will be empty if it was cleared on login).
-      setCart(loadGuestCart())
+      // For seller/admin portals, just keep whatever is in local state.
+      if (!isAuthenticated) setCart(loadGuestCart())
       return
     }
-    // Authenticated: backend is authoritative; drop the local guest cart.
+    // Authenticated customer: backend is authoritative; drop the local guest cart.
     clearGuestCart()
     CartService.get()
       .then((data) => {
         if (data != null) setCart(normalizeCart(data))
       })
       .catch(() => {})
-  }, [isAuthenticated, authLoading])
+  }, [isAuthenticated, authLoading, isCustomerPortal])
 
   // Persist guest cart to localStorage on every change so page reloads don't
   // wipe items for unauthenticated users.

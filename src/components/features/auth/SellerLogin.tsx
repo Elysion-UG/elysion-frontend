@@ -21,6 +21,7 @@ import { AuthService } from "@/src/services/auth.service"
 import { validatePassword, isValidEmail } from "@/src/lib/validation"
 
 import { toast } from "sonner"
+import { buyerUrl } from "@/src/lib/seller-url"
 
 type View = "login" | "register" | "forgot"
 
@@ -532,7 +533,7 @@ export default function SellerLogin() {
         </div>
 
         <p className="mt-10 text-xs text-stone-400">
-          <a href="/" className="hover:text-stone-600">
+          <a href={buyerUrl("/")} className="hover:text-stone-600">
             ← Zurück zum Shop
           </a>
         </p>

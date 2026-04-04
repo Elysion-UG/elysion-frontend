@@ -7,7 +7,21 @@ import ProductForm from "@/src/components/features/products/ProductForm"
 import type { ProductListItem, ProductStatus } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
 import { toast } from "sonner"
-import { productStatusLabel, productStatusColor } from "./sellerDashboard.constants"
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/src/components/ui/table"
+import { StatusBadge } from "@/src/components/shared"
+import {
+  productStatusLabel,
+  productStatusColor,
+  SELLER_TABLE_HEAD_CLASS,
+  SELLER_TABLE_CELL_CLASS,
+} from "./sellerDashboard.constants"
 import SellerKpiCard from "./SellerKpiCard"
 
 interface SellerProductsTabProps {
@@ -111,100 +125,91 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
             <p className="text-slate-500">Fügen Sie Ihr erstes nachhaltiges Produkt hinzu.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">
-                    Produkt
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">
-                    Preis
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">
-                    Aktionen
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {products.map((product) => {
-                  const status = (product as unknown as { status: ProductStatus }).status as
-                    | ProductStatus
-                    | undefined
-                  return (
-                    <tr key={product.id} className="hover:bg-slate-50">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-teal-100">
-                            <Package className="h-5 w-5 text-teal-600" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-slate-800">{product.title}</p>
-                            <p className="text-xs text-slate-400">ID: {product.id.slice(0, 8)}…</p>
-                          </div>
+          <Table>
+            <TableHeader className="bg-slate-50">
+              <TableRow className="hover:bg-slate-50">
+                <TableHead className={SELLER_TABLE_HEAD_CLASS}>Produkt</TableHead>
+                <TableHead className={SELLER_TABLE_HEAD_CLASS}>Preis</TableHead>
+                <TableHead className={SELLER_TABLE_HEAD_CLASS}>Status</TableHead>
+                <TableHead className={SELLER_TABLE_HEAD_CLASS}>Aktionen</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {products.map((product) => {
+                const status = (product as unknown as { status: ProductStatus }).status as
+                  | ProductStatus
+                  | undefined
+                return (
+                  <TableRow key={product.id} className="hover:bg-slate-50">
+                    <TableCell className={SELLER_TABLE_CELL_CLASS}>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-teal-100">
+                          <Package className="h-5 w-5 text-teal-600" />
                         </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium text-slate-800">
-                        {formatEuro(product.price ?? 0)}
-                      </td>
-                      <td className="px-6 py-4">
-                        {status ? (
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${productStatusColor[status]}`}
-                          >
-                            {productStatusLabel[status]}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-slate-400">–</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">{product.title}</p>
+                          <p className="text-xs text-slate-400">ID: {product.id.slice(0, 8)}…</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell
+                      className={`${SELLER_TABLE_CELL_CLASS} text-sm font-medium text-slate-800`}
+                    >
+                      {formatEuro(product.price ?? 0)}
+                    </TableCell>
+                    <TableCell className={SELLER_TABLE_CELL_CLASS}>
+                      {status ? (
+                        <StatusBadge
+                          label={productStatusLabel[status]}
+                          colorClasses={productStatusColor[status]}
+                        />
+                      ) : (
+                        <span className="text-xs text-slate-400">–</span>
+                      )}
+                    </TableCell>
+                    <TableCell className={SELLER_TABLE_CELL_CLASS}>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setEditProduct(product)
+                            setShowProductForm(true)
+                          }}
+                          className="text-teal-600 transition-colors hover:text-teal-800"
+                          title="Bearbeiten"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        {status === "DRAFT" && (
                           <button
-                            onClick={() => {
-                              setEditProduct(product)
-                              setShowProductForm(true)
-                            }}
-                            className="text-teal-600 transition-colors hover:text-teal-800"
-                            title="Bearbeiten"
+                            onClick={() => handleStatusChange(product.id, "REVIEW")}
+                            className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800 hover:bg-amber-200"
                           >
-                            <Edit className="h-4 w-4" />
+                            Zur Prüfung
                           </button>
-                          {status === "DRAFT" && (
-                            <button
-                              onClick={() => handleStatusChange(product.id, "REVIEW")}
-                              className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800 hover:bg-amber-200"
-                            >
-                              Zur Prüfung
-                            </button>
-                          )}
-                          {status === "ACTIVE" && (
-                            <button
-                              onClick={() => handleStatusChange(product.id, "INACTIVE")}
-                              className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-200"
-                            >
-                              Deaktivieren
-                            </button>
-                          )}
-                          {status === "INACTIVE" && (
-                            <button
-                              onClick={() => handleStatusChange(product.id, "ACTIVE")}
-                              className="rounded bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800 hover:bg-emerald-200"
-                            >
-                              Aktivieren
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                        )}
+                        {status === "ACTIVE" && (
+                          <button
+                            onClick={() => handleStatusChange(product.id, "INACTIVE")}
+                            className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-200"
+                          >
+                            Deaktivieren
+                          </button>
+                        )}
+                        {status === "INACTIVE" && (
+                          <button
+                            onClick={() => handleStatusChange(product.id, "ACTIVE")}
+                            className="rounded bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800 hover:bg-emerald-200"
+                          >
+                            Aktivieren
+                          </button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
         )}
       </div>
 

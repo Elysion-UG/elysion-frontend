@@ -6,6 +6,21 @@ import { SellerOrderService } from "@/src/services/seller-order.service"
 import type { Settlement } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
 import { toast } from "sonner"
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/src/components/ui/table"
+import { StatusBadge } from "@/src/components/shared"
+import {
+  settlementStatusLabel,
+  settlementStatusColor,
+  SELLER_TABLE_HEAD_CLASS,
+  SELLER_TABLE_CELL_CLASS,
+} from "./sellerDashboard.constants"
 
 export default function SellerSettlementsTab() {
   const [settlements, setSettlements] = useState<Settlement[]>([])
@@ -14,12 +29,8 @@ export default function SellerSettlementsTab() {
   const fetchSettlements = useCallback(async () => {
     setSettlementsLoading(true)
     try {
-      const data = await SellerOrderService.listSettlements({ size: 100 })
-      setSettlements(
-        Array.isArray(data)
-          ? (data as unknown as Settlement[])
-          : ((data as unknown as { content: Settlement[] }).content ?? [])
-      )
+      const data = await SellerOrderService.listSettlements()
+      setSettlements(data)
     } catch {
       toast.error("Auszahlungen konnten nicht geladen werden.")
     } finally {
@@ -53,61 +64,43 @@ export default function SellerSettlementsTab() {
           <p className="text-slate-500">Noch keine Auszahlungen.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">
-                  Zeitraum
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">
-                  Brutto
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">
-                  Plattformgebühr
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">
-                  Netto
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase text-slate-500">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {settlements.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50">
-                  <td className="px-6 py-4 text-sm text-slate-600">
-                    {new Date(s.periodStart).toLocaleDateString("de-DE")} –{" "}
-                    {new Date(s.periodEnd).toLocaleDateString("de-DE")}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-800">
-                    {formatEuro(s.grossAmountCents / 100)}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-slate-500">
-                    {formatEuro(s.platformFeeCents / 100)}
-                  </td>
-                  <td className="px-6 py-4 text-sm font-semibold text-teal-700">
-                    {formatEuro(s.netAmountCents / 100)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                        s.status === "PAID"
-                          ? "bg-green-100 text-green-700"
-                          : s.status === "PENDING"
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-blue-100 text-blue-700"
-                      }`}
-                    >
-                      {s.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table>
+          <TableHeader className="bg-slate-50">
+            <TableRow className="hover:bg-slate-50">
+              <TableHead className={SELLER_TABLE_HEAD_CLASS}>Datum</TableHead>
+              <TableHead className={SELLER_TABLE_HEAD_CLASS}>Brutto</TableHead>
+              <TableHead className={SELLER_TABLE_HEAD_CLASS}>Plattformgebühr</TableHead>
+              <TableHead className={SELLER_TABLE_HEAD_CLASS}>Netto</TableHead>
+              <TableHead className={SELLER_TABLE_HEAD_CLASS}>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {settlements.map((s) => (
+              <TableRow key={s.settlementId} className="hover:bg-slate-50">
+                <TableCell className={`${SELLER_TABLE_CELL_CLASS} text-sm text-slate-600`}>
+                  {new Date(s.createdAt).toLocaleDateString("de-DE")}
+                </TableCell>
+                <TableCell className={`${SELLER_TABLE_CELL_CLASS} text-sm text-slate-800`}>
+                  {formatEuro(s.grossAmount)}
+                </TableCell>
+                <TableCell className={`${SELLER_TABLE_CELL_CLASS} text-sm text-slate-500`}>
+                  {formatEuro(s.platformFeeAmount)}
+                </TableCell>
+                <TableCell
+                  className={`${SELLER_TABLE_CELL_CLASS} text-sm font-semibold text-teal-700`}
+                >
+                  {formatEuro(s.netAmount)}
+                </TableCell>
+                <TableCell className={SELLER_TABLE_CELL_CLASS}>
+                  <StatusBadge
+                    label={settlementStatusLabel[s.status] ?? s.status}
+                    colorClasses={settlementStatusColor[s.status] ?? "bg-blue-100 text-blue-700"}
+                  />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
     </div>
   )

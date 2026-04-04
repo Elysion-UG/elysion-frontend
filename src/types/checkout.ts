@@ -20,35 +20,29 @@ export interface CheckoutDTO {
 export interface CheckoutStartResponse {
   cartId?: string
   ownershipType?: string
-  /** Validated line items — backend does NOT include productName; resolve via cart context */
+  /** Validated line items with nested product/variant summaries */
   items?: Array<{
-    cartItemId?: string
-    productId?: string
-    variantId?: string
+    id?: string
+    product?: { id: string; slug: string; name: string; primaryImage?: string }
+    variant?: { id: string; sku: string }
     quantity: number
     unitPrice?: number
-    /** Line total in euro (decimal). Backend field name: lineTotal */
     lineTotal: number
     currency?: string
   }>
   shippingAddress?: CheckoutAddressDTO
-  /** Validated subtotal in euro (decimal) — includes tax. */
+  billingAddress?: CheckoutAddressDTO
   subtotal?: number
-  /** Shipping cost in euro (decimal). May be absent if not provided by backend. */
   shippingCost?: number
-  /** Total tax amount in euro (decimal). May be absent if not provided by backend. */
   tax?: number
   totalQuantity?: number
   currency?: string
-  readyToProceed?: boolean
-  paymentIntentClientSecret?: string
 }
 
 export interface CheckoutCompleteResponse {
-  completionId?: string
   orderId?: string
   orderNumber?: string
-  status?: string
+  orderStatus?: string
   paymentStatus?: string
   paymentMethod?: string
   completedAt?: string

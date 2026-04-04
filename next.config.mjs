@@ -2,7 +2,11 @@
 const devHostIp = process.env.NEXT_PUBLIC_DEV_HOST_IP
 
 const nextConfig = {
-  allowedDevOrigins: devHostIp ? [devHostIp] : [],
+  allowedDevOrigins: [
+    "seller.localhost",
+    "admin.localhost",
+    ...(devHostIp ? [devHostIp] : []),
+  ],
   async rewrites() {
     // When API_URL is set (server-side env var), proxy /api/v1/* through Next.js.
     // This keeps cookies same-origin (browser → :3000 → backend), avoiding

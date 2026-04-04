@@ -7,10 +7,13 @@ import type { NextRequest } from "next/server"
 const SELLER_PROTECTED = ["/seller-dashboard"]
 const SELLER_PUBLIC = ["/login/seller", "/reset-password", "/verify-email"]
 
+// Admin portal: only these paths are reachable on the admin domain
+const ADMIN_PROTECTED = ["/admin"]
+const ADMIN_PUBLIC = ["/login/admin", "/reset-password", "/verify-email"]
+
 // Buyer / main shop
 const BUYER_PROTECTED = ["/profil", "/onboarding"]
 const BUYER_ONLY = ["/cart", "/checkout", "/orders", "/praeferenzen"]
-const ADMIN_ONLY = ["/admin"]
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -20,8 +23,27 @@ function isSellerDomain(request: NextRequest): boolean {
   return host.startsWith("seller.") || (!!configured && host === configured)
 }
 
+function isAdminDomain(request: NextRequest): boolean {
+  const host = request.headers.get("host") ?? ""
+  const configured = process.env.ADMIN_DOMAIN
+  return host.startsWith("admin.") || (!!configured && host === configured)
+}
+
+function buyerOrigin(request: NextRequest): string {
+  const domain = process.env.BUYER_DOMAIN
+  if (domain) {
+    const protocol = domain.includes("localhost") ? "http" : "https"
+    return `${protocol}://${domain}`
+  }
+  // Fallback: strip "admin." / "seller." prefix from current host
+  const host = request.headers.get("host") ?? "localhost:3000"
+  const bare = host.replace(/^(admin|seller)\./, "")
+  const protocol = bare.includes("localhost") ? "http" : "https"
+  return `${protocol}://${bare}`
+}
+
 function hasSession(request: NextRequest): boolean {
-  return request.cookies.has("refresh_token")
+  return request.cookies.has("refreshToken")
 }
 
 // ── Middleware ─────────────────────────────────────────────────────────────
@@ -36,15 +58,34 @@ export function middleware(request: NextRequest) {
       SELLER_PUBLIC.some((r) => pathname.startsWith(r)) ||
       pathname === "/"
 
-    // Any non-seller path → send to dashboard (or login if no session)
+    // Any non-seller path → redirect to buyer domain (shop pages don't belong here)
     if (!isSellerPath) {
-      const target = hasSession(request) ? "/seller-dashboard" : "/login/seller"
-      return NextResponse.redirect(new URL(target, request.url))
+      return NextResponse.redirect(new URL(pathname, buyerOrigin(request)))
     }
 
-    // Protect the dashboard itself
-    if (SELLER_PROTECTED.some((r) => pathname.startsWith(r)) && !hasSession(request)) {
-      return NextResponse.redirect(new URL("/login/seller", request.url))
+    // Root → redirect to dashboard (client-side AuthGuard handles login redirect)
+    if (pathname === "/") {
+      return NextResponse.redirect(new URL("/seller-dashboard", request.url))
+    }
+
+    return NextResponse.next()
+  }
+
+  // ── Admin domain ─────────────────────────────────────────────────────────
+  if (isAdminDomain(request)) {
+    const isAdminPath =
+      ADMIN_PROTECTED.some((r) => pathname.startsWith(r)) ||
+      ADMIN_PUBLIC.some((r) => pathname.startsWith(r)) ||
+      pathname === "/"
+
+    // Any non-admin path → redirect to buyer domain (shop pages don't belong here)
+    if (!isAdminPath) {
+      return NextResponse.redirect(new URL(pathname, buyerOrigin(request)))
+    }
+
+    // Root → redirect to dashboard (client-side AdminGuard handles login redirect)
+    if (pathname === "/") {
+      return NextResponse.redirect(new URL("/admin", request.url))
     }
 
     return NextResponse.next()
@@ -69,11 +110,27 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Normal auth checks for buyer / admin routes
+  // Redirect all admin entry points to the admin domain when configured
+  const isAdminEntryPoint =
+    ADMIN_PROTECTED.some((r) => pathname.startsWith(r)) || pathname.startsWith("/login/admin")
+
+  if (isAdminEntryPoint) {
+    const adminDomain = process.env.ADMIN_DOMAIN
+    if (adminDomain) {
+      const target = new URL(pathname, `${request.nextUrl.protocol}//${adminDomain}`)
+      return NextResponse.redirect(target)
+    }
+    // No admin domain configured → protect admin routes with session check
+    if (ADMIN_PROTECTED.some((r) => pathname.startsWith(r)) && !hasSession(request)) {
+      return NextResponse.redirect(new URL("/", request.url))
+    }
+    return NextResponse.next()
+  }
+
+  // Normal auth checks for buyer routes
   const isProtected =
     BUYER_PROTECTED.some((r) => pathname.startsWith(r)) ||
-    BUYER_ONLY.some((r) => pathname.startsWith(r)) ||
-    ADMIN_ONLY.some((r) => pathname.startsWith(r))
+    BUYER_ONLY.some((r) => pathname.startsWith(r))
 
   if (isProtected && !hasSession(request)) {
     return NextResponse.redirect(new URL("/", request.url))

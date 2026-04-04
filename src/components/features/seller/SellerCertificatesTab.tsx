@@ -6,6 +6,7 @@ import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import { CertificateService } from "@/src/services/certificate.service"
 import type { Certificate, CertificateType } from "@/src/types"
 import { toast } from "sonner"
+import { StatusBadge } from "@/src/components/shared"
 import { certStatusLabel, certStatusColor, CERT_TYPES } from "./sellerDashboard.constants"
 
 // ── CertForm Modal ───────────────────────────────────────────────────────────
@@ -237,11 +238,10 @@ export default function SellerCertificatesTab() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-medium text-slate-800">{cert.title}</p>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${certStatusColor[cert.status]}`}
-                    >
-                      {certStatusLabel[cert.status]}
-                    </span>
+                    <StatusBadge
+                      label={certStatusLabel[cert.status]}
+                      colorClasses={certStatusColor[cert.status]}
+                    />
                     <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
                       {cert.certificateType}
                     </span>

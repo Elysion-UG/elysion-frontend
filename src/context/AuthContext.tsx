@@ -125,24 +125,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const role = user?.role ?? null
   const sellerStatus = user?.sellerProfile?.status ?? null
 
-  // Token refresh interval — fires every 10 min
+  // Token refresh interval — fires every 10 min, retries up to 2× before logging out
   useEffect(() => {
     if (token) {
       refreshTimer.current = setInterval(
         async () => {
-          try {
-            const res = await AuthService.refresh()
-            setToken(res.accessToken)
-            setAccessToken(res.accessToken)
-            if (user) {
-              const persisted = loadAuthSession()
-              const portal = persisted?.portal ?? "customer"
-              saveAuthSession(res.accessToken, user, portal)
+          const maxRetries = 2
+          for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+              const res = await AuthService.refresh()
+              setToken(res.accessToken)
+              setAccessToken(res.accessToken)
+              if (user) {
+                const persisted = loadAuthSession()
+                const portal = persisted?.portal ?? "customer"
+                saveAuthSession(res.accessToken, user, portal)
+              }
+              return // success — exit
+            } catch {
+              if (attempt < maxRetries) {
+                await new Promise((r) => setTimeout(r, (attempt + 1) * 3000))
+              } else {
+                // All retries exhausted — log out
+                setUser(null)
+                setToken(null)
+                setAccessToken(null)
+                clearAuthSession()
+              }
             }
-          } catch {
-            setUser(null)
-            setToken(null)
-            clearAuthSession()
           }
         },
         10 * 60 * 1000

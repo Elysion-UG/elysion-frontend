@@ -19,3 +19,14 @@ export function buyerUrl(path: string = "/"): string {
   const protocol = domain.includes("localhost") ? "http" : "https"
   return `${protocol}://${domain}${path}`
 }
+
+/**
+ * Builds an absolute URL on the admin domain.
+ * Falls back to a relative path if NEXT_PUBLIC_ADMIN_DOMAIN is not configured.
+ */
+export function adminUrl(path: string = "/"): string {
+  const domain = process.env.NEXT_PUBLIC_ADMIN_DOMAIN
+  if (!domain) return path
+  const protocol = domain.includes("localhost") ? "http" : "https"
+  return `${protocol}://${domain}${path}`
+}

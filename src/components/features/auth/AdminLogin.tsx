@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import { Eye, EyeOff, Mail, Lock, ShieldCheck, AlertTriangle, Loader2 } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
+import { buyerUrl } from "@/src/lib/seller-url"
 import { AuthService } from "@/src/services/auth.service"
 import { toast } from "sonner"
 
@@ -57,7 +58,7 @@ export default function AdminLogin() {
       <div className="relative w-full max-w-sm">
         {/* Brand header */}
         <div className="mb-8 text-center">
-          <a href="/" className="mb-5 inline-flex flex-col items-center gap-3">
+          <a href={buyerUrl("/")} className="mb-5 inline-flex flex-col items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyber-600/20 shadow-[0_0_20px_rgba(6,182,212,0.2)] ring-1 ring-cyber-500/40">
               <ShieldCheck className="h-6 w-6 text-cyber-400" />
             </div>
@@ -207,7 +208,7 @@ export default function AdminLogin() {
         </div>
 
         <p className="mt-6 text-center text-xs text-slate-700">
-          <a href="/" className="transition-colors hover:text-slate-400">
+          <a href={buyerUrl("/")} className="transition-colors hover:text-slate-400">
             ← Zurück zum Shop
           </a>
         </p>

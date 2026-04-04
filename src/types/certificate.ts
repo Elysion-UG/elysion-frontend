@@ -13,11 +13,17 @@ export interface Certificate {
   issuingBody?: string
   certificateNumber?: string
   validFrom: string
+  issueDate?: string
   validUntil?: string
   expiryDate?: string
   status: CertificateStatus
   rejectionReason?: string
   documentUrl?: string
+  notes?: string
+  verifiedByAdminId?: string
+  verifiedAt?: string
+  rejectedByAdminId?: string
+  rejectedAt?: string
   createdAt: string
   updatedAt: string
 }

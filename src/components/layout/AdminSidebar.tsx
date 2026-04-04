@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import {
   Users,
   Store,
@@ -16,7 +16,6 @@ import {
   Menu,
 } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
-import { AuthService } from "@/src/services/auth.service"
 
 interface NavItem {
   href: string
@@ -123,11 +122,11 @@ function SidebarContent({
 
 export default function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebarProps) {
   const pathname = usePathname()
-  const router = useRouter()
+  const { logout } = useAuth()
 
   const handleLogout = async () => {
-    await AuthService.logout()
-    router.push("/login/admin")
+    await logout()
+    window.location.href = "/login/admin"
   }
 
   return (

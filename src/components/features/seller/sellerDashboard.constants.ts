@@ -56,3 +56,17 @@ export const orderStatusColor: Record<OrderGroupStatus, string> = {
   DELIVERED: "bg-green-100 text-green-800",
   CANCELLED: "bg-red-100 text-red-800",
 }
+
+// Shared seller table styling (light theme)
+export const SELLER_TABLE_HEAD_CLASS = "px-6 py-3 text-xs font-medium uppercase text-slate-500"
+export const SELLER_TABLE_CELL_CLASS = "px-6 py-4"
+
+export const settlementStatusLabel: Record<string, string> = {
+  PAID: "Bezahlt",
+  PENDING: "Ausstehend",
+}
+
+export const settlementStatusColor: Record<string, string> = {
+  PAID: "bg-green-100 text-green-700",
+  PENDING: "bg-amber-100 text-amber-700",
+}

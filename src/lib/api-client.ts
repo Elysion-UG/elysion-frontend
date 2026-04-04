@@ -4,11 +4,12 @@
  * Access token is stored in module memory (not localStorage) for XSS safety.
  * Refresh token is HttpOnly cookie managed by the browser automatically.
  *
- * Backend base URL: http://localhost:8080 (or NEXT_PUBLIC_API_URL env var)
+ * Backend base URL: relative (same-origin) by default, or NEXT_PUBLIC_API_URL if set.
+ * Relative paths keep requests same-origin across all subdomains (seller.*, admin.*).
  * Response envelope: { status: "success"|"error", message: string|null, data: T }
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ""
 
 // ── Session persistence ────────────────────────────────────────────────────────
 // Storing { token, user } in sessionStorage lets us survive full-page navigations
@@ -63,14 +64,18 @@ export function clearAuthSession(): void {
 // causing backends that validate auth eagerly to return 401.
 let _accessToken: string | null = null
 
-function isJwtExpired(token: string): boolean {
+function jwtSecondsRemaining(token: string): number {
   try {
     const payload = JSON.parse(atob(token.split(".")[1])) as { exp?: number }
-    if (!payload.exp) return false
-    return payload.exp < Math.floor(Date.now() / 1000)
+    if (!payload.exp) return Infinity
+    return payload.exp - Math.floor(Date.now() / 1000)
   } catch {
-    return false // unparseable — let the server decide
+    return Infinity // unparseable — let the server decide
   }
+}
+
+function isJwtExpired(token: string): boolean {
+  return jwtSecondsRemaining(token) <= 0
 }
 
 if (typeof window !== "undefined") {
@@ -180,11 +185,11 @@ async function tryRefreshAndRetry<T>(path: string, options: RequestInit): Promis
     return apiRequest<T>(path, options, true)
   } catch {
     setAccessToken(null)
+    clearAuthSession()
     reportApiError(path, 401, "Sitzung abgelaufen", "auth")
     if (hadToken && typeof window !== "undefined") {
       const { toast } = await import("sonner")
       toast.error("Sitzung abgelaufen. Bitte erneut anmelden.")
-      window.location.href = "/"
     }
     throw new ApiError(401, "Sitzung abgelaufen")
   }
@@ -201,6 +206,16 @@ export async function apiRequest<T>(
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     ...((options.headers as Record<string, string>) ?? {}),
+  }
+
+  // Proactive refresh: if the JWT expires within 2 minutes, refresh before sending
+  if (_accessToken && !skipRetry && jwtSecondsRemaining(_accessToken) < 120) {
+    try {
+      const tokens = await refreshSession()
+      setAccessToken(tokens.accessToken)
+    } catch {
+      // ignore — will get 401 and retry normally
+    }
   }
 
   if (_accessToken) {
@@ -289,11 +304,11 @@ export async function apiRequestRaw<T>(
       return apiRequestRaw<T>(path, options, true)
     } catch {
       setAccessToken(null)
+      clearAuthSession()
       reportApiError(path, 401, "Sitzung abgelaufen", "auth")
       if (hadToken && typeof window !== "undefined") {
         const { toast } = await import("sonner")
         toast.error("Sitzung abgelaufen. Bitte erneut anmelden.")
-        window.location.href = "/"
       }
       throw new ApiError(401, "Sitzung abgelaufen")
     }

@@ -19,12 +19,9 @@ export interface User {
 export interface SellerProfile {
   id: string
   companyName: string
+  status: SellerStatus
   vatId?: string
   iban?: string
-  status: SellerStatus
-  rejectionReason?: string
-  approvedAt?: string
-  rejectedAt?: string
 }
 
 export interface AuthState {
