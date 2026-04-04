@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { CheckCircle2, XCircle, Ban, Loader2 } from "lucide-react"
-import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import { AdminService } from "@/src/services/admin.service"
 import type { AdminSellerListItem, SellerStatus } from "@/src/types"
 import {
@@ -32,6 +31,15 @@ import {
   TableHead,
   TableCell,
 } from "@/src/components/ui/table"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/src/components/ui/dialog"
+import { Textarea } from "@/src/components/ui/textarea"
 import { toast } from "sonner"
 
 function RejectModal({
@@ -63,32 +71,25 @@ function RejectModal({
     }
   }
 
-  const modalRef = useFocusTrap(onClose)
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div
-        ref={modalRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="reject-seller-title"
-        className="w-full max-w-md rounded-xl border border-slate-800/60 bg-slate-900 p-6 shadow-2xl"
-      >
-        <h3
-          id="reject-seller-title"
-          className="mb-1 font-mono text-lg font-semibold text-slate-100"
-        >
-          Verkäufer ablehnen
-        </h3>
-        <p className="mb-4 text-sm text-slate-500">{seller.companyName}</p>
-        <textarea
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md rounded-xl border border-slate-800/60 bg-slate-900 p-6 shadow-2xl">
+        <DialogHeader>
+          <DialogTitle className="font-mono text-lg font-semibold text-slate-100">
+            Verkäufer ablehnen
+          </DialogTitle>
+          <DialogDescription className="text-sm text-slate-500">
+            {seller.companyName}
+          </DialogDescription>
+        </DialogHeader>
+        <Textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           placeholder="Ablehnungsgrund..."
           className="w-full rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
         />
-        <div className="mt-4 flex gap-3">
+        <DialogFooter className="mt-4 flex gap-3 sm:flex-row">
           <button
             onClick={onClose}
             className="flex-1 rounded-lg border border-slate-700/60 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800/60"
@@ -102,9 +103,9 @@ function RejectModal({
           >
             {loading && <Loader2 className="h-3 w-3 animate-spin" />} Ablehnen
           </button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -133,32 +134,25 @@ function SuspendModal({
     }
   }
 
-  const modalRef = useFocusTrap(onClose)
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
-      <div
-        ref={modalRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="suspend-seller-title"
-        className="w-full max-w-md rounded-xl border border-slate-800/60 bg-slate-900 p-6 shadow-2xl"
-      >
-        <h3
-          id="suspend-seller-title"
-          className="mb-1 font-mono text-lg font-semibold text-slate-100"
-        >
-          Verkäufer sperren
-        </h3>
-        <p className="mb-4 text-sm text-slate-500">{seller.companyName}</p>
-        <textarea
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md rounded-xl border border-slate-800/60 bg-slate-900 p-6 shadow-2xl">
+        <DialogHeader>
+          <DialogTitle className="font-mono text-lg font-semibold text-slate-100">
+            Verkäufer sperren
+          </DialogTitle>
+          <DialogDescription className="text-sm text-slate-500">
+            {seller.companyName}
+          </DialogDescription>
+        </DialogHeader>
+        <Textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           placeholder="Grund (optional)..."
           className="w-full rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
         />
-        <div className="mt-4 flex gap-3">
+        <DialogFooter className="mt-4 flex gap-3 sm:flex-row">
           <button
             onClick={onClose}
             className="flex-1 rounded-lg border border-slate-700/60 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800/60"
@@ -172,9 +166,9 @@ function SuspendModal({
           >
             {loading && <Loader2 className="h-3 w-3 animate-spin" />} Sperren
           </button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 

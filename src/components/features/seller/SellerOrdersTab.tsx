@@ -15,6 +15,14 @@ import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import { SellerOrderService } from "@/src/services/seller-order.service"
 import type { OrderGroupDetail } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/src/components/ui/dialog"
 import { toast } from "sonner"
 import { orderStatusLabel, orderStatusColor } from "./sellerDashboard.constants"
 import SellerKpiCard from "./SellerKpiCard"
@@ -272,20 +280,13 @@ function ShipModal({
     }
   }
 
-  const modalRef = useFocusTrap(onClose)
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div
-        ref={modalRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="ship-modal-title"
-        className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
-      >
-        <h3 id="ship-modal-title" className="mb-4 text-lg font-semibold text-slate-800">
-          Versanddetails
-        </h3>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md rounded-xl bg-white p-6 shadow-xl">
+        <DialogHeader>
+          <DialogTitle className="text-lg font-semibold text-slate-800">Versanddetails</DialogTitle>
+          <DialogDescription className="sr-only">Versandinformationen eingeben</DialogDescription>
+        </DialogHeader>
         <div className="space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium text-slate-700">
@@ -312,7 +313,7 @@ function ShipModal({
             />
           </div>
         </div>
-        <div className="mt-6 flex gap-3">
+        <DialogFooter className="mt-6 flex gap-3 sm:flex-row">
           <button
             onClick={onClose}
             className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
@@ -326,9 +327,9 @@ function ShipModal({
           >
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Versandt"}
           </button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }
 
