@@ -21,7 +21,7 @@ import { useAuth } from "@/src/context/AuthContext"
 import { useCart } from "@/src/hooks/useCart"
 import LoginModal from "@/src/components/features/auth/LoginModal"
 import Footer from "@/src/components/layout/Footer"
-import { sellerUrl } from "@/src/lib/seller-url"
+import { sellerUrl, adminUrl } from "@/src/lib/seller-url"
 import { toast } from "sonner"
 
 interface PageLayoutProps {
@@ -56,7 +56,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
     <Link
       key={href}
       href={href}
-      className="flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors hover:text-sage-700"
+      className="relative flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-sage-600 after:transition-all after:duration-200 hover:text-sage-700 hover:after:w-full"
     >
       {icon}
       {label}
@@ -111,9 +111,15 @@ export default function PageLayout({ children }: PageLayoutProps) {
                 </a>
               )}
 
-              {isAuthenticated &&
-                role === "ADMIN" &&
-                navLink("/admin/users", "Admin", <ShieldCheck className="h-3.5 w-3.5" />)}
+              {isAuthenticated && role === "ADMIN" && (
+                <a
+                  href={adminUrl("/admin/users")}
+                  className="flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors hover:text-sage-700"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Admin
+                </a>
+              )}
 
               <Link
                 href="/cart"
@@ -121,7 +127,10 @@ export default function PageLayout({ children }: PageLayoutProps) {
               >
                 <ShoppingCart className="h-5 w-5" />
                 {mounted && totalItems > 0 && (
-                  <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-sage-600 text-[10px] font-bold text-white">
+                  <span
+                    key={totalItems}
+                    className="absolute -right-2 -top-2 flex h-4 w-4 animate-bounce-subtle items-center justify-center rounded-full bg-sage-600 text-[10px] font-bold text-white"
+                  >
                     {totalItems > 9 ? "9+" : totalItems}
                   </span>
                 )}
@@ -162,7 +171,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
           </div>
 
           {mobileMenuOpen && (
-            <nav className="mt-3 flex flex-col gap-3 border-t border-stone-100 pb-3 pt-3 md:hidden">
+            <nav className="mt-3 flex animate-fade-in flex-col gap-3 border-t border-stone-100 pb-3 pt-3 md:hidden">
               {navLink("/", "Shop")}
               {navLink("/about", "Über uns")}
               {navLink("/contact", "Kontakt")}
@@ -181,9 +190,15 @@ export default function PageLayout({ children }: PageLayoutProps) {
                   Verkäufer
                 </a>
               )}
-              {isAuthenticated &&
-                role === "ADMIN" &&
-                navLink("/admin/users", "Admin", <ShieldCheck className="h-3.5 w-3.5" />)}
+              {isAuthenticated && role === "ADMIN" && (
+                <a
+                  href={adminUrl("/admin/users")}
+                  className="flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors hover:text-sage-700"
+                >
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Admin
+                </a>
+              )}
               <Link
                 href="/cart"
                 className="flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors hover:text-stone-900"
@@ -191,7 +206,10 @@ export default function PageLayout({ children }: PageLayoutProps) {
                 <ShoppingCart className="h-4 w-4" />
                 Warenkorb
                 {mounted && totalItems > 0 && (
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-sage-600 text-[10px] font-bold text-white">
+                  <span
+                    key={totalItems}
+                    className="flex h-4 w-4 animate-bounce-subtle items-center justify-center rounded-full bg-sage-600 text-[10px] font-bold text-white"
+                  >
                     {totalItems > 9 ? "9+" : totalItems}
                   </span>
                 )}
@@ -220,7 +238,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
         </div>
       </header>
 
-      <main id="main-content" className="container mx-auto flex-1 px-4 py-8">
+      <main id="main-content" className="container mx-auto flex-1 animate-fade-in px-4 py-8">
         {children}
       </main>
       <Footer />

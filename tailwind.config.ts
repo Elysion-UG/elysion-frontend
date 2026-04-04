@@ -96,6 +96,10 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       keyframes: {
+        "bounce-subtle": {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.2)" },
+        },
         "glow-pulse": {
           "0%, 100%": { boxShadow: "0 0 8px rgba(6, 182, 212, 0.3)" },
           "50%": { boxShadow: "0 0 20px rgba(6, 182, 212, 0.6)" },
@@ -116,13 +120,19 @@ const config: Config = {
           from: { opacity: "0" },
           to: { opacity: "1" },
         },
+        "scale-in": {
+          from: { opacity: "0", transform: "scale(0.95)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
       },
       animation: {
+        "bounce-subtle": "bounce-subtle 0.3s ease-out",
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-up": "fade-up 0.5s ease-out both",
         "fade-in": "fade-in 0.4s ease-out both",
+        "scale-in": "scale-in 0.3s ease-out both",
       },
     },
   },

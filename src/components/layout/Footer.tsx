@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { Leaf, Store, ShieldCheck } from "lucide-react"
-import { sellerUrl } from "@/src/lib/seller-url"
+import { sellerUrl, adminUrl } from "@/src/lib/seller-url"
 import { useAuth } from "@/src/hooks/useAuth"
 
 export default function Footer() {
@@ -51,17 +51,26 @@ export default function Footer() {
             </h3>
             <ul className="space-y-3 text-sm">
               <li>
-                <Link href="/" className="text-bark-300 transition-colors hover:text-white">
+                <Link
+                  href="/"
+                  className="relative text-bark-300 transition-colors after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-current after:transition-all after:duration-200 hover:text-white hover:after:w-full"
+                >
                   Shop
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="text-bark-300 transition-colors hover:text-white">
+                <Link
+                  href="/about"
+                  className="relative text-bark-300 transition-colors after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-current after:transition-all after:duration-200 hover:text-white hover:after:w-full"
+                >
                   Über uns
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-bark-300 transition-colors hover:text-white">
+                <Link
+                  href="/contact"
+                  className="relative text-bark-300 transition-colors after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-current after:transition-all after:duration-200 hover:text-white hover:after:w-full"
+                >
                   Kontakt
                 </Link>
               </li>
@@ -69,19 +78,19 @@ export default function Footer() {
                 <li>
                   <Link
                     href="/praeferenzen"
-                    className="text-bark-300 transition-colors hover:text-white"
+                    className="relative text-bark-300 transition-colors after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-current after:transition-all after:duration-200 hover:text-white hover:after:w-full"
                   >
                     Meine Präferenzen
                   </Link>
                 </li>
               )}
               <li>
-                <Link
-                  href="/login/admin"
+                <a
+                  href={adminUrl("/login/admin")}
                   className="text-bark-600 transition-colors hover:text-bark-400"
                 >
                   Admin Portal
-                </Link>
+                </a>
               </li>
             </ul>
           </div>

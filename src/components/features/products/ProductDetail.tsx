@@ -13,6 +13,7 @@ import {
   MapPin,
   Loader2,
   AlertCircle,
+  Check,
 } from "lucide-react"
 import { ProductService } from "@/src/services/product.service"
 import { CertificateService } from "@/src/services/certificate.service"
@@ -39,6 +40,7 @@ export default function ProductDetail() {
   const [quantity, setQuantity] = useState(1)
   const [activeTab, setActiveTab] = useState("details")
   const [addingToCart, setAddingToCart] = useState(false)
+  const [justAdded, setJustAdded] = useState(false)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
 
   useEffect(() => {
@@ -90,6 +92,8 @@ export default function ProductDetail() {
         variantOptions: selectedVariant?.options?.map((o) => ({ name: o.type, value: o.value })),
       })
       toast.success("Zum Warenkorb hinzugefügt")
+      setJustAdded(true)
+      setTimeout(() => setJustAdded(false), 1500)
     } catch {
       toast.error("Fehler beim Hinzufügen zum Warenkorb")
     } finally {
@@ -347,14 +351,24 @@ export default function ProductDetail() {
           <button
             onClick={handleAddToCart}
             disabled={!inStock || addingToCart}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sage-700 disabled:cursor-not-allowed disabled:bg-stone-300"
+            className={`flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-150 active:scale-95 disabled:cursor-not-allowed disabled:bg-stone-300 ${
+              justAdded ? "bg-green-600 hover:bg-green-700" : "bg-sage-600 hover:bg-sage-700"
+            }`}
           >
             {addingToCart ? (
               <Loader2 className="h-5 w-5 animate-spin" />
+            ) : justAdded ? (
+              <Check className="h-5 w-5 animate-scale-in" />
             ) : (
               <ShoppingCart className="h-5 w-5" />
             )}
-            {inStock ? "In den Warenkorb" : "Nicht verfügbar"}
+            {addingToCart
+              ? "Wird hinzugefügt…"
+              : justAdded
+                ? "Hinzugefügt!"
+                : inStock
+                  ? "In den Warenkorb"
+                  : "Nicht verfügbar"}
           </button>
 
           {/* Shipping info */}

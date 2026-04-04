@@ -662,9 +662,9 @@ export default function SustainableShop() {
           {/* Products Grid */}
           {!isLoading && !error && products.length > 0 && (
             <div
-              className={`grid gap-5 transition-opacity duration-200 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isFetching ? "opacity-60" : "opacity-100"}`}
+              className={`grid animate-fade-in gap-5 transition-opacity duration-200 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isFetching ? "opacity-60" : "opacity-100"}`}
             >
-              {products.map((product) => {
+              {products.map((product, index) => {
                 const sellerName = getSellerName(product)
                 const image = getProductImage(product)
                 const price = getProductPrice(product)
@@ -673,7 +673,8 @@ export default function SustainableShop() {
                   <div
                     key={product.id}
                     onClick={() => handleProductClick(product.slug, product.id)}
-                    className="group cursor-pointer overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-sage-200 hover:shadow-lg"
+                    style={{ animationDelay: `${index * 60}ms` }}
+                    className="group animate-fade-up cursor-pointer overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-sage-200 hover:shadow-xl active:scale-[0.98]"
                   >
                     {/* Product image */}
                     <div className="relative aspect-square overflow-hidden bg-sage-50">

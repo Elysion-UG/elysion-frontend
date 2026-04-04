@@ -51,7 +51,7 @@ export default function Checkout() {
     if (!preview?.items?.length) return
 
     const missing = (preview.items ?? [])
-      .map((i) => i.productId)
+      .map((i) => i.product?.id)
       .filter((id): id is string => !!id && !displayMap[id])
 
     if (missing.length === 0) return
@@ -171,8 +171,8 @@ export default function Checkout() {
 
   if (step === "success" && result) {
     return (
-      <div className="mx-auto max-w-lg py-16 text-center">
-        <CheckCircle2 className="mx-auto mb-6 h-20 w-20 text-green-500" />
+      <div className="mx-auto max-w-lg animate-fade-up py-16 text-center">
+        <CheckCircle2 className="mx-auto mb-6 h-20 w-20 animate-bounce-subtle text-green-500" />
         <h1 className="mb-2 text-3xl font-bold text-slate-800">Bestellung aufgegeben!</h1>
         <p className="mb-1 text-slate-500">Bestellnummer</p>
         <p className="mb-8 text-2xl font-bold text-teal-700">#{result.orderNumber}</p>
@@ -197,7 +197,7 @@ export default function Checkout() {
 
   if (step === "preview" && preview) {
     return (
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-2xl animate-fade-up">
         <h1 className="mb-8 flex items-center gap-3 text-3xl font-bold text-slate-800">
           <CreditCard className="h-8 w-8 text-teal-600" />
           Bestellung bestätigen
@@ -210,7 +210,7 @@ export default function Checkout() {
           </h2>
           <div className="space-y-3">
             {(preview.items ?? []).map((item, idx) => {
-              const display = item.productId ? displayMap[item.productId] : null
+              const display = item.product?.id ? displayMap[item.product.id] : null
               return (
                 <div key={idx} className="flex items-center gap-3 text-sm">
                   {display?.imageUrl ? (
@@ -337,7 +337,7 @@ export default function Checkout() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl animate-fade-up">
       <h1 className="mb-8 flex items-center gap-3 text-3xl font-bold text-slate-800">
         <MapPin className="h-8 w-8 text-teal-600" />
         Lieferadresse
