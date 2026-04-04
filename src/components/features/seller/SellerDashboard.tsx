@@ -7,6 +7,7 @@ import SellerProductsTab from "./SellerProductsTab"
 import SellerOrdersTab from "./SellerOrdersTab"
 import SellerCertificatesTab from "./SellerCertificatesTab"
 import SellerSettlementsTab from "./SellerSettlementsTab"
+import SellerProfileTab from "./SellerProfileTab"
 import type { Tab } from "./sellerDashboard.constants"
 
 const PAGE_META: Record<Tab, { title: string; subtitle: string }> = {
@@ -14,6 +15,7 @@ const PAGE_META: Record<Tab, { title: string; subtitle: string }> = {
   orders: { title: "Bestellungen", subtitle: "Eingehende und laufende Bestellungen" },
   certificates: { title: "Zertifikate", subtitle: "Nachhaltigkeitsnachweise für Ihre Produkte" },
   settlements: { title: "Auszahlungen", subtitle: "Erlöse und Abrechnungen" },
+  profile: { title: "Profil", subtitle: "Firmenprofil und Nachhaltigkeitsprofil verwalten" },
 }
 
 export default function SellerDashboard() {
@@ -53,6 +55,7 @@ export default function SellerDashboard() {
       {activeTab === "orders" && <SellerOrdersTab />}
       {activeTab === "certificates" && <SellerCertificatesTab />}
       {activeTab === "settlements" && <SellerSettlementsTab />}
+      {activeTab === "profile" && <SellerProfileTab />}
     </div>
   )
 }

@@ -3,9 +3,11 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
+  LayoutDashboard,
   Users,
   Store,
   Package,
+  FolderTree,
   ShoppingCart,
   DollarSign,
   Award,
@@ -24,9 +26,11 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/users", label: "Benutzer", icon: Users },
   { href: "/admin/sellers", label: "Verkäufer", icon: Store },
   { href: "/admin/products", label: "Produkte", icon: Package },
+  { href: "/admin/categories", label: "Kategorien", icon: FolderTree },
   { href: "/admin/orders", label: "Bestellungen", icon: ShoppingCart },
   { href: "/admin/finance", label: "Finanzen", icon: DollarSign },
   { href: "/admin/certificates", label: "Zertifikate", icon: Award },
@@ -71,7 +75,7 @@ function SidebarContent({
           Navigation
         </p>
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const isActive = activePath.startsWith(href)
+          const isActive = href === "/admin" ? activePath === "/admin" : activePath.startsWith(href)
           return (
             <Link
               key={href}

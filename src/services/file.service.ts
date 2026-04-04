@@ -69,6 +69,22 @@ export const FileService = {
   },
 
   /**
+   * Replace a linked file with another uploaded file.
+   * POST /api/v1/files/{fileId}/replace
+   */
+  async replace(
+    fileId: string,
+    newFileId: string,
+    targetType: FileLinkTarget,
+    targetId: string
+  ): Promise<FileMetadata> {
+    return apiRequest<FileMetadata>(`/api/v1/files/${fileId}/replace`, {
+      method: "POST",
+      body: JSON.stringify({ newFileId, targetType, targetId }),
+    })
+  },
+
+  /**
    * Upload a file and immediately link it to an entity (two-step convenience).
    */
   async uploadAndLink(

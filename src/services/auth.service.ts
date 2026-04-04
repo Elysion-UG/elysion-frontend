@@ -102,8 +102,10 @@ export const AuthService = {
     })
   },
 
-  /** Validates a password reset token without consuming it. */
-  async validateResetToken(token: string): Promise<{ valid: boolean }> {
-    return apiRequest(`/api/v1/auth/reset-password?token=${encodeURIComponent(token)}`)
+  /** Validates a password reset token without consuming it. Throws on 4xx. */
+  async validateResetToken(token: string): Promise<void> {
+    return apiRequest(`/api/v1/auth/reset-password?token=${encodeURIComponent(token)}`, {
+      method: "GET",
+    })
   },
 }

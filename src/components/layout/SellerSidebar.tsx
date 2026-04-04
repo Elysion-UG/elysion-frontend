@@ -2,16 +2,17 @@
 
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { Package, TrendingUp, Award, DollarSign, Leaf, LogOut, X, Menu } from "lucide-react"
+import { Package, TrendingUp, Award, DollarSign, User, Leaf, LogOut, X, Menu } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
 
-type Tab = "products" | "orders" | "certificates" | "settlements"
+type Tab = "products" | "orders" | "certificates" | "settlements" | "profile"
 
 const NAV_ITEMS: { key: Tab; label: string; icon: React.ElementType }[] = [
   { key: "products", label: "Produkte", icon: Package },
   { key: "orders", label: "Bestellungen", icon: TrendingUp },
   { key: "certificates", label: "Zertifikate", icon: Award },
   { key: "settlements", label: "Auszahlungen", icon: DollarSign },
+  { key: "profile", label: "Profil", icon: User },
 ]
 
 interface SellerSidebarProps {

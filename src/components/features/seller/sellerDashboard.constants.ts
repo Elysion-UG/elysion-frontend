@@ -5,7 +5,7 @@ import type {
   OrderGroupStatus,
 } from "@/src/types"
 
-export type Tab = "products" | "orders" | "settlements" | "certificates"
+export type Tab = "products" | "orders" | "settlements" | "certificates" | "profile"
 
 export const certStatusLabel: Record<CertificateStatus, string> = {
   PENDING: "Ausstehend",
