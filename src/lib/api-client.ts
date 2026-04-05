@@ -74,18 +74,9 @@ export function buildQuery(
 }
 
 // ── Token store ────────────────────────────────────────────────────────────────
-// _accessToken lives in module memory for XSS safety.
-//
-// IMPORTANT: We seed it synchronously from sessionStorage at module-load time.
-// React child effects run before parent effects (bottom-up order), so by the
-// time any component's useEffect calls an API, the token must already be
-// present in _accessToken — we cannot rely on AuthContext's useEffect to set
-// it first.
-//
-// We parse the JWT exp claim locally before trusting the token. If already
-// expired we clear sessionStorage immediately — otherwise an invalid
-// Authorization header is sent to every request, including public endpoints,
-// causing backends that validate auth eagerly to return 401.
+// _accessToken lives in module memory for XSS safety (H-S3).
+// AuthContext Phase 2 fetches a fresh token via the HttpOnly refresh cookie on
+// every page load; no token is ever stored in JS-readable storage.
 let _accessToken: string | null = null
 
 function jwtSecondsRemaining(token: string): number {
@@ -98,14 +89,6 @@ function jwtSecondsRemaining(token: string): number {
   }
 }
 
-function isJwtExpired(token: string): boolean {
-  return jwtSecondsRemaining(token) <= 0
-}
-
-// Access token is no longer seeded from sessionStorage at module-load time
-// (H-S3: tokens must not be stored in JS-readable storage).
-// AuthContext Phase 2 always fetches a fresh token via the HttpOnly refresh cookie.
-
 export function setAccessToken(token: string | null): void {
   _accessToken = token
 }
@@ -114,7 +97,6 @@ export function getAccessToken(): string | null {
   return _accessToken
 }
 
-// Error class
 export class ApiError extends Error {
   readonly status: number
   readonly body: unknown
@@ -187,8 +169,27 @@ export async function refreshSession(): Promise<TokensResponse> {
   return _refreshInFlight
 }
 
-// 401 refresh helper — uses shared refreshSession() to avoid concurrent refresh calls
-async function tryRefreshAndRetry<T>(path: string, options: RequestInit): Promise<T> {
+// Proactive refresh helper — fires before a request if the JWT is near expiry.
+// Only triggers for valid, near-expiry tokens (remaining > 0 && < 2 min).
+// Malformed/tampered tokens return -1 and must not trigger a refresh —
+// they will 401 normally and be retried via tryRefreshAndRetry.
+async function proactiveRefreshIfNeeded(skipRetry: boolean): Promise<void> {
+  if (!skipRetry && _accessToken) {
+    const remaining = jwtSecondsRemaining(_accessToken)
+    if (remaining > 0 && remaining < 120) {
+      try {
+        const tokens = await refreshSession()
+        setAccessToken(tokens.accessToken)
+      } catch {
+        // ignore — the actual request will handle the 401
+      }
+    }
+  }
+}
+
+// 401 refresh helper — uses shared refreshSession() to avoid concurrent refresh calls.
+// retryFn is a closure over the original arguments so each caller can re-invoke itself.
+async function tryRefreshAndRetry<T>(path: string, retryFn: () => Promise<T>): Promise<T> {
   // Guests have no access token and no persisted session — skip refresh entirely.
   // Attempting refresh without a cookie causes a "Missing refresh token" error.
   const hadToken = _accessToken != null
@@ -199,7 +200,7 @@ async function tryRefreshAndRetry<T>(path: string, options: RequestInit): Promis
   try {
     const tokens = await refreshSession()
     setAccessToken(tokens.accessToken)
-    return apiRequest<T>(path, options, true)
+    return retryFn()
   } catch {
     setAccessToken(null)
     clearAuthSession()
@@ -225,20 +226,7 @@ export async function apiRequest<T>(
     ...((options.headers as Record<string, string>) ?? {}),
   }
 
-  // Proactive refresh: if the JWT expires within 2 minutes, refresh before sending.
-  // Only fires when remaining > 0 — malformed/tampered tokens return -1 and must
-  // not trigger a refresh (they will 401 normally and be retried via tryRefreshAndRetry).
-  if (_accessToken && !skipRetry) {
-    const remaining = jwtSecondsRemaining(_accessToken)
-    if (remaining > 0 && remaining < 120) {
-      try {
-        const tokens = await refreshSession()
-        setAccessToken(tokens.accessToken)
-      } catch {
-        // ignore — will get 401 and retry normally
-      }
-    }
-  }
+  await proactiveRefreshIfNeeded(skipRetry)
 
   if (_accessToken) {
     headers["Authorization"] = `Bearer ${_accessToken}`
@@ -266,7 +254,7 @@ export async function apiRequest<T>(
 
   // 401 Unauthorized — attempt token refresh once
   if (response.status === 401 && !skipRetry) {
-    return tryRefreshAndRetry<T>(path, options)
+    return tryRefreshAndRetry<T>(path, () => apiRequest<T>(path, options, true))
   }
 
   const body = await response.json()
@@ -293,6 +281,8 @@ export async function apiRequestRaw<T>(
     ...((options.headers as Record<string, string>) ?? {}),
   }
 
+  await proactiveRefreshIfNeeded(skipRetry)
+
   if (_accessToken) {
     headers["Authorization"] = `Bearer ${_accessToken}`
   }
@@ -315,25 +305,7 @@ export async function apiRequestRaw<T>(
   }
 
   if (response.status === 401 && !skipRetry) {
-    const hadToken = _accessToken != null
-    const hasPersistedSession = typeof window !== "undefined" && loadAuthSession() != null
-    if (!hadToken && !hasPersistedSession) {
-      throw new ApiError(401, "Nicht autorisiert")
-    }
-    try {
-      const tokens = await refreshSession()
-      setAccessToken(tokens.accessToken)
-      return apiRequestRaw<T>(path, options, true)
-    } catch {
-      setAccessToken(null)
-      clearAuthSession()
-      reportApiError(path, 401, "Sitzung abgelaufen", "auth")
-      if (hadToken && typeof window !== "undefined") {
-        const { toast } = await import("sonner")
-        toast.error("Sitzung abgelaufen. Bitte erneut anmelden.")
-      }
-      throw new ApiError(401, "Sitzung abgelaufen")
-    }
+    return tryRefreshAndRetry<T>(path, () => apiRequestRaw<T>(path, options, true))
   }
 
   const body = await response.json()
@@ -349,18 +321,7 @@ export async function apiRequestRaw<T>(
 
 // Multipart upload
 export async function apiUpload<T>(path: string, form: FormData, skipRetry = false): Promise<T> {
-  // Proactive refresh: same guard as apiRequest — only fires for valid, near-expiry tokens
-  if (_accessToken && !skipRetry) {
-    const remaining = jwtSecondsRemaining(_accessToken)
-    if (remaining > 0 && remaining < 120) {
-      try {
-        const tokens = await refreshSession()
-        setAccessToken(tokens.accessToken)
-      } catch {
-        // ignore — will get 401 and retry normally
-      }
-    }
-  }
+  await proactiveRefreshIfNeeded(skipRetry)
 
   const headers: Record<string, string> = {}
 
@@ -388,25 +349,7 @@ export async function apiUpload<T>(path: string, form: FormData, skipRetry = fal
 
   // 401 Unauthorized — attempt token refresh once
   if (response.status === 401 && !skipRetry) {
-    const hadToken = _accessToken != null
-    const hasPersistedSession = typeof window !== "undefined" && loadAuthSession() != null
-    if (!hadToken && !hasPersistedSession) {
-      throw new ApiError(401, "Nicht autorisiert")
-    }
-    try {
-      const tokens = await refreshSession()
-      setAccessToken(tokens.accessToken)
-      return apiUpload<T>(path, form, true)
-    } catch {
-      setAccessToken(null)
-      clearAuthSession()
-      reportApiError(path, 401, "Sitzung abgelaufen", "auth")
-      if (hadToken && typeof window !== "undefined") {
-        const { toast } = await import("sonner")
-        toast.error("Sitzung abgelaufen. Bitte erneut anmelden.")
-      }
-      throw new ApiError(401, "Sitzung abgelaufen")
-    }
+    return tryRefreshAndRetry<T>(path, () => apiUpload<T>(path, form, true))
   }
 
   const body = await response.json()
