@@ -1,5 +1,16 @@
 /** @type {import('next').NextConfig} */
 const devHostIp = process.env.NEXT_PUBLIC_DEV_HOST_IP
+const isDev = process.env.NODE_ENV !== "production"
+
+const csp = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline' https://js.stripe.com${isDev ? " 'unsafe-eval'" : ""}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob: https://marketplace-backend-1-1w30.onrender.com",
+  "connect-src 'self' https://marketplace-backend-1-1w30.onrender.com https://js.stripe.com",
+  "frame-src https://js.stripe.com https://hooks.stripe.com",
+  "font-src 'self'",
+].join("; ")
 
 const nextConfig = {
   allowedDevOrigins: ["seller.localhost", "admin.localhost", ...(devHostIp ? [devHostIp] : [])],
@@ -16,7 +27,7 @@ const nextConfig = {
       },
     ]
   },
-  async headers() {
+  headers() {
     return [
       {
         source: "/(.*)",
@@ -25,6 +36,8 @@ const nextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Content-Security-Policy", value: csp },
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
         ],
       },
     ]
@@ -43,4 +56,5 @@ const nextConfig = {
     ],
   },
 }
+
 export default nextConfig
