@@ -1,6 +1,6 @@
 # Dokumentationsstatus
 
-**Stand:** 2026-03-31
+**Stand:** 2026-04-05
 **Status:** Aktuell
 
 ---
@@ -10,7 +10,7 @@
 | Datei                     | Inhalt                                                                           | Status     |
 | ------------------------- | -------------------------------------------------------------------------------- | ---------- |
 | `README.md`               | Projekt-Übersicht, Setup, Architektur, implementierte Module                     | ✅ Aktuell |
-| `CONTRIBUTING.md`         | Branch-Strategie, Commit-Konventionen, PR-Prozess, CI-Übersicht                  | ✅ Aktuell |
+| `CONTRIBUTING.md`         | Branch-Strategie, Commit-Konventionen, PR-Prozess, CI-Übersicht, Bun-Setup       | ✅ Aktuell |
 | `docs/api-integration.md` | Vollständige API-Integrations-Referenz (alle Endpoints, DTOs, Fehlerbehandlung)  | ✅ Aktuell |
 | `docs/BACKEND_QUIRKS.md`  | Bekannte Abweichungen Backend-Response vs. Frontend-Typen                        | ✅ Aktuell |
 | `docs/CODE_STANDARDS.md`  | Namenskonventionen, Architekturmuster, Code-Review-Checkliste                    | ✅ Aktuell |

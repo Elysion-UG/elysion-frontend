@@ -7,8 +7,8 @@
 
 ## Voraussetzungen
 
-- **Node.js 22** (LTS)
-- **npm** (kein yarn/pnpm)
+- **Bun** (primärer Package Manager — `npm install -g bun` oder [bun.sh](https://bun.sh))
+- **Node.js 22** (LTS, als Fallback für Tools die Bun nicht unterstützen)
 - Zugang zum Backend-Repo (`../marketplace-backend/`) für lokale Entwicklung
 
 ---
@@ -21,16 +21,17 @@ git clone <repo-url>
 cd v0-sustainable-online-shop
 
 # 2. Dependencies installieren
-npm install
+bun install
 
 # 3. Umgebungsvariablen konfigurieren
 cp .env.example .env.local
-# NEXT_PUBLIC_API_URL auf lokales Backend setzen (http://localhost:8080)
-# oder auf Render-Backend für reine Frontend-Arbeit:
-# NEXT_PUBLIC_API_URL=https://marketplace-backend-1-1w30.onrender.com
+# NEXT_PUBLIC_API_URL leer lassen (empfohlen) → same-origin relative Pfade
+# Nur setzen für direkten Backend-Zugriff ohne Next.js Proxy:
+#   NEXT_PUBLIC_API_URL=http://localhost:8080   (lokales Backend)
+#   NEXT_PUBLIC_API_URL=https://marketplace-backend-1-1w30.onrender.com  (Render)
 
 # 4. Dev-Server starten
-npm run dev
+bun run dev
 # → http://localhost:3000
 ```
 
@@ -112,17 +113,18 @@ git commit -m "test: add unit tests for AuthService"
 
 ## Verfügbare Scripts
 
-| Command                 | Beschreibung                 |
-| ----------------------- | ---------------------------- |
-| `npm run dev`           | Dev-Server (localhost:3000)  |
-| `npm run build`         | Production-Build             |
-| `npm run lint`          | ESLint                       |
-| `npm run format`        | Prettier (auto-fix)          |
-| `npm run format:check`  | Prettier (nur prüfen)        |
-| `npm run typecheck`     | TypeScript type check        |
-| `npm run test`          | Unit-Tests (einmalig)        |
-| `npm run test:watch`    | Unit-Tests (watch mode)      |
-| `npm run test:coverage` | Unit-Tests + Coverage-Report |
+| Command                    | Beschreibung                            |
+| -------------------------- | --------------------------------------- |
+| `bun run dev`              | Dev-Server (localhost:3000)             |
+| `bun run build`            | Production-Build                        |
+| `bun run lint`             | ESLint                                  |
+| `bun run format`           | Prettier (auto-fix)                     |
+| `bun run format:check`     | Prettier (nur prüfen)                   |
+| `bun run typecheck`        | TypeScript type check                   |
+| `bun run test`             | Unit-Tests (einmalig)                   |
+| `bun run test:watch`       | Unit-Tests (watch mode)                 |
+| `bun run test:coverage`    | Unit-Tests + Coverage-Report            |
+| `bun run test:integration` | Integrations-Tests (vitest.integration) |
 
 ---
 

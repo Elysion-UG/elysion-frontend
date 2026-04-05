@@ -101,6 +101,6 @@ Config: `.lintstagedrc`
 
 There is currently no automated deployment step in CI. Deployment is done manually.
 
-**Frontend build:** `npm run build` → `.next/` output directory
+**Frontend build:** `bun run build` → `.next/` output directory
 **Backend:** hosted on Render at `https://marketplace-backend-1-1w30.onrender.com`
 **Frontend hosting:** TBD — configure `NEXT_PUBLIC_API_URL` in hosting environment before deployment.
