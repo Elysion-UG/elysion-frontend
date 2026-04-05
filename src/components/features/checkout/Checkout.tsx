@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import Image from "next/image"
 import {
   CheckCircle2,
   Loader2,
@@ -234,10 +235,12 @@ export default function Checkout() {
               return (
                 <div key={idx} className="flex items-center gap-3 text-sm">
                   {display?.imageUrl ? (
-                    <img
+                    <Image
                       src={display.imageUrl}
-                      alt={display.name}
-                      className="h-12 w-12 flex-shrink-0 rounded-lg object-cover"
+                      alt={display.name ?? "Produkt"}
+                      width={48}
+                      height={48}
+                      className="flex-shrink-0 rounded-lg object-cover"
                     />
                   ) : (
                     <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100">

@@ -1,6 +1,7 @@
 "use client"
 
 import type React from "react"
+import Image from "next/image"
 import { ShieldCheck } from "lucide-react"
 import { formatEuro } from "@/src/lib/currency"
 import type { ProductDetail } from "@/src/types"
@@ -43,10 +44,12 @@ export default function ProductCard({ product, onProductClick, onSellerClick }: 
     >
       {/* Product image */}
       <div className="relative aspect-square overflow-hidden bg-sage-50">
-        <img
+        <Image
           src={image}
           alt={product.name ?? product.title ?? "Produkt"}
-          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          fill
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
         />
 
         {/* Certificate count badge */}

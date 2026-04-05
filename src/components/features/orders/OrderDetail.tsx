@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { Package, Truck, CheckCircle2, Loader2, ChevronLeft, MapPin } from "lucide-react"
 import { OrderService } from "@/src/services/order.service"
@@ -187,9 +188,15 @@ export default function OrderDetail() {
               const options = snap?.options ?? []
               return (
                 <div key={idx} className="flex gap-3">
-                  <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-sage-50">
+                  <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-sage-50">
                     {imageUrl ? (
-                      <img src={imageUrl} alt={name} className="h-full w-full object-cover" />
+                      <Image
+                        src={imageUrl}
+                        alt={name}
+                        fill
+                        className="object-cover"
+                        sizes="56px"
+                      />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-stone-300">
                         <Package className="h-6 w-6" />

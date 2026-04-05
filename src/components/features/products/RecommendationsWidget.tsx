@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { Sparkles, Loader2 } from "lucide-react"
 import { RecommendationService } from "@/src/services/recommendation.service"
 import { useAuth } from "@/src/context/AuthContext"
@@ -56,10 +57,12 @@ export default function RecommendationsWidget() {
           >
             <div className="relative aspect-square overflow-hidden bg-slate-100">
               {rec.imageUrl ? (
-                <img
+                <Image
                   src={rec.imageUrl}
                   alt={rec.name}
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  fill
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                  sizes="(max-width: 768px) 50vw, 25vw"
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-slate-300">

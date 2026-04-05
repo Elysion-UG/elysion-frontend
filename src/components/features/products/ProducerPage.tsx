@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
@@ -141,10 +142,13 @@ Jedes EcoWear-Kleidungsstück ist auf Langlebigkeit ausgelegt, wodurch der Bedar
     <div className="min-h-screen bg-slate-50">
       {/* Hero Section */}
       <div className="relative h-64 md:h-80">
-        <img
+        <Image
           src={producer.heroImage || "/placeholder.svg"}
           alt={`${producer.name} banner`}
-          className="h-full w-full object-cover"
+          fill
+          className="object-cover"
+          sizes="100vw"
+          priority
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
@@ -303,11 +307,13 @@ Jedes EcoWear-Kleidungsstück ist auf Langlebigkeit ausgelegt, wodurch der Bedar
                       onClick={() => handleProductClick(product.id)}
                       className="group cursor-pointer overflow-hidden rounded-lg border border-slate-200 bg-white transition-all hover:border-teal-400 hover:shadow-lg"
                     >
-                      <div className="aspect-square overflow-hidden">
-                        <img
+                      <div className="relative aspect-square overflow-hidden">
+                        <Image
                           src={product.image || "/placeholder.svg"}
                           alt={product.name}
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                          sizes="(max-width: 768px) 50vw, 33vw"
                         />
                       </div>
                       <div className="p-4">

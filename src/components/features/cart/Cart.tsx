@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Loader2, PackageOpen } from "lucide-react"
 import { useCart } from "@/src/context/CartContext"
 import { formatEuro, centsToEuro } from "@/src/lib/currency"
@@ -106,12 +107,14 @@ export default function Cart() {
                 key={item.id}
                 className="flex gap-4 rounded-xl border border-stone-200 bg-white p-4 shadow-sm"
               >
-                <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-sage-50">
+                <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-sage-50">
                   {item.imageUrl ? (
-                    <img
+                    <Image
                       src={item.imageUrl}
-                      alt={item.productName}
-                      className="h-full w-full object-cover"
+                      alt={item.productName ?? "Produkt"}
+                      fill
+                      className="object-cover"
+                      sizes="80px"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-stone-300">

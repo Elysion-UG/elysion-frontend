@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import Image from "next/image"
 import { Upload, X, ArrowUp, ArrowDown, Loader2, ImageIcon } from "lucide-react"
 import { ProductService } from "@/src/services/product.service"
 import { FileService } from "@/src/services/file.service"
@@ -138,12 +139,14 @@ export default function ProductImageManager({
             return (
               <div
                 key={imageId ?? index}
-                className="group relative overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
+                className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
               >
-                <img
+                <Image
                   src={image.url}
                   alt={`Produktbild ${index + 1}`}
-                  className="aspect-square w-full object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="200px"
                 />
                 {imageId && (
                   <div className="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100">

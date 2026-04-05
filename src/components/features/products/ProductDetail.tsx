@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import { useSearchParams, useRouter } from "next/navigation"
 import {
   ShoppingCart,
@@ -193,11 +194,13 @@ export default function ProductDetail() {
       <div className="grid gap-12 lg:grid-cols-2">
         {/* Product Images */}
         <div className="space-y-4">
-          <div className="aspect-square overflow-hidden rounded-2xl border border-stone-200 bg-sage-50 shadow-sm">
-            <img
+          <div className="relative aspect-square overflow-hidden rounded-2xl border border-stone-200 bg-sage-50 shadow-sm">
+            <Image
               src={displayImages[selectedImageIndex] ?? "/placeholder.svg"}
               alt={product.name}
-              className="h-full w-full object-cover"
+              fill
+              className="object-cover"
+              sizes="(max-width: 1024px) 100vw, 50vw"
             />
           </div>
           {displayImages.length > 1 && (
@@ -206,16 +209,18 @@ export default function ProductDetail() {
                 <button
                   key={index}
                   onClick={() => setSelectedImageIndex(index)}
-                  className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2 transition-colors ${
+                  className={`relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2 transition-colors ${
                     selectedImageIndex === index
                       ? "border-sage-500 shadow-sm"
                       : "border-stone-200 hover:border-stone-300"
                   }`}
                 >
-                  <img
+                  <Image
                     src={image}
                     alt={`${product.name} ${index + 1}`}
-                    className="h-full w-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="80px"
                   />
                 </button>
               ))}
