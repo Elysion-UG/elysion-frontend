@@ -5,6 +5,7 @@ import { Eye, EyeOff, Mail, Lock, ShieldCheck, Loader2 } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
 import { buyerUrl } from "@/src/lib/seller-url"
 import { AuthService } from "@/src/services/auth.service"
+import { ApiError } from "@/src/lib/api-client"
 import { toast } from "sonner"
 import { ErrorAlert } from "@/src/components/shared"
 
@@ -29,8 +30,12 @@ export default function AdminLogin() {
       await login({ email, password }, "admin")
       toast.success("Admin-Anmeldung erfolgreich.")
       window.location.href = "/admin/users"
-    } catch {
-      setError("Ungültige Anmeldedaten oder fehlende Berechtigung.")
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 429) {
+        setError(err.message)
+      } else {
+        setError("Ungültige Anmeldedaten oder fehlende Berechtigung.")
+      }
     }
   }
 

@@ -160,6 +160,34 @@ function reportApiError(
   }
 }
 
+// ── 429 Too Many Requests helper ──────────────────────────────────────────────
+// Parses the Retry-After header (RFC 7231: either seconds or an HTTP-date) and
+// produces a German-localised ApiError. Callers should invoke this INSTEAD of
+// reading the JSON body for a 429 response — some rate-limit responses have
+// no body at all (e.g. nginx / edge limiters), so `response.json()` would throw.
+
+function parseRetryAfter(header: string | null): number | null {
+  if (!header) return null
+  const asSeconds = Number(header)
+  if (Number.isFinite(asSeconds) && asSeconds >= 0) return Math.ceil(asSeconds)
+  const asDate = Date.parse(header)
+  if (!Number.isNaN(asDate)) {
+    const delta = Math.ceil((asDate - Date.now()) / 1000)
+    return delta > 0 ? delta : 0
+  }
+  return null
+}
+
+function buildRateLimitError(path: string, response: Response): ApiError {
+  const retryAfter = parseRetryAfter(response.headers.get("retry-after"))
+  const message =
+    retryAfter != null
+      ? `Zu viele Anfragen — bitte in ${retryAfter}s erneut versuchen.`
+      : "Zu viele Anfragen — bitte kurz warten und erneut versuchen."
+  reportApiError(path, 429, message)
+  return new ApiError(429, message, { retryAfter })
+}
+
 // Shared in-flight refresh promise — deduplicates concurrent refresh calls.
 // Without this, AuthContext's session-restore and a simultaneous 401 retry would
 // both call POST /auth/refresh with the same cookie. Refresh-token rotation
@@ -287,6 +315,11 @@ export async function apiRequest<T>(
     return tryRefreshAndRetry<T>(path, () => apiRequest<T>(path, options, true))
   }
 
+  // 429 Too Many Requests — some rate limiters return no body, so handle before .json()
+  if (response.status === 429) {
+    throw buildRateLimitError(path, response)
+  }
+
   const body = await response.json()
 
   if (!response.ok) {
@@ -338,6 +371,10 @@ export async function apiRequestRaw<T>(
     return tryRefreshAndRetry<T>(path, () => apiRequestRaw<T>(path, options, true))
   }
 
+  if (response.status === 429) {
+    throw buildRateLimitError(path, response)
+  }
+
   const body = await response.json()
 
   if (!response.ok) {
@@ -380,6 +417,10 @@ export async function apiUpload<T>(path: string, form: FormData, skipRetry = fal
   // 401 Unauthorized — attempt token refresh once
   if (response.status === 401 && !skipRetry) {
     return tryRefreshAndRetry<T>(path, () => apiUpload<T>(path, form, true))
+  }
+
+  if (response.status === 429) {
+    throw buildRateLimitError(path, response)
   }
 
   const body = await response.json()

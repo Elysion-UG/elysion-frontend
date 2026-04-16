@@ -19,6 +19,7 @@ import { useAuth } from "@/src/context/AuthContext"
 import { validatePassword, isValidEmail } from "@/src/lib/validation"
 import { AuthService } from "@/src/services"
 import { sellerUrl } from "@/src/lib/seller-url"
+import { ApiError } from "@/src/lib/api-client"
 import { toast } from "sonner"
 import { ErrorAlert } from "@/src/components/shared"
 
@@ -77,8 +78,12 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       toast.success("Erfolgreich angemeldet!")
       resetAll()
       onClose()
-    } catch {
-      setError("Ungültige Anmeldedaten. Bitte versuchen Sie es erneut.")
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 429) {
+        setError(err.message)
+      } else {
+        setError("Ungültige Anmeldedaten. Bitte versuchen Sie es erneut.")
+      }
     }
   }
 

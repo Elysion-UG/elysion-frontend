@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@/src/context/AuthContext"
 import { AuthService } from "@/src/services/auth.service"
 import { validatePassword, isValidEmail } from "@/src/lib/validation"
+import { ApiError } from "@/src/lib/api-client"
 import { toast } from "sonner"
 import { buyerUrl } from "@/src/lib/seller-url"
 import { ErrorAlert } from "@/src/components/shared"
@@ -84,8 +85,12 @@ export default function SellerLogin() {
       await login({ email, password }, "seller")
       toast.success("Erfolgreich angemeldet!")
       window.location.href = "/seller-dashboard"
-    } catch {
-      setError("Ungültige Anmeldedaten.")
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 429) {
+        setError(err.message)
+      } else {
+        setError("Ungültige Anmeldedaten.")
+      }
     }
   }
 

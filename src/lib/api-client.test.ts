@@ -921,3 +921,93 @@ describe("authenticated user 401 — generation guard", () => {
     expect(mockFetch).toHaveBeenCalledTimes(1)
   })
 })
+
+// ── 429 Too Many Requests ─────────────────────────────────────────────────────
+
+describe("429 rate-limit handling", () => {
+  function mock429(retryAfter: string | null, options: { withBody?: boolean } = {}): Response {
+    const headers = new Headers()
+    if (retryAfter !== null) headers.set("retry-after", retryAfter)
+    return {
+      status: 429,
+      ok: false,
+      headers,
+      json: options.withBody
+        ? vi.fn().mockResolvedValue({ message: "Too Many Requests" })
+        : vi.fn().mockRejectedValue(new SyntaxError("Unexpected end of JSON input")),
+    } as unknown as Response
+  }
+
+  beforeEach(() => {
+    setAccessToken(null)
+    vi.stubGlobal("fetch", vi.fn())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    setAccessToken(null)
+  })
+
+  it("parses Retry-After seconds and surfaces a German-localised message", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mock429("30")))
+    await expect(
+      apiRequest("/api/v1/auth/customer/login", { method: "POST" })
+    ).rejects.toMatchObject({
+      status: 429,
+      message: "Zu viele Anfragen — bitte in 30s erneut versuchen.",
+      body: { retryAfter: 30 },
+    })
+  })
+
+  it("parses Retry-After as an HTTP-date and computes remaining seconds", async () => {
+    const future = new Date(Date.now() + 45_000).toUTCString()
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mock429(future)))
+    const err = (await apiRequest("/api/v1/auth/customer/login", { method: "POST" }).catch(
+      (e) => e
+    )) as ApiError
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(429)
+    // Tolerance of ±2 seconds for test execution timing
+    const retryAfter = (err.body as { retryAfter: number }).retryAfter
+    expect(retryAfter).toBeGreaterThanOrEqual(43)
+    expect(retryAfter).toBeLessThanOrEqual(46)
+  })
+
+  it("falls back to a generic message when Retry-After is missing", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mock429(null)))
+    await expect(
+      apiRequest("/api/v1/auth/customer/login", { method: "POST" })
+    ).rejects.toMatchObject({
+      status: 429,
+      message: "Zu viele Anfragen — bitte kurz warten und erneut versuchen.",
+      body: { retryAfter: null },
+    })
+  })
+
+  it("does not attempt to parse the body for body-less 429 responses", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(mock429("5"))
+    vi.stubGlobal("fetch", fetchMock)
+    await expect(
+      apiRequest("/api/v1/auth/customer/login", { method: "POST" })
+    ).rejects.toMatchObject({ status: 429 })
+    // Only one request; no crash from json() rejecting
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("applies to apiRequestRaw as well", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mock429("10")))
+    await expect(apiRequestRaw("/public/feed")).rejects.toMatchObject({
+      status: 429,
+      message: "Zu viele Anfragen — bitte in 10s erneut versuchen.",
+    })
+  })
+
+  it("applies to apiUpload as well", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mock429("15")))
+    const form = new FormData()
+    await expect(apiUpload("/api/v1/upload", form)).rejects.toMatchObject({
+      status: 429,
+      message: "Zu viele Anfragen — bitte in 15s erneut versuchen.",
+    })
+  })
+})
