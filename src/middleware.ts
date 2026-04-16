@@ -60,10 +60,68 @@ function buyerOrigin(request: NextRequest): string {
 // All auth gating is performed by the client-side AuthGuard / AdminGuard /
 // SellerGuard components, which read the actual AuthContext state.
 
+// ── Content Security Policy ────────────────────────────────────────────────
+// A fresh nonce is generated per request so inline bootstrap scripts emitted
+// by Next.js can be executed without 'unsafe-inline'. The nonce travels via an
+// `x-nonce` request header that Next.js reads during SSR. Dev mode still needs
+// 'unsafe-eval' for HMR / React Fast Refresh.
+//
+// style-src retains 'unsafe-inline' because Radix UI / recharts inject inline
+// style attributes that can't currently be nonce-tagged. Tightening this is
+// tracked as a separate follow-up — nonce-tagging styles requires either
+// a CSS-in-JS migration or a Radix upstream change.
+
+const isDev = process.env.NODE_ENV !== "production"
+
+function buildCsp(nonce: string): string {
+  const scriptSrc = [
+    "'self'",
+    `'nonce-${nonce}'`,
+    "https://js.stripe.com",
+    ...(isDev ? ["'unsafe-eval'"] : []),
+  ].join(" ")
+
+  return [
+    "default-src 'self'",
+    `script-src ${scriptSrc}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https://marketplace-backend-1-1w30.onrender.com",
+    "connect-src 'self' https://marketplace-backend-1-1w30.onrender.com https://js.stripe.com",
+    "frame-src https://js.stripe.com https://hooks.stripe.com",
+    "font-src 'self'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ")
+}
+
+function generateNonce(): string {
+  // crypto.randomUUID is available in the edge runtime; strip dashes to get
+  // a CSP-safe alphanumeric token.
+  return crypto.randomUUID().replace(/-/g, "")
+}
+
+function applySecurityHeaders(request: NextRequest, response: NextResponse, nonce: string): void {
+  response.headers.set("Content-Security-Policy", buildCsp(nonce))
+  // Expose the nonce to downstream request handlers via the request header on
+  // the cloned response — already applied on `request` by the caller.
+  void request
+}
+
 // ── Middleware ─────────────────────────────────────────────────────────────
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const nonce = generateNonce()
+  const csp = buildCsp(nonce)
+
+  // Forward the nonce to the app so <Script nonce={…}> and Next.js' own
+  // inline bootstrap scripts can adopt it during SSR.
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set("x-nonce", nonce)
+  requestHeaders.set("Content-Security-Policy", csp)
+
+  const nextWithNonce = () => NextResponse.next({ request: { headers: requestHeaders } })
 
   // ── Seller domain ────────────────────────────────────────────────────────
   if (isSellerDomain(request)) {
@@ -74,15 +132,21 @@ export function middleware(request: NextRequest) {
 
     // Any non-seller path → redirect to buyer domain (shop pages don't belong here)
     if (!isSellerPath) {
-      return NextResponse.redirect(new URL(pathname, buyerOrigin(request)))
+      const res = NextResponse.redirect(new URL(pathname, buyerOrigin(request)))
+      applySecurityHeaders(request, res, nonce)
+      return res
     }
 
     // Root → redirect to dashboard (client-side AuthGuard handles login redirect)
     if (pathname === "/") {
-      return NextResponse.redirect(new URL("/seller-dashboard", request.url))
+      const res = NextResponse.redirect(new URL("/seller-dashboard", request.url))
+      applySecurityHeaders(request, res, nonce)
+      return res
     }
 
-    return NextResponse.next()
+    const res = nextWithNonce()
+    applySecurityHeaders(request, res, nonce)
+    return res
   }
 
   // ── Admin domain ─────────────────────────────────────────────────────────
@@ -94,15 +158,21 @@ export function middleware(request: NextRequest) {
 
     // Any non-admin path → redirect to buyer domain (shop pages don't belong here)
     if (!isAdminPath) {
-      return NextResponse.redirect(new URL(pathname, buyerOrigin(request)))
+      const res = NextResponse.redirect(new URL(pathname, buyerOrigin(request)))
+      applySecurityHeaders(request, res, nonce)
+      return res
     }
 
     // Root → redirect to dashboard (client-side AdminGuard handles login redirect)
     if (pathname === "/") {
-      return NextResponse.redirect(new URL("/admin", request.url))
+      const res = NextResponse.redirect(new URL("/admin", request.url))
+      applySecurityHeaders(request, res, nonce)
+      return res
     }
 
-    return NextResponse.next()
+    const res = nextWithNonce()
+    applySecurityHeaders(request, res, nonce)
+    return res
   }
 
   // ── Main / buyer domain ──────────────────────────────────────────────────
@@ -115,10 +185,14 @@ export function middleware(request: NextRequest) {
     const sellerDomain = process.env.SELLER_DOMAIN
     if (sellerDomain) {
       const target = new URL(pathname, `${request.nextUrl.protocol}//${sellerDomain}`)
-      return NextResponse.redirect(target)
+      const res = NextResponse.redirect(target)
+      applySecurityHeaders(request, res, nonce)
+      return res
     }
     // No seller domain configured → client-side SellerGuard handles auth
-    return NextResponse.next()
+    const res = nextWithNonce()
+    applySecurityHeaders(request, res, nonce)
+    return res
   }
 
   // Redirect all admin entry points to the admin domain when configured
@@ -129,18 +203,20 @@ export function middleware(request: NextRequest) {
     const adminDomain = process.env.ADMIN_DOMAIN
     if (adminDomain) {
       const target = new URL(pathname, `${request.nextUrl.protocol}//${adminDomain}`)
-      return NextResponse.redirect(target)
+      const res = NextResponse.redirect(target)
+      applySecurityHeaders(request, res, nonce)
+      return res
     }
     // No admin domain configured → client-side AdminGuard handles auth
-    return NextResponse.next()
+    const res = nextWithNonce()
+    applySecurityHeaders(request, res, nonce)
+    return res
   }
 
   // Buyer auth is handled client-side by AuthGuard in the (buyer) layout.
-  // The middleware cookie check was unreliable because the backend's HttpOnly
-  // refreshToken cookie may not be visible here (wrong Path/Domain attributes
-  // after proxying). Client-side guards use sessionStorage + AuthContext which
-  // is always in sync with the actual auth state.
-  return NextResponse.next()
+  const res = nextWithNonce()
+  applySecurityHeaders(request, res, nonce)
+  return res
 }
 
 export const config = {
