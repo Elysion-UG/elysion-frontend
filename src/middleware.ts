@@ -55,9 +55,10 @@ function buyerOrigin(request: NextRequest): string {
   return `${protocol}://${bare}`
 }
 
-function hasSession(request: NextRequest): boolean {
-  return request.cookies.has("refreshToken")
-}
+// NOTE: No cookie-based session check here. The refresh cookie is scoped to
+// /api/v1/auth and is not visible to the middleware on navigation requests.
+// All auth gating is performed by the client-side AuthGuard / AdminGuard /
+// SellerGuard components, which read the actual AuthContext state.
 
 // ── Middleware ─────────────────────────────────────────────────────────────
 
@@ -116,10 +117,7 @@ export function middleware(request: NextRequest) {
       const target = new URL(pathname, `${request.nextUrl.protocol}//${sellerDomain}`)
       return NextResponse.redirect(target)
     }
-    // No seller domain configured → protect seller-dashboard with session check
-    if (SELLER_PROTECTED.some((r) => pathname.startsWith(r)) && !hasSession(request)) {
-      return NextResponse.redirect(new URL("/", request.url))
-    }
+    // No seller domain configured → client-side SellerGuard handles auth
     return NextResponse.next()
   }
 
@@ -133,10 +131,7 @@ export function middleware(request: NextRequest) {
       const target = new URL(pathname, `${request.nextUrl.protocol}//${adminDomain}`)
       return NextResponse.redirect(target)
     }
-    // No admin domain configured → protect admin routes with session check
-    if (ADMIN_PROTECTED.some((r) => pathname.startsWith(r)) && !hasSession(request)) {
-      return NextResponse.redirect(new URL("/", request.url))
-    }
+    // No admin domain configured → client-side AdminGuard handles auth
     return NextResponse.next()
   }
 

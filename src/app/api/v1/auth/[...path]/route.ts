@@ -49,12 +49,15 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
   })
 
   // Forward Set-Cookie headers (refresh token set/rotate/clear) back to the browser.
-  // Rewrite Path to "/" so the cookie is visible to the Next.js middleware on ALL
-  // routes (e.g. /profil, /orders). The backend typically sets Path=/api/v1/auth
-  // which would make the cookie invisible to non-API navigation requests.
+  // Strip Domain so the cookie is bound to the current host (the backend may set
+  // Domain=localhost for the API origin, which the browser would reject on
+  // seller.localhost / admin.localhost subdomains).
+  // Keep the backend-provided Path as-is — the refresh cookie only needs to reach
+  // /api/v1/auth/refresh and broadening its scope would unnecessarily leak it to
+  // every request.
   const setCookies = upstream.headers.getSetCookie()
   for (const sc of setCookies) {
-    const rewritten = sc.replace(/Path=\/[^;]*/i, "Path=/").replace(/;\s*Domain=[^;]*/i, "")
+    const rewritten = sc.replace(/;\s*Domain=[^;]*/i, "")
     res.headers.append("Set-Cookie", rewritten)
   }
 
