@@ -8,6 +8,8 @@ import {
   apiRequest,
   apiRequestRaw,
   apiUpload,
+  getAuthGeneration,
+  bumpAuthGeneration,
 } from "./api-client"
 
 // Mock dynamic imports used inside tryRefreshAndRetry to prevent loading the
@@ -854,5 +856,68 @@ describe("authenticated user 401 — refresh-and-retry", () => {
     const result = await apiUpload<{ fileId: string }>("/api/v1/files", new FormData())
     expect(result).toEqual({ fileId: "f2" })
     expect(mockFetch).toHaveBeenCalledTimes(2)
+  })
+})
+
+// ── Auth generation counter ───────────────────────────────────────────────────
+//
+// Guards against late-apply: an in-flight refresh must not restore session
+// state after a logout that happened while the refresh was pending.
+
+describe("auth generation counter", () => {
+  it("getAuthGeneration is monotonically non-decreasing", () => {
+    const g1 = getAuthGeneration()
+    bumpAuthGeneration()
+    const g2 = getAuthGeneration()
+    expect(g2).toBeGreaterThan(g1)
+  })
+
+  it("bumpAuthGeneration is idempotent-per-call (each call increments by 1)", () => {
+    const before = getAuthGeneration()
+    bumpAuthGeneration()
+    bumpAuthGeneration()
+    expect(getAuthGeneration()).toBe(before + 2)
+  })
+})
+
+describe("authenticated user 401 — generation guard", () => {
+  const refreshedTokensResponse = {
+    accessToken: "refreshed-access-token",
+    user: { id: "u1", email: "test@example.com", role: "BUYER" as const },
+    expiresIn: 3600,
+  }
+
+  beforeEach(async () => {
+    setAccessToken("valid-but-expired-token")
+    vi.stubGlobal("fetch", vi.fn())
+    const { AuthService } = await import("@/src/services/auth.service")
+    vi.mocked(AuthService.refresh).mockResolvedValue(refreshedTokensResponse as any)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    setAccessToken(null)
+    window.sessionStorage.removeItem(AUTH_SESSION_KEY)
+  })
+
+  it("bumping the generation during an in-flight 401-retry causes the retry to fail", async () => {
+    const { AuthService } = await import("@/src/services/auth.service")
+    // refresh resolves only after the generation has been bumped
+    vi.mocked(AuthService.refresh).mockImplementation(async () => {
+      bumpAuthGeneration() // simulates a concurrent logout
+      return refreshedTokensResponse as any
+    })
+
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce(mockFetchResponse(401, { message: "Unauthorized" }, false))
+    vi.stubGlobal("fetch", mockFetch)
+
+    await expect(apiRequest("/api/v1/items")).rejects.toMatchObject({
+      status: 401,
+      message: "Sitzung abgelaufen",
+    })
+    // The original request was tried once; no retry because generation changed
+    expect(mockFetch).toHaveBeenCalledTimes(1)
   })
 })

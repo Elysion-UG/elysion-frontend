@@ -1,15 +1,7 @@
 "use client"
 
 import type React from "react"
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-} from "react"
+import { createContext, useContext, useState, useCallback, useEffect, useLayoutEffect } from "react"
 import type {
   User,
   LoginDTO,
@@ -25,6 +17,8 @@ import {
   saveAuthSession,
   loadAuthSession,
   clearAuthSession,
+  bumpAuthGeneration,
+  getAuthGeneration,
   type AuthPortal,
 } from "@/src/lib/api-client"
 
@@ -58,7 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true) // true until session restore completes
-  const refreshTimer = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // ── Phase 1: synchronous sessionStorage restore (before first paint) ──────────
   //
@@ -80,9 +73,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Always runs — even when Phase 1 restored a user from sessionStorage —
   // because the access token is never persisted. A fresh token is obtained
   // from the HttpOnly refresh cookie on every cold start / page reload.
+  //
+  // The generation guard prevents a stale resolve from restoring auth state
+  // after a logout that happened while this refresh was in flight.
   useEffect(() => {
+    const gen = getAuthGeneration()
     refreshSession()
       .then(async (res) => {
+        if (gen !== getAuthGeneration()) return // logout happened mid-refresh
         const tokens = res as TokensResponse
         setToken(tokens.accessToken)
         setAccessToken(tokens.accessToken)
@@ -100,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Backend refresh didn't return a user — fall back to /users/me.
           const { UserService } = await import("@/src/services/user.service")
           const freshUser = await UserService.getCurrentUser()
+          if (gen !== getAuthGeneration()) return
           const portal: AuthPortal =
             freshUser.role === "SELLER"
               ? "seller"
@@ -111,56 +110,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
       .catch(() => {
+        if (gen !== getAuthGeneration()) return
         // No valid refresh cookie — stay logged out.
         setAccessToken(null)
         setUser(null)
         setToken(null)
         clearAuthSession()
       })
-      .finally(() => setIsLoading(false))
+      .finally(() => {
+        if (gen !== getAuthGeneration()) return
+        setIsLoading(false)
+      })
   }, [])
 
   const isAuthenticated = !!token && !!user
   const role = user?.role ?? null
   const sellerStatus = user?.sellerProfile?.status ?? null
 
-  // Token refresh interval — fires every 10 min, retries up to 2× before logging out
-  useEffect(() => {
-    if (token) {
-      refreshTimer.current = setInterval(
-        async () => {
-          const maxRetries = 2
-          for (let attempt = 0; attempt <= maxRetries; attempt++) {
-            try {
-              const res = await AuthService.refresh()
-              setToken(res.accessToken)
-              setAccessToken(res.accessToken)
-              if (user) {
-                const persisted = loadAuthSession()
-                const portal = persisted?.portal ?? "customer"
-                saveAuthSession(user, portal)
-              }
-              return // success — exit
-            } catch {
-              if (attempt < maxRetries) {
-                await new Promise((r) => setTimeout(r, (attempt + 1) * 3000))
-              } else {
-                // All retries exhausted — log out
-                setUser(null)
-                setToken(null)
-                setAccessToken(null)
-                clearAuthSession()
-              }
-            }
-          }
-        },
-        10 * 60 * 1000
-      )
-    }
-    return () => {
-      if (refreshTimer.current) clearInterval(refreshTimer.current)
-    }
-  }, [token, user])
+  // No background setInterval refresh — proactive-on-request (<120s remaining)
+  // and reactive 401-retry in api-client cover the refresh needs. Idle tabs
+  // no longer compete with tab-focus refreshes for the single-use refresh
+  // cookie, which eliminated a race where two rotations invalidated each other.
 
   const login = useCallback(async (dto: LoginDTO, portal: AuthPortal): Promise<UserRole> => {
     setIsLoading(true)
@@ -174,6 +144,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await loginFn(dto)
       // login response always includes user
       const loggedInUser = res.user!
+      // Bump generation so any in-flight refreshes from the previous auth state
+      // don't overwrite this fresh token when they resolve.
+      bumpAuthGeneration()
       setUser(loggedInUser)
       setToken(res.accessToken)
       setAccessToken(res.accessToken)
@@ -200,6 +173,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const logout = useCallback(async () => {
+    // Bump generation FIRST so any in-flight refresh resolve is discarded
+    // before it can re-apply a token after state has been cleared.
+    bumpAuthGeneration()
     setIsLoading(true)
     try {
       await AuthService.logout()
@@ -212,22 +188,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAccessToken(null)
       clearAuthSession()
       setIsLoading(false)
-      if (refreshTimer.current) clearInterval(refreshTimer.current)
     }
   }, [])
 
   const refreshTokenFn = useCallback(async () => {
     if (!token) return
+    // Route through the shared, deduplicated refreshSession() so this call
+    // coalesces with any in-flight refresh triggered by api-client's proactive
+    // or 401-retry paths. Capturing the generation guards against late-apply
+    // after a concurrent logout.
+    const gen = getAuthGeneration()
     try {
-      const res = await AuthService.refresh()
-      setToken(res.accessToken)
-      setAccessToken(res.accessToken)
+      const tokens = await refreshSession()
+      if (gen !== getAuthGeneration()) return
+      setToken(tokens.accessToken)
+      setAccessToken(tokens.accessToken)
       if (user) {
         const persisted = loadAuthSession()
         const portal = persisted?.portal ?? "customer"
         saveAuthSession(user, portal)
       }
     } catch {
+      if (gen !== getAuthGeneration()) return
+      bumpAuthGeneration()
       setUser(null)
       setToken(null)
       clearAuthSession()

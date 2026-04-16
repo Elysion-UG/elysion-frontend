@@ -21,6 +21,8 @@ vi.mock("@/src/lib/api-client", () => ({
   loadAuthSession: vi.fn().mockReturnValue(null),
   saveAuthSession: vi.fn(),
   clearAuthSession: vi.fn(),
+  getAuthGeneration: vi.fn(() => 0),
+  bumpAuthGeneration: vi.fn(),
   AUTH_SESSION_KEY: "auth_session",
 }))
 

@@ -20,12 +20,20 @@ vi.mock("@/src/services/auth.service", () => ({
 // Mock api-client to control refreshSession directly and avoid the module-level
 // _refreshInFlight cache bleeding between tests. All session-storage helpers are
 // mocked as no-ops so tests control sessionStorage themselves via the Web API.
+// Generation helpers are backed by a local counter so that bumpAuthGeneration()
+// observably increases the value returned by getAuthGeneration() — which is
+// what the real implementation does.
+let _testAuthGen = 0
 vi.mock("@/src/lib/api-client", () => ({
   setAccessToken: vi.fn(),
   refreshSession: vi.fn(),
   saveAuthSession: vi.fn(),
   loadAuthSession: vi.fn().mockReturnValue(null),
   clearAuthSession: vi.fn(),
+  getAuthGeneration: vi.fn(() => _testAuthGen),
+  bumpAuthGeneration: vi.fn(() => {
+    _testAuthGen += 1
+  }),
   AUTH_SESSION_KEY: "auth_session",
 }))
 
@@ -36,6 +44,8 @@ import {
   loadAuthSession,
   saveAuthSession,
   clearAuthSession,
+  bumpAuthGeneration,
+  getAuthGeneration,
 } from "@/src/lib/api-client"
 
 // ── Fixtures ───────────────────────────────────────────────────────────────────
@@ -68,6 +78,7 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
 // Clear sessionStorage so persisted auth state doesn't bleed between tests.
 beforeEach(() => {
   sessionStorage.clear()
+  _testAuthGen = 0
   vi.mocked(refreshSession).mockRejectedValue(new Error("no session"))
 })
 
@@ -659,5 +670,51 @@ describe("setUser", () => {
     })
 
     expect(result.current.role).toBe("ADMIN")
+  })
+})
+
+// ── logout-race: in-flight refresh must not resurrect session ─────────────────
+//
+// Scenario: user loads a page → Phase 2 kicks off refreshSession() → user clicks
+// logout before refresh resolves → refresh resolves with a valid token. Without
+// the generation guard, Phase 2 would call setUser/setToken and undo the logout.
+
+describe("session restore — logout during in-flight refresh", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    _testAuthGen = 0
+    sessionStorage.clear()
+    vi.mocked(AuthService.logout).mockResolvedValue(undefined)
+  })
+
+  it("does not restore user/token when refreshSession resolves after logout", async () => {
+    // Hold refreshSession pending; we'll resolve it manually after logout.
+    let resolveRefresh!: (v: TokensResponse) => void
+    vi.mocked(refreshSession).mockReturnValue(
+      new Promise<TokensResponse>((resolve) => {
+        resolveRefresh = resolve
+      }) as never
+    )
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    // Trigger logout while Phase-2 refresh is still pending.
+    await act(async () => {
+      await result.current.logout()
+    })
+
+    expect(result.current.user).toBeNull()
+    expect(result.current.token).toBeNull()
+    expect(bumpAuthGeneration).toHaveBeenCalled()
+
+    // Now the stale refresh resolves — it must NOT restore state.
+    await act(async () => {
+      resolveRefresh(mockTokensResponse)
+      await Promise.resolve()
+    })
+
+    expect(result.current.user).toBeNull()
+    expect(result.current.token).toBeNull()
+    expect(result.current.isAuthenticated).toBe(false)
   })
 })

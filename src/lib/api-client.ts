@@ -79,6 +79,22 @@ export function buildQuery(
 // every page load; no token is ever stored in JS-readable storage.
 let _accessToken: string | null = null
 
+// ── Auth generation counter ────────────────────────────────────────────────────
+// Increments on every auth state transition (login success, logout, refresh
+// failure). Callers that await refreshSession() must capture the generation
+// before the await and discard the result if the generation has changed.
+// Without this, an in-flight refresh can resolve after logout and restore
+// the session via setAccessToken/setUser (lost-logout bug).
+let _authGen = 0
+
+export function getAuthGeneration(): number {
+  return _authGen
+}
+
+export function bumpAuthGeneration(): void {
+  _authGen += 1
+}
+
 function jwtSecondsRemaining(token: string): number {
   try {
     const payload = JSON.parse(atob(token.split(".")[1])) as { exp?: number }
@@ -177,8 +193,11 @@ async function proactiveRefreshIfNeeded(skipRetry: boolean): Promise<void> {
   if (!skipRetry && _accessToken) {
     const remaining = jwtSecondsRemaining(_accessToken)
     if (remaining > 0 && remaining < 120) {
+      const gen = _authGen
       try {
         const tokens = await refreshSession()
+        // Auth state changed during refresh (logout / new login) — discard.
+        if (gen !== _authGen) return
         setAccessToken(tokens.accessToken)
       } catch {
         // ignore — the actual request will handle the 401
@@ -197,13 +216,24 @@ async function tryRefreshAndRetry<T>(path: string, retryFn: () => Promise<T>): P
   if (!hadToken && !hasPersistedSession) {
     throw new ApiError(401, "Nicht autorisiert")
   }
+  const gen = _authGen
   try {
     const tokens = await refreshSession()
+    // Auth state changed during refresh (logout / new login) — fail the retry
+    // rather than resurrect a stale session.
+    if (gen !== _authGen) {
+      throw new ApiError(401, "Sitzung abgelaufen")
+    }
     setAccessToken(tokens.accessToken)
     return retryFn()
   } catch {
-    setAccessToken(null)
-    clearAuthSession()
+    // Only mutate shared state if this refresh attempt still represents the
+    // current auth generation. Otherwise another transition already took over.
+    if (gen === _authGen) {
+      bumpAuthGeneration()
+      setAccessToken(null)
+      clearAuthSession()
+    }
     reportApiError(path, 401, "Sitzung abgelaufen", "auth")
     if (hadToken && typeof window !== "undefined") {
       const { toast } = await import("sonner")
