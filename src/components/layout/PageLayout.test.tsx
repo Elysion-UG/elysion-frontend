@@ -13,7 +13,7 @@ vi.mock("@/src/context/AuthContext", () => ({
   }),
 }))
 
-vi.mock("@/src/hooks/useCart", () => ({
+vi.mock("@/src/context/CartContext", () => ({
   useCart: vi.fn().mockReturnValue({ totalItems: 0 }),
 }))
 

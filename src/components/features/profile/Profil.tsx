@@ -174,7 +174,6 @@ export default function Profil() {
 
   useEffect(() => {
     if (!profileData) return
-    setUser(profileData)
     setFirstName(profileData.firstName ?? "")
     setLastName(profileData.lastName ?? "")
     setPhone(profileData.phone ?? "")
@@ -431,24 +430,15 @@ export default function Profil() {
             onToggle={toggleSection}
           />
           {expandedSections.payment && (
-            <div className="space-y-4 px-5 pb-5">
-              <div className="flex items-center justify-between rounded-lg border border-stone-200 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-12 items-center justify-center rounded bg-slate-800 text-xs font-bold text-white">
-                    VISA
-                  </div>
-                  <div>
-                    <p className="font-medium text-stone-800">{"•••• •••• •••• 4242"}</p>
-                    <p className="text-sm text-stone-500">Gültig bis 12/26</p>
-                  </div>
-                </div>
-                <span className="rounded bg-sage-100 px-2 py-0.5 text-xs text-sage-700">
-                  Standard
-                </span>
+            <div className="space-y-3 px-5 pb-5">
+              <div className="rounded-lg border border-dashed border-stone-200 bg-stone-50 p-4 text-center">
+                <p className="text-sm font-medium text-stone-700">
+                  Gespeicherte Zahlungsmethoden folgen in Kürze
+                </p>
+                <p className="mt-1 text-xs text-stone-500">
+                  Aktuell werden Zahlungen pro Bestellung im Checkout ausgewählt.
+                </p>
               </div>
-              <button className="flex items-center gap-2 text-sm font-medium text-sage-600 hover:text-sage-700">
-                <Plus className="h-4 w-4" /> Zahlungsmethode hinzufügen
-              </button>
             </div>
           )}
         </div>
@@ -463,35 +453,16 @@ export default function Profil() {
             onToggle={toggleSection}
           />
           {expandedSections.notifications && (
-            <div className="space-y-4 px-5 pb-5">
-              {[
-                {
-                  label: "E-Mail Benachrichtigungen",
-                  desc: "Bestellbestätigungen und Updates",
-                  defaultOn: true,
-                },
-                { label: "Newsletter", desc: "Angebote und neue Produkte", defaultOn: false },
-                {
-                  label: "Push-Benachrichtigungen",
-                  desc: "Echtzeit-Updates im Browser",
-                  defaultOn: true,
-                },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between py-2">
-                  <div>
-                    <p className="font-medium text-stone-800">{item.label}</p>
-                    <p className="text-sm text-stone-500">{item.desc}</p>
-                  </div>
-                  <label className="relative inline-flex cursor-pointer items-center">
-                    <input
-                      type="checkbox"
-                      defaultChecked={item.defaultOn}
-                      className="peer sr-only"
-                    />
-                    <div className="peer h-6 w-11 rounded-full bg-stone-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-stone-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-sage-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none" />
-                  </label>
-                </div>
-              ))}
+            <div className="space-y-3 px-5 pb-5">
+              <div className="rounded-lg border border-dashed border-stone-200 bg-stone-50 p-4 text-center">
+                <p className="text-sm font-medium text-stone-700">
+                  Benachrichtigungseinstellungen folgen in Kürze
+                </p>
+                <p className="mt-1 text-xs text-stone-500">
+                  Wichtige Bestell-E-Mails erhalten Sie aktuell automatisch an Ihre hinterlegte
+                  Adresse.
+                </p>
+              </div>
             </div>
           )}
         </div>

@@ -95,7 +95,7 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
 ## Auth-Zugriff in Komponenten
 
 ```typescript
-import { useAuth } from "@/src/hooks/useAuth"
+import { useAuth } from "@/src/context/AuthContext"
 
 export function MyComponent() {
   const { user, isAuthenticated, isLoading } = useAuth()

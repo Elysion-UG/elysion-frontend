@@ -1,10 +1,8 @@
 import { describe, it, expect, vi } from "vitest"
 import { renderHook } from "@testing-library/react"
 import React from "react"
-import { AuthProvider } from "@/src/context/AuthContext"
-import { CartProvider } from "@/src/context/CartContext"
-import { useAuth } from "./useAuth"
-import { useCart } from "./useCart"
+import { AuthProvider, useAuth } from "@/src/context/AuthContext"
+import { CartProvider, useCart } from "@/src/context/CartContext"
 
 vi.mock("@/src/services/auth.service", () => ({
   AuthService: {

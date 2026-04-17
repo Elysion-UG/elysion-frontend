@@ -18,7 +18,7 @@ import {
   PackageSearch,
 } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
-import { useCart } from "@/src/hooks/useCart"
+import { useCart } from "@/src/context/CartContext"
 import LoginModal from "@/src/components/features/auth/LoginModal"
 import Footer from "@/src/components/layout/Footer"
 import { sellerUrl, adminUrl } from "@/src/lib/seller-url"

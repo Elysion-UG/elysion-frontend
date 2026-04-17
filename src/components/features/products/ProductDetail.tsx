@@ -18,7 +18,7 @@ import {
 } from "lucide-react"
 import { ProductService } from "@/src/services/product.service"
 import { CertificateService } from "@/src/services/certificate.service"
-import { useCart } from "@/src/hooks/useCart"
+import { useCart } from "@/src/context/CartContext"
 import { formatEuro } from "@/src/lib/currency"
 import type {
   ProductDetail as ProductDetailType,
