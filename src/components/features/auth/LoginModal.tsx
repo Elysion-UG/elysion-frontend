@@ -3,18 +3,7 @@
 import type React from "react"
 import { useState } from "react"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
-import {
-  X,
-  Eye,
-  EyeOff,
-  Mail,
-  Lock,
-  User,
-  Building2,
-  Loader2,
-  CheckCircle2,
-  XCircle,
-} from "lucide-react"
+import { X, Mail, User, Building2, Loader2, CheckCircle2, XCircle } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
 import { validatePassword, isValidEmail } from "@/src/lib/validation"
 import { AuthService } from "@/src/services"
@@ -22,6 +11,7 @@ import { sellerUrl } from "@/src/lib/seller-url"
 import { ApiError } from "@/src/lib/api-client"
 import { toast } from "sonner"
 import { ErrorAlert } from "@/src/components/shared"
+import { PasswordField } from "@/src/components/features/auth/_shared/PasswordField"
 
 interface LoginModalProps {
   isOpen: boolean
@@ -33,7 +23,6 @@ type ModalView = "login" | "register" | "forgot"
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const { login, register, isLoading } = useAuth()
   const [view, setView] = useState<ModalView>("login")
-  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
 
   const [loginEmail, setLoginEmail] = useState("")
@@ -61,7 +50,6 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setPrivacyAccepted(false)
     setForgotEmail("")
     setForgotSubmitted(false)
-    setShowPassword(false)
   }
 
   const switchView = (v: ModalView) => {
@@ -210,30 +198,14 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="login-pw" className="mb-1 block text-sm font-medium text-stone-700">
-                  Passwort
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-                  <input
-                    id="login-pw"
-                    type={showPassword ? "text" : "password"}
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    required
-                    className="w-full rounded-xl border border-stone-300 py-2.5 pl-10 pr-10 text-stone-800 focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
-                    placeholder="Passwort"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
+              <PasswordField
+                id="login-pw"
+                label="Passwort"
+                value={loginPassword}
+                onChange={setLoginPassword}
+                placeholder="Passwort"
+                required
+              />
 
               <div className="text-right">
                 <button
@@ -362,27 +334,14 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               </div>
 
               <div>
-                <label htmlFor="reg-pw" className="mb-1 block text-sm font-medium text-stone-700">
-                  Passwort
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-                  <input
-                    id="reg-pw"
-                    type={showPassword ? "text" : "password"}
-                    value={regPassword}
-                    onChange={(e) => setRegPassword(e.target.value)}
-                    required
-                    className="w-full rounded-xl border border-stone-300 py-2.5 pl-10 pr-10 text-stone-800 focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
+                <PasswordField
+                  id="reg-pw"
+                  label="Passwort"
+                  value={regPassword}
+                  onChange={setRegPassword}
+                  required
+                  autoComplete="new-password"
+                />
                 {regPassword.length > 0 && (
                   <ul className="mt-2 space-y-1">
                     {pwValidation.results.map((r) => (
@@ -403,20 +362,14 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               </div>
 
               <div>
-                <label htmlFor="reg-cpw" className="mb-1 block text-sm font-medium text-stone-700">
-                  Passwort bestätigen
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-                  <input
-                    id="reg-cpw"
-                    type={showPassword ? "text" : "password"}
-                    value={regConfirmPassword}
-                    onChange={(e) => setRegConfirmPassword(e.target.value)}
-                    required
-                    className="w-full rounded-xl border border-stone-300 py-2.5 pl-10 pr-4 text-stone-800 focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
-                  />
-                </div>
+                <PasswordField
+                  id="reg-cpw"
+                  label="Passwort bestätigen"
+                  value={regConfirmPassword}
+                  onChange={setRegConfirmPassword}
+                  required
+                  autoComplete="new-password"
+                />
                 {regConfirmPassword.length > 0 && regPassword !== regConfirmPassword && (
                   <p className="mt-1 flex items-center gap-1 text-xs text-red-600">
                     <XCircle className="h-3.5 w-3.5" /> Passwörter stimmen nicht überein
