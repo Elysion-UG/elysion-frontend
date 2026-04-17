@@ -1,25 +1,17 @@
 "use client"
 
 import React, { useState } from "react"
-import {
-  Mail,
-  Leaf,
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  ShieldCheck,
-  BarChart3,
-  Award,
-  Banknote,
-} from "lucide-react"
+import { Leaf, CheckCircle2, XCircle, ShieldCheck, BarChart3, Award, Banknote } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
-import { AuthService } from "@/src/services/auth.service"
 import { validatePassword, isValidEmail } from "@/src/lib/validation"
 import { ApiError } from "@/src/lib/api-client"
 import { toast } from "sonner"
 import { buyerUrl } from "@/src/lib/seller-url"
 import { ErrorAlert } from "@/src/components/shared"
 import { PasswordField } from "@/src/components/features/auth/_shared/PasswordField"
+import { EmailField } from "@/src/components/features/auth/_shared/EmailField"
+import { AuthSubmitButton } from "@/src/components/features/auth/_shared/AuthSubmitButton"
+import { ForgotPasswordPanel } from "@/src/components/features/auth/_shared/ForgotPasswordPanel"
 
 type View = "login" | "register" | "forgot"
 
@@ -30,16 +22,17 @@ const FEATURES = [
   { icon: Banknote, text: "Transparente Auszahlungen und Abrechnungen" },
 ]
 
+const textInputClass =
+  "w-full rounded-xl border border-stone-300 px-3 py-2.5 text-sm focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
+
 export default function SellerLogin() {
   const { login, register, isLoading } = useAuth()
   const [view, setView] = useState<View>("login")
   const [error, setError] = useState("")
 
-  // Login
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
-  // Register
   const [regEmail, setRegEmail] = useState("")
   const [regPassword, setRegPassword] = useState("")
   const [regConfirm, setRegConfirm] = useState("")
@@ -48,10 +41,6 @@ export default function SellerLogin() {
   const [regCompany, setRegCompany] = useState("")
   const [regVatId, setRegVatId] = useState("")
   const [regIban, setRegIban] = useState("")
-
-  // Forgot
-  const [forgotEmail, setForgotEmail] = useState("")
-  const [forgotDone, setForgotDone] = useState(false)
 
   const reset = () => {
     setError("")
@@ -65,8 +54,6 @@ export default function SellerLogin() {
     setRegCompany("")
     setRegVatId("")
     setRegIban("")
-    setForgotEmail("")
-    setForgotDone(false)
   }
 
   const switchView = (v: View) => {
@@ -127,23 +114,12 @@ export default function SellerLogin() {
     }
   }
 
-  const handleForgot = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      await AuthService.forgotPassword(forgotEmail)
-    } catch {
-      /* silent */
-    }
-    setForgotDone(true)
-  }
-
   const pwCheck = validatePassword(regPassword)
 
   return (
     <div className="flex min-h-screen">
       {/* ── LEFT PANEL (desktop only) ── */}
       <div className="relative hidden overflow-hidden bg-stone-900 lg:flex lg:w-5/12 lg:flex-col lg:px-12 lg:py-16 xl:w-2/5">
-        {/* Decorative blobs */}
         <div
           aria-hidden="true"
           className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-sage-700/20"
@@ -153,7 +129,6 @@ export default function SellerLogin() {
           className="absolute -bottom-16 -right-16 h-72 w-72 rounded-full bg-sage-600/10"
         />
 
-        {/* Logo */}
         <div className="relative flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sage-600">
             <Leaf className="h-5 w-5 text-white" />
@@ -166,7 +141,6 @@ export default function SellerLogin() {
           </div>
         </div>
 
-        {/* Headline */}
         <div className="relative mt-16">
           <h2 className="text-3xl font-bold leading-snug text-white">
             Ihr nachhaltiges Geschäft — <span className="text-sage-400">zentral verwaltet.</span>
@@ -176,7 +150,6 @@ export default function SellerLogin() {
           </p>
         </div>
 
-        {/* Feature list */}
         <ul className="relative mt-10 space-y-5">
           {FEATURES.map(({ icon: Icon, text }) => (
             <li key={text} className="flex items-start gap-3">
@@ -188,7 +161,6 @@ export default function SellerLogin() {
           ))}
         </ul>
 
-        {/* Bottom note */}
         <p className="relative mt-auto pt-16 text-xs text-stone-600">
           Elysion Marketplace · Nachhaltiger Handel
         </p>
@@ -196,7 +168,6 @@ export default function SellerLogin() {
 
       {/* ── RIGHT PANEL (form) ── */}
       <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto bg-white px-6 py-12">
-        {/* Mobile logo */}
         <div className="mb-8 flex flex-col items-center gap-2 lg:hidden">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-stone-900">
             <Leaf className="h-6 w-6 text-sage-400" />
@@ -208,7 +179,6 @@ export default function SellerLogin() {
         </div>
 
         <div className="w-full max-w-md">
-          {/* ── LOGIN ── */}
           {view === "login" && (
             <>
               <h1 className="mb-1 text-2xl font-bold text-stone-800">Willkommen zurück</h1>
@@ -219,20 +189,13 @@ export default function SellerLogin() {
               {error && <ErrorAlert message={error} className="mb-5" />}
 
               <form onSubmit={handleLogin} className="space-y-4">
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-stone-700">E-Mail</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      className="w-full rounded-xl border border-stone-300 py-2.5 pl-10 pr-4 text-sm focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
-                      placeholder="ihre@firma.de"
-                    />
-                  </div>
-                </div>
+                <EmailField
+                  label="E-Mail"
+                  value={email}
+                  onChange={setEmail}
+                  placeholder="ihre@firma.de"
+                  required
+                />
                 <PasswordField
                   label="Passwort"
                   value={password}
@@ -249,19 +212,11 @@ export default function SellerLogin() {
                     Passwort vergessen?
                   </button>
                 </div>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sage-700 disabled:opacity-50"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Anmeldung...
-                    </>
-                  ) : (
-                    "Anmelden"
-                  )}
-                </button>
+                <AuthSubmitButton
+                  label="Anmelden"
+                  pendingLabel="Anmeldung..."
+                  isLoading={isLoading}
+                />
               </form>
 
               <p className="mt-8 text-center text-sm text-stone-500">
@@ -276,7 +231,6 @@ export default function SellerLogin() {
             </>
           )}
 
-          {/* ── REGISTER ── */}
           {view === "register" && (
             <>
               <h1 className="mb-1 text-2xl font-bold text-stone-800">Als Verkäufer registrieren</h1>
@@ -297,7 +251,7 @@ export default function SellerLogin() {
                       value={regFirstName}
                       onChange={(e) => setRegFirstName(e.target.value)}
                       required
-                      className="w-full rounded-xl border border-stone-300 px-3 py-2.5 text-sm focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
+                      className={textInputClass}
                     />
                   </div>
                   <div>
@@ -309,27 +263,18 @@ export default function SellerLogin() {
                       value={regLastName}
                       onChange={(e) => setRegLastName(e.target.value)}
                       required
-                      className="w-full rounded-xl border border-stone-300 px-3 py-2.5 text-sm focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
+                      className={textInputClass}
                     />
                   </div>
                 </div>
 
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-stone-700">
-                    E-Mail *
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-                    <input
-                      type="email"
-                      value={regEmail}
-                      onChange={(e) => setRegEmail(e.target.value)}
-                      required
-                      className="w-full rounded-xl border border-stone-300 py-2.5 pl-10 pr-4 text-sm focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
-                      placeholder="ihre@firma.de"
-                    />
-                  </div>
-                </div>
+                <EmailField
+                  label="E-Mail *"
+                  value={regEmail}
+                  onChange={setRegEmail}
+                  placeholder="ihre@firma.de"
+                  required
+                />
 
                 <div>
                   <PasswordField
@@ -411,19 +356,11 @@ export default function SellerLogin() {
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sage-700 disabled:opacity-50"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" /> Registrierung...
-                    </>
-                  ) : (
-                    "Verkäufer-Konto erstellen"
-                  )}
-                </button>
+                <AuthSubmitButton
+                  label="Verkäufer-Konto erstellen"
+                  pendingLabel="Registrierung..."
+                  isLoading={isLoading}
+                />
               </form>
 
               <p className="mt-8 text-center text-sm text-stone-500">
@@ -438,54 +375,14 @@ export default function SellerLogin() {
             </>
           )}
 
-          {/* ── FORGOT ── */}
           {view === "forgot" && (
-            <>
-              <h1 className="mb-1 text-2xl font-bold text-stone-800">Passwort zurücksetzen</h1>
-              {!forgotDone ? (
-                <>
-                  <p className="mb-8 text-sm text-stone-500">
-                    Wir senden Ihnen einen Reset-Link an Ihre E-Mail-Adresse.
-                  </p>
-                  <form onSubmit={handleForgot} className="space-y-4">
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
-                      <input
-                        type="email"
-                        value={forgotEmail}
-                        onChange={(e) => setForgotEmail(e.target.value)}
-                        required
-                        className="w-full rounded-xl border border-stone-300 py-2.5 pl-10 pr-4 text-sm focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
-                        placeholder="ihre@firma.de"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="w-full rounded-xl bg-sage-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sage-700"
-                    >
-                      Link senden
-                    </button>
-                  </form>
-                </>
-              ) : (
-                <div className="mt-8 text-center">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
-                    <CheckCircle2 className="h-7 w-7 text-emerald-500" />
-                  </div>
-                  <p className="text-sm text-stone-600">
-                    Falls ein Konto existiert, haben wir einen Reset-Link gesendet.
-                  </p>
-                </div>
-              )}
-              <div className="mt-8 text-center">
-                <button
-                  onClick={() => switchView("login")}
-                  className="text-sm font-semibold text-sage-600 hover:text-sage-800"
-                >
-                  ← Zurück zur Anmeldung
-                </button>
-              </div>
-            </>
+            <ForgotPasswordPanel
+              intro="Wir senden Ihnen einen Reset-Link an Ihre E-Mail-Adresse."
+              successMessage="Falls ein Konto existiert, haben wir einen Reset-Link gesendet."
+              backLabel="← Zurück zur Anmeldung"
+              placeholder="ihre@firma.de"
+              onBack={() => switchView("login")}
+            />
           )}
         </div>
 
