@@ -34,7 +34,10 @@ export interface PersistedAuthSession {
 export function saveAuthSession(user: User, portal: AuthPortal): void {
   try {
     window.sessionStorage.setItem(AUTH_SESSION_KEY, JSON.stringify({ user, portal }))
-  } catch {}
+  } catch {
+    // sessionStorage may be unavailable (private mode). Session is best-effort;
+    // the HttpOnly refresh cookie is the authoritative source of truth.
+  }
 }
 
 export function loadAuthSession(): PersistedAuthSession | null {
@@ -50,7 +53,9 @@ export function loadAuthSession(): PersistedAuthSession | null {
 export function clearAuthSession(): void {
   try {
     window.sessionStorage.removeItem(AUTH_SESSION_KEY)
-  } catch {}
+  } catch {
+    // sessionStorage may be unavailable (private mode); nothing to remove.
+  }
 }
 
 // ── Query string builder ───────────────────────────────────────────────────────

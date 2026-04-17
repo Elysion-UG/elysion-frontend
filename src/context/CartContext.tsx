@@ -69,7 +69,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     try {
       localStorage.removeItem("guest_cart")
-    } catch {}
+    } catch {
+      // localStorage may be unavailable (private mode, SSR); safe to ignore.
+    }
   }, [])
 
   // Sync cart with backend on auth state changes:

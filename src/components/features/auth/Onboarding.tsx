@@ -72,7 +72,10 @@ export default function Onboarding() {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1)
     } else {
-      // TODO: Call API to save user preferences
+      // Onboarding is currently advisory: the definitive preference store is
+      // the BuyerValueProfile reachable via /praeferenzen. Persisting the
+      // selection here would require a dedicated backend endpoint that does
+      // not yet exist.
       toast.success("Onboarding abgeschlossen!")
     }
   }

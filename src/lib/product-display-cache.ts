@@ -94,7 +94,9 @@ export function saveVariantOptions(variantId: string, options: VariantOption[]):
       VARIANT_OPTIONS_CACHE_KEY,
       JSON.stringify({ ...cache, [variantId]: options })
     )
-  } catch {}
+  } catch {
+    // QuotaExceededError or private-mode restriction — cache is best-effort.
+  }
 }
 
 export function getVariantOptions(variantId: string): VariantOption[] | null {

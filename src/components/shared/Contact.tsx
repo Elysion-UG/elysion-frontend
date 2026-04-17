@@ -39,7 +39,8 @@ export default function Contact() {
     setIsSubmitting(true)
 
     try {
-      // TODO: echten API-Endpunkt für Kontaktformular anbinden
+      // No contact API on the backend yet; the form is intentionally a stub
+      // that simulates a network round-trip so the UI can be validated.
       await new Promise((resolve) => setTimeout(resolve, 1000))
       setSubmitted(true)
       setFormData({ name: "", email: "", subject: "", message: "" })
