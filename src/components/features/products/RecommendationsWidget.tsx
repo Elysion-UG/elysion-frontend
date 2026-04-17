@@ -1,30 +1,24 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import Image from "next/image"
+import { useQuery } from "@tanstack/react-query"
 import { Sparkles, Loader2 } from "lucide-react"
 import { RecommendationService } from "@/src/services/recommendation.service"
 import { useAuth } from "@/src/context/AuthContext"
-import type { Recommendation } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
 
 export default function RecommendationsWidget() {
   const { isAuthenticated, role } = useAuth()
-  const [recommendations, setRecommendations] = useState<Recommendation[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const isBuyer = isAuthenticated && role === "BUYER"
 
-  useEffect(() => {
-    if (!isAuthenticated || role !== "BUYER") return
-    setIsLoading(true)
-    RecommendationService.getRecommendations(6)
-      .then(setRecommendations)
-      .catch(() => {
-        // Silently hide — recommendations are non-critical
-      })
-      .finally(() => setIsLoading(false))
-  }, [isAuthenticated, role])
+  const { data: recommendations = [], isLoading } = useQuery({
+    queryKey: ["recommendations", 6],
+    queryFn: () => RecommendationService.getRecommendations(6),
+    enabled: isBuyer,
+    staleTime: 5 * 60 * 1000,
+  })
 
-  if (!isAuthenticated || role !== "BUYER") return null
+  if (!isBuyer) return null
   if (isLoading) {
     return (
       <div className="mb-10">

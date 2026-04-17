@@ -46,7 +46,7 @@ export default function AdminUserDetail() {
       }
     }
     load()
-  }, [])
+  }, [id])
 
   const handleSuspend = async () => {
     if (!user) return

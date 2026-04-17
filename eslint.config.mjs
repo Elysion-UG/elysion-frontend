@@ -1,8 +1,15 @@
 import nextConfig from "eslint-config-next"
 
-export default [
+const config = [
   {
-    ignores: [".claude/", ".clone/", "everything-claude-code/", ".next/", "node_modules/"],
+    ignores: [
+      ".claude/",
+      ".clone/",
+      "everything-claude-code/",
+      ".next/",
+      "node_modules/",
+      "coverage/",
+    ],
   },
   ...nextConfig,
   {
@@ -25,3 +32,5 @@ export default [
     },
   },
 ]
+
+export default config

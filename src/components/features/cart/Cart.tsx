@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import Link from "next/link"
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Loader2, PackageOpen } from "lucide-react"
 import { useCart } from "@/src/context/CartContext"
 import { formatEuro, centsToEuro } from "@/src/lib/currency"
@@ -56,12 +57,12 @@ export default function Cart() {
           <h2 className="text-xl font-bold text-stone-800">Dein Warenkorb ist leer</h2>
           <p className="mt-1 text-sm text-stone-500">Entdecke unsere nachhaltigen Produkte.</p>
         </div>
-        <a
+        <Link
           href="/"
           className="rounded-xl bg-sage-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sage-700"
         >
           Zum Shop
-        </a>
+        </Link>
       </div>
     )
   }

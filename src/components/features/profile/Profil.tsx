@@ -174,6 +174,8 @@ export default function Profil() {
 
   useEffect(() => {
     if (!profileData) return
+    // Hydrate form state from fetched profile — user may still edit fields afterwards.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setFirstName(profileData.firstName ?? "")
     setLastName(profileData.lastName ?? "")
     setPhone(profileData.phone ?? "")

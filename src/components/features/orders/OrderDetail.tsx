@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Package, Truck, CheckCircle2, Loader2, ChevronLeft, MapPin } from "lucide-react"
 import { OrderService } from "@/src/services/order.service"
@@ -86,7 +87,7 @@ export default function OrderDetail() {
     )
       .then((entries) => setDisplayMap((prev) => ({ ...prev, ...Object.fromEntries(entries) })))
       .catch(() => {})
-  }, [order])
+  }, [order, displayMap])
 
   if (isLoading) {
     return (
@@ -104,13 +105,13 @@ export default function OrderDetail() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <a
+      <Link
         href="/orders"
         className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-stone-400 transition-colors hover:text-sage-600"
       >
         <ChevronLeft className="h-4 w-4" />
         Alle Bestellungen
-      </a>
+      </Link>
 
       <div className="mb-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -190,13 +191,7 @@ export default function OrderDetail() {
                 <div key={idx} className="flex gap-3">
                   <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-sage-50">
                     {imageUrl ? (
-                      <Image
-                        src={imageUrl}
-                        alt={name}
-                        fill
-                        className="object-cover"
-                        sizes="56px"
-                      />
+                      <Image src={imageUrl} alt={name} fill className="object-cover" sizes="56px" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-stone-300">
                         <Package className="h-6 w-6" />

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import Link from "next/link"
 import { AlertTriangle, RefreshCw, Home } from "lucide-react"
 import { errorStore } from "@/src/lib/error-store"
 
@@ -38,13 +39,13 @@ export default function AdminError({
           <RefreshCw className="h-4 w-4" />
           Erneut versuchen
         </button>
-        <a
+        <Link
           href="/admin/users"
           className="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 shadow-sm hover:bg-slate-700"
         >
           <Home className="h-4 w-4" />
           Admin-Startseite
-        </a>
+        </Link>
       </div>
     </div>
   )

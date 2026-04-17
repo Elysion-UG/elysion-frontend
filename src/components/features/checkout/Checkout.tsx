@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import {
   CheckCircle2,
   Loader2,
@@ -92,7 +93,7 @@ export default function Checkout() {
       .catch(() => {
         // Silently ignore — placeholder remains
       })
-  }, [preview])
+  }, [preview, displayMap])
 
   useEffect(() => {
     if (!isAuthenticated) return
@@ -199,18 +200,18 @@ export default function Checkout() {
         <p className="mb-8 text-2xl font-bold text-teal-700">#{result.orderNumber}</p>
         <p className="mb-8 text-slate-500">Du erhältst eine Bestätigung per E-Mail.</p>
         <div className="flex flex-col justify-center gap-3 sm:flex-row">
-          <a
+          <Link
             href="/orders"
             className="rounded-lg bg-teal-600 px-6 py-3 font-medium text-white transition-colors hover:bg-teal-700"
           >
             Meine Bestellungen
-          </a>
-          <a
+          </Link>
+          <Link
             href="/"
             className="rounded-lg border border-slate-300 px-6 py-3 font-medium text-slate-700 transition-colors hover:bg-slate-50"
           >
             Weiter einkaufen
-          </a>
+          </Link>
         </div>
       </div>
     )

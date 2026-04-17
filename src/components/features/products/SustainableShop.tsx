@@ -39,7 +39,9 @@ export default function SustainableShop() {
     useState<Record<string, string>>(MIDDLE_IMPORTANCE)
 
   useEffect(() => {
+    // Sync slider state from server-side value profile; user may still override locally.
     if (!isAuthenticated || !valueProfile?.simpleProfile) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSustainabilityImportance(MIDDLE_IMPORTANCE)
       return
     }

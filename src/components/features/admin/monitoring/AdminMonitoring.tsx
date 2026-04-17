@@ -13,15 +13,10 @@ import dynamic from "next/dynamic"
 import HealthSummaryCards from "./HealthSummaryCards"
 import ErrorList from "./ErrorList"
 
-const ErrorTrendChart = dynamic(
-  () => import("./ErrorTrendChart"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="h-[300px] animate-pulse rounded bg-muted" />
-    ),
-  }
-)
+const ErrorTrendChart = dynamic(() => import("./ErrorTrendChart"), {
+  ssr: false,
+  loading: () => <div className="h-[300px] animate-pulse rounded bg-muted" />,
+})
 
 const TIME_RANGES = [
   { label: "1 Std.", hours: 1 },
@@ -43,6 +38,8 @@ export default function AdminMonitoring() {
 
   // Subscribe to live updates
   useEffect(() => {
+    // Initial sync from external error store — required before the subscription fires.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh()
     const unsubscribe = errorStore.subscribe(() => {
       refresh()

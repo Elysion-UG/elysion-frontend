@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import Link from "next/link"
 import { AlertTriangle, RefreshCw, Home } from "lucide-react"
 import { errorStore } from "@/src/lib/error-store"
 
@@ -38,13 +39,13 @@ export default function BuyerError({
           <RefreshCw className="h-4 w-4" />
           Erneut versuchen
         </button>
-        <a
+        <Link
           href="/"
           className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
         >
           <Home className="h-4 w-4" />
           Startseite
-        </a>
+        </Link>
       </div>
     </div>
   )

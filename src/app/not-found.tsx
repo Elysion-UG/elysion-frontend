@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Home, Search } from "lucide-react"
 
 export default function NotFound() {
@@ -10,13 +11,13 @@ export default function NotFound() {
       <p className="max-w-sm text-sm text-gray-500">
         Die angeforderte Seite existiert nicht oder wurde verschoben.
       </p>
-      <a
+      <Link
         href="/"
         className="inline-flex items-center gap-2 rounded-md bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700"
       >
         <Home className="h-4 w-4" />
         Zur Startseite
-      </a>
+      </Link>
     </div>
   )
 }

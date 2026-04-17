@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import Link from "next/link"
 import { Lock, Eye, EyeOff, CheckCircle2, XCircle, Loader2, AlertTriangle } from "lucide-react"
 import { AuthService } from "@/src/services/auth.service"
 import { validatePassword } from "@/src/lib/validation"
@@ -82,12 +83,12 @@ export default function ResetPassword() {
             <p className="mb-6 text-stone-600">
               Dieser Link zum Zurücksetzen des Passworts ist ungültig oder abgelaufen.
             </p>
-            <a
+            <Link
               href="/"
               className="inline-block rounded-xl bg-sage-600 px-6 py-2.5 font-semibold text-white transition-colors hover:bg-sage-700"
             >
               Zur Startseite
-            </a>
+            </Link>
           </div>
         )}
 
@@ -100,12 +101,12 @@ export default function ResetPassword() {
             <p className="mb-6 text-stone-600">
               Sie können sich jetzt mit Ihrem neuen Passwort anmelden.
             </p>
-            <a
+            <Link
               href="/"
               className="inline-block rounded-xl bg-sage-600 px-6 py-2.5 font-semibold text-white transition-colors hover:bg-sage-700"
             >
               Zur Anmeldung
-            </a>
+            </Link>
           </div>
         )}
 

@@ -82,6 +82,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (authLoading) return
 
     if (isAuthenticated && !isCustomerPortal) {
+      // Seller/admin portals don't have a cart — reset local state on portal switch.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCart(emptyCart)
       setIsInitializing(false)
       return
