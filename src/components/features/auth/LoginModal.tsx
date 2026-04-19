@@ -3,17 +3,18 @@
 import type React from "react"
 import { useState } from "react"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
-import { X, Mail, User, Building2, CheckCircle2, XCircle } from "lucide-react"
+import { X, Mail, User, Building2, XCircle } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
 import { validatePassword, isValidEmail } from "@/src/lib/validation"
 import { sellerUrl } from "@/src/lib/seller-url"
-import { ApiError } from "@/src/lib/api-client"
 import { toast } from "sonner"
 import { ErrorAlert } from "@/src/components/shared"
 import { PasswordField } from "@/src/components/features/auth/_shared/PasswordField"
 import { EmailField } from "@/src/components/features/auth/_shared/EmailField"
 import { AuthSubmitButton } from "@/src/components/features/auth/_shared/AuthSubmitButton"
 import { ForgotPasswordPanel } from "@/src/components/features/auth/_shared/ForgotPasswordPanel"
+import { PasswordStrengthHints } from "@/src/components/features/auth/_shared/PasswordStrengthHints"
+import { useAuthLoginHandler } from "@/src/components/features/auth/_shared/useAuthLoginHandler"
 
 interface LoginModalProps {
   isOpen: boolean
@@ -26,9 +27,8 @@ const textInputClass =
   "w-full rounded-xl border border-stone-300 px-3 py-2.5 text-stone-800 focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  const { login, register, isLoading } = useAuth()
+  const { register, isLoading } = useAuth()
   const [view, setView] = useState<ModalView>("login")
-  const [error, setError] = useState("")
 
   const [loginEmail, setLoginEmail] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
@@ -39,6 +39,20 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const [regFirstName, setRegFirstName] = useState("")
   const [regLastName, setRegLastName] = useState("")
   const [privacyAccepted, setPrivacyAccepted] = useState(false)
+
+  const {
+    error,
+    setError,
+    submit: submitLogin,
+  } = useAuthLoginHandler({
+    portal: "customer",
+    invalidCredentialsMessage: "Ungültige Anmeldedaten. Bitte versuchen Sie es erneut.",
+    successToast: "Erfolgreich angemeldet!",
+    onSuccess: () => {
+      resetAll()
+      onClose()
+    },
+  })
 
   const resetAll = () => {
     setError("")
@@ -57,21 +71,9 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setView(v)
   }
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
-    try {
-      await login({ email: loginEmail, password: loginPassword }, "customer")
-      toast.success("Erfolgreich angemeldet!")
-      resetAll()
-      onClose()
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 429) {
-        setError(err.message)
-      } else {
-        setError("Ungültige Anmeldedaten. Bitte versuchen Sie es erneut.")
-      }
-    }
+    void submitLogin(loginEmail, loginPassword)
   }
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -291,23 +293,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   required
                   autoComplete="new-password"
                 />
-                {regPassword.length > 0 && (
-                  <ul className="mt-2 space-y-1">
-                    {pwValidation.results.map((r) => (
-                      <li
-                        key={r.label}
-                        className={`flex items-center gap-1.5 text-xs ${r.passed ? "text-emerald-600" : "text-stone-400"}`}
-                      >
-                        {r.passed ? (
-                          <CheckCircle2 className="h-3.5 w-3.5" />
-                        ) : (
-                          <XCircle className="h-3.5 w-3.5" />
-                        )}
-                        {r.label}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+                <PasswordStrengthHints password={regPassword} results={pwValidation.results} />
               </div>
 
               <div>

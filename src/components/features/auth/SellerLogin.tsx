@@ -1,10 +1,9 @@
 "use client"
 
 import React, { useState } from "react"
-import { Leaf, CheckCircle2, XCircle, ShieldCheck, BarChart3, Award, Banknote } from "lucide-react"
+import { Leaf, XCircle, ShieldCheck, BarChart3, Award, Banknote } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
 import { validatePassword, isValidEmail } from "@/src/lib/validation"
-import { ApiError } from "@/src/lib/api-client"
 import { toast } from "sonner"
 import { buyerUrl } from "@/src/lib/seller-url"
 import { ErrorAlert } from "@/src/components/shared"
@@ -12,6 +11,8 @@ import { PasswordField } from "@/src/components/features/auth/_shared/PasswordFi
 import { EmailField } from "@/src/components/features/auth/_shared/EmailField"
 import { AuthSubmitButton } from "@/src/components/features/auth/_shared/AuthSubmitButton"
 import { ForgotPasswordPanel } from "@/src/components/features/auth/_shared/ForgotPasswordPanel"
+import { PasswordStrengthHints } from "@/src/components/features/auth/_shared/PasswordStrengthHints"
+import { useAuthLoginHandler } from "@/src/components/features/auth/_shared/useAuthLoginHandler"
 
 type View = "login" | "register" | "forgot"
 
@@ -26,9 +27,8 @@ const textInputClass =
   "w-full rounded-xl border border-stone-300 px-3 py-2.5 text-sm focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
 
 export default function SellerLogin() {
-  const { login, register, isLoading } = useAuth()
+  const { register, isLoading } = useAuth()
   const [view, setView] = useState<View>("login")
-  const [error, setError] = useState("")
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -41,6 +41,19 @@ export default function SellerLogin() {
   const [regCompany, setRegCompany] = useState("")
   const [regVatId, setRegVatId] = useState("")
   const [regIban, setRegIban] = useState("")
+
+  const {
+    error,
+    setError,
+    submit: submitLogin,
+  } = useAuthLoginHandler({
+    portal: "seller",
+    invalidCredentialsMessage: "Ungültige Anmeldedaten.",
+    successToast: "Erfolgreich angemeldet!",
+    onSuccess: () => {
+      window.location.href = "/seller-dashboard"
+    },
+  })
 
   const reset = () => {
     setError("")
@@ -61,20 +74,9 @@ export default function SellerLogin() {
     setView(v)
   }
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
-    try {
-      await login({ email, password }, "seller")
-      toast.success("Erfolgreich angemeldet!")
-      window.location.href = "/seller-dashboard"
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 429) {
-        setError(err.message)
-      } else {
-        setError("Ungültige Anmeldedaten.")
-      }
-    }
+    void submitLogin(email, password)
   }
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -284,23 +286,7 @@ export default function SellerLogin() {
                     required
                     autoComplete="new-password"
                   />
-                  {regPassword.length > 0 && (
-                    <ul className="mt-2 space-y-1">
-                      {pwCheck.results.map((r) => (
-                        <li
-                          key={r.label}
-                          className={`flex items-center gap-1.5 text-xs ${r.passed ? "text-emerald-600" : "text-stone-400"}`}
-                        >
-                          {r.passed ? (
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                          ) : (
-                            <XCircle className="h-3.5 w-3.5" />
-                          )}{" "}
-                          {r.label}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <PasswordStrengthHints password={regPassword} results={pwCheck.results} />
                 </div>
 
                 <div>

@@ -4,38 +4,33 @@ import React, { useState } from "react"
 import { ShieldCheck } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
 import { buyerUrl } from "@/src/lib/seller-url"
-import { ApiError } from "@/src/lib/api-client"
-import { toast } from "sonner"
 import { ErrorAlert } from "@/src/components/shared"
 import { PasswordField } from "@/src/components/features/auth/_shared/PasswordField"
 import { EmailField } from "@/src/components/features/auth/_shared/EmailField"
 import { AuthSubmitButton } from "@/src/components/features/auth/_shared/AuthSubmitButton"
 import { ForgotPasswordPanel } from "@/src/components/features/auth/_shared/ForgotPasswordPanel"
+import { useAuthLoginHandler } from "@/src/components/features/auth/_shared/useAuthLoginHandler"
 
 type View = "login" | "forgot"
 
 export default function AdminLogin() {
-  const { login, isLoading } = useAuth()
+  const { isLoading } = useAuth()
   const [view, setView] = useState<View>("login")
-  const [error, setError] = useState("")
-
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    try {
-      await login({ email, password }, "admin")
-      toast.success("Admin-Anmeldung erfolgreich.")
+  const { error, submit } = useAuthLoginHandler({
+    portal: "admin",
+    invalidCredentialsMessage: "Ungültige Anmeldedaten oder fehlende Berechtigung.",
+    successToast: "Admin-Anmeldung erfolgreich.",
+    onSuccess: () => {
       window.location.href = "/admin/users"
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 429) {
-        setError(err.message)
-      } else {
-        setError("Ungültige Anmeldedaten oder fehlende Berechtigung.")
-      }
-    }
+    },
+  })
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault()
+    void submit(email, password)
   }
 
   return (
