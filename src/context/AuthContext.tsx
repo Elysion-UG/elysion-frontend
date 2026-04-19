@@ -1,7 +1,15 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useCallback, useEffect, useLayoutEffect } from "react"
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+} from "react"
 import type {
   User,
   LoginDTO,
@@ -229,25 +237,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [token]
   )
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        isAuthenticated,
-        isLoading,
-        role,
-        sellerStatus,
-        login,
-        register,
-        logout,
-        refreshToken: refreshTokenFn,
-        setUser: handleSetUser,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+  // Stable context value: without useMemo, every AuthProvider render would
+  // create a new object and cascade-re-render every useAuth consumer.
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      user,
+      token,
+      isAuthenticated,
+      isLoading,
+      role,
+      sellerStatus,
+      login,
+      register,
+      logout,
+      refreshToken: refreshTokenFn,
+      setUser: handleSetUser,
+    }),
+    [
+      user,
+      token,
+      isAuthenticated,
+      isLoading,
+      role,
+      sellerStatus,
+      login,
+      register,
+      logout,
+      refreshTokenFn,
+      handleSetUser,
+    ]
   )
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {

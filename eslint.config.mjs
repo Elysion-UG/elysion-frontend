@@ -17,17 +17,17 @@ const config = [
       // German-language app — apostrophes in JSX text are expected
       "react/no-unescaped-entities": "off",
 
-      // Performance suggestions — warn only, not blocking
-      "@next/next/no-img-element": "warn",
-      "@next/next/no-html-link-for-pages": "warn",
-      "@next/next/no-assign-module-variable": "warn",
+      // Next.js rules — enforce as errors so CI fails on regressions
+      "@next/next/no-img-element": "error",
+      "@next/next/no-html-link-for-pages": "error",
+      "@next/next/no-assign-module-variable": "error",
 
-      // Hook purity/immutability — warn until codebase is migrated
-      "react-hooks/immutability": "warn",
-      "react-hooks/purity": "warn",
-      "react-hooks/set-state-in-effect": "warn",
+      // Hook purity/immutability — enforce as errors; codebase is clean today
+      "react-hooks/immutability": "error",
+      "react-hooks/purity": "error",
+      "react-hooks/set-state-in-effect": "error",
 
-      // Style preference — warn only
+      // Style preference — keep as warn (stylistic, not correctness)
       "import/no-anonymous-default-export": "warn",
     },
   },

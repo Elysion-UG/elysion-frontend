@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useState, useCallback, useEffect } from "react"
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from "react"
 import { toast } from "sonner"
 import type { Cart, CartItem, AddToCartDTO } from "@/src/types"
 import { CartService } from "@/src/services/cart.service"
@@ -209,29 +209,43 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const totalItems = (cart.items ?? []).reduce((sum, i) => sum + i.quantity, 0)
-  const totalPrice = (cart.items ?? []).reduce(
-    (sum, i) => sum + (i.unitPriceCents != null ? (i.unitPriceCents * i.quantity) / 100 : 0),
-    0
+  const { totalItems, totalPrice } = useMemo(() => {
+    const items = cart.items ?? []
+    return {
+      totalItems: items.reduce((sum, i) => sum + i.quantity, 0),
+      totalPrice: items.reduce(
+        (sum, i) => sum + (i.unitPriceCents != null ? (i.unitPriceCents * i.quantity) / 100 : 0),
+        0
+      ),
+    }
+  }, [cart])
+
+  const value = useMemo<CartContextValue>(
+    () => ({
+      cart,
+      isLoading: isInitializing,
+      addItem,
+      updateItem,
+      removeItem,
+      clearCart,
+      refetch,
+      totalItems,
+      totalPrice,
+    }),
+    [
+      cart,
+      isInitializing,
+      addItem,
+      updateItem,
+      removeItem,
+      clearCart,
+      refetch,
+      totalItems,
+      totalPrice,
+    ]
   )
 
-  return (
-    <CartContext.Provider
-      value={{
-        cart,
-        isLoading: isInitializing,
-        addItem,
-        updateItem,
-        removeItem,
-        clearCart,
-        refetch,
-        totalItems,
-        totalPrice,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
-  )
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }
 
 export function useCart() {
