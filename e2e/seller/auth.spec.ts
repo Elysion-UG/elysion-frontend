@@ -1,8 +1,21 @@
 import { test, expect } from "@playwright/test"
+import { fileURLToPath } from "url"
+import path from "path"
 
 // baseURL + storageState kommen aus playwright.config.ts (seller-Projekt)
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const SELLER_AUTH_FILE = path.join(__dirname, "..", ".auth", "seller.json")
+
+test.describe.configure({ mode: "serial" })
+
 test.describe("Seller – Login", () => {
+  // Speichert den ggf. rotierten Refresh-Cookie nach jedem Test zurück,
+  // damit Folge-Tests (z. B. products.spec.ts) keinen invalidierten Token lesen.
+  test.afterEach(async ({ page }) => {
+    await page.context().storageState({ path: SELLER_AUTH_FILE })
+  })
+
   test("Login-Seite ist erreichbar", async ({ page }) => {
     // Neue Seite ohne gespeicherten Auth-State öffnen
     const context = await page.context().browser()!.newContext()

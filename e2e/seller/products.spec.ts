@@ -1,9 +1,19 @@
 import { test, expect } from "@playwright/test"
+import { fileURLToPath } from "url"
+import path from "path"
 
 // baseURL=http://seller.localhost:3000 + storageState (Refresh-Cookie) kommen aus playwright.config.ts
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const SELLER_AUTH_FILE = path.join(__dirname, "..", ".auth", "seller.json")
+
 // Seed-Produkte von GreenThread Textiles GmbH (seller1@greenthread.dev)
 const EXPECTED_PRODUCTS = ["Bio-Baumwoll T-Shirt", "Fair-Trade Pullover", "Leinen-Shorts"]
+
+// Serial mode: der Refresh-Token ist single-use. Jeder Test lädt storageState,
+// rotiert den Cookie bei Phase-2-Refresh, und muss den neuen Cookie zurück ins
+// File schreiben — sonst lädt der nächste Test den bereits invalidierten Token.
+test.describe.configure({ mode: "serial" })
 
 test.describe("Seller – Produkte", () => {
   test.beforeEach(async ({ page }) => {
@@ -13,6 +23,12 @@ test.describe("Seller – Produkte", () => {
     await expect(page.getByRole("heading", { name: "Produkte", exact: true })).toBeVisible({
       timeout: 10_000,
     })
+  })
+
+  // Speichert den rotierten Refresh-Cookie zurück, damit der nächste Test
+  // nicht den bereits invalidierten Token aus der Datei liest.
+  test.afterEach(async ({ page }) => {
+    await page.context().storageState({ path: SELLER_AUTH_FILE })
   })
 
   test("Produkte-Tab zeigt Tabelle nach Login", async ({ page }) => {

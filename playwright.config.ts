@@ -7,10 +7,13 @@ const SELLER_AUTH_FILE = path.join(__dirname, "e2e/.auth/seller.json")
 
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: true,
+  // Tests laufen seriell (1 Worker): der HttpOnly Refresh-Token aus storageState
+  // ist single-use — würden parallele Worker denselben Cookie laden, würde der
+  // erste rotieren und die anderen mit 401 scheitern.
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   reporter: [["html"], ["list"]],
 
   use: {
