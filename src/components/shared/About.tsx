@@ -1,36 +1,34 @@
-"use client"
-
 import { Leaf, Heart, Recycle, Users, Globe } from "lucide-react"
 import Link from "next/link"
 
-export default function About() {
-  const values = [
-    {
-      icon: Leaf,
-      title: "Nachhaltigkeit zuerst",
-      description:
-        "Jedes Produkt auf Elysion erfüllt strenge ökologische und ethische Standards — mit echten Zertifikaten, die wir prüfen.",
-    },
-    {
-      icon: Heart,
-      title: "Ethische Lieferkette",
-      description:
-        "Wir arbeiten nur mit Unternehmen zusammen, die faire Löhne und sichere Arbeitsbedingungen gewährleisten.",
-    },
-    {
-      icon: Recycle,
-      title: "Kreislaufwirtschaft",
-      description:
-        "Wir fördern Produkte, die auf Langlebigkeit, Reparierbarkeit und Recyclingfähigkeit ausgelegt sind.",
-    },
-    {
-      icon: Users,
-      title: "Transparenz",
-      description:
-        "Kein Greenwashing: Jeder Nachhaltigkeits-Claim auf Elysion ist mit einem nachprüfbaren Zertifikat hinterlegt.",
-    },
-  ]
+const VALUES = [
+  {
+    icon: Leaf,
+    title: "Nachhaltigkeit zuerst",
+    description:
+      "Jedes Produkt auf Elysion erfüllt strenge ökologische und ethische Standards — mit echten Zertifikaten, die wir prüfen.",
+  },
+  {
+    icon: Heart,
+    title: "Ethische Lieferkette",
+    description:
+      "Wir arbeiten nur mit Unternehmen zusammen, die faire Löhne und sichere Arbeitsbedingungen gewährleisten.",
+  },
+  {
+    icon: Recycle,
+    title: "Kreislaufwirtschaft",
+    description:
+      "Wir fördern Produkte, die auf Langlebigkeit, Reparierbarkeit und Recyclingfähigkeit ausgelegt sind.",
+  },
+  {
+    icon: Users,
+    title: "Transparenz",
+    description:
+      "Kein Greenwashing: Jeder Nachhaltigkeits-Claim auf Elysion ist mit einem nachprüfbaren Zertifikat hinterlegt.",
+  },
+]
 
+export default function About() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-12">
@@ -66,7 +64,7 @@ export default function About() {
         <div className="mb-16">
           <h2 className="mb-12 text-center text-3xl font-bold text-stone-800">Unsere Werte</h2>
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-            {values.map((value, index) => {
+            {VALUES.map((value, index) => {
               const Icon = value.icon
               return (
                 <div
