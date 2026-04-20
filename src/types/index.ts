@@ -43,12 +43,7 @@ export type {
   PublicCertificate,
 } from "./certificate"
 
-export type {
-  CartItem,
-  Cart,
-  AddToCartDTO,
-  UpdateCartItemDTO,
-} from "./cart"
+export type { CartItem, Cart, AddToCartDTO, UpdateCartItemDTO } from "./cart"
 
 export type {
   CheckoutAddressDTO,
