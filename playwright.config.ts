@@ -41,10 +41,11 @@ export default defineConfig({
       },
     },
 
-    // ── Andere Tests (ohne Auth-Abhängigkeit) ──────────────────────────────────
+    // ── Öffentliche Tests (ohne Auth-Abhängigkeit) ─────────────────────────────
     {
       name: "chromium",
       testIgnore: ["**/seller/**", "**/auth.setup.ts"],
+      testMatch: ["**/shop/**/*.spec.ts", "**/public/**/*.spec.ts"],
       use: { ...devices["Desktop Chrome"] },
     },
   ],
