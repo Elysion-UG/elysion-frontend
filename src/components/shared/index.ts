@@ -10,6 +10,8 @@ export { AdminTablePagination } from "./AdminTablePagination"
 export { AdminTableContainer } from "./AdminTableContainer"
 export { ErrorAlert } from "./ErrorAlert"
 export { GenericRejectModal } from "./GenericRejectModal"
+export { RouteErrorFallback } from "./RouteErrorFallback"
+export type { RouteErrorFallbackProps, RouteErrorTheme } from "./RouteErrorFallback"
 export {
   ADMIN_TH_CLASS,
   ADMIN_THEAD_CLASS,
