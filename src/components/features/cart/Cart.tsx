@@ -3,6 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Loader2, PackageOpen } from "lucide-react"
+import { CartSkeleton } from "./CartSkeleton"
 import { useCart } from "@/src/context/CartContext"
 import { formatEuro, centsToEuro } from "@/src/lib/currency"
 import { toast } from "sonner"
@@ -40,11 +41,7 @@ export default function Cart() {
   }
 
   if (!mounted || isLoading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-sage-600" />
-      </div>
-    )
+    return <CartSkeleton />
   }
 
   if (!cart || cart.items.length === 0) {

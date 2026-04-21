@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { Loader2 } from "lucide-react"
 import { AddressService } from "@/src/services/address.service"
 import { CheckoutService } from "@/src/services/checkout.service"
 import { useCart } from "@/src/context/CartContext"
@@ -9,6 +8,7 @@ import { useAuth } from "@/src/context/AuthContext"
 import type { Address, CheckoutStartResponse, CheckoutCompleteResponse } from "@/src/types"
 import { toast } from "sonner"
 import PaymentStep from "@/src/components/features/checkout/PaymentStep"
+import { CheckoutSkeleton } from "./CheckoutSkeleton"
 import { AddressStep } from "./steps/AddressStep"
 import { PreviewStep } from "./steps/PreviewStep"
 import { SuccessStep } from "./steps/SuccessStep"
@@ -85,11 +85,7 @@ export default function Checkout() {
   }, [])
 
   if (authLoading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
-      </div>
-    )
+    return <CheckoutSkeleton />
   }
 
   if (!isAuthenticated) {

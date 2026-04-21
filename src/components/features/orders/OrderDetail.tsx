@@ -4,8 +4,9 @@ import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Package, Truck, CheckCircle2, Loader2, ChevronLeft, MapPin } from "lucide-react"
+import { Package, Truck, CheckCircle2, ChevronLeft, MapPin } from "lucide-react"
 import { OrderService } from "@/src/services/order.service"
+import { OrderDetailSkeleton } from "./OrderDetailSkeleton"
 import { ProductService } from "@/src/services/product.service"
 import type { OrderDetail as OrderDetailType } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
@@ -90,11 +91,7 @@ export default function OrderDetail() {
   }, [order, displayMap])
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-7 w-7 animate-spin text-sage-500" />
-      </div>
-    )
+    return <OrderDetailSkeleton />
   }
 
   if (error || !order) {
