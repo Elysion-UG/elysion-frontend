@@ -4,6 +4,8 @@ import path from "path"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const SELLER_AUTH_FILE = path.join(__dirname, "e2e/.auth/seller.json")
+const BUYER_AUTH_FILE = path.join(__dirname, "e2e/.auth/buyer.json")
+const ADMIN_AUTH_FILE = path.join(__dirname, "e2e/.auth/admin.json")
 
 export default defineConfig({
   testDir: "./e2e",
@@ -24,13 +26,21 @@ export default defineConfig({
   },
 
   projects: [
-    // ── Setup: einmaliger Login, speichert Auth-State ──────────────────────────
+    // ── Setup-Projekte: einmaliger Login je Portal, speichert Auth-State ───────
     {
       name: "seller-setup",
       testMatch: "**/auth.setup.ts",
     },
+    {
+      name: "buyer-setup",
+      testMatch: "**/buyer.setup.ts",
+    },
+    {
+      name: "admin-setup",
+      testMatch: "**/admin.setup.ts",
+    },
 
-    // ── Seller-Tests: laufen nach Setup, nutzen gespeicherten Auth-State ───────
+    // ── Seller-Tests: nach Setup, nutzen gespeicherten Auth-State ──────────────
     {
       name: "seller",
       testMatch: "**/seller/**/*.spec.ts",
@@ -41,11 +51,40 @@ export default defineConfig({
       },
     },
 
+    // ── Buyer-Tests (Shop-Domain, eingeloggt) ──────────────────────────────────
+    {
+      name: "buyer",
+      testMatch: "**/buyer/**/*.spec.ts",
+      dependencies: ["buyer-setup"],
+      use: {
+        baseURL: "http://localhost:3000",
+        storageState: BUYER_AUTH_FILE,
+      },
+    },
+
+    // ── Admin-Tests (Admin-Domain, eingeloggt) ─────────────────────────────────
+    {
+      name: "admin",
+      testMatch: "**/admin/**/*.spec.ts",
+      dependencies: ["admin-setup"],
+      use: {
+        baseURL: "http://admin.localhost:3000",
+        storageState: ADMIN_AUTH_FILE,
+      },
+    },
+
     // ── Öffentliche Tests (ohne Auth-Abhängigkeit) ─────────────────────────────
     {
       name: "chromium",
-      testIgnore: ["**/seller/**", "**/auth.setup.ts"],
-      testMatch: ["**/shop/**/*.spec.ts", "**/public/**/*.spec.ts"],
+      testIgnore: [
+        "**/seller/**",
+        "**/buyer/**",
+        "**/admin/**",
+        "**/auth.setup.ts",
+        "**/buyer.setup.ts",
+        "**/admin.setup.ts",
+      ],
+      testMatch: ["**/shop/**/*.spec.ts", "**/public/**/*.spec.ts", "**/auth/**/*.spec.ts"],
       use: { ...devices["Desktop Chrome"] },
     },
   ],
