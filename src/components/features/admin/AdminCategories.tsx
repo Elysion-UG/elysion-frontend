@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { Plus, Loader2, RefreshCw } from "lucide-react"
-import { CategoryService } from "@/src/services/category.service"
+import { CategoryService, buildCategoryTree } from "@/src/services/category.service"
 import type { CategoryTreeNode, CategoryCreateDTO, CategoryUpdateDTO, Category } from "@/src/types"
 import { toast } from "sonner"
 import AdminCategoryTreeNode from "./AdminCategoryTreeNode"
@@ -49,10 +49,12 @@ export default function AdminCategories() {
   const load = useCallback(async () => {
     setIsLoading(true)
     try {
-      const [treeData, listData] = await Promise.all([
-        CategoryService.tree(),
-        CategoryService.list(),
-      ])
+      // One round-trip: the flat list carries everything we need (status,
+      // description, parentId). The hierarchical view is derived locally
+      // via buildCategoryTree — keeps a second request to /categories/tree
+      // off the wire (and dodges its current 500 from the backend).
+      const listData = await CategoryService.list()
+      const treeData = buildCategoryTree(listData)
       setTree(treeData)
       setFlatCategories(listData)
       if (isFirstLoad.current) {

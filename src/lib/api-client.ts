@@ -110,6 +110,43 @@ function jwtSecondsRemaining(token: string): number {
   }
 }
 
+/**
+ * Best-effort claims of the access token. Returns null when the token can't
+ * be parsed. The shape mirrors what the backend embeds:
+ *   sub, email, role ("BUYER"|"SELLER"|"ADMIN"), iat, exp, jti
+ *
+ * Pure base64-decode — does NOT verify the signature. Trustworthy only as
+ * a fallback for UI gating when the server has already accepted the token.
+ */
+export interface JwtClaims {
+  sub: string
+  email: string
+  role: string
+  iat?: number
+  exp?: number
+}
+
+export function decodeJwtClaims(token: string): JwtClaims | null {
+  try {
+    const parts = token.split(".")
+    if (parts.length !== 3) return null
+    const payload = JSON.parse(atob(parts[1])) as Record<string, unknown>
+    const sub = typeof payload.sub === "string" ? payload.sub : null
+    const email = typeof payload.email === "string" ? payload.email : null
+    const role = typeof payload.role === "string" ? payload.role : null
+    if (!sub || !email || !role) return null
+    return {
+      sub,
+      email,
+      role,
+      iat: typeof payload.iat === "number" ? payload.iat : undefined,
+      exp: typeof payload.exp === "number" ? payload.exp : undefined,
+    }
+  } catch {
+    return null
+  }
+}
+
 export function setAccessToken(token: string | null): void {
   _accessToken = token
 }

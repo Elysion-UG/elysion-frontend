@@ -10,6 +10,7 @@ import {
   apiUpload,
   getAuthGeneration,
   bumpAuthGeneration,
+  decodeJwtClaims,
 } from "./api-client"
 
 // Mock dynamic imports used inside tryRefreshAndRetry to prevent loading the
@@ -1017,5 +1018,60 @@ describe("429 rate-limit handling", () => {
       status: 429,
       message: "Zu viele Anfragen — bitte in 15s erneut versuchen.",
     })
+  })
+})
+
+// ── decodeJwtClaims ───────────────────────────────────────────────────────────
+// Used by AuthContext as a final fallback when /users/me 403s and no persisted
+// session exists. The decoder must NEVER throw on bad input — it always
+// returns null or a well-typed claims object.
+
+describe("decodeJwtClaims", () => {
+  function makeJwt(payload: Record<string, unknown>): string {
+    const b64 = (s: string) => Buffer.from(s).toString("base64").replace(/=+$/, "")
+    return `${b64('{"alg":"HS256"}')}.${b64(JSON.stringify(payload))}.signature`
+  }
+
+  it("returns null for malformed tokens", () => {
+    expect(decodeJwtClaims("")).toBeNull()
+    expect(decodeJwtClaims("not.a.jwt")).toBeNull()
+    expect(decodeJwtClaims("only-one-part")).toBeNull()
+    expect(decodeJwtClaims("two.parts")).toBeNull()
+  })
+
+  it("returns null when required claims are missing", () => {
+    expect(decodeJwtClaims(makeJwt({ sub: "u", email: "e@e.com" }))).toBeNull() // no role
+    expect(decodeJwtClaims(makeJwt({ sub: "u", role: "ADMIN" }))).toBeNull() // no email
+    expect(decodeJwtClaims(makeJwt({ email: "e@e.com", role: "ADMIN" }))).toBeNull() // no sub
+  })
+
+  it("returns null when claim types are wrong", () => {
+    expect(decodeJwtClaims(makeJwt({ sub: 123, email: "e@e.com", role: "ADMIN" }))).toBeNull()
+    expect(decodeJwtClaims(makeJwt({ sub: "u", email: ["e"], role: "ADMIN" }))).toBeNull()
+  })
+
+  it("returns the claims object when all required fields are present", () => {
+    const claims = decodeJwtClaims(
+      makeJwt({
+        sub: "user-123",
+        email: "admin@example.com",
+        role: "ADMIN",
+        iat: 1700000000,
+        exp: 1700003600,
+      })
+    )
+    expect(claims).toEqual({
+      sub: "user-123",
+      email: "admin@example.com",
+      role: "ADMIN",
+      iat: 1700000000,
+      exp: 1700003600,
+    })
+  })
+
+  it("leaves iat/exp undefined when absent", () => {
+    const claims = decodeJwtClaims(makeJwt({ sub: "u", email: "e@e.com", role: "BUYER" }))
+    expect(claims?.iat).toBeUndefined()
+    expect(claims?.exp).toBeUndefined()
   })
 })

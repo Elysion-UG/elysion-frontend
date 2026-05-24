@@ -13,10 +13,16 @@ test.describe("Admin – Dashboard-Bereiche", () => {
   })
 
   const sections: { path: string; headingPattern: RegExp }[] = [
-    { path: "/admin/users", headingPattern: /Nutzer|Benutzer/i },
-    { path: "/admin/orders", headingPattern: /Bestellungen/i },
-    { path: "/admin/products", headingPattern: /Produkte/i },
+    // Headings use German singular-stem "-Verwaltung" compounds. Match the
+    // stem rather than a plural form so the test survives copy tweaks.
+    { path: "/admin/users", headingPattern: /Benutzer/i },
+    { path: "/admin/orders", headingPattern: /Bestell/i },
+    { path: "/admin/products", headingPattern: /Produkt/i },
     { path: "/admin/certificates", headingPattern: /Zertifikat/i },
+    // Categories: tree is built client-side from /categories (the backend's
+    // /categories/tree returns 500). Heading proves the build path didn't
+    // throw and the page rendered, not just the URL.
+    { path: "/admin/categories", headingPattern: /Kategorie/i },
   ]
 
   for (const section of sections) {

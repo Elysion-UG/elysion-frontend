@@ -27,6 +27,7 @@ import {
   clearAuthSession,
   bumpAuthGeneration,
   getAuthGeneration,
+  decodeJwtClaims,
   type AuthPortal,
 } from "@/src/lib/api-client"
 
@@ -36,6 +37,32 @@ function isValidUser(value: unknown): value is User {
   if (!value || typeof value !== "object") return false
   const u = value as Record<string, unknown>
   return typeof u.id === "string" && typeof u.email === "string" && typeof u.role === "string"
+}
+
+/**
+ * Builds a minimal User stub from access-token claims when neither the refresh
+ * response nor /users/me yielded a user object (e.g. ADMIN tokens that get 403
+ * on /users/me). The token has already been accepted by the backend, so the
+ * claimed role is trustworthy enough for UI gating. firstName/lastName remain
+ * empty placeholders — they aren't load-bearing for AuthGuard / AdminGuard /
+ * SellerGuard, and the rest of the UI shows them as " " harmlessly.
+ */
+function userFromAccessToken(accessToken: string): User | null {
+  const claims = decodeJwtClaims(accessToken)
+  if (!claims) return null
+  if (claims.role !== "BUYER" && claims.role !== "SELLER" && claims.role !== "ADMIN") {
+    return null
+  }
+  return {
+    id: claims.sub,
+    email: claims.email,
+    firstName: "",
+    lastName: "",
+    role: claims.role,
+    emailVerified: true,
+    status: "ACTIVE",
+    createdAt: claims.iat ? new Date(claims.iat * 1000).toISOString() : new Date(0).toISOString(),
+  }
 }
 
 // ── Context ────────────────────────────────────────────────────────────────────
@@ -105,10 +132,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           // Backend refresh didn't return a user — try /users/me as fallback.
           // Some portal tokens (notably ADMIN) get 403 on /users/me even though
-          // the access token itself is valid. In that case, trust the user that
-          // Phase 1 restored from sessionStorage: the JWT in `tokens.accessToken`
-          // already authorizes the session, and the persisted user is the most
-          // recent server-confirmed identity from login.
+          // the access token itself is valid. We fall back in this order:
+          //   1) persisted user from sessionStorage (richest data — set during login)
+          //   2) JWT claims of the fresh access token (lean stub, role-correct)
+          //   3) propagate to outer catch and log out
+          // The access token has already been accepted by the backend, so trusting
+          // its claims for role-gated UI is safe.
           try {
             const { UserService } = await import("@/src/services/user.service")
             const freshUser = await UserService.getCurrentUser()
@@ -127,8 +156,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (persisted && isValidUser(persisted.user)) {
               setUser(persisted.user)
             } else {
-              // No persisted user to fall back on — surface the failure.
-              throw err
+              const stub = userFromAccessToken(tokens.accessToken)
+              if (!stub) throw err
+              const portal: AuthPortal =
+                stub.role === "SELLER" ? "seller" : stub.role === "ADMIN" ? "admin" : "customer"
+              setUser(stub)
+              saveAuthSession(stub, portal)
             }
           }
         }

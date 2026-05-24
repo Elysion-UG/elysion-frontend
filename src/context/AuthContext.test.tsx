@@ -42,6 +42,8 @@ vi.mock("@/src/lib/api-client", () => ({
   bumpAuthGeneration: vi.fn(() => {
     _testAuthGen += 1
   }),
+  // decodeJwtClaims is mocked per-test where the JWT-stub fallback matters.
+  decodeJwtClaims: vi.fn().mockReturnValue(null),
   AUTH_SESSION_KEY: "auth_session",
 }))
 
@@ -55,6 +57,7 @@ import {
   clearAuthSession,
   bumpAuthGeneration,
   getAuthGeneration,
+  decodeJwtClaims,
 } from "@/src/lib/api-client"
 
 // ── Fixtures ───────────────────────────────────────────────────────────────────
@@ -792,10 +795,46 @@ describe("session restore — refresh returns user: null (fallback to /users/me)
     expect(clearAuthSession).not.toHaveBeenCalled()
   })
 
-  it("clears session when refresh.user is null, /users/me throws, and no persisted user", async () => {
+  it("builds a stub user from JWT claims when /users/me throws and no persisted user (Playwright case)", async () => {
+    // Playwright's storageState only persists cookies — sessionStorage is
+    // empty in fresh test contexts. The fallback must therefore not depend
+    // on sessionStorage: trusting the access-token claims (which the backend
+    // has already validated) gives a role-correct stub user.
+    vi.mocked(loadAuthSession).mockReturnValue(null)
+    vi.mocked(refreshSession).mockResolvedValue(refreshNoUser as never)
+    vi.mocked(UserService.getCurrentUser).mockRejectedValue(
+      Object.assign(new Error("Forbidden"), { status: 403 })
+    )
+    vi.mocked(decodeJwtClaims).mockReturnValue({
+      sub: "admin-uuid",
+      email: "admin@example.com",
+      role: "ADMIN",
+      iat: 1700000000,
+      exp: 1700003600,
+    })
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    expect(result.current.user).not.toBeNull()
+    expect(result.current.user?.id).toBe("admin-uuid")
+    expect(result.current.user?.email).toBe("admin@example.com")
+    expect(result.current.user?.role).toBe("ADMIN")
+    expect(result.current.role).toBe("ADMIN")
+    expect(result.current.token).toBe("fresh-access-token")
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(result.current.isLoading).toBe(false)
+    expect(clearAuthSession).not.toHaveBeenCalled()
+    // Stub should also be saved so subsequent reloads can use Phase 1 directly.
+    expect(saveAuthSession).toHaveBeenCalled()
+  })
+
+  it("clears session when refresh.user is null, /users/me throws, no persisted user, and JWT is unparseable", async () => {
     vi.mocked(loadAuthSession).mockReturnValue(null)
     vi.mocked(refreshSession).mockResolvedValue(refreshNoUser as never)
     vi.mocked(UserService.getCurrentUser).mockRejectedValue(new Error("Forbidden"))
+    vi.mocked(decodeJwtClaims).mockReturnValue(null)
 
     const { result } = renderHook(() => useAuth(), { wrapper })
 

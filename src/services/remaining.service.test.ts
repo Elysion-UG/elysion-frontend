@@ -159,10 +159,20 @@ describe("CategoryService", () => {
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/categories")
   })
 
-  it("tree calls GET /api/v1/categories/tree", async () => {
-    mockApiRequest.mockResolvedValue([])
-    await CategoryService.tree()
-    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/categories/tree")
+  it("tree calls GET /api/v1/categories and builds the tree client-side", async () => {
+    // Backend /categories/tree currently returns 500 — the tree is built from
+    // the flat list instead. The service must request /categories, NOT /tree.
+    mockApiRequest.mockResolvedValue([
+      { id: "root", name: "Root", slug: "root", parentId: null, level: 1, order: 1 },
+      { id: "child", name: "Child", slug: "child", parentId: "root", level: 2, order: 1 },
+    ])
+    const tree = await CategoryService.tree()
+    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/categories")
+    expect(mockApiRequest).not.toHaveBeenCalledWith("/api/v1/categories/tree")
+    expect(tree).toHaveLength(1)
+    expect(tree[0].id).toBe("root")
+    expect(tree[0].children).toHaveLength(1)
+    expect(tree[0].children[0].id).toBe("child")
   })
 
   it("create calls POST /api/v1/categories", async () => {
