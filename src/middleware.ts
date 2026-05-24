@@ -235,5 +235,10 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/).*)"],
+  // Skip static assets in /public — otherwise the middleware redirects icon
+  // requests on seller/admin domains to the buyer domain, producing redirect
+  // loops for any URL that is not a recognised portal path.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?|ttf)$|api/).*)",
+  ],
 }

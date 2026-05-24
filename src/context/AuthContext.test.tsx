@@ -17,6 +17,14 @@ vi.mock("@/src/services/auth.service", () => ({
   },
 }))
 
+// AuthContext dynamically imports UserService when Phase-2 refresh returns
+// `user: null`. Mock it so the /users/me fallback branch is observable.
+vi.mock("@/src/services/user.service", () => ({
+  UserService: {
+    getCurrentUser: vi.fn(),
+  },
+}))
+
 // Mock api-client to control refreshSession directly and avoid the module-level
 // _refreshInFlight cache bleeding between tests. All session-storage helpers are
 // mocked as no-ops so tests control sessionStorage themselves via the Web API.
@@ -39,6 +47,7 @@ vi.mock("@/src/lib/api-client", () => ({
 
 // Import AFTER mock so we get the mocked version
 import { AuthService } from "@/src/services/auth.service"
+import { UserService } from "@/src/services/user.service"
 import {
   refreshSession,
   loadAuthSession,
@@ -716,5 +725,86 @@ describe("session restore — logout during in-flight refresh", () => {
     expect(result.current.user).toBeNull()
     expect(result.current.token).toBeNull()
     expect(result.current.isAuthenticated).toBe(false)
+  })
+})
+
+// ── refresh returns user: null — /users/me fallback ───────────────────────────
+//
+// Backend behaviour (HAR 2026-05-24): POST /api/v1/auth/refresh returns
+//   { accessToken, expiresIn, user: null }
+// and GET /api/v1/users/me responds 403 for ADMIN portal tokens. Frühere
+// Implementierung räumte in dem Fall die ganze Session leer → Admin wurde
+// nach jedem Reload ausgeloggt. Diese Tests halten die robuste Fallback-Kette
+// fest:
+//   1) /users/me ok → fresh user übernehmen
+//   2) /users/me fails + persisted user → persisted user behalten
+//   3) /users/me fails + kein persisted user → Session wird verworfen
+
+describe("session restore — refresh returns user: null (fallback to /users/me)", () => {
+  const refreshNoUser: TokensResponse = {
+    accessToken: "fresh-access-token",
+    user: null as unknown as User, // Backend liefert literal null
+    expiresIn: 3600,
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    _testAuthGen = 0
+    sessionStorage.clear()
+  })
+
+  it("uses /users/me result when refresh.user is null and call succeeds", async () => {
+    vi.mocked(loadAuthSession).mockReturnValue(null)
+    vi.mocked(refreshSession).mockResolvedValue(refreshNoUser as never)
+    vi.mocked(UserService.getCurrentUser).mockResolvedValue(mockUser)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    expect(UserService.getCurrentUser).toHaveBeenCalledOnce()
+    expect(result.current.user).toEqual(mockUser)
+    expect(result.current.token).toBe("fresh-access-token")
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(result.current.isLoading).toBe(false)
+  })
+
+  it("keeps persisted user when refresh.user is null and /users/me throws (ADMIN 403 case)", async () => {
+    // Phase 1: sessionStorage already restored an ADMIN user (last server-confirmed identity)
+    const adminUser: User = { ...mockUser, role: "ADMIN" }
+    vi.mocked(loadAuthSession).mockReturnValue({ user: adminUser, portal: "admin" })
+    vi.mocked(refreshSession).mockResolvedValue(refreshNoUser as never)
+    // /users/me returns 403 (typical backend behaviour for admin portal tokens)
+    vi.mocked(UserService.getCurrentUser).mockRejectedValue(
+      Object.assign(new Error("Forbidden"), { status: 403 })
+    )
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    // Session must survive — persisted user remains, token is the fresh one.
+    expect(result.current.user).toEqual(adminUser)
+    expect(result.current.token).toBe("fresh-access-token")
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(result.current.role).toBe("ADMIN")
+    expect(result.current.isLoading).toBe(false)
+    expect(clearAuthSession).not.toHaveBeenCalled()
+  })
+
+  it("clears session when refresh.user is null, /users/me throws, and no persisted user", async () => {
+    vi.mocked(loadAuthSession).mockReturnValue(null)
+    vi.mocked(refreshSession).mockResolvedValue(refreshNoUser as never)
+    vi.mocked(UserService.getCurrentUser).mockRejectedValue(new Error("Forbidden"))
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    expect(result.current.user).toBeNull()
+    expect(result.current.token).toBeNull()
+    expect(result.current.isAuthenticated).toBe(false)
+    expect(result.current.isLoading).toBe(false)
+    expect(clearAuthSession).toHaveBeenCalled()
   })
 })

@@ -9,6 +9,13 @@
  * möglicherweise nur die Rolle fehlt, ohne das Konto preiszugeben).
  *
  * Rate-Limit: siehe Hinweis in buyer-login.spec.ts. Diese Datei macht 3 Logins.
+ *
+ * REGRESSIONS-SCHUTZ (Bug: Admin wird nach Reload sofort ausgeloggt):
+ *  - Erfolgreicher-Login-Test prüft nicht nur die URL, sondern auch dass der
+ *    Heading-Inhalt der Admin-Page rendert UND ein Reload die Session nicht
+ *    verwirft. Deckt den Fall ab, in dem das Backend bei /auth/refresh
+ *    `user: null` zurückgibt und /users/me für ADMIN 403 antwortet — frühere
+ *    Version verlor in dem Szenario stillschweigend die Session.
  */
 import { test, expect } from "@playwright/test"
 
@@ -35,12 +42,41 @@ async function fillAndSubmit(
 test.describe.configure({ mode: "serial" })
 
 test.describe("Admin – Login", () => {
-  test("Erfolgreicher Login leitet auf /admin/users weiter", async ({ page }) => {
+  test("Erfolgreicher Login rendert Admin-Page und überlebt einen Reload", async ({ page }) => {
+    // Schritt 1: Login + Page wird tatsächlich gerendert.
+    // Heading-Render bestätigt, dass AdminGuard den User akzeptiert hat und nicht
+    // sofort auf "/" umgeleitet wurde. Frühere Version dieses Tests prüfte nur
+    // die URL — ein 403 auf /users/me im AuthContext-Fallback hätte den User
+    // danach ausgeloggt, ohne dass der Test es bemerkt hätte.
     await fillAndSubmit(page, ADMIN.email, ADMIN.password)
+    await page.waitForURL("**/admin/users**", { timeout: 15_000 })
+    await expect(page.getByRole("heading", { name: /Benutzerverwaltung/i })).toBeVisible({
+      timeout: 10_000,
+    })
 
-    await page.waitForURL("**/admin/**", { timeout: 15_000 })
-    // Admin-Bereich erreicht — die genaue Landing-Page ist /admin/users.
-    await expect(page).toHaveURL(/\/admin\//)
+    // Schritt 2: Reload triggert AuthContext Phase 2 (refresh + ggf. /users/me).
+    // Wenn Backend hier user: null + 403 liefert, darf das Frontend die Session
+    // nicht verwerfen — der persisted User aus sessionStorage muss reichen.
+    const unexpectedNavigations: string[] = []
+    page.on("framenavigated", (frame) => {
+      if (frame === page.mainFrame()) {
+        const url = frame.url()
+        if (/\/login\/admin/.test(url) || /^http:\/\/admin\.localhost:3000\/?$/.test(url)) {
+          unexpectedNavigations.push(url)
+        }
+      }
+    })
+
+    await page.reload()
+    await expect(page).toHaveURL(/\/admin\/users/, { timeout: 10_000 })
+    await expect(page.getByRole("heading", { name: /Benutzerverwaltung/i })).toBeVisible({
+      timeout: 10_000,
+    })
+
+    expect(
+      unexpectedNavigations,
+      `AdminGuard hat die Session nach dem Reload verworfen — Redirects: ${unexpectedNavigations.join(", ")}`
+    ).toEqual([])
   })
 
   test("Falsches Passwort zeigt Fehlermeldung, URL bleibt auf /login/admin", async ({ page }) => {

@@ -103,18 +103,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(tokens.user)
           saveAuthSession(tokens.user, portal)
         } else {
-          // Backend refresh didn't return a user — fall back to /users/me.
-          const { UserService } = await import("@/src/services/user.service")
-          const freshUser = await UserService.getCurrentUser()
-          if (gen !== getAuthGeneration()) return
-          const portal: AuthPortal =
-            freshUser.role === "SELLER"
-              ? "seller"
-              : freshUser.role === "ADMIN"
-                ? "admin"
-                : "customer"
-          setUser(freshUser)
-          saveAuthSession(freshUser, portal)
+          // Backend refresh didn't return a user — try /users/me as fallback.
+          // Some portal tokens (notably ADMIN) get 403 on /users/me even though
+          // the access token itself is valid. In that case, trust the user that
+          // Phase 1 restored from sessionStorage: the JWT in `tokens.accessToken`
+          // already authorizes the session, and the persisted user is the most
+          // recent server-confirmed identity from login.
+          try {
+            const { UserService } = await import("@/src/services/user.service")
+            const freshUser = await UserService.getCurrentUser()
+            if (gen !== getAuthGeneration()) return
+            const portal: AuthPortal =
+              freshUser.role === "SELLER"
+                ? "seller"
+                : freshUser.role === "ADMIN"
+                  ? "admin"
+                  : "customer"
+            setUser(freshUser)
+            saveAuthSession(freshUser, portal)
+          } catch (err) {
+            if (gen !== getAuthGeneration()) return
+            const persisted = loadAuthSession()
+            if (persisted && isValidUser(persisted.user)) {
+              setUser(persisted.user)
+            } else {
+              // No persisted user to fall back on — surface the failure.
+              throw err
+            }
+          }
         }
       })
       .catch(() => {
