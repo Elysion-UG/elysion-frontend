@@ -27,10 +27,16 @@ vi.mock("sonner", () => ({
 
 function mockFetchResponse(status: number, body: unknown, ok?: boolean): Response {
   const resolvedOk = ok ?? (status >= 200 && status < 300)
+  // The api-client reads the body via response.text() and parses defensively
+  // (some upstream errors return non-JSON or empty bodies). Mock both `.text`
+  // and `.json` so old tests that read either continue to work.
+  const text = body === undefined || body === null ? "" : JSON.stringify(body)
   return {
     status,
     ok: resolvedOk,
+    text: vi.fn().mockResolvedValue(text),
     json: vi.fn().mockResolvedValue(body),
+    headers: new Headers(),
   } as unknown as Response
 }
 
@@ -520,9 +526,11 @@ describe("apiUpload", () => {
     const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(500, {}, false))
     vi.stubGlobal("fetch", mockFetch)
 
+    // After deduplication, all three request entry points share the generic
+    // "Request failed (...)" fallback. Upload-specific phrasing was dropped.
     await expect(apiUpload("/api/v1/files", new FormData())).rejects.toMatchObject({
       status: 500,
-      message: "Upload failed (500)",
+      message: "Request failed (500)",
     })
   })
 })

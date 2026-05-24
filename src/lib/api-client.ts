@@ -241,6 +241,14 @@ async function proactiveRefreshIfNeeded(skipRetry: boolean): Promise<void> {
 
 // 401 refresh helper — uses shared refreshSession() to avoid concurrent refresh calls.
 // retryFn is a closure over the original arguments so each caller can re-invoke itself.
+//
+// Two distinct failure modes are handled separately:
+//   1. The refresh itself fails (refreshSession threw). That's an auth-layer
+//      problem — wipe the session and surface either the original cause (if it
+//      was a non-401 ApiError, e.g. 5xx / network) or a generic 401.
+//   2. The refresh succeeds but the retry call fails. That's a normal request
+//      error (could be 5xx, validation, etc.) and must propagate as-is so the
+//      caller sees the real status code, not a misleading "Sitzung abgelaufen".
 async function tryRefreshAndRetry<T>(path: string, retryFn: () => Promise<T>): Promise<T> {
   // Guests have no access token and no persisted session — skip refresh entirely.
   // Attempting refresh without a cookie causes a "Missing refresh token" error.
@@ -250,23 +258,26 @@ async function tryRefreshAndRetry<T>(path: string, retryFn: () => Promise<T>): P
     throw new ApiError(401, "Nicht autorisiert")
   }
   const gen = _authGen
+
+  let tokens: TokensResponse
   try {
-    const tokens = await refreshSession()
-    // Auth state changed during refresh (logout / new login) — fail the retry
-    // rather than resurrect a stale session.
-    if (gen !== _authGen) {
-      throw new ApiError(401, "Sitzung abgelaufen")
-    }
-    setAccessToken(tokens.accessToken)
-    return retryFn()
-  } catch {
-    // Only mutate shared state if this refresh attempt still represents the
-    // current auth generation. Otherwise another transition already took over.
+    tokens = await refreshSession()
+  } catch (refreshErr) {
+    // Only wipe shared state if this refresh attempt still represents the
+    // current auth generation; otherwise another transition already took over.
     if (gen === _authGen) {
       bumpAuthGeneration()
       setAccessToken(null)
       clearAuthSession()
     }
+
+    // Surface non-auth refresh failures with their real status (5xx, network, …)
+    // so callers and the error store don't see misleading 401s.
+    if (refreshErr instanceof ApiError && refreshErr.status !== 401) {
+      reportApiError(path, refreshErr.status, refreshErr.message, "auth")
+      throw refreshErr
+    }
+
     reportApiError(path, 401, "Sitzung abgelaufen", "auth")
     if (hadToken && typeof window !== "undefined") {
       const { toast } = await import("sonner")
@@ -274,20 +285,64 @@ async function tryRefreshAndRetry<T>(path: string, retryFn: () => Promise<T>): P
     }
     throw new ApiError(401, "Sitzung abgelaufen")
   }
+
+  // Auth state changed during refresh (logout / new login) — fail the retry
+  // rather than resurrect a stale session.
+  if (gen !== _authGen) {
+    throw new ApiError(401, "Sitzung abgelaufen")
+  }
+  setAccessToken(tokens.accessToken)
+
+  // Retry runs outside the refresh try/catch on purpose: a failure here is a
+  // regular request error (5xx, 4xx, network) and must propagate untouched.
+  return retryFn()
 }
 
-// Core request function
-// skipRetry=true prevents the 401 interceptor from triggering — use for the refresh
-// endpoint itself to avoid infinite recursion.
-export async function apiRequest<T>(
-  path: string,
-  options: RequestInit = {},
-  skipRetry = false
-): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...((options.headers as Record<string, string>) ?? {}),
+// ── Core request executor ─────────────────────────────────────────────────────
+// All three public entry points (apiRequest, apiRequestRaw, apiUpload) funnel
+// into this function so the refresh / 401-retry / 429 / network-error logic
+// lives in exactly one place.
+
+type RequestMode = "envelope" | "raw" | "upload"
+
+// Safely parse a response body. Some endpoints (and edge rate limiters / CDN
+// error pages) return non-JSON or empty bodies even on success. response.json()
+// throws on those, masking the actual HTTP status. We read as text and parse
+// defensively instead.
+async function safeJson(response: Response): Promise<unknown> {
+  const text = await response.text()
+  if (!text) return null
+  try {
+    return JSON.parse(text)
+  } catch {
+    return { message: text }
   }
+}
+
+function getMessage(body: unknown, fallback: string): string {
+  if (typeof body === "object" && body !== null && "message" in body) {
+    const m = (body as { message?: unknown }).message
+    if (typeof m === "string" && m.length > 0) return m
+  }
+  return fallback
+}
+
+async function _executeRequest<T>(
+  path: string,
+  options: RequestInit,
+  skipRetry: boolean,
+  mode: RequestMode
+): Promise<T> {
+  // Upload requests must NOT set Content-Type — the browser supplies the
+  // multipart boundary automatically. JSON requests get a default unless the
+  // caller already provided one.
+  const headers: Record<string, string> =
+    mode === "upload"
+      ? { ...((options.headers as Record<string, string>) ?? {}) }
+      : {
+          "Content-Type": "application/json",
+          ...((options.headers as Record<string, string>) ?? {}),
+        }
 
   await proactiveRefreshIfNeeded(skipRetry)
 
@@ -317,26 +372,41 @@ export async function apiRequest<T>(
 
   // 401 Unauthorized — attempt token refresh once
   if (response.status === 401 && !skipRetry) {
-    return tryRefreshAndRetry<T>(path, () => apiRequest<T>(path, options, true))
+    return tryRefreshAndRetry<T>(path, () => _executeRequest<T>(path, options, true, mode))
   }
 
-  // 429 Too Many Requests — some rate limiters return no body, so handle before .json()
+  // 429 Too Many Requests — some rate limiters return no body, handle before parsing
   if (response.status === 429) {
     throw buildRateLimitError(path, response)
   }
 
-  const body = await response.json()
+  const body = await safeJson(response)
 
   if (!response.ok) {
-    const message = body?.message ?? `Request failed (${response.status})`
+    const message = getMessage(body, `Request failed (${response.status})`)
     reportApiError(path, response.status, message)
     throw new ApiError(response.status, message, body)
   }
 
-  return body.data as T
+  if (mode === "raw") {
+    return body as T
+  }
+  // envelope + upload both unwrap { data }
+  return (body as { data: T } | null)?.data as T
 }
 
-// Raw request (no ApiResponse unwrapping — returns body as-is, no data envelope extraction)
+// Core request function (envelope-aware).
+// skipRetry=true prevents the 401 interceptor from triggering — use for the refresh
+// endpoint itself to avoid infinite recursion.
+export async function apiRequest<T>(
+  path: string,
+  options: RequestInit = {},
+  skipRetry = false
+): Promise<T> {
+  return _executeRequest<T>(path, options, skipRetry, "envelope")
+}
+
+// Raw request (no ApiResponse unwrapping — returns body as-is).
 // Includes the same 401-refresh-retry logic as apiRequest so an expired token
 // does not permanently break public endpoints that still validate auth headers.
 export async function apiRequestRaw<T>(
@@ -344,95 +414,10 @@ export async function apiRequestRaw<T>(
   options: RequestInit = {},
   skipRetry = false
 ): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    ...((options.headers as Record<string, string>) ?? {}),
-  }
-
-  await proactiveRefreshIfNeeded(skipRetry)
-
-  if (_accessToken) {
-    headers["Authorization"] = `Bearer ${_accessToken}`
-  }
-
-  let response: Response
-  try {
-    response = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      headers,
-      credentials: "include",
-    })
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Netzwerkfehler"
-    reportApiError(path, 0, msg, "network")
-    throw new ApiError(0, "Netzwerkfehler — bitte Internetverbindung prüfen")
-  }
-
-  if (response.status === 204) {
-    return null as T
-  }
-
-  if (response.status === 401 && !skipRetry) {
-    return tryRefreshAndRetry<T>(path, () => apiRequestRaw<T>(path, options, true))
-  }
-
-  if (response.status === 429) {
-    throw buildRateLimitError(path, response)
-  }
-
-  const body = await response.json()
-
-  if (!response.ok) {
-    const message = body?.message ?? `Request failed (${response.status})`
-    reportApiError(path, response.status, message)
-    throw new ApiError(response.status, message, body)
-  }
-
-  return body as T
+  return _executeRequest<T>(path, options, skipRetry, "raw")
 }
 
-// Multipart upload
+// Multipart upload — POST with FormData. Same envelope unwrap as apiRequest.
 export async function apiUpload<T>(path: string, form: FormData, skipRetry = false): Promise<T> {
-  await proactiveRefreshIfNeeded(skipRetry)
-
-  const headers: Record<string, string> = {}
-
-  if (_accessToken) {
-    headers["Authorization"] = `Bearer ${_accessToken}`
-  }
-
-  let response: Response
-  try {
-    response = await fetch(`${API_BASE}${path}`, {
-      method: "POST",
-      headers,
-      body: form,
-      credentials: "include",
-    })
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Netzwerkfehler"
-    reportApiError(path, 0, msg, "network")
-    throw new ApiError(0, "Netzwerkfehler — bitte Internetverbindung prüfen")
-  }
-
-  if (response.status === 204) {
-    return null as T
-  }
-
-  // 401 Unauthorized — attempt token refresh once
-  if (response.status === 401 && !skipRetry) {
-    return tryRefreshAndRetry<T>(path, () => apiUpload<T>(path, form, true))
-  }
-
-  if (response.status === 429) {
-    throw buildRateLimitError(path, response)
-  }
-
-  const body = await response.json()
-
-  if (!response.ok) {
-    throw new ApiError(response.status, body?.message ?? `Upload failed (${response.status})`, body)
-  }
-
-  return body.data as T
+  return _executeRequest<T>(path, { method: "POST", body: form }, skipRetry, "upload")
 }

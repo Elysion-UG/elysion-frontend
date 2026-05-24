@@ -29,17 +29,26 @@ const ADMIN_PUBLIC = ["/login/admin", "/reset-password", "/verify-email"]
 // Buyer auth is handled client-side by AuthGuard (see src/app/(buyer)/layout.tsx)
 
 // ── Helpers ────────────────────────────────────────────────────────────────
+// Strict exact-match against the configured portal domain. Any other host
+// (including foreign hosts pointed via DNS at this server) falls through to
+// the buyer/main-domain branch.
+//
+// The previous `startsWith("seller.")` heuristic was too permissive — a host
+// like `seller.evil.example.com` would have been treated as the seller portal
+// and could have triggered redirects/CSP relaxations meant for trusted users.
+
+function hostMatches(host: string, configured: string | undefined): boolean {
+  return !!configured && host === configured
+}
 
 function isSellerDomain(request: NextRequest): boolean {
   const host = request.headers.get("host") ?? ""
-  const configured = process.env.SELLER_DOMAIN
-  return host.startsWith("seller.") || (!!configured && host === configured)
+  return hostMatches(host, process.env.SELLER_DOMAIN)
 }
 
 function isAdminDomain(request: NextRequest): boolean {
   const host = request.headers.get("host") ?? ""
-  const configured = process.env.ADMIN_DOMAIN
-  return host.startsWith("admin.") || (!!configured && host === configured)
+  return hostMatches(host, process.env.ADMIN_DOMAIN)
 }
 
 function buyerOrigin(request: NextRequest): string {
@@ -73,6 +82,12 @@ function buyerOrigin(request: NextRequest): string {
 
 const isDev = process.env.NODE_ENV !== "production"
 
+// Backend host for img-src / connect-src. Falls back to the production deployment
+// so existing setups keep working without an explicit configuration.
+const BACKEND_HOST =
+  process.env.NEXT_PUBLIC_BACKEND_HOST || "marketplace-backend-1-1w30.onrender.com"
+const BACKEND_ORIGIN = `https://${BACKEND_HOST}`
+
 function buildCsp(nonce: string): string {
   const scriptSrc = [
     "'self'",
@@ -85,8 +100,8 @@ function buildCsp(nonce: string): string {
     "default-src 'self'",
     `script-src ${scriptSrc}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://marketplace-backend-1-1w30.onrender.com",
-    "connect-src 'self' https://marketplace-backend-1-1w30.onrender.com https://js.stripe.com",
+    `img-src 'self' data: blob: ${BACKEND_ORIGIN}`,
+    `connect-src 'self' ${BACKEND_ORIGIN} https://js.stripe.com`,
     "frame-src https://js.stripe.com https://hooks.stripe.com",
     "font-src 'self'",
     "object-src 'none'",

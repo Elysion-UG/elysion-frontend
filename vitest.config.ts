@@ -46,10 +46,25 @@ export default defineConfig({
         "src/context/ErrorContext.tsx", // error boundary context — UI-only
         "src/components/features/**/index.ts", // barrel re-exports
       ],
-      // Global threshold covers both business logic (already ~85%) and features
-      // (currently near-zero). Honest-baseline floor until Phase 4 adds
-      // component tests; ratcheting target after Phase 4: lines ≥ 50.
-      thresholds: { lines: 20, functions: 20, branches: 15, statements: 20 },
+      // Two-tier thresholds:
+      //   1. Global floor — honest baseline reflecting that feature components
+      //      (`src/components/features/**`) are still largely untested. Set
+      //      slightly below the current measured numbers so the build stays
+      //      green; raise as Phase 4+ component tests land. This is a
+      //      no-regression ratchet, not an aspirational target.
+      //   2. Per-glob strict thresholds — business-logic layers
+      //      (lib/services/context) sit at 80%+ today. The per-glob threshold
+      //      catches a coverage drop in a critical layer even when the global
+      //      average still looks fine.
+      thresholds: {
+        lines: 22,
+        functions: 25,
+        branches: 17,
+        statements: 22,
+        "src/lib/**": { lines: 75, functions: 75, branches: 65, statements: 75 },
+        "src/services/**": { lines: 75, functions: 75, branches: 65, statements: 75 },
+        "src/context/**": { lines: 70, functions: 70, branches: 60, statements: 70 },
+      },
     },
   },
   resolve: {

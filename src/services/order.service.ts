@@ -1,6 +1,26 @@
 import { apiRequest, buildQuery } from "@/src/lib/api-client"
+import { orderGroupStatusSchema, orderStatusSchema } from "@/src/lib/api-schemas"
 import type { Order, OrderDetail, OrderGroup, OrderItem } from "@/src/types"
 import { type ApiOrderProductSnapshot, normalizeSnapshot } from "./_order-normalizers"
+
+// Safely narrow a backend status string to one of our known enum values.
+// Unknown values from the server fall back to a sane default and are reported
+// to the console so contract drift is visible during development. This is
+// preferable to `as` casts that silently render an undefined status badge.
+function parseOrderStatus(raw: string | undefined): OrderDetail["status"] {
+  if (!raw) return undefined
+  const result = orderStatusSchema.safeParse(raw)
+  if (result.success) return result.data
+  console.warn(`[order.service] unknown order status from backend: ${raw}`)
+  return "PENDING"
+}
+
+function parseOrderGroupStatus(raw: string): OrderGroup["status"] {
+  const result = orderGroupStatusSchema.safeParse(raw)
+  if (result.success) return result.data
+  console.warn(`[order.service] unknown order-group status from backend: ${raw}`)
+  return "PENDING"
+}
 
 export interface OrderListParams {
   page?: number
@@ -76,7 +96,7 @@ function normalizeGroup(raw: ApiOrderGroup): OrderGroup {
   return {
     id: raw.id,
     sellerId: raw.sellerId ?? raw.seller?.id,
-    status: raw.status as OrderGroup["status"],
+    status: parseOrderGroupStatus(raw.status),
     subtotal: raw.subtotal,
     shippingCost: raw.shippingCost ?? raw.shipping,
     shipment: raw.shipment,
@@ -88,7 +108,7 @@ function normalizeOrderDetail(raw: ApiOrderDetail): OrderDetail {
   return {
     id: raw.id,
     orderNumber: raw.orderNumber,
-    status: raw.status as OrderDetail["status"],
+    status: parseOrderStatus(raw.status),
     createdAt: raw.createdAt,
     shippingAddress: raw.shippingAddress,
     groups: (raw.groups ?? []).map(normalizeGroup),

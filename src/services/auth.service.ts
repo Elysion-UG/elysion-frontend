@@ -16,7 +16,16 @@
  *   GET  /reset-password?token= — validate reset token (link-friendly, does not consume token)
  */
 import { apiRequest } from "@/src/lib/api-client"
+import { parseApiResponse, tokensResponseSchema } from "@/src/lib/api-schemas"
 import type { LoginDTO, RegisterDTO, TokensResponse } from "@/src/types"
+
+async function loginRequest(path: string, dto: LoginDTO): Promise<TokensResponse> {
+  const raw = await apiRequest<unknown>(path, {
+    method: "POST",
+    body: JSON.stringify(dto),
+  })
+  return parseApiResponse(tokensResponseSchema, raw, path)
+}
 
 export const AuthService = {
   async register(dto: RegisterDTO): Promise<{ userId: string; email: string }> {
@@ -28,26 +37,17 @@ export const AuthService = {
 
   /** Login for BUYER users on the customer portal. */
   async loginAsCustomer(dto: LoginDTO): Promise<TokensResponse> {
-    return apiRequest("/api/v1/auth/customer/login", {
-      method: "POST",
-      body: JSON.stringify(dto),
-    })
+    return loginRequest("/api/v1/auth/customer/login", dto)
   },
 
   /** Login for SELLER users on the seller portal. */
   async loginAsSeller(dto: LoginDTO): Promise<TokensResponse> {
-    return apiRequest("/api/v1/auth/seller/login", {
-      method: "POST",
-      body: JSON.stringify(dto),
-    })
+    return loginRequest("/api/v1/auth/seller/login", dto)
   },
 
   /** Login for ADMIN users on the admin portal. */
   async loginAsAdmin(dto: LoginDTO): Promise<TokensResponse> {
-    return apiRequest("/api/v1/auth/admin/login", {
-      method: "POST",
-      body: JSON.stringify(dto),
-    })
+    return loginRequest("/api/v1/auth/admin/login", dto)
   },
 
   /**
@@ -57,7 +57,12 @@ export const AuthService = {
   async refresh(): Promise<TokensResponse> {
     // Pass skipRetry=true — if the refresh endpoint itself returns 401,
     // we must not re-enter tryRefreshAndRetry, which would cause infinite recursion.
-    return apiRequest("/api/v1/auth/refresh", { method: "POST", body: "{}" }, true)
+    const raw = await apiRequest<unknown>(
+      "/api/v1/auth/refresh",
+      { method: "POST", body: "{}" },
+      true
+    )
+    return parseApiResponse(tokensResponseSchema, raw, "/api/v1/auth/refresh")
   },
 
   /**

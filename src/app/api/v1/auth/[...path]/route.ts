@@ -12,7 +12,18 @@
  */
 import { type NextRequest, NextResponse } from "next/server"
 
-const BACKEND_URL = process.env.API_URL ?? "http://localhost:8080"
+// Resolve backend URL at request time (not module load time) so that:
+//   1. tests / build-time imports don't crash if API_URL is unset
+//   2. a missing API_URL in production is reported via a request-time error
+//      instead of silently proxying every auth request to localhost:8080.
+function resolveBackendUrl(): string {
+  const url = process.env.API_URL
+  if (url) return url
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("API_URL environment variable is required in production for the auth proxy.")
+  }
+  return "http://localhost:8080"
+}
 
 async function proxy(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params
@@ -36,7 +47,7 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
     outgoingHeaders["Authorization"] = authorization
   }
 
-  const upstream = await fetch(`${BACKEND_URL}/api/v1/auth/${subpath}${qs}`, {
+  const upstream = await fetch(`${resolveBackendUrl()}/api/v1/auth/${subpath}${qs}`, {
     method: request.method,
     headers: outgoingHeaders,
     body: ["GET", "HEAD"].includes(request.method) ? undefined : await request.text(),

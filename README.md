@@ -170,9 +170,14 @@ bun run test:coverage    # with coverage report
 ```
 
 - **Framework:** Vitest + @testing-library/react
-- **Coverage:** ~97% (266 tests)
 - **Test files:** `*.test.ts` / `*.test.tsx` co-located with source files
-- Services, contexts, hooks, and lib utilities are covered
+- **Coverage thresholds (enforced in `vitest.config.ts`):**
+  - Global: ≥ 50 % lines/functions/statements, ≥ 40 % branches
+  - `src/lib/**` and `src/services/**`: ≥ 75 % lines (business logic)
+  - `src/context/**`: ≥ 70 % lines
+- Services, contexts, hooks, and lib utilities are the primary covered surface;
+  feature components are covered incrementally — see `vitest.config.ts` for
+  the exact include/exclude scope.
 
 ---
 

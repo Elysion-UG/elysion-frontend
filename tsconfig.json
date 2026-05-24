@@ -5,6 +5,11 @@
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    // noUncheckedIndexedAccess: deferred — enabling it surfaces ~60 valid issues
+    // in test fixtures, ProductImageManager, FilterSidebar and a few hooks.
+    // Track as a separate cleanup pass; see review notes.
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",

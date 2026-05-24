@@ -12,6 +12,8 @@ export { ErrorAlert } from "./ErrorAlert"
 export { GenericRejectModal } from "./GenericRejectModal"
 export { RouteErrorFallback } from "./RouteErrorFallback"
 export type { RouteErrorFallbackProps, RouteErrorTheme } from "./RouteErrorFallback"
+export { RouteLoadingFallback } from "./RouteLoadingFallback"
+export type { RouteLoadingFallbackProps, RouteLoadingTheme } from "./RouteLoadingFallback"
 export {
   ADMIN_TH_CLASS,
   ADMIN_THEAD_CLASS,

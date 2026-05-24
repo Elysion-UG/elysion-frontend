@@ -3,9 +3,15 @@ import { apiRequest } from "@/src/lib/api-client"
 import { AuthService } from "./auth.service"
 import type { LoginDTO, RegisterDTO, TokensResponse } from "@/src/types"
 
-vi.mock("@/src/lib/api-client", () => ({
-  apiRequest: vi.fn(),
-}))
+vi.mock("@/src/lib/api-client", async (importOriginal) => {
+  // ApiError must remain real because api-schemas.ts (used by AuthService for
+  // runtime validation of TokensResponse) extends it.
+  const actual = await importOriginal<typeof import("@/src/lib/api-client")>()
+  return {
+    ...actual,
+    apiRequest: vi.fn(),
+  }
+})
 
 const mockApiRequest = vi.mocked(apiRequest)
 
