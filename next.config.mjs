@@ -1,6 +1,11 @@
 /** @type {import('next').NextConfig} */
 const devHostIp = process.env.NEXT_PUBLIC_DEV_HOST_IP
 
+// Backend host for image remotePatterns. Defaults to the production deployment
+// so existing setups keep working without explicit configuration.
+const backendHost =
+  process.env.NEXT_PUBLIC_BACKEND_HOST || "marketplace-backend-1-1w30.onrender.com"
+
 // Content-Security-Policy is set per-request in src/middleware.ts so it can
 // include a fresh nonce. Static, non-nonce headers remain here.
 
@@ -38,16 +43,15 @@ const nextConfig = {
   },
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "marketplace-backend-1-1w30.onrender.com",
-      },
-      {
-        protocol: "http",
-        hostname: "localhost",
-      },
+      { protocol: "https", hostname: backendHost },
+      { protocol: "https", hostname: "placehold.co" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "http", hostname: "localhost" },
       ...(devHostIp ? [{ protocol: /** @type {"http"} */ ("http"), hostname: devHostIp }] : []),
     ],
+    dangerouslyAllowSVG: true,
+    contentDispositionType: "attachment",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 }
 
