@@ -65,23 +65,27 @@ window.location.href = `/product?id=${product.id}`
 
 ---
 
-## Auth — resend verification endpoint not yet implemented
+## Auth — resend verification (implemented)
 
-`POST /api/v1/auth/resend-verification` is not yet implemented in the backend (verified as of 2026-03-28). The frontend UI exists but the service call is currently mocked/no-op. Do not wire it to a real call without confirming backend availability.
+`POST /api/v1/auth/resend-verification` is implemented on the backend and wired in the frontend
+(`AuthService.resendVerification()` → `auth.service.ts:103`, used by `EmailVerification.tsx`).
+This is a real call now — the earlier mock/no-op note is obsolete.
 
 ---
 
-## Stripe — backend is production-ready, frontend still uses mock
+## Stripe — fully integrated front-to-back
 
-The backend has a real Stripe integration (`StripeHttpApiClient`) as of the payment hardening release (2026-03-23). The frontend `PaymentService` still uses a mock flow.
+Both sides are integrated as of 2026-05. The backend has a real Stripe integration
+(`StripeHttpApiClient`, idempotent webhook processing, settlement tracking). The frontend uses
+Stripe Elements via `@stripe/react-stripe-js` in `src/components/features/checkout/PaymentStep.tsx`:
 
-**Do not activate the real Stripe path** without implementing the full frontend flow:
+- Payment Intent creation (`PaymentService.createIntent`)
+- Client-side confirmation with `<PaymentElement>`
+- Post-payment status polling (`PaymentService.getStatus`)
+- Webhook-based finalization handled by the backend
 
-- Stripe Payment Intent creation
-- Client-side confirmation (Stripe.js / Elements)
-- Webhook-based status updates (backend already handles these)
-
-Until then, keep `PaymentService` as-is and leave the mock in Checkout.
+**Only remaining gap:** `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` must be set in the environment.
+Without it, `stripePromise` is `null` and the payment step is disabled. See `LAUNCH_READINESS.md` (B1).
 
 ---
 

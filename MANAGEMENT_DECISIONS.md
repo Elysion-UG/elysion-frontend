@@ -66,16 +66,19 @@ Das Backend-Modell ist vollständig. Der Auslöser und Ablauf der Auszahlung ist
 
 Das Backend ist production-ready (Stripe API v2026-03-23). Das Frontend nutzt noch einen Mock-Flow.
 
+**Update (2026-05):** Frontend und Backend sind inzwischen voll integriert (Stripe Elements in
+`PaymentStep.tsx`). Es fehlt nur noch die **Konfiguration** der Live-Keys — kein Code mehr offen.
+
 **Offene Fragen:**
 
-- Wann soll die echte Stripe-Integration aktiviert werden?
-- Wie werden bestehende Test-/Mock-Bestellungen behandelt?
-- Wer hält die Stripe-API-Keys (DevOps, Management)?
+- Wer hält die Stripe-API-Keys (DevOps, Management) und setzt sie in Prod?
+- Wie werden bestehende Test-/Mock-Bestellungen aus der Entwicklung behandelt?
 
-**Bereits entschieden (überschreibbar):**
+**Bereits entschieden / umgesetzt:**
 
-- Backend: `StripeHttpApiClient` ist vollständig implementiert
-- Frontend: `PaymentService` & `Checkout.tsx` verwenden noch Mock-Endpunkt
+- Backend: `StripeHttpApiClient` vollständig implementiert (Intent, idempotenter Webhook, Settlement)
+- Frontend: Stripe Elements in `PaymentStep.tsx` verdrahtet — benötigt `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- Live-Schaltung = Setzen von `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (FE) + `APP_STRIPE_SECRET_KEY`/`APP_STRIPE_WEBHOOK_SECRET` (BE), siehe `docs/LAUNCH_READINESS.md` B1–B3
 
 ---
 
