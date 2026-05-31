@@ -98,4 +98,18 @@ test.describe("Admin – Login", () => {
     await expect(page.getByText(INVALID_CREDS_MESSAGE)).toBeVisible({ timeout: 5_000 })
     await expect(page).toHaveURL(/\/login\/admin/)
   })
+
+  test("Logout aus dem Admin-Portal → Redirect zu /login/admin", async ({ page }) => {
+    // Nutzt eigenen Browser-Context (kein shared admin.json storageState),
+    // damit der Logout den globalen Refresh-Cookie für andere Tests nicht
+    // invalidiert. Login → Klick auf Abmelden-Button in der Sidebar → URL.
+    await fillAndSubmit(page, ADMIN.email, ADMIN.password)
+    await page.waitForURL("**/admin/**", { timeout: 15_000 })
+
+    await page.getByRole("button", { name: "Abmelden" }).click()
+    await page.waitForURL(/\/login\/admin/, { timeout: 15_000 })
+    await expect(page.getByRole("heading", { name: "Administrator-Anmeldung" })).toBeVisible({
+      timeout: 10_000,
+    })
+  })
 })
