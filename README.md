@@ -198,7 +198,7 @@ bun run test:coverage    # with coverage report
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` config      | 🔴 Launch blocker — Stripe integration is built, key missing in env            |
 | Legal pages (Impressum/Datenschutz/AGB/Widerruf) | 🔴 Launch blocker — page scaffolds exist, contain `[PLATZHALTER]` data         |
 | Public seller/producer profile                   | ✅ `ProducerPage` shows real seller products; richer profile endpoint optional |
-| Contact form API                                 | 🟡 `Contact.tsx` is a `setTimeout` stub — no backend endpoint                  |
+| Contact form API                                 | ✅ `Contact.tsx` uses a `mailto:` fallback; backend endpoint optional          |
 | Monitoring persistence                           | 🟡 `monitoring.service.ts` missing — admin monitoring is in-memory only        |
 | Guest checkout                                   | Planned — Phase 2                                                              |
 | Wishlist / favorites                             | Planned — Phase 2                                                              |

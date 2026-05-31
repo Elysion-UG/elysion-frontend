@@ -29,7 +29,7 @@
 | Recommendations / Matching               | ✅                      | ✅                    |
 | File Upload                              | ✅                      | ✅                    |
 | Public Seller-/Producer-Profil           | 🟡 kein Profil-Endpoint | ✅ echte Produktdaten |
-| **Kontaktformular-API**                  | ❌ fehlt                | 🔴 Stub               |
+| Kontaktformular                          | 🟡 kein Endpoint        | ✅ mailto-Fallback    |
 | **Monitoring-Persistenz**                | ❌ fehlt (Spec da)      | 🟡 nur In-Memory      |
 | **Payout-Execution**                     | ⚠️ manuell              | — (Read-Only Admin)   |
 
@@ -72,9 +72,10 @@ Settlement-Modell ist im Backend fertig, aber die **Höhe der Plattformgebühr**
 `src/components/features/products/ProducerPage.tsx` wurde auf **echte Daten** umgebaut: Firmenname + die aktiven Produkte des Sellers via `ProductService.list({ sellerId })` (Hook `useSellerProducts`). Die früheren **Mock-/Fake-Daten** (EcoWear, Rating 4.8 / 124 Reviews, erfundene Kennzahlen) wurden vollständig entfernt — damit ist auch das § 5b UWG-Risiko (COMPLIANCE H4) erledigt.
 **Optionales Fast-Follow (Backend):** Ein dedizierter `GET /api/v1/sellers/{id}/profile` würde ein reicheres Profil ermöglichen (Beschreibung, Seller-Zertifikate, Standort). Kein Launch-Blocker.
 
-### W2 — Kontaktformular-API
+### W2 — Kontaktformular ✅ (Frontend erledigt 2026-05-31)
 
-`src/components/shared/Contact.tsx` simuliert nur `setTimeout(1000)`, kein Backend-Endpoint. Für MVP: `mailto:`-Fallback oder Anbindung an ein Support-Postfach/Form-Service.
+`src/components/shared/Contact.tsx` öffnet jetzt per **`mailto:`-Fallback** das E-Mail-Programm mit vorausgefüllter Nachricht (Helfer `src/lib/contact.ts`, Adresse via `NEXT_PUBLIC_SUPPORT_EMAIL`). Der irreführende `setTimeout`-Stub mit Fake-„Nachricht gesendet" wurde entfernt; die Support-Mail wird als Link angezeigt.
+**Optionales Fast-Follow (Backend):** Ein echter Kontakt-Endpoint (Speicherung/Weiterleitung serverseitig) bleibt optional, kein Launch-Blocker.
 
 ### W3 — Onboarding persistiert nicht
 
@@ -102,8 +103,7 @@ Zahlungen können nach Order-Ablauf eintreffen → Backend erkennt + loggt das f
 
 ### Test-Lücken
 
-- ❌ Kein E2E-Test für den **Stripe-Payment-Flow** (schwer ohne konfigurierten Key — nach B1 nachziehen).
-- ❌ Kontaktformular noch ohne Test gegen echtes Backend (weiterhin Stub). Producer-Seite hat jetzt Tests (`ProducerPage.test.tsx`).
+- ❌ Kein E2E-Test für den **Stripe-Payment-Flow** (schwer ohne konfigurierten Key — nach B1/Backend-Setup nachziehen). Producer-Seite und Kontaktformular haben jetzt Unit-Tests.
 
 ---
 
@@ -127,7 +127,7 @@ Zahlungen können nach Order-Ablauf eintreffen → Backend erkennt + loggt das f
 | ----------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------- |
 | Stripe Key        | `.env.example`, `.env.local`                        | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` dokumentiert; Key-Wert noch einzutragen                      | 🔴 B1     |
 | Producer          | `src/components/features/products/ProducerPage.tsx` | ✅ Auf echte Daten umgebaut (Seller-Produkte via `useSellerProducts`); Mock/Fake-Reviews entfernt | ✅ W1     |
-| Kontakt           | `src/components/shared/Contact.tsx:42`              | `setTimeout(1000)`-Stub statt API                                                                 | 🟡 W2     |
+| Kontakt           | `src/components/shared/Contact.tsx`                 | ✅ `mailto:`-Fallback (`src/lib/contact.ts`); Fake-Stub entfernt                                  | ✅ W2     |
 | Onboarding        | `src/components/features/auth/Onboarding.tsx:75`    | „Advisory", keine Persistenz (bewusst)                                                            | 🟡 W3     |
 | Monitoring        | `src/services/monitoring.service.ts`                | Service fehlt; `error-store.ts` ohne Flush                                                        | 🟡 W4     |
 | Impressum         | `src/app/(public)/impressum/page.tsx`               | ~15× `[PLATZHALTER]`                                                                              | 🔴 B4     |
@@ -135,7 +135,7 @@ Zahlungen können nach Order-Ablauf eintreffen → Backend erkennt + loggt das f
 | AGB               | `src/app/(public)/agb/page.tsx`                     | ~4× Platzhalter                                                                                   | 🔴 B4     |
 | Widerruf          | `src/app/(public)/widerruf/page.tsx`                | ~2× Platzhalter                                                                                   | 🔴 B4     |
 | Public Seller API | Backend                                             | `GET /api/v1/sellers/{id}/profile` fehlt                                                          | 🟡 W1     |
-| Contact API       | Backend                                             | Kein Kontakt-Endpoint                                                                             | 🟡 W2     |
+| Contact API       | Backend                                             | Kein Kontakt-Endpoint (optional; Frontend nutzt `mailto:`)                                        | 🟢 W2     |
 | Payout-Execution  | Backend                                             | `StripePaymentProviderGateway.createPayout()` wirft `ConflictException` — manuell off-platform    | ⚠️ B6     |
 
 ---

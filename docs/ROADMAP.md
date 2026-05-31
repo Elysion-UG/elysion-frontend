@@ -69,7 +69,8 @@ Alle Kernfeatures sind implementiert und ins Backend integriert.
 
 - [x] Producer-Seite auf echte Daten umgebaut (Seller-Produkte via `useSellerProducts`; Mock/Fake-Reviews entfernt)
 - [ ] Optionaler Public-Seller-Profil-Endpoint im Backend für reicheres Producer-Profil (Beschreibung, Seller-Zertifikate)
-- [ ] Kontaktformular an echtes Backend/Postfach (aktuell Stub)
+- [x] Kontaktformular: `mailto:`-Fallback (Fake-Stub entfernt; Adresse via `NEXT_PUBLIC_SUPPORT_EMAIL`)
+- [ ] Optionaler Kontakt-Endpoint im Backend (serverseitige Speicherung/Weiterleitung)
 - [ ] Monitoring-Persistenz (`monitoring.service.ts` + Backend-Endpoint, Spec in `monitoring-api.md`)
 - [ ] Guest Checkout
 - [ ] Wishlist / Favoriten
