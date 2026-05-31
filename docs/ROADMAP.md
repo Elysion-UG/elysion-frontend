@@ -67,7 +67,8 @@ Alle Kernfeatures sind implementiert und ins Backend integriert.
 
 ### Neue Features
 
-- [ ] Public Seller-/Producer-Profil anbinden (ProducerPage nutzt noch Mockdaten — Backend-Endpoint fehlt)
+- [x] Producer-Seite auf echte Daten umgebaut (Seller-Produkte via `useSellerProducts`; Mock/Fake-Reviews entfernt)
+- [ ] Optionaler Public-Seller-Profil-Endpoint im Backend für reicheres Producer-Profil (Beschreibung, Seller-Zertifikate)
 - [ ] Kontaktformular an echtes Backend/Postfach (aktuell Stub)
 - [ ] Monitoring-Persistenz (`monitoring.service.ts` + Backend-Endpoint, Spec in `monitoring-api.md`)
 - [ ] Guest Checkout

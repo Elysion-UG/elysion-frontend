@@ -119,12 +119,12 @@
 
 ### Lücken
 
-- Fake-Bewertungen in `ProducerPage.tsx` (hardcoded: rating 4.8, reviews 124) — **§ 5b UWG Verstoß**
+- ~~Fake-Bewertungen in `ProducerPage.tsx` (hardcoded: rating 4.8, reviews 124) — **§ 5b UWG Verstoß**~~ → behoben (2026-05-31, siehe H4)
 - "Für dich empfohlen"-Widget ohne Erklärung des Algorithmus (§ 5b Abs. 2 UWG)
 
 ### Umsetzungsstatus
 
-- [ ] **H4** Fake-Bewertungen aus ProducerPage entfernen _(erfordert echte Backend-Daten)_
+- [x] **H4** Fake-Bewertungen aus ProducerPage entfernt — Seite zeigt jetzt nur echte Seller-Produktdaten _(Frontend, 2026-05-31)_
 - [ ] **M4** "Für dich empfohlen"-Erklärung im Widget _(Frontend)_
 
 ---
@@ -216,7 +216,7 @@
 | H1  | `lang="de"` in `app/layout.tsx`                   | WCAG 2.1 / BFSG | ✅ Frontend umgesetzt      |
 | H2  | About, Contact auf Deutsch mit Echtdaten          | TMG, UWG        | ✅ Frontend umgesetzt      |
 | H3  | Versandkosten + MwSt.-Zeile im Checkout           | § 1 PAngV       | ✅ Frontend umgesetzt      |
-| H4  | Fake-Bewertungen aus ProducerPage entfernen       | § 5b UWG        | ⏳ Erfordert Backend-Daten |
+| H4  | Fake-Bewertungen aus ProducerPage entfernen       | § 5b UWG        | ✅ Frontend umgesetzt      |
 | H5  | Footer-Claims produktbezogen formulieren          | § 5 UWG         | ✅ Frontend umgesetzt      |
 | H6  | "CO2-neutraler Versand" belegen oder relativieren | § 5 UWG         | ✅ Frontend umgesetzt      |
 | H7  | OS-Streitschlichtungs-Link im Impressum           | § 36 VSBG       | ✅ Im Impressum hinterlegt |

@@ -83,7 +83,7 @@ Alle 16 Backend-Module sind vollständig ins Frontend integriert:
 
 **Offen (Auswahl, vollständig in `LAUNCH_READINESS.md`):**
 
-- Public Seller-/Producer-Profil (ProducerPage nutzt Mockdaten, Backend-Endpoint fehlt)
+- Public Seller-/Producer-Profil: ProducerPage läuft auf echten Produktdaten; optionaler reicher Profil-Endpoint im Backend offen
 - Kontaktformular-API (aktuell Stub)
 - Monitoring-Persistenz
 - Guest Checkout, Wishlist / Favoriten, Retouren-/Erstattungs-UI

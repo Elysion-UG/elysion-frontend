@@ -54,7 +54,7 @@ components/
 
 Ziel: kleine, fokussierte Komponenten (<300 LOC, meist <150). "God components"
 werden in `feature/<feature>-parts/` oder `feature/<feature>/` dekomponiert
-(siehe `product-detail/`, `praeferenzen-parts/`, `producer-parts/`).
+(siehe `product-detail/`, `praeferenzen-parts/`).
 
 ### 2.3 `context/`
 

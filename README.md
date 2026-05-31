@@ -91,7 +91,7 @@ src/
       cart/               — Cart
       checkout/           — Checkout (3-step: address → preview → confirm)
       orders/             — Orders, OrderDetail
-      products/           — SustainableShop, ProductDetail, ProductForm, RecommendationsWidget, ProducerPage (mock)
+      products/           — SustainableShop, ProductDetail, ProductForm, RecommendationsWidget, ProducerPage
       profile/            — Profil, AddressForm, Praeferenzen
       seller/             — SellerDashboard (tab-based: products, orders, certificates, profile, settlements, ship modal)
     layout/               — PageLayout (sticky header, nav, cart badge)
@@ -193,16 +193,16 @@ bun run test:coverage    # with coverage report
 
 > Full launch-readiness assessment and open items: [`docs/LAUNCH_READINESS.md`](./docs/LAUNCH_READINESS.md)
 
-| Item                                             | Status                                                                   |
-| ------------------------------------------------ | ------------------------------------------------------------------------ |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` config      | 🔴 Launch blocker — Stripe integration is built, key missing in env      |
-| Legal pages (Impressum/Datenschutz/AGB/Widerruf) | 🔴 Launch blocker — page scaffolds exist, contain `[PLATZHALTER]` data   |
-| Public seller/producer profile                   | 🟡 `ProducerPage` uses mock data — no backend `GET /api/v1/sellers/{id}` |
-| Contact form API                                 | 🟡 `Contact.tsx` is a `setTimeout` stub — no backend endpoint            |
-| Monitoring persistence                           | 🟡 `monitoring.service.ts` missing — admin monitoring is in-memory only  |
-| Guest checkout                                   | Planned — Phase 2                                                        |
-| Wishlist / favorites                             | Planned — Phase 2                                                        |
-| Returns / refund UI (buyer-facing)               | Planned — Phase 2                                                        |
+| Item                                             | Status                                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` config      | 🔴 Launch blocker — Stripe integration is built, key missing in env            |
+| Legal pages (Impressum/Datenschutz/AGB/Widerruf) | 🔴 Launch blocker — page scaffolds exist, contain `[PLATZHALTER]` data         |
+| Public seller/producer profile                   | ✅ `ProducerPage` shows real seller products; richer profile endpoint optional |
+| Contact form API                                 | 🟡 `Contact.tsx` is a `setTimeout` stub — no backend endpoint                  |
+| Monitoring persistence                           | 🟡 `monitoring.service.ts` missing — admin monitoring is in-memory only        |
+| Guest checkout                                   | Planned — Phase 2                                                              |
+| Wishlist / favorites                             | Planned — Phase 2                                                              |
+| Returns / refund UI (buyer-facing)               | Planned — Phase 2                                                              |
 
 ---
 
