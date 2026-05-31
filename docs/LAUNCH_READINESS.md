@@ -37,10 +37,10 @@
 
 ## 2. 🔴 Launch-Blocker (müssen vor Go-Live)
 
-### B1 — Stripe-Publishable-Key fehlt (Frontend)
+### B1 — Stripe-Publishable-Key konfigurieren (Frontend)
 
-`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` ist weder in `.env.example` noch `.env.local` dokumentiert. Ohne ihn ist `stripePromise = null` in `src/components/features/checkout/PaymentStep.tsx` → **Bezahlen im Checkout funktioniert nicht**.
-**Hinweis:** Die Stripe-Integration selbst ist vollständig (echte `@stripe/react-stripe-js`-Anbindung, `PaymentStep` in `Checkout.tsx` verdrahtet, Status-Polling, `PaymentService.getStatus()`). Es fehlt **nur** der Key in der Konfiguration.
+`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` ist seit 2026-05-31 in `.env.example` und `.env.local` dokumentiert (Variable + Hinweise). **Offen:** der echte Key-Wert muss noch eingetragen werden — Test-Key (`pk_test_…`) für Dev/QA, Live-Key (`pk_live_…`) in Prod. Solange leer, ist `stripePromise = null` in `src/components/features/checkout/PaymentStep.tsx` und der Checkout zeigt „Zahlungssystem nicht konfiguriert".
+**Hinweis:** Die Stripe-Integration selbst ist vollständig (echte `@stripe/react-stripe-js`-Anbindung, `PaymentStep` in `Checkout.tsx` verdrahtet, Status-Polling, `PaymentService.getStatus()`). Es fehlt **nur** der Key-Wert in der Umgebung.
 
 ### B2 — Stripe-Live-Secrets (Backend)
 
@@ -125,7 +125,7 @@ Zahlungen können nach Order-Ablauf eintreffen → Backend erkennt + loggt das f
 
 | Bereich           | Datei / Ort                                         | Befund                                                                                         | Kategorie |
 | ----------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------- | --------- |
-| Stripe Key        | `.env.example`, `.env.local`                        | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` fehlt                                                     | 🔴 B1     |
+| Stripe Key        | `.env.example`, `.env.local`                        | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` dokumentiert; Key-Wert noch einzutragen                   | 🔴 B1     |
 | Producer          | `src/components/features/products/ProducerPage.tsx` | Komplett Mockdaten (`producer-parts/producer-mock.ts`)                                         | 🟡 W1     |
 | Kontakt           | `src/components/shared/Contact.tsx:42`              | `setTimeout(1000)`-Stub statt API                                                              | 🟡 W2     |
 | Onboarding        | `src/components/features/auth/Onboarding.tsx:75`    | „Advisory", keine Persistenz (bewusst)                                                         | 🟡 W3     |
