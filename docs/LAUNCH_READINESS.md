@@ -84,9 +84,10 @@ Die Geschäftsregeln sind **entschieden** (siehe [`MANAGEMENT_DECISIONS.md`](../
 `src/components/shared/Contact.tsx` öffnet jetzt per **`mailto:`-Fallback** das E-Mail-Programm mit vorausgefüllter Nachricht (Helfer `src/lib/contact.ts`, Adresse via `NEXT_PUBLIC_SUPPORT_EMAIL`). Der irreführende `setTimeout`-Stub mit Fake-„Nachricht gesendet" wurde entfernt; die Support-Mail wird als Link angezeigt.
 **Optionales Fast-Follow (Backend):** Ein echter Kontakt-Endpoint (Speicherung/Weiterleitung serverseitig) bleibt optional, kein Launch-Blocker.
 
-### W3 — Onboarding persistiert nicht
+### W3 — Onboarding persistiert nicht ✅ (Frontend erledigt 2026-06-01)
 
-`src/components/features/auth/Onboarding.tsx` ist bewusst „advisory"; die echte Präferenz-Speicherung läuft über `/praeferenzen` (BuyerValueProfile). Akzeptabel für Launch. Offen: Datenschutz-Hinweis vor Präferenzspeicherung (COMPLIANCE M8) und Ersatz von `console.log`/`alert()` (COMPLIANCE M5).
+`src/components/features/auth/Onboarding.tsx` ist bewusst „advisory"; die echte Präferenz-Speicherung läuft über `/praeferenzen` (BuyerValueProfile). Akzeptabel für Launch.
+**Erledigt:** Datenschutz-Hinweis ergänzt (informativer Block mit Link auf `/datenschutz` und `/praeferenzen`, COMPLIANCE M8); `console.log`/`alert()` waren bereits durch `toast.success()` ersetzt (COMPLIANCE M5). Damit sind beide vormals offenen Teilpunkte geschlossen.
 
 ### W4 — Monitoring-Persistenz
 

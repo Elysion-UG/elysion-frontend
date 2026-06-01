@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { toast } from "sonner"
-import { ChevronRight, ChevronLeft, Check, Leaf, Heart, Recycle } from "lucide-react"
+import { ChevronRight, ChevronLeft, Check, Leaf, Heart, Recycle, ShieldCheck } from "lucide-react"
 
 type SustainabilityPreference = {
   id: string
@@ -279,6 +279,28 @@ export default function Onboarding() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* DSGVO-Hinweis: Präferenzen dienen nur der Empfehlung (COMPLIANCE M8) */}
+        <div className="mb-6 flex items-start gap-2.5 rounded-lg border border-green-200 bg-green-50 p-3">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+          <p className="text-xs text-green-700">
+            Deine Angaben werden ausschließlich zur Verbesserung deiner Produktempfehlungen genutzt.
+            Du kannst sie jederzeit unter{" "}
+            <a href="/praeferenzen" className="underline hover:text-green-900">
+              Präferenzen
+            </a>{" "}
+            anpassen. Details zur Verarbeitung findest du in unserer{" "}
+            <a
+              href="/datenschutz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-green-900"
+            >
+              Datenschutzerklärung
+            </a>
+            .
+          </p>
         </div>
 
         {/* Navigation Buttons */}
