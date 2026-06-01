@@ -343,4 +343,43 @@ describe("AdminService", () => {
     )
     expect(result).toEqual({ expiredCount: 7 })
   })
+
+  // ── Commission & payouts ───────────────────────────────────────────────
+
+  it("updateSellerCommission — PATCH /api/v1/admin/sellers/:id/commission with rate body", async () => {
+    mockApiRequest.mockResolvedValue({ id: "s1", commissionRate: 12 })
+
+    await AdminService.updateSellerCommission("s1", 12)
+
+    expect(mockApiRequest).toHaveBeenCalledWith(
+      "/api/v1/admin/sellers/s1/commission",
+      expect.objectContaining({ method: "PATCH", body: JSON.stringify({ commissionRate: 12 }) })
+    )
+  })
+
+  it("listDuePayouts — calls GET /api/v1/admin/payouts/due", async () => {
+    mockApiRequest.mockResolvedValue([])
+
+    const result = await AdminService.listDuePayouts()
+
+    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/payouts/due")
+    expect(result).toEqual([])
+  })
+
+  it("runPayout — POST /api/v1/admin/payouts/run with sellerId body", async () => {
+    mockApiRequest.mockResolvedValue({
+      payoutId: "p1",
+      sellerId: "s1",
+      amount: 5000,
+      status: "PENDING",
+      createdAt: "",
+    })
+
+    await AdminService.runPayout("s1")
+
+    expect(mockApiRequest).toHaveBeenCalledWith(
+      "/api/v1/admin/payouts/run",
+      expect.objectContaining({ method: "POST", body: JSON.stringify({ sellerId: "s1" }) })
+    )
+  })
 })

@@ -3,6 +3,7 @@ import type {
   CertificateType,
   ProductStatus,
   OrderGroupStatus,
+  SellerPayoutAccountStatus,
 } from "@/src/types"
 import {
   PRODUCT_STATUS_LABEL,
@@ -56,4 +57,19 @@ export const settlementStatusLabel: Record<string, string> = {
 export const settlementStatusColor: Record<string, string> = {
   PAID: "bg-green-100 text-green-700",
   PENDING: "bg-amber-100 text-amber-700",
+}
+
+// ── Payout-Account (Stripe Connect Express, light theme) ──────────────
+export const payoutAccountStatusLabel: Record<SellerPayoutAccountStatus, string> = {
+  NOT_CONNECTED: "Nicht verbunden",
+  PENDING: "In Einrichtung",
+  ACTIVE: "Aktiv",
+  RESTRICTED: "Eingeschränkt",
+}
+
+export const payoutAccountStatusColor: Record<SellerPayoutAccountStatus, string> = {
+  NOT_CONNECTED: "bg-slate-100 text-slate-600",
+  PENDING: "bg-amber-100 text-amber-700",
+  ACTIVE: "bg-emerald-100 text-emerald-700",
+  RESTRICTED: "bg-red-100 text-red-700",
 }

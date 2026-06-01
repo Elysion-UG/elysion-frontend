@@ -65,25 +65,26 @@ NEXT_PUBLIC_API_URL=https://marketplace-backend-1-1w30.onrender.com
 
 Alle Services werden aus `src/services/index.ts` re-exportiert.
 
-| Service                     | Endpoints                                                                                                      |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `AuthService`               | register, login, logout, refresh, verifyEmail, forgotPassword, resetPassword                                   |
-| `UserService`               | getCurrentUser, updateProfile, deleteAccount                                                                   |
-| `AddressService`            | list, create, update, setDefault, delete                                                                       |
-| `AdminService`              | listUsers, getUser, suspendUser, activateUser, approveSellerProfile, rejectSellerProfile, suspendSellerProfile |
-| `SellerProfileService`      | get, update                                                                                                    |
-| `SellerValueProfileService` | get, upsert                                                                                                    |
-| `BuyerValueProfileService`  | get, upsert                                                                                                    |
-| `CategoryService`           | list, tree, get, create, update, delete                                                                        |
-| `ProductService`            | list, getBySlug, getById, create, update, updateStatus, addImage, deleteImage, createVariant                   |
-| `CertificateService`        | list, get, create, update, linkToProduct, getProductCertificates                                               |
-| `CartService`               | get, addItem, updateItem, removeItem, clear                                                                    |
-| `CheckoutService`           | preview, complete                                                                                              |
-| `OrderService`              | list, getById                                                                                                  |
-| `SellerOrderService`        | list, getById, updateStatus, ship, deliver, listSettlements                                                    |
-| `PaymentService`            | createIntent, getStatus                                                                                        |
-| `FileService`               | upload, getMetadata, getContentUrl, delete, link, unlink, uploadAndLink                                        |
-| `RecommendationService`     | getRecommendations                                                                                             |
+| Service                     | Endpoints                                                                                                                                                         |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `AuthService`               | register, login, logout, refresh, verifyEmail, forgotPassword, resetPassword                                                                                      |
+| `UserService`               | getCurrentUser, updateProfile, deleteAccount                                                                                                                      |
+| `AddressService`            | list, create, update, setDefault, delete                                                                                                                          |
+| `AdminService`              | listUsers, getUser, suspendUser, activateUser, approveSellerProfile, rejectSellerProfile, suspendSellerProfile, updateSellerCommission, listDuePayouts, runPayout |
+| `SellerProfileService`      | get, update                                                                                                                                                       |
+| `SellerValueProfileService` | get, upsert                                                                                                                                                       |
+| `BuyerValueProfileService`  | get, upsert                                                                                                                                                       |
+| `CategoryService`           | list, tree, get, create, update, delete                                                                                                                           |
+| `ProductService`            | list, getBySlug, getById, create, update, updateStatus, addImage, deleteImage, createVariant                                                                      |
+| `CertificateService`        | list, get, create, update, linkToProduct, getProductCertificates                                                                                                  |
+| `CartService`               | get, addItem, updateItem, removeItem, clear                                                                                                                       |
+| `CheckoutService`           | preview, complete                                                                                                                                                 |
+| `OrderService`              | list, getById                                                                                                                                                     |
+| `SellerOrderService`        | list, getById, updateStatus, ship, deliver, listSettlements                                                                                                       |
+| `SellerPayoutService`       | getAccount, createOnboardingLink                                                                                                                                  |
+| `PaymentService`            | createIntent, getStatus                                                                                                                                           |
+| `FileService`               | upload, getMetadata, getContentUrl, delete, link, unlink, uploadAndLink                                                                                           |
+| `RecommendationService`     | getRecommendations                                                                                                                                                |
 
 ---
 
@@ -230,3 +231,68 @@ Authorization: Bearer <accessToken>
 // Refresh Token kommt automatisch als Cookie — credentials: 'include' ist gesetzt
 Cookie: refreshToken=<httponly-cookie>
 ```
+
+---
+
+## Plattformgebühr & Auszahlungen (Stripe Connect) — API-Verträge
+
+> **Status (2026-06-01):** Frontend ist gegen diese Verträge implementiert; die
+> Backend-Endpoints sind **noch offen** (siehe Backend-Issues). Bis das Backend
+> liefert, scheitern die Aufrufe mit 404/501 — die UI fängt das ab.
+> Geschäftsregeln: [`MANAGEMENT_DECISIONS.md`](../MANAGEMENT_DECISIONS.md) §1.1 / §1.2.
+
+### 1. Plattformgebühr pro Seller (Provision)
+
+- Default für neue Seller: **15 %**, pro Seller vom Admin anpassbar.
+- Bezugsgröße: Warenwert pro OrderGroup **exkl. Versand**.
+- Stripe-Transaktionsgebühr trägt die Plattform (aus der Provision).
+
+```http
+# AdminSellerDetail-Response um commissionRate (Prozent, z. B. 15) erweitern
+GET   /api/v1/admin/sellers/{id}            → { ..., commissionRate: number }
+
+# Provision setzen (0–100, max. 2 Nachkommastellen)
+PATCH /api/v1/admin/sellers/{id}/commission
+      Body: { "commissionRate": number }    → AdminSellerDetail
+```
+
+### 2. Seller-Auszahlungskonto (Stripe Connect Express)
+
+```http
+GET  /api/v1/seller/payout-account
+     → {
+         status: "NOT_CONNECTED" | "PENDING" | "ACTIVE" | "RESTRICTED",
+         chargesEnabled: boolean,
+         payoutsEnabled: boolean,
+         detailsSubmitted: boolean,
+         requirementsDue?: string[]
+       }
+
+POST /api/v1/seller/payout-account/onboarding-link
+     → { url: string }   # Stripe Account Link; Frontend leitet dorthin weiter
+```
+
+- Nach Abschluss des Connect-Onboardings meldet ein **Stripe-Webhook** das Konto
+  serverseitig als `ACTIVE` (`account.updated`).
+
+### 3. Admin-Auszahlungs-Freigabe (monatlich, manuell)
+
+```http
+# Pro Seller aggregierte, fällige (DELIVERED, noch nicht ausgezahlte) Settlements
+GET  /api/v1/admin/payouts/due
+     → PayoutDueItem[] mit {
+         sellerId, sellerName,
+         payoutAccountStatus: "NOT_CONNECTED" | "PENDING" | "ACTIVE" | "RESTRICTED",
+         settlementCount, grossAmount, feeAmount, netAmount,
+         currency?, oldestEligibleAt?
+       }
+
+# Fällige Settlements eines Sellers freigeben → löst Stripe-Transfer/Payout aus.
+# Setzt payoutAccountStatus === "ACTIVE" voraus.
+POST /api/v1/admin/payouts/run
+     Body: { "sellerId": string }   → AdminPayoutItem
+```
+
+- Settlement-Auslöser bleibt **`DELIVERED`** (bestehende Logik).
+- Bei Freigabe wird zusätzlich eine **gebrandete Payout-E-Mail** an den Seller versendet.
+- `createPayout()` im Backend muss das bestehende `ConflictException`-Stub ersetzen.

@@ -119,7 +119,11 @@ export type {
   AdminPaymentItem,
   AdminRefundItem,
   AdminPayoutItem,
+  UpdateSellerCommissionDTO,
+  PayoutDueItem,
 } from "./admin"
+
+export type { SellerPayoutAccountStatus, SellerPayoutAccount, PayoutOnboardingLink } from "./payout"
 
 export type { Recommendation } from "./recommendations"
 

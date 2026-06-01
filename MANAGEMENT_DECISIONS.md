@@ -20,38 +20,62 @@
 
 ### 1.1 Plattformgebühr / Seller-Commission
 
-**Status:** OFFEN — BLOCKER (vor Payout-Feature)
+**Status:** ENTSCHIEDEN (2026-06-01) — Frontend umgesetzt, Backend offen
 
-Das Datenbankmodell für Settlements und Auszahlungen ist fertig implementiert. Die Höhe der Plattformgebühr ist jedoch noch nicht festgelegt.
+**Entscheidungen:**
 
-**Offene Fragen:**
+- **Höhe:** Default **15 %** für neue Seller.
+- **Struktur:** **Pro Seller individuell**, vom Admin anpassbar (kein globaler Flat-Satz, keine automatische Volumen-Staffelung).
+- **Bezugsgröße:** Provision auf den **Warenwert pro OrderGroup, exkl. Versand**. Versandkosten bleiben provisionsfrei beim Seller.
+- **Stripe-Transaktionsgebühr:** trägt die **Plattform** (aus ihrer Provision); die Seller-Abrechnung bleibt „Brutto − Provision = Auszahlung".
+- **Seller-Einblick:** Seller sieht im Dashboard **Brutto, Gebühr (€) und Auszahlung** pro Bestellung — **nicht** den Prozentsatz (da Sätze pro Seller variieren).
 
-- Wie hoch ist die Plattformgebühr (z. B. 10 %, 15 %)?
-- Flat-Rate oder volumenbasierte Staffelung?
-- Kann die Gebühr pro Seller individuell angepasst werden (Admin UI)?
-- Können Seller ihre Abrechnungsdetails einsehen?
+**Frontend umgesetzt (2026-06-01):**
+
+- Admin-Provisions-Editor pro Seller (`AdminSellerDetail.tsx`, `AdminService.updateSellerCommission`)
+- `AdminSellerDetail.commissionRate` (Prozent) im Typmodell
+- Seller-Settlements-Tab zeigt Beträge ohne %-Satz (bereits konform)
+
+**Backend offen (Issue):**
+
+- Feld `commissionRate` auf `SellerProfile` (Default 15) + Nutzung in Settlement-Berechnung
+- Endpoint `PATCH /api/v1/admin/sellers/{id}/commission`
+- `AdminSellerDetail`-Response um `commissionRate` erweitern
 
 **Bereits entschieden (überschreibbar):**
 
 - Beträge werden als Integer (Cent) gespeichert, niemals als Float
 - `settlement.platformFee` und `settlement.sellerNet` werden pro OrderGroup berechnet
-- Kein Abrechnungs-UI für Admins vorhanden (nur API)
 
 ---
 
 ### 1.2 Auszahlungs-Workflow (Seller Payouts)
 
-**Status:** OFFEN — BLOCKER (vor Seller-Onboarding)
+**Status:** ENTSCHIEDEN (2026-06-01) — Frontend umgesetzt, Backend offen
 
-Das Backend-Modell ist vollständig. Der Auslöser und Ablauf der Auszahlung ist nicht entschieden.
+**Entscheidungen:**
 
-**Offene Fragen:**
+- **Auslöser:** **Manuelle Admin-Freigabe** auf festem Rhythmus (kein Cronjob, keine Selbstauslösung durch Seller).
+- **Ausführungsweg:** **Echte Stripe-Auszahlung über Stripe Connect (Express-Accounts)**. Stripe übernimmt KYC/Compliance und IBAN-Verwaltung (→ entschärft §2.1-KYC); die Plattform behält Provisions-Kontrolle (`application_fee`) und Branding.
+- **Intervall:** **Monatlich** — der Admin gibt 1×/Monat alle fälligen Settlements gesammelt frei.
+- **Mindestbetrag:** **keiner** (zeitbasiert statt betragsbasiert) → kein Vortrag/keine Sperre nötig.
+- **Settlement-Auslöser:** ab Order-Status **`DELIVERED`** (= bestehender Code, kein Change).
+- **Benachrichtigung:** **eigene gebrandete Plattform-E-Mail** bei Auszahlung (zusätzlich zu Stripes eigener Benachrichtigung).
 
-- Automatische Auszahlung (täglich/wöchentlich) oder manuelle Admin-Freigabe?
-- Wer löst die Auszahlung aus (Admin, Seller, Cronjob)?
-- Mindestauszahlungsbetrag (z. B. €50)?
-- Was passiert mit Guthaben unter dem Mindestauszahlungsbetrag (Vortrag oder Sperre)?
-- Erhalten Seller eine Auszahlungsbenachrichtigung per E-Mail?
+> ⚠️ **Scope-Hinweis:** „Echte Stripe-Auszahlung" ist KEIN no-code-MVP-Punkt mehr, sondern ein echtes Backend-Feature (Connect-Onboarding, Webhooks, `createPayout()` ersetzt das bestehende `ConflictException`-Stub). Verschiebt den Funktions-Launch entsprechend.
+
+**Frontend umgesetzt (2026-06-01):**
+
+- Seller-Onboarding-Karte „Auszahlungskonto verbinden" (`SellerPayoutAccountCard.tsx`, `SellerPayoutService`)
+- Admin-Tab „Fällige Auszahlungen" mit per-Seller-Freigabe (`AdminFinance.tsx`, `AdminService.listDuePayouts` / `runPayout`)
+
+**Backend offen (Issue):**
+
+- Stripe Connect Express: Account-Erstellung, Onboarding-Link, Status-Webhook
+- `GET /seller/payout-account`, `POST /seller/payout-account/onboarding-link`
+- `GET /admin/payouts/due`, `POST /admin/payouts/run` (löst Stripe-Transfer/Payout aus)
+- `createPayout()` implementieren (ersetzt `ConflictException`)
+- Gebrandetes Payout-E-Mail-Template
 
 **Bereits entschieden (überschreibbar):**
 
@@ -451,9 +475,11 @@ Keine MwSt.-Berechnung oder -Abführungslogik vorhanden.
 
 ### 8.2 KYC / Identitätsprüfung für Seller
 
-**Status:** OFFEN
+**Status:** WEITGEHEND GEKLÄRT durch §1.2-Entscheidung (Stripe Connect Express)
 
-Keine Identitätsprüfung für Seller implementiert.
+> Mit der Entscheidung für **Stripe Connect Express** (§1.2) übernimmt **Stripe** KYC/Identitätsprüfung und Bankdaten-Verifizierung der Seller im Rahmen des Connect-Onboardings. Ein separater KYC-Anbieter ist damit für den Launch nicht erforderlich. Offen bleibt nur die organisatorische Abnahme (Datenschutz/AGB).
+
+Keine eigene Identitätsprüfung für Seller implementiert (an Stripe Connect delegiert).
 
 **Offene Fragen:**
 

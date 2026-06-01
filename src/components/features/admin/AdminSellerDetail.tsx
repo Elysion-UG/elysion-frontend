@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { Loader2, CheckCircle2, XCircle, Ban, ExternalLink } from "lucide-react"
+import { Loader2, CheckCircle2, XCircle, Ban, ExternalLink, Percent } from "lucide-react"
 import { AdminService } from "@/src/services/admin.service"
 import type {
   AdminSellerDetail,
@@ -31,12 +31,15 @@ export default function AdminSellerDetailView() {
   const [suspendReason, setSuspendReason] = useState("")
   const [showRejectInput, setShowRejectInput] = useState(false)
   const [showSuspendInput, setShowSuspendInput] = useState(false)
+  const [commissionInput, setCommissionInput] = useState("")
+  const [commissionSaving, setCommissionSaving] = useState(false)
 
   const load = useCallback(async () => {
     setIsLoading(true)
     try {
       const data = await AdminService.getSeller(id)
       setSeller(data)
+      setCommissionInput(data.commissionRate != null ? String(data.commissionRate) : "")
       // fetch all products and filter by this seller (no server-side seller filter available)
       AdminService.listProducts({ page: 0, size: 200 })
         .then((res) => {
@@ -84,6 +87,26 @@ export default function AdminSellerDetailView() {
       toast.error("Fehler beim Ablehnen.")
     } finally {
       setActionLoading(false)
+    }
+  }
+
+  const handleSaveCommission = async () => {
+    if (!seller) return
+    const rate = Number(commissionInput.replace(",", "."))
+    if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
+      toast.error("Bitte einen Prozentsatz zwischen 0 und 100 eingeben.")
+      return
+    }
+    setCommissionSaving(true)
+    try {
+      const updated = await AdminService.updateSellerCommission(seller.id, rate)
+      setSeller(updated)
+      setCommissionInput(String(updated.commissionRate))
+      toast.success(`Provision auf ${updated.commissionRate} % gesetzt.`)
+    } catch {
+      toast.error("Provision konnte nicht gespeichert werden.")
+    } finally {
+      setCommissionSaving(false)
     }
   }
 
@@ -221,6 +244,45 @@ export default function AdminSellerDetailView() {
             )}
           </div>
         )}
+      </div>
+
+      {/* Plattformgebühr */}
+      <div className="rounded-xl border border-slate-800/60 bg-slate-900/60 p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <Percent className="h-4 w-4 text-cyber-500" />
+          <h2 className="font-mono text-sm font-semibold uppercase tracking-wider text-slate-400">
+            Plattformgebühr
+          </h2>
+        </div>
+        <p className="mb-4 text-sm text-slate-500">
+          Provision auf den Warenwert (exkl. Versand) pro Bestellung. Default für neue Seller:
+          15&nbsp;%.
+        </p>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <input
+              type="number"
+              min={0}
+              max={100}
+              step={0.5}
+              value={commissionInput}
+              onChange={(e) => setCommissionInput(e.target.value)}
+              aria-label="Provision in Prozent"
+              className="w-32 rounded-lg border border-slate-700/60 bg-slate-800/60 py-2 pl-3 pr-8 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
+            />
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">
+              %
+            </span>
+          </div>
+          <button
+            onClick={handleSaveCommission}
+            disabled={commissionSaving || commissionInput.trim() === ""}
+            className="flex items-center gap-1.5 rounded-lg border border-cyber-800/60 bg-cyber-950/30 px-4 py-2 text-sm text-cyber-400 hover:text-cyber-300 disabled:opacity-40"
+          >
+            {commissionSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+            Speichern
+          </button>
+        </div>
       </div>
 
       {/* Products */}

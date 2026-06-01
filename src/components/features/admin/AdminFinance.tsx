@@ -1,9 +1,24 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
-import { DollarSign, Loader2, CreditCard, ArrowDownLeft, Banknote, Wrench } from "lucide-react"
+import {
+  DollarSign,
+  Loader2,
+  CreditCard,
+  ArrowDownLeft,
+  Banknote,
+  Wrench,
+  HandCoins,
+  Send,
+} from "lucide-react"
 import { AdminService } from "@/src/services/admin.service"
-import type { AdminPaymentItem, AdminRefundItem, Settlement, AdminPayoutItem } from "@/src/types"
+import type {
+  AdminPaymentItem,
+  AdminRefundItem,
+  Settlement,
+  AdminPayoutItem,
+  PayoutDueItem,
+} from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
 import {
   ADMIN_PAYMENT_STATUS_COLOR as paymentStatusColor,
@@ -28,7 +43,7 @@ import {
 } from "@/src/components/ui/table"
 import { toast } from "sonner"
 
-type Tab = "payments" | "refunds" | "settlements" | "payouts" | "maintenance"
+type Tab = "payments" | "refunds" | "settlements" | "due" | "payouts" | "maintenance"
 
 export default function AdminFinance() {
   const [tab, setTab] = useState<Tab>("payments")
@@ -36,8 +51,10 @@ export default function AdminFinance() {
   const [payments, setPayments] = useState<AdminPaymentItem[]>([])
   const [refunds, setRefunds] = useState<AdminRefundItem[]>([])
   const [settlements, setSettlements] = useState<Settlement[]>([])
+  const [duePayouts, setDuePayouts] = useState<PayoutDueItem[]>([])
   const [payouts, setPayouts] = useState<AdminPayoutItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [releasingSellerId, setReleasingSellerId] = useState<string | null>(null)
   const [maintenanceLoading, setMaintenanceLoading] = useState<string | null>(null)
 
   const load = useCallback(async () => {
@@ -52,6 +69,9 @@ export default function AdminFinance() {
       } else if (tab === "settlements") {
         const res = await AdminService.listSettlements({ page: 0, size: 50 })
         setSettlements(res.items ?? [])
+      } else if (tab === "due") {
+        const items = await AdminService.listDuePayouts()
+        setDuePayouts(items ?? [])
       } else if (tab === "payouts") {
         const res = await AdminService.listPayouts({ page: 0, size: 50 })
         setPayouts(res.items ?? [])
@@ -62,6 +82,19 @@ export default function AdminFinance() {
       setIsLoading(false)
     }
   }, [tab])
+
+  const releasePayout = async (item: PayoutDueItem) => {
+    setReleasingSellerId(item.sellerId)
+    try {
+      await AdminService.runPayout(item.sellerId)
+      toast.success(`Auszahlung für ${item.sellerName} freigegeben.`)
+      setDuePayouts((prev) => prev.filter((d) => d.sellerId !== item.sellerId))
+    } catch {
+      toast.error("Auszahlung konnte nicht freigegeben werden.")
+    } finally {
+      setReleasingSellerId(null)
+    }
+  }
 
   useEffect(() => {
     if (tab !== "maintenance") load()
@@ -88,6 +121,7 @@ export default function AdminFinance() {
     { id: "payments", label: "Zahlungen", icon: <CreditCard className="h-4 w-4" /> },
     { id: "refunds", label: "Erstattungen", icon: <ArrowDownLeft className="h-4 w-4" /> },
     { id: "settlements", label: "Abrechnungen", icon: <DollarSign className="h-4 w-4" /> },
+    { id: "due", label: "Fällige Auszahlungen", icon: <HandCoins className="h-4 w-4" /> },
     { id: "payouts", label: "Auszahlungen", icon: <Banknote className="h-4 w-4" /> },
     { id: "maintenance", label: "Wartung", icon: <Wrench className="h-4 w-4" /> },
   ]
@@ -265,6 +299,80 @@ export default function AdminFinance() {
                             </TableCell>
                           </TableRow>
                         ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              )}
+
+              {/* Fällige Auszahlungen */}
+              {tab === "due" && (
+                <div className="overflow-x-auto">
+                  <div className="mb-4 rounded-lg border border-slate-800/60 bg-slate-800/30 p-4 text-sm text-slate-400">
+                    Auszahlungen werden <span className="text-slate-200">monatlich</span> manuell
+                    freigegeben. Aufgeführt sind pro Verkäufer alle gelieferten, noch nicht
+                    ausgezahlten Abrechnungen. Eine Freigabe ist nur bei aktivem
+                    Stripe-Auszahlungskonto möglich.
+                  </div>
+                  {duePayouts.length === 0 ? (
+                    <p className="py-8 text-center text-slate-500">Keine fälligen Auszahlungen.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader className={ADMIN_THEAD_CLASS}>
+                        <TableRow>
+                          <TableHead className={ADMIN_TH_CLASS}>Verkäufer</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Konto</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Abrechnungen</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Netto</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS} />
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {duePayouts.map((d) => {
+                          const canRelease = d.payoutAccountStatus === "ACTIVE"
+                          return (
+                            <TableRow key={d.sellerId} className={ADMIN_TR_CLASS}>
+                              <TableCell className="px-3 py-2.5 text-slate-300">
+                                {d.sellerName}
+                              </TableCell>
+                              <TableCell className="px-3 py-2.5">
+                                <StatusBadge
+                                  label={d.payoutAccountStatus}
+                                  colorClasses={
+                                    canRelease
+                                      ? "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40"
+                                      : "bg-amber-900/40 text-amber-400 ring-1 ring-amber-700/40"
+                                  }
+                                />
+                              </TableCell>
+                              <TableCell className="px-3 py-2.5 text-slate-400">
+                                {d.settlementCount}
+                              </TableCell>
+                              <TableCell className="px-3 py-2.5 font-medium text-emerald-400">
+                                {formatEuro(d.netAmount)}
+                              </TableCell>
+                              <TableCell className="px-3 py-2.5 text-right">
+                                <button
+                                  onClick={() => releasePayout(d)}
+                                  disabled={!canRelease || releasingSellerId === d.sellerId}
+                                  title={
+                                    canRelease
+                                      ? "Auszahlung freigeben"
+                                      : "Verkäufer hat kein aktives Auszahlungskonto"
+                                  }
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-cyber-800/60 bg-cyber-950/30 px-3 py-1.5 text-xs text-cyber-400 hover:text-cyber-300 disabled:opacity-40"
+                                >
+                                  {releasingSellerId === d.sellerId ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <Send className="h-3.5 w-3.5" />
+                                  )}
+                                  Freigeben
+                                </button>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
                       </TableBody>
                     </Table>
                   )}

@@ -12,26 +12,26 @@
 
 **Backend und Frontend sind funktional weitgehend fertig.** Alle Kernflüsse — Auth, Katalog, Warenkorb, Checkout, Multi-Vendor-Orders, Stripe-Payments, Refunds, Admin-Moderation, Zertifikate — sind end-to-end implementiert. Was bis zum Launch fehlt, ist primär **Konfiguration, rechtliche Inhalte und einige kleinere Funktionslücken** — keine großen Feature-Baustellen.
 
-| Bereich                                  | Backend                 | Frontend              |
-| ---------------------------------------- | ----------------------- | --------------------- |
-| Auth (3 Portale, Verify, Reset)          | ✅                      | ✅                    |
-| User / Adressen / Profile                | ✅                      | ✅                    |
-| Produkte + Varianten + Bilder            | ✅                      | ✅                    |
-| Kategorien                               | ✅                      | ✅                    |
-| Cart (Guest + Auth)                      | ✅                      | ✅                    |
-| Checkout (2-Schritt Backend / 3-Step UI) | ✅                      | ✅                    |
-| Orders (Multi-Vendor + Fulfillment)      | ✅                      | ✅                    |
-| Payments (Stripe)                        | ✅                      | ✅ (Key fehlt)        |
-| Refunds / Settlements                    | ✅                      | ✅ (Admin Finance)    |
-| Zertifikate                              | ✅                      | ✅                    |
-| Admin-Panel (komplett)                   | ✅                      | ✅                    |
-| Seller-Dashboard (Tab-basiert)           | ✅                      | ✅                    |
-| Recommendations / Matching               | ✅                      | ✅                    |
-| File Upload                              | ✅                      | ✅                    |
-| Public Seller-/Producer-Profil           | 🟡 kein Profil-Endpoint | ✅ echte Produktdaten |
-| Kontaktformular                          | 🟡 kein Endpoint        | ✅ mailto-Fallback    |
-| **Monitoring-Persistenz**                | ❌ fehlt (Spec da)      | 🟡 nur In-Memory      |
-| **Payout-Execution**                     | ⚠️ manuell              | — (Read-Only Admin)   |
+| Bereich                                  | Backend                 | Frontend                 |
+| ---------------------------------------- | ----------------------- | ------------------------ |
+| Auth (3 Portale, Verify, Reset)          | ✅                      | ✅                       |
+| User / Adressen / Profile                | ✅                      | ✅                       |
+| Produkte + Varianten + Bilder            | ✅                      | ✅                       |
+| Kategorien                               | ✅                      | ✅                       |
+| Cart (Guest + Auth)                      | ✅                      | ✅                       |
+| Checkout (2-Schritt Backend / 3-Step UI) | ✅                      | ✅                       |
+| Orders (Multi-Vendor + Fulfillment)      | ✅                      | ✅                       |
+| Payments (Stripe)                        | ✅                      | ✅ (Key fehlt)           |
+| Refunds / Settlements                    | ✅                      | ✅ (Admin Finance)       |
+| Zertifikate                              | ✅                      | ✅                       |
+| Admin-Panel (komplett)                   | ✅                      | ✅                       |
+| Seller-Dashboard (Tab-basiert)           | ✅                      | ✅                       |
+| Recommendations / Matching               | ✅                      | ✅                       |
+| File Upload                              | ✅                      | ✅                       |
+| Public Seller-/Producer-Profil           | 🟡 kein Profil-Endpoint | ✅ echte Produktdaten    |
+| Kontaktformular                          | 🟡 kein Endpoint        | ✅ mailto-Fallback       |
+| **Monitoring-Persistenz**                | ❌ fehlt (Spec da)      | 🟡 nur In-Memory         |
+| **Payout-Execution**                     | ⚠️ Connect offen (Spec) | ✅ UI (Connect+Freigabe) |
 
 ---
 
@@ -59,9 +59,16 @@ Impressum (~15× `[PLATZHALTER]`), Datenschutz (~8×), AGB (~4×), Widerruf (~2�
 
 `SPRING_PROFILES_ACTIVE=prod`, echte `APP_JWT_SECRET`, `APP_PASSWORD_PEPPER`, `APP_MAIL_ENABLED=true` + reale SMTP-Credentials, `APP_FRONTEND_URL`, `APP_CORS_ALLOWED_ORIGINS` auf echte Domains. Cookies `Secure` + korrekte SameSite/Domain-Policy.
 
-### B6 — Plattformgebühr & Payout-Workflow festlegen
+### B6 — Plattformgebühr & Payout-Workflow festlegen ✅ (entschieden 2026-06-01)
 
-Settlement-Modell ist im Backend fertig, aber die **Höhe der Plattformgebühr** und der **Auszahlungs-Workflow** sind als BLOCKER offen (siehe [`MANAGEMENT_DECISIONS.md`](../MANAGEMENT_DECISIONS.md) §1.1 / §1.2). Payouts laufen aktuell manuell/off-platform (Read-Only-API). Vor echtem Seller-Onboarding zu entscheiden.
+Die Geschäftsregeln sind **entschieden** (siehe [`MANAGEMENT_DECISIONS.md`](../MANAGEMENT_DECISIONS.md) §1.1 / §1.2):
+
+- **Provision:** 15 % Default, pro Seller vom Admin anpassbar, auf Warenwert exkl. Versand; Stripe-Gebühr trägt die Plattform.
+- **Payouts:** monatliche manuelle Admin-Freigabe über **Stripe Connect Express**, kein Mindestbetrag, Settlement ab `DELIVERED`, eigene Payout-Mail.
+
+**Frontend ist umgesetzt** (Admin-Provisions-Editor, Seller-Connect-Onboarding-Karte, Admin-Tab „Fällige Auszahlungen").
+
+**Verbleibender Blocker = Backend:** Stripe Connect Express + zugehörige Endpoints sind ein echtes Feature (verschiebt den Funktions-Launch). API-Verträge dokumentiert in [`api-integration.md`](./api-integration.md) → Backend-Issues. `createPayout()` muss das bestehende `ConflictException`-Stub ersetzen.
 
 ---
 
@@ -123,20 +130,20 @@ Zahlungen können nach Order-Ablauf eintreffen → Backend erkennt + loggt das f
 
 ## 6. Detail-Findings nach Datei
 
-| Bereich           | Datei / Ort                                         | Befund                                                                                            | Kategorie |
-| ----------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------- | --------- |
-| Stripe Key        | `.env.example`, `.env.local`                        | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` dokumentiert; Key-Wert noch einzutragen                      | 🔴 B1     |
-| Producer          | `src/components/features/products/ProducerPage.tsx` | ✅ Auf echte Daten umgebaut (Seller-Produkte via `useSellerProducts`); Mock/Fake-Reviews entfernt | ✅ W1     |
-| Kontakt           | `src/components/shared/Contact.tsx`                 | ✅ `mailto:`-Fallback (`src/lib/contact.ts`); Fake-Stub entfernt                                  | ✅ W2     |
-| Onboarding        | `src/components/features/auth/Onboarding.tsx:75`    | „Advisory", keine Persistenz (bewusst)                                                            | 🟡 W3     |
-| Monitoring        | `src/services/monitoring.service.ts`                | Service fehlt; `error-store.ts` ohne Flush                                                        | 🟡 W4     |
-| Impressum         | `src/app/(public)/impressum/page.tsx`               | ~15× `[PLATZHALTER]`                                                                              | 🔴 B4     |
-| Datenschutz       | `src/app/(public)/datenschutz/page.tsx`             | ~8× Platzhalter                                                                                   | 🔴 B4     |
-| AGB               | `src/app/(public)/agb/page.tsx`                     | ~4× Platzhalter                                                                                   | 🔴 B4     |
-| Widerruf          | `src/app/(public)/widerruf/page.tsx`                | ~2× Platzhalter                                                                                   | 🔴 B4     |
-| Public Seller API | Backend                                             | `GET /api/v1/sellers/{id}/profile` fehlt                                                          | 🟡 W1     |
-| Contact API       | Backend                                             | Kein Kontakt-Endpoint (optional; Frontend nutzt `mailto:`)                                        | 🟢 W2     |
-| Payout-Execution  | Backend                                             | `StripePaymentProviderGateway.createPayout()` wirft `ConflictException` — manuell off-platform    | ⚠️ B6     |
+| Bereich           | Datei / Ort                                         | Befund                                                                                                                                                  | Kategorie |
+| ----------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| Stripe Key        | `.env.example`, `.env.local`                        | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` dokumentiert; Key-Wert noch einzutragen                                                                            | 🔴 B1     |
+| Producer          | `src/components/features/products/ProducerPage.tsx` | ✅ Auf echte Daten umgebaut (Seller-Produkte via `useSellerProducts`); Mock/Fake-Reviews entfernt                                                       | ✅ W1     |
+| Kontakt           | `src/components/shared/Contact.tsx`                 | ✅ `mailto:`-Fallback (`src/lib/contact.ts`); Fake-Stub entfernt                                                                                        | ✅ W2     |
+| Onboarding        | `src/components/features/auth/Onboarding.tsx:75`    | „Advisory", keine Persistenz (bewusst)                                                                                                                  | 🟡 W3     |
+| Monitoring        | `src/services/monitoring.service.ts`                | Service fehlt; `error-store.ts` ohne Flush                                                                                                              | 🟡 W4     |
+| Impressum         | `src/app/(public)/impressum/page.tsx`               | ~15× `[PLATZHALTER]`                                                                                                                                    | 🔴 B4     |
+| Datenschutz       | `src/app/(public)/datenschutz/page.tsx`             | ~8× Platzhalter                                                                                                                                         | 🔴 B4     |
+| AGB               | `src/app/(public)/agb/page.tsx`                     | ~4× Platzhalter                                                                                                                                         | 🔴 B4     |
+| Widerruf          | `src/app/(public)/widerruf/page.tsx`                | ~2× Platzhalter                                                                                                                                         | 🔴 B4     |
+| Public Seller API | Backend                                             | `GET /api/v1/sellers/{id}/profile` fehlt                                                                                                                | 🟡 W1     |
+| Contact API       | Backend                                             | Kein Kontakt-Endpoint (optional; Frontend nutzt `mailto:`)                                                                                              | 🟢 W2     |
+| Payout-Execution  | Backend                                             | Entschieden: Stripe Connect Express + monatliche Admin-Freigabe. FE fertig; `createPayout()` (wirft noch `ConflictException`) + Connect-Endpoints offen | ⚠️ B6     |
 
 ---
 

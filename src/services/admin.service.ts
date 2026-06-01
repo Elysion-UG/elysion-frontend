@@ -39,6 +39,7 @@ import type {
   AdminPaymentItem,
   AdminRefundItem,
   AdminPayoutItem,
+  PayoutDueItem,
   Settlement,
   PagedResponse,
   OrderStatus,
@@ -129,6 +130,20 @@ export const AdminService = {
     return apiRequest(`/api/v1/admin/sellers/${sellerId}`)
   },
 
+  /**
+   * Setzt die Plattformgebühr (Provision) eines Sellers in Prozent.
+   * @param commissionRate Prozentsatz 0–100 (z. B. 15 für 15 %)
+   */
+  async updateSellerCommission(
+    sellerId: string,
+    commissionRate: number
+  ): Promise<AdminSellerDetail> {
+    return apiRequest(`/api/v1/admin/sellers/${sellerId}/commission`, {
+      method: "PATCH",
+      body: JSON.stringify({ commissionRate }),
+    })
+  },
+
   async listSellers(
     params: { page?: number; size?: number; status?: string } = {}
   ): Promise<PagedResponse<AdminSellerListItem>> {
@@ -199,6 +214,26 @@ export const AdminService = {
     return apiRequest(
       `/api/v1/admin/payouts${buildQuery({ page: params.page, size: params.size })}`
     )
+  },
+
+  /**
+   * Listet pro Seller die fälligen (auszahlungsfähigen) Settlements,
+   * aggregiert für die monatliche manuelle Freigabe.
+   */
+  async listDuePayouts(): Promise<PayoutDueItem[]> {
+    return apiRequest(`/api/v1/admin/payouts/due`)
+  },
+
+  /**
+   * Gibt die fälligen Settlements eines Sellers frei und löst die
+   * Stripe-Auszahlung (Transfer/Payout) aus. Setzt ein aktives
+   * Connect-Express-Konto des Sellers voraus.
+   */
+  async runPayout(sellerId: string): Promise<AdminPayoutItem> {
+    return apiRequest(`/api/v1/admin/payouts/run`, {
+      method: "POST",
+      body: JSON.stringify({ sellerId }),
+    })
   },
 
   async cleanupRefreshTokens(): Promise<{ deletedCount: number }> {
