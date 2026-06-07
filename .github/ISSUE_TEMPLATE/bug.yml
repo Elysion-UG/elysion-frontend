@@ -1,0 +1,42 @@
+name: 🐛 Bug
+description: Etwas funktioniert nicht wie erwartet
+labels: ["bug"]
+body:
+  - type: textarea
+    id: kontext
+    attributes:
+      label: Kontext
+      description: Wo tritt das Problem auf (Seite, Komponente, Endpoint)? Seit wann / unter welchen Umständen?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduktion
+      description: Schritte zum Nachstellen (Klickpfad, Request, Befehl)
+      placeholder: |
+        1. …
+        2. …
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: erwartet
+    attributes:
+      label: Erwartetes Verhalten
+    validations:
+      required: true
+  - type: textarea
+    id: tatsaechlich
+    attributes:
+      label: Tatsächliches Verhalten
+      description: Inkl. Fehlermeldung, Logs, Response-Body, Screenshots
+    validations:
+      required: true
+  - type: textarea
+    id: referenz
+    attributes:
+      label: Referenz
+      description: Verwandte Issues (voll qualifiziert bei Cross-Repo, z. B. Elysion-UG/elysion-marketplace-backend#117), Doku
+    validations:
+      required: false
