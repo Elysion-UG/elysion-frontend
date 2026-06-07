@@ -1,10 +1,32 @@
 # Launch-Readiness — Elysion Sustainable Marketplace
 
-**Stand:** 2026-05-31
+**Stand:** 2026-06-07
 **Scope:** Frontend (`v0-sustainable-online-shop`) + Backend (`marketplace-backend`)
-**Zweck:** Konsolidierter Ist-Stand beider Repos und vollständige Liste der noch offenen Punkte bis zum Go-Live. Single Source of Truth für die Launch-Vorbereitung.
+**Zweck:** Konsolidierter Ist-Stand beider Repos und inhaltlicher Hintergrund der Launch-Vorbereitung.
+
+> **Tracking seit 2026-06-07:** Der aktuelle Offen-Status lebt in den **GitHub-Issues** beider
+> Repos (Label `launch-blocker` = 🔴) — dieses Dokument liefert Kontext und Begründungen,
+> die Issues sind die Single Source of Truth für „was ist noch offen".
+> Mapping: B1→FE#10, B2→BE#117, B3→BE#118, B4→FE#9, B5→BE#119, B6→BE#109–112,
+> W1-FF→BE#104, W2-FF→BE#120, W4-Backend→BE#115, W5→FE#11, W6→BE#121, E2E-Stripe→FE#12.
 
 > Verwandte Dokumente: rechtliche Details in [`COMPLIANCE.md`](./COMPLIANCE.md), Management-Entscheidungen in [`../MANAGEMENT_DECISIONS.md`](../MANAGEMENT_DECISIONS.md), Backend-Go-Live-Schritte in `../../marketplace-backend/docs/backend/go-live-checklist.md`.
+
+---
+
+## Staging-Umgebung (live seit 2026-06-07)
+
+| Komponente    | URL                                                                       |
+| ------------- | ------------------------------------------------------------------------- |
+| Buyer-Portal  | https://elysion-stage.vercel.app                                          |
+| Seller-Portal | https://elysion-stage-seller.vercel.app                                   |
+| Admin-Portal  | https://elysion-stage-admin.vercel.app                                    |
+| Backend-API   | https://elysion-backend-stage.onrender.com (Free-Tier-Kaltstart ~60–90 s) |
+
+Deployt automatisch bei Merge nach `stage` (Render + Vercel, branch-gebundene Domains).
+Test-Logins: Seed-Credentials (`../../marketplace-backend/docs/seed-data-credentials.md`).
+Setup/Betrieb: Backend-Repo → `docs/backend/deployment.md` + `operations-runbook.md` (BE#127).
+**Produktion** ist derzeit außer Betrieb (alte Render-DB gelöscht) — Neuaufbau vor Launch: BE#122.
 
 ---
 
@@ -138,7 +160,7 @@ Zahlungen können nach Order-Ablauf eintreffen → Backend erkennt + loggt das f
 | Producer          | `src/components/features/products/ProducerPage.tsx` | ✅ Auf echte Daten umgebaut (Seller-Produkte via `useSellerProducts`); Mock/Fake-Reviews entfernt                                                       | ✅ W1     |
 | Kontakt           | `src/components/shared/Contact.tsx`                 | ✅ `mailto:`-Fallback (`src/lib/contact.ts`); Fake-Stub entfernt                                                                                        | ✅ W2     |
 | Onboarding        | `src/components/features/auth/Onboarding.tsx:75`    | „Advisory", keine Persistenz (bewusst)                                                                                                                  | 🟡 W3     |
-| Monitoring        | `src/services/monitoring.service.ts`                | Service fehlt; `error-store.ts` ohne Flush                                                                                                              | 🟡 W4     |
+| Monitoring        | `src/services/monitoring.service.ts`                | ✅ Frontend fertig (Flush in `error-store.ts` + MonitoringService, committet 2026-06-07); Backend-Ingestion offen → BE#115                              | 🟡 W4     |
 | Impressum         | `src/app/(public)/impressum/page.tsx`               | ~15× `[PLATZHALTER]`                                                                                                                                    | 🔴 B4     |
 | Datenschutz       | `src/app/(public)/datenschutz/page.tsx`             | ~8× Platzhalter                                                                                                                                         | 🔴 B4     |
 | AGB               | `src/app/(public)/agb/page.tsx`                     | ~4× Platzhalter                                                                                                                                         | 🔴 B4     |
