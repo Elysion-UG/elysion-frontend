@@ -1,0 +1,35 @@
+name: ✨ Feature / Verbesserung
+description: Neue Funktionalität oder Erweiterung
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: kontext
+    attributes:
+      label: Kontext
+      description: Warum brauchen wir das? Hintergrund, betroffene Stellen, Geschäftsregeln/Entscheidungen
+    validations:
+      required: true
+  - type: textarea
+    id: aufgaben
+    attributes:
+      label: Aufgaben
+      description: Abhakbare, einzeln verifizierbare Schritte
+      placeholder: |
+        - [ ] …
+        - [ ] …
+    validations:
+      required: true
+  - type: textarea
+    id: abhaengigkeiten
+    attributes:
+      label: Abhängigkeiten
+      description: Vorausgesetzte Issues/Entscheidungen — Cross-Repo voll qualifiziert (Elysion-UG/repo#nr)
+    validations:
+      required: false
+  - type: textarea
+    id: referenz
+    attributes:
+      label: Referenz
+      description: Spezifikation, Doku-Abschnitte (z. B. docs/LAUNCH_READINESS.md, docs/api/…)
+    validations:
+      required: false

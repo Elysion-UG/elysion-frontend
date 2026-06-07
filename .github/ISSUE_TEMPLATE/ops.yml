@@ -1,0 +1,34 @@
+name: 🔧 Ops / Konfiguration
+description: Betriebs-, Deployment- oder Konfigurationsaufgabe
+labels: ["ops"]
+body:
+  - type: textarea
+    id: kontext
+    attributes:
+      label: Kontext
+      description: Was muss konfiguriert/umgestellt werden und warum? Welche Umgebung (Render, Vercel, GitHub, DNS, …)?
+    validations:
+      required: true
+  - type: textarea
+    id: aufgaben
+    attributes:
+      label: Aufgaben
+      placeholder: |
+        - [ ] …
+        - [ ] …
+    validations:
+      required: true
+  - type: textarea
+    id: verifikation
+    attributes:
+      label: Verifikation
+      description: Wie prüfen wir, dass die Änderung wirkt? (Smoke-Test, Health-Check, Logabfrage)
+    validations:
+      required: true
+  - type: textarea
+    id: referenz
+    attributes:
+      label: Referenz
+      description: Runbook, Checklisten, verwandte Issues
+    validations:
+      required: false
