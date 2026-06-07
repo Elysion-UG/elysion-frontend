@@ -48,3 +48,27 @@ export interface ErrorStoreStats {
   /** Errors per minute averaged over the last 30 minutes. */
   errorsPerMinute: number
 }
+
+/**
+ * A frontend error event as persisted and returned by the backend
+ * (`GET /api/v1/admin/monitoring/errors`). Promoted fields are flattened
+ * out of the client-side `metadata` object; see `docs/monitoring-api.md`.
+ */
+export interface PersistedErrorEvent {
+  id: string
+  clientEventId: string
+  sessionId: string | null
+  severity: ErrorSeverity
+  category: ErrorCategory
+  message: string
+  stack: string | null
+  url: string | null
+  apiPath: string | null
+  statusCode: number | null
+  component: string | null
+  userId: string | null
+  userAgent: string | null
+  metadata: Record<string, unknown> | null
+  clientTimestamp: string
+  createdAt: string
+}

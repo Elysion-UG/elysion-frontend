@@ -1,7 +1,7 @@
 # Monitoring API — Frontend Error Persistierung
 
-> **Status: GEPLANT — noch nicht implementiert**
-> `MonitoringService` existiert noch nicht in `src/services/`. Der Flush-Mechanismus in `src/lib/error-store.ts` ist ebenfalls noch nicht gebaut. Dieses Dokument ist eine Implementierungs-Spezifikation.
+> **Status (2026-06-01): FRONTEND UMGESETZT — Backend offen**
+> Der Flush-Mechanismus in `src/lib/error-store.ts` (Timer-Flush 30 s, Threshold-Flush ab 20 Events, `beforeunload`-Beacon, Exponential-Backoff, Truncation, direkter `fetch` ohne api-client) und `src/services/monitoring.service.ts` (Admin-Reads) sind implementiert und getestet. Solange der Backend-Endpoint fehlt, schlägt der Flush still fehl und die Events bleiben im Buffer (kein Datenverlust im Sinne der Live-Ansicht, aber keine Persistenz). **Offen ist der Backend-Teil** (Tabelle, Ingestion-/Admin-Controller, Cleanup-Job) — siehe unten.
 
 Spezifikation für die Backend-seitige Persistierung von Frontend-Fehlerereignissen. Das Frontend erfasst bereits Fehler in einem In-Memory-Ring-Buffer (`src/lib/error-store.ts`) und zeigt sie im Admin-Dashboard (`/admin/monitoring`). Diese Spezifikation beschreibt die notwendige Backend-Erweiterung, um Fehler über Sessions hinweg in der Datenbank zu speichern.
 

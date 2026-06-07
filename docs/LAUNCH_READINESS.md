@@ -30,7 +30,7 @@
 | File Upload                              | ✅                      | ✅                       |
 | Public Seller-/Producer-Profil           | 🟡 kein Profil-Endpoint | ✅ echte Produktdaten    |
 | Kontaktformular                          | 🟡 kein Endpoint        | ✅ mailto-Fallback       |
-| **Monitoring-Persistenz**                | ❌ fehlt (Spec da)      | 🟡 nur In-Memory         |
+| **Monitoring-Persistenz**                | ❌ fehlt (Spec da)      | ✅ Flush + Service       |
 | **Payout-Execution**                     | ⚠️ Connect offen (Spec) | ✅ UI (Connect+Freigabe) |
 
 ---
@@ -89,9 +89,10 @@ Die Geschäftsregeln sind **entschieden** (siehe [`MANAGEMENT_DECISIONS.md`](../
 `src/components/features/auth/Onboarding.tsx` ist bewusst „advisory"; die echte Präferenz-Speicherung läuft über `/praeferenzen` (BuyerValueProfile). Akzeptabel für Launch.
 **Erledigt:** Datenschutz-Hinweis ergänzt (informativer Block mit Link auf `/datenschutz` und `/praeferenzen`, COMPLIANCE M8); `console.log`/`alert()` waren bereits durch `toast.success()` ersetzt (COMPLIANCE M5). Damit sind beide vormals offenen Teilpunkte geschlossen.
 
-### W4 — Monitoring-Persistenz
+### W4 — Monitoring-Persistenz 🟡 (Frontend erledigt 2026-06-01, Backend offen)
 
-Admin-Monitoring (`/admin/monitoring`) zeigt nur einen In-Memory-Ring-Buffer (`src/lib/error-store.ts`), Daten gehen bei Reload verloren. `src/services/monitoring.service.ts` fehlt; Backend-Endpoint noch nicht gebaut. Spezifikation liegt vor: [`monitoring-api.md`](./monitoring-api.md).
+**Frontend umgesetzt:** Flush-Mechanismus in `src/lib/error-store.ts` (Timer 30 s, Threshold ab 20 Events, `beforeunload`-Beacon, Backoff, Truncation, direkter `fetch`) + `src/services/monitoring.service.ts` (Admin-Reads) + Typ `PersistedErrorEvent`. Das Live-Dashboard (`/admin/monitoring`) bleibt unverändert als In-Memory-Ansicht.
+**Backend offen:** Tabelle `frontend_error_events`, Ingestion-/Admin-Controller, Cleanup-Job — vollständige Spec + API-Verträge in [`monitoring-api.md`](./monitoring-api.md) → Backend-Issue. Solange der Endpoint fehlt, schlägt der Flush still fehl (kein Crash).
 
 ### W5 — Fokus-Trapping in Modals (Barrierefreiheit)
 

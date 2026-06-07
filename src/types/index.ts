@@ -133,4 +133,5 @@ export type {
   ErrorEventMetadata,
   FrontendErrorEvent,
   ErrorStoreStats,
+  PersistedErrorEvent,
 } from "./error"
