@@ -73,6 +73,16 @@ export default defineConfig({
       },
     },
 
+    // ── Stage-Smoke: läuft gegen die Staging-Deployments (FE#24) ──────────────
+    // Kein storageState/Setup — der Spec loggt sich selbst ein (max. 2 Logins,
+    // Retries auf 1 begrenzt wegen Backend-Rate-Limit 5 Logins/15 min pro IP).
+    {
+      name: "stage-smoke",
+      testMatch: "**/stage/**/*.spec.ts",
+      retries: process.env.CI ? 1 : 0,
+      use: { ...devices["Desktop Chrome"] },
+    },
+
     // ── Öffentliche Tests (ohne Auth-Abhängigkeit) ─────────────────────────────
     {
       name: "chromium",
