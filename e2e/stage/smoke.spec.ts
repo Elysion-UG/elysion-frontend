@@ -22,10 +22,18 @@ const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || "admin@marketplace.dev"
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || "Admin123!"
 
 // Sammelt CSP-Verstöße — die wichtigste Regression aus FE#23.
+// Ausgenommen: Vercels eigene Preview-Tooling-Scripts (vercel.live) — die
+// injiziert Vercel in Preview-Deployments, sie sind kein Fehler unserer App.
+// (Preview-Feedback ist am Projekt deaktiviert; der Filter sichert gegen
+// künftige Vercel-Injektionen ab.)
 function collectCspErrors(page: Page): string[] {
   const errors: string[] = []
   page.on("console", (msg) => {
-    if (msg.type() === "error" && /Content Security Policy/i.test(msg.text())) {
+    if (
+      msg.type() === "error" &&
+      /Content Security Policy/i.test(msg.text()) &&
+      !msg.text().includes("vercel.live")
+    ) {
       errors.push(msg.text().slice(0, 200))
     }
   })
@@ -54,9 +62,9 @@ test.describe("Stage-Smoke", () => {
   test("Seller-Portal: Login mit Seed-Account erreicht das Dashboard", async ({ page }) => {
     const cspErrors = collectCspErrors(page)
 
-    await page.goto(`${SELLER_URL}/login/seller`, { waitUntil: "domcontentloaded" })
-    await page.getByPlaceholder("ihre@firma.de").fill(SELLER_EMAIL)
-    await page.getByPlaceholder("Passwort").fill(SELLER_PASSWORD)
+    await page.goto(`${SELLER_URL}/login/seller`, { waitUntil: "networkidle" })
+    await fillStable(page, "ihre@firma.de", SELLER_EMAIL)
+    await fillStable(page, "Passwort", SELLER_PASSWORD)
     await page.getByRole("button", { name: "Anmelden" }).click()
 
     await page.waitForURL("**/seller-dashboard**", { timeout: 30_000 })
@@ -70,9 +78,9 @@ test.describe("Stage-Smoke", () => {
   test("Admin-Portal: Login mit Seed-Account erreicht das Admin-Panel", async ({ page }) => {
     const cspErrors = collectCspErrors(page)
 
-    await page.goto(`${ADMIN_URL}/login/admin`, { waitUntil: "domcontentloaded" })
-    await page.getByPlaceholder("admin@elysion.de").fill(ADMIN_EMAIL)
-    await page.getByPlaceholder("Passwort").fill(ADMIN_PASSWORD)
+    await page.goto(`${ADMIN_URL}/login/admin`, { waitUntil: "networkidle" })
+    await fillStable(page, "admin@elysion.de", ADMIN_EMAIL)
+    await fillStable(page, "Passwort", ADMIN_PASSWORD)
     await page.getByRole("button", { name: "Anmelden" }).click()
 
     await page.waitForURL("**/admin/**", { timeout: 30_000 })
@@ -80,3 +88,17 @@ test.describe("Stage-Smoke", () => {
     expect(cspErrors, `CSP-Verstöße auf Admin-Portal:\n${cspErrors.join("\n")}`).toHaveLength(0)
   })
 })
+
+// Hydration-sicheres Ausfüllen: Auf Stage rendert SSR das Formular, bevor
+// React hydratisiert — ein zu frühes fill() wird beim Hydratisieren von den
+// Controlled-Inputs zurückgesetzt (leerer Submit). Daher: füllen und so lange
+// nachprüfen/nachfüllen, bis der Wert stabil im Input steht.
+async function fillStable(page: Page, placeholder: string, value: string): Promise<void> {
+  const input = page.getByPlaceholder(placeholder)
+  await expect(input).toBeVisible({ timeout: 15_000 })
+  await expect(async () => {
+    await input.fill(value)
+    await page.waitForTimeout(300)
+    await expect(input).toHaveValue(value, { timeout: 1_000 })
+  }).toPass({ timeout: 20_000 })
+}
