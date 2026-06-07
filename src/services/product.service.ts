@@ -2,16 +2,17 @@
  * ProductService — API calls for products.
  *
  * Public endpoints (no auth):
- *   GET /api/v1/products            — paginated list (Spring Page format, NOT wrapped)
+ *   GET /api/v1/products            — paginated list (wrapped ApiResponse, custom pagination)
  *   GET /api/v1/products/{slug}     — public storefront detail (wrapped ApiResponse)
  *
  * Authenticated:
- *   GET /api/v1/products/{id}       — internal UUID detail (raw, NOT wrapped)
+ *   GET /api/v1/products/by-id/{id} — internal UUID detail (wrapped ApiResponse)
  *
  * Seller-only:
  *   POST   /api/v1/products                              — create product
  *   PATCH  /api/v1/products/{id}                         — update product
  *   PATCH  /api/v1/products/{id}/status                  — status transition
+ *   DELETE /api/v1/products/{id}                         — delete product
  *   POST   /api/v1/products/{id}/images                  — add image
  *   DELETE /api/v1/products/{id}/images/{imageId}        — remove image
  *   PATCH  /api/v1/products/{id}/images/order            — reorder images
@@ -20,11 +21,72 @@
  *   DELETE /api/v1/products/{id}/variants/{variantId}    — delete variant
  *
  * Note on response styles:
- *   - Product list and internal UUID detail return raw objects (no ApiResponse wrapper)
- *     → use apiRequestRaw (returns body as-is) instead of apiRequest (which extracts body.data)
- *   - All other endpoints return wrapped ApiResponse → apiRequest unwraps to data field
+ *   - All endpoints return a wrapped ApiResponse { status, message, data }
+ *     → use apiRequest (extracts body.data) for all calls
+ *   - The list endpoint uses a custom pagination shape:
+ *     data.items (not content), data.totalItems (not totalElements), data.page (not number)
+ *     → ProductService.list() normalises this to the internal ProductPage type
  */
-import { apiRequest, apiRequestRaw } from "@/src/lib/api-client"
+import { apiRequest, buildQuery } from "@/src/lib/api-client"
+
+// ── Raw API types (list endpoint) ─────────────────────────────────────────────
+// These reflect the actual JSON the backend returns inside data{}.
+// They are normalised to internal types before leaving this module.
+
+interface ApiProductListItem {
+  id: string
+  slug: string
+  name: string
+  price: number
+  currency: string
+  primaryImage: string | null
+  seller: { id: string; companyName: string } | null
+  createdAt: string
+  matchScore: number | null
+  status?: string
+}
+
+interface ApiProductPage {
+  items: ApiProductListItem[]
+  page: number
+  size: number
+  totalItems: number
+  totalPages: number
+}
+
+// ── Raw API types (detail endpoint) ──────────────────────────────────────────
+
+interface ApiProductVariant {
+  id: string
+  sku?: string
+  price?: number | null
+  stock?: number
+  available?: boolean
+  imageUrls?: string[]
+  options?: Array<{ type: string; value: string }>
+  size?: string
+  color?: string
+  material?: string
+}
+
+interface ApiProductDetail {
+  id: string
+  name: string
+  slug: string
+  title?: string
+  description?: string
+  shortDescription?: string // API uses shortDescription, internal type uses shortDesc
+  price?: number
+  basePrice?: number
+  currency?: string
+  taxRate?: number
+  images?: Array<{ id?: string; url: string; altText?: string; order?: number }>
+  variants?: ApiProductVariant[]
+  seller?: { id: string; companyName?: string; firstName?: string; lastName?: string } | null
+  category?: { id?: string; name: string; slug?: string } | null
+  matchScore?: number | null
+  matchBreakdown?: unknown
+}
 import type {
   ProductPage,
   ProductListParams,
@@ -43,27 +105,82 @@ export const ProductService = {
   // ── Public ────────────────────────────────────────────────────────
 
   async list(params: ProductListParams = {}): Promise<ProductPage> {
-    const query = new URLSearchParams()
-    if (params.search) query.set("search", params.search)
-    if (params.categoryId) query.set("categoryId", params.categoryId)
-    if (params.sellerId) query.set("sellerId", params.sellerId)
-    if (params.minPrice !== undefined) query.set("minPrice", String(params.minPrice))
-    if (params.maxPrice !== undefined) query.set("maxPrice", String(params.maxPrice))
-    if (params.sort) query.set("sort", params.sort)
-    if (params.page !== undefined) query.set("page", String(params.page))
-    if (params.size !== undefined) query.set("size", String(params.size))
-    const qs = query.toString()
-    return apiRequestRaw(`/api/v1/products${qs ? `?${qs}` : ""}`)
+    const raw = await apiRequest<ApiProductPage>(
+      `/api/v1/products${buildQuery({
+        search: params.search,
+        categoryId: params.categoryId,
+        sellerId: params.sellerId,
+        minPrice: params.minPrice,
+        maxPrice: params.maxPrice,
+        sort: params.sort,
+        page: params.page,
+        size: params.size,
+      })}`
+    )
+    return {
+      content: raw.items.map((item) => ({
+        id: item.id,
+        slug: item.slug,
+        name: item.name,
+        title: item.name,
+        price: item.price,
+        currency: item.currency,
+        status: item.status,
+        imageUrls: item.primaryImage ? [item.primaryImage] : undefined,
+        seller: item.seller?.id
+          ? { userId: item.seller.id, companyName: item.seller.companyName }
+          : undefined,
+        createdAt: item.createdAt,
+      })),
+      totalElements: raw.totalItems,
+      totalPages: raw.totalPages,
+      size: raw.size,
+      number: raw.page,
+    }
   },
 
   async getBySlug(slug: string): Promise<ProductDetail> {
-    return apiRequest(`/api/v1/products/${slug}`)
+    const raw = await apiRequest<ApiProductDetail>(`/api/v1/products/${slug}`)
+    return {
+      id: raw.id,
+      name: raw.name,
+      slug: raw.slug,
+      title: raw.title,
+      description: raw.description,
+      shortDesc: raw.shortDescription,
+      price: raw.price,
+      basePrice: raw.basePrice,
+      currency: raw.currency,
+      taxRate: raw.taxRate,
+      images: raw.images?.map((img) => ({ id: img.id, url: img.url, position: img.order })),
+      variants: raw.variants?.map((v) => ({
+        id: v.id,
+        sku: v.sku,
+        price: v.price,
+        stock: v.stock,
+        available: v.available,
+        imageUrls: v.imageUrls,
+        options: v.options,
+        size: v.size,
+        color: v.color,
+        material: v.material,
+      })),
+      seller: raw.seller
+        ? {
+            userId: raw.seller.id,
+            companyName: raw.seller.companyName,
+            firstName: raw.seller.firstName,
+            lastName: raw.seller.lastName,
+          }
+        : undefined,
+      category: raw.category ?? undefined,
+    }
   },
 
   // ── Authenticated ─────────────────────────────────────────────────
 
   async getById(id: string): Promise<ProductInternalDetail> {
-    return apiRequest(`/api/v1/products/${id}`)
+    return apiRequest<ProductInternalDetail>(`/api/v1/products/by-id/${id}`)
   },
 
   // ── Seller commands ───────────────────────────────────────────────
@@ -136,14 +253,7 @@ export const ProductService = {
     })
   },
 
-  async reserveVariant(variantId: string, quantity: number): Promise<null> {
-    return apiRequest(`/api/v1/variants/${variantId}/reserve`, {
-      method: "POST",
-      body: JSON.stringify({ quantity }),
-    })
-  },
-
-  async getProductCertificates(productId: string): Promise<unknown[]> {
-    return apiRequest(`/api/v1/products/${productId}/certificates`)
+  async delete(id: string): Promise<void> {
+    return apiRequest(`/api/v1/products/${id}`, { method: "DELETE" })
   },
 }

@@ -3,23 +3,39 @@ import { apiRequest } from "@/src/lib/api-client"
 import { AuthService } from "./auth.service"
 import type { LoginDTO, RegisterDTO, TokensResponse } from "@/src/types"
 
-vi.mock("@/src/lib/api-client", () => ({
-  apiRequest: vi.fn(),
-}))
+vi.mock("@/src/lib/api-client", async (importOriginal) => {
+  // ApiError must remain real because api-schemas.ts (used by AuthService for
+  // runtime validation of TokensResponse) extends it.
+  const actual = await importOriginal<typeof import("@/src/lib/api-client")>()
+  return {
+    ...actual,
+    apiRequest: vi.fn(),
+  }
+})
 
 const mockApiRequest = vi.mocked(apiRequest)
 
+const mockUser: TokensResponse["user"] = {
+  id: "u1",
+  email: "user@example.com",
+  firstName: "Jane",
+  lastName: "Doe",
+  role: "BUYER",
+  emailVerified: true,
+  status: "ACTIVE",
+  createdAt: "2026-01-01T00:00:00Z",
+}
+
 const mockTokensResponse: TokensResponse = {
-  token: "access-token-abc",
-  user: {
-    id: "u1",
-    email: "user@example.com",
-    firstName: "Jane",
-    lastName: "Doe",
-    role: "BUYER",
-    status: "ACTIVE",
-    createdAt: "2026-01-01T00:00:00Z",
-  },
+  accessToken: "access-token-abc",
+  user: mockUser,
+  expiresIn: 3600,
+}
+
+/** Refresh returns user: null */
+const mockRefreshResponse: TokensResponse = {
+  accessToken: "access-token-refreshed",
+  user: null,
   expiresIn: 3600,
 }
 
@@ -45,29 +61,67 @@ describe("AuthService", () => {
     expect(result).toEqual({ userId: "u-new", email: "new@example.com" })
   })
 
-  it("login — calls POST /api/v1/auth/login with credentials and returns tokens", async () => {
-    const dto: LoginDTO = { email: "user@example.com", password: "hunter2" }
+  it("loginAsCustomer — calls POST /api/v1/auth/customer/login with credentials and returns tokens", async () => {
+    const dto: LoginDTO = { email: "buyer@example.com", password: "hunter2" }
     mockApiRequest.mockResolvedValue(mockTokensResponse)
 
-    const result = await AuthService.login(dto)
+    const result = await AuthService.loginAsCustomer(dto)
 
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/auth/login",
+      "/api/v1/auth/customer/login",
       expect.objectContaining({ method: "POST", body: JSON.stringify(dto) })
     )
     expect(result).toEqual(mockTokensResponse)
   })
 
-  it("refresh — calls POST /api/v1/auth/refresh and returns new tokens", async () => {
-    mockApiRequest.mockResolvedValue(mockTokensResponse)
+  it("loginAsSeller — calls POST /api/v1/auth/seller/login with credentials and returns tokens", async () => {
+    const dto: LoginDTO = { email: "seller@example.com", password: "hunter2" }
+    const sellerResponse: TokensResponse = {
+      ...mockTokensResponse,
+      user: { ...mockUser!, role: "SELLER" },
+    }
+    mockApiRequest.mockResolvedValue(sellerResponse)
+
+    const result = await AuthService.loginAsSeller(dto)
+
+    expect(mockApiRequest).toHaveBeenCalledWith(
+      "/api/v1/auth/seller/login",
+      expect.objectContaining({ method: "POST", body: JSON.stringify(dto) })
+    )
+    expect(result).toEqual(sellerResponse)
+  })
+
+  it("loginAsAdmin — calls POST /api/v1/auth/admin/login with credentials and returns tokens", async () => {
+    const dto: LoginDTO = { email: "admin@example.com", password: "hunter2" }
+    const adminResponse: TokensResponse = {
+      ...mockTokensResponse,
+      user: { ...mockUser!, role: "ADMIN" },
+    }
+    mockApiRequest.mockResolvedValue(adminResponse)
+
+    const result = await AuthService.loginAsAdmin(dto)
+
+    expect(mockApiRequest).toHaveBeenCalledWith(
+      "/api/v1/auth/admin/login",
+      expect.objectContaining({ method: "POST", body: JSON.stringify(dto) })
+    )
+    expect(result).toEqual(adminResponse)
+  })
+
+  it("refresh — calls POST /api/v1/auth/refresh with skipRetry=true and returns null user", async () => {
+    mockApiRequest.mockResolvedValue(mockRefreshResponse)
 
     const result = await AuthService.refresh()
 
+    // skipRetry must be true to prevent infinite recursion when the refresh
+    // endpoint itself returns 401 (expired cookie).
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/auth/refresh",
-      expect.objectContaining({ method: "POST" })
+      expect.objectContaining({ method: "POST" }),
+      true
     )
-    expect(result).toEqual(mockTokensResponse)
+    expect(result.user).toBeNull()
+    expect(result.accessToken).toBe("access-token-refreshed")
   })
 
   it("logout — calls POST /api/v1/auth/logout", async () => {
@@ -77,7 +131,8 @@ describe("AuthService", () => {
 
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/auth/logout",
-      expect.objectContaining({ method: "POST" })
+      expect.objectContaining({ method: "POST" }),
+      true
     )
   })
 

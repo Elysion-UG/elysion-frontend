@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useParams } from "next/navigation"
 import {
-  ArrowLeft,
   Loader2,
   User,
   Mail,
@@ -17,17 +17,24 @@ import {
 } from "lucide-react"
 import type { User as UserType } from "@/src/types"
 import { UserService } from "@/src/services/user.service"
+import {
+  ADMIN_ACCOUNT_STATUS_LABEL,
+  ADMIN_ACCOUNT_STATUS_COLOR,
+  ADMIN_ROLE_COLOR,
+  ADMIN_SELLER_STATUS_LABEL,
+  ADMIN_SELLER_DETAIL_STATUS_COLOR,
+} from "@/src/lib/constants"
+import { BackButton, LoadingFullPage, StatusBadge } from "@/src/components/shared"
 import { toast } from "sonner"
 
 export default function AdminUserDetail() {
+  const { id } = useParams<{ id: string }>()
   const [user, setUser] = useState<UserType | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
 
   useEffect(() => {
     async function load() {
-      const params = new URLSearchParams(window.location.search)
-      const id = params.get("id") ?? window.location.pathname.split("/").pop()
       if (!id) return
       try {
         const u = await UserService.getUserById(id)
@@ -39,7 +46,7 @@ export default function AdminUserDetail() {
       }
     }
     load()
-  }, [])
+  }, [id])
 
   const handleSuspend = async () => {
     if (!user) return
@@ -75,71 +82,42 @@ export default function AdminUserDetail() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
-      </div>
-    )
+    return <LoadingFullPage className="min-h-[60vh]" />
   }
 
   if (!user) {
     return (
       <div className="py-12 text-center">
-        <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-slate-400" />
-        <p className="text-slate-600">Benutzer nicht gefunden.</p>
+        <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-slate-600" />
+        <p className="text-slate-500">Benutzer nicht gefunden.</p>
       </div>
     )
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <button
-        onClick={() => {
-          window.location.href = "/admin/users"
-        }}
-        className="mb-6 flex items-center gap-2 text-sm text-slate-600 transition-colors hover:text-teal-600"
-      >
-        <ArrowLeft className="h-4 w-4" /> Zurück zur Übersicht
-      </button>
+    <div className="max-w-3xl">
+      <BackButton
+        label="Zurück zur Übersicht"
+        className="mb-6 transition-colors hover:text-cyber-400"
+      />
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-slate-800/60 bg-slate-900/60">
         {/* Header */}
-        <div className="border-b border-slate-200 p-6">
+        <div className="border-b border-slate-800/60 p-6">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-teal-100">
-              <User className="h-8 w-8 text-teal-600" />
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-cyber-900/60 ring-1 ring-cyber-700/40">
+              <User className="h-8 w-8 text-cyber-500" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">
+              <h1 className="font-mono text-2xl font-bold tracking-wide text-slate-100">
                 {user.firstName} {user.lastName}
               </h1>
               <div className="mt-1 flex items-center gap-3">
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    user.role === "ADMIN"
-                      ? "bg-indigo-100 text-indigo-700"
-                      : user.role === "SELLER"
-                        ? "bg-teal-100 text-teal-700"
-                        : "bg-slate-100 text-slate-700"
-                  }`}
-                >
-                  {user.role}
-                </span>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                    user.status === "ACTIVE"
-                      ? "bg-emerald-100 text-emerald-700"
-                      : user.status === "SUSPENDED"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-amber-100 text-amber-700"
-                  }`}
-                >
-                  {user.status === "ACTIVE"
-                    ? "Aktiv"
-                    : user.status === "SUSPENDED"
-                      ? "Gesperrt"
-                      : "Ausstehend"}
-                </span>
+                <StatusBadge label={user.role} colorClasses={ADMIN_ROLE_COLOR[user.role]} />
+                <StatusBadge
+                  label={ADMIN_ACCOUNT_STATUS_LABEL[user.status]}
+                  colorClasses={ADMIN_ACCOUNT_STATUS_COLOR[user.status]}
+                />
               </div>
             </div>
           </div>
@@ -149,16 +127,16 @@ export default function AdminUserDetail() {
         <div className="space-y-4 p-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="flex items-center gap-3 text-sm">
-              <Mail className="h-4 w-4 text-slate-400" />
-              <span className="text-slate-700">{user.email}</span>
+              <Mail className="h-4 w-4 text-slate-600" />
+              <span className="text-slate-300">{user.email}</span>
             </div>
             <div className="flex items-center gap-3 text-sm">
-              <Phone className="h-4 w-4 text-slate-400" />
-              <span className="text-slate-700">{user.phone ?? "Nicht angegeben"}</span>
+              <Phone className="h-4 w-4 text-slate-600" />
+              <span className="text-slate-300">{user.phone ?? "Nicht angegeben"}</span>
             </div>
             <div className="flex items-center gap-3 text-sm">
-              <Calendar className="h-4 w-4 text-slate-400" />
-              <span className="text-slate-700">
+              <Calendar className="h-4 w-4 text-slate-600" />
+              <span className="text-slate-300">
                 Registriert: {new Date(user.createdAt).toLocaleDateString("de-DE")}
               </span>
             </div>
@@ -166,38 +144,31 @@ export default function AdminUserDetail() {
 
           {/* Seller profile info */}
           {user.sellerProfile && (
-            <div className="mt-6 space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <h3 className="flex items-center gap-2 font-semibold text-slate-800">
-                <Building2 className="h-4 w-4" /> Verkäuferprofil
+            <div className="mt-6 space-y-3 rounded-lg border border-slate-800/60 bg-slate-800/30 p-4">
+              <h3 className="flex items-center gap-2 font-mono font-semibold text-slate-200">
+                <Building2 className="h-4 w-4 text-cyber-500" /> Verkäuferprofil
               </h3>
               <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
                 <div>
                   <span className="text-slate-500">Firma:</span>{" "}
-                  <span className="font-medium text-slate-700">
+                  <span className="font-medium text-slate-300">
                     {user.sellerProfile.companyName}
                   </span>
                 </div>
                 <div>
                   <span className="text-slate-500">USt-IdNr.:</span>{" "}
-                  <span className="font-medium text-slate-700">{user.sellerProfile.vatId}</span>
+                  <span className="font-medium text-slate-300">{user.sellerProfile.vatId}</span>
                 </div>
                 <div>
                   <span className="text-slate-500">IBAN:</span>{" "}
-                  <span className="font-medium text-slate-700">{user.sellerProfile.iban}</span>
+                  <span className="font-medium text-slate-300">{user.sellerProfile.iban}</span>
                 </div>
                 <div>
                   <span className="text-slate-500">Status:</span>{" "}
-                  <span
-                    className={`font-medium ${
-                      user.sellerProfile.status === "APPROVED"
-                        ? "text-emerald-700"
-                        : user.sellerProfile.status === "PENDING"
-                          ? "text-amber-700"
-                          : "text-red-700"
-                    }`}
-                  >
-                    {user.sellerProfile.status}
-                  </span>
+                  <StatusBadge
+                    label={ADMIN_SELLER_STATUS_LABEL[user.sellerProfile.status]}
+                    colorClasses={ADMIN_SELLER_DETAIL_STATUS_COLOR[user.sellerProfile.status]}
+                  />
                 </div>
               </div>
             </div>
@@ -205,15 +176,15 @@ export default function AdminUserDetail() {
         </div>
 
         {/* Actions */}
-        <div className="flex flex-wrap gap-3 border-t border-slate-200 p-6">
+        <div className="flex flex-wrap gap-3 border-t border-slate-800/60 p-6">
           {/* Suspend / Activate */}
           <button
             onClick={handleSuspend}
             disabled={isUpdating}
             className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
               user.status === "SUSPENDED"
-                ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                : "bg-red-600 text-white hover:bg-red-700"
+                ? "bg-emerald-700 text-white hover:bg-emerald-600"
+                : "bg-red-700 text-white hover:bg-red-600"
             }`}
           >
             {isUpdating ? (
@@ -232,14 +203,14 @@ export default function AdminUserDetail() {
               <button
                 onClick={() => handleSellerAction("APPROVED")}
                 disabled={isUpdating}
-                className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
               >
                 <CheckCircle className="h-4 w-4" /> Verkäufer genehmigen
               </button>
               <button
                 onClick={() => handleSellerAction("REJECTED")}
                 disabled={isUpdating}
-                className="flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
               >
                 <XCircle className="h-4 w-4" /> Verkäufer ablehnen
               </button>

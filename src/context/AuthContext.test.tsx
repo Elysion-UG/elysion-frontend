@@ -8,15 +8,57 @@ import type { LoginDTO, RegisterDTO, User, TokensResponse } from "@/src/types"
 
 vi.mock("@/src/services/auth.service", () => ({
   AuthService: {
-    login: vi.fn(),
+    loginAsCustomer: vi.fn(),
+    loginAsSeller: vi.fn(),
+    loginAsAdmin: vi.fn(),
     logout: vi.fn(),
     register: vi.fn(),
     refresh: vi.fn(),
   },
 }))
 
+// AuthContext dynamically imports UserService when Phase-2 refresh returns
+// `user: null`. Mock it so the /users/me fallback branch is observable.
+vi.mock("@/src/services/user.service", () => ({
+  UserService: {
+    getCurrentUser: vi.fn(),
+  },
+}))
+
+// Mock api-client to control refreshSession directly and avoid the module-level
+// _refreshInFlight cache bleeding between tests. All session-storage helpers are
+// mocked as no-ops so tests control sessionStorage themselves via the Web API.
+// Generation helpers are backed by a local counter so that bumpAuthGeneration()
+// observably increases the value returned by getAuthGeneration() — which is
+// what the real implementation does.
+let _testAuthGen = 0
+vi.mock("@/src/lib/api-client", () => ({
+  setAccessToken: vi.fn(),
+  refreshSession: vi.fn(),
+  saveAuthSession: vi.fn(),
+  loadAuthSession: vi.fn().mockReturnValue(null),
+  clearAuthSession: vi.fn(),
+  getAuthGeneration: vi.fn(() => _testAuthGen),
+  bumpAuthGeneration: vi.fn(() => {
+    _testAuthGen += 1
+  }),
+  // decodeJwtClaims is mocked per-test where the JWT-stub fallback matters.
+  decodeJwtClaims: vi.fn().mockReturnValue(null),
+  AUTH_SESSION_KEY: "auth_session",
+}))
+
 // Import AFTER mock so we get the mocked version
 import { AuthService } from "@/src/services/auth.service"
+import { UserService } from "@/src/services/user.service"
+import {
+  refreshSession,
+  loadAuthSession,
+  saveAuthSession,
+  clearAuthSession,
+  bumpAuthGeneration,
+  getAuthGeneration,
+  decodeJwtClaims,
+} from "@/src/lib/api-client"
 
 // ── Fixtures ───────────────────────────────────────────────────────────────────
 
@@ -26,12 +68,13 @@ const mockUser: User = {
   firstName: "Jane",
   lastName: "Doe",
   role: "BUYER",
+  emailVerified: true,
   status: "ACTIVE",
   createdAt: "2024-01-01T00:00:00Z",
 }
 
 const mockTokensResponse: TokensResponse = {
-  token: "access-token-abc",
+  accessToken: "access-token-abc",
   user: mockUser,
   expiresIn: 3600,
 }
@@ -42,11 +85,21 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
   <AuthProvider>{children}</AuthProvider>
 )
 
+// Default: refreshSession rejects immediately (no active session).
+// Individual tests override this when they need specific session-restore behaviour.
+// Clear sessionStorage so persisted auth state doesn't bleed between tests.
+beforeEach(() => {
+  sessionStorage.clear()
+  _testAuthGen = 0
+  vi.mocked(refreshSession).mockRejectedValue(new Error("no session"))
+})
+
 // ── Initial state ──────────────────────────────────────────────────────────────
 
 describe("AuthContext — initial state", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(refreshSession).mockRejectedValue(new Error("no session"))
   })
 
   it("starts with user = null", () => {
@@ -64,9 +117,11 @@ describe("AuthContext — initial state", () => {
     expect(result.current.isAuthenticated).toBe(false)
   })
 
-  it("starts with isLoading = false", () => {
+  it("starts with isLoading = true (session restore in progress)", () => {
+    // isLoading is true from mount until refreshSession() settles.
+    // This is intentional — it prevents a "logged out" flash on page reload.
     const { result } = renderHook(() => useAuth(), { wrapper })
-    expect(result.current.isLoading).toBe(false)
+    expect(result.current.isLoading).toBe(true)
   })
 
   it("starts with role = null", () => {
@@ -96,26 +151,28 @@ describe("useAuth", () => {
 describe("login", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(AuthService.login).mockResolvedValue(mockTokensResponse)
+    vi.mocked(refreshSession).mockRejectedValue(new Error("no session"))
+    vi.mocked(AuthService.loginAsCustomer).mockResolvedValue(mockTokensResponse)
   })
 
-  it("calls AuthService.login with the provided credentials", async () => {
+  it("calls AuthService.loginAsCustomer when portal is 'customer'", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
     const dto: LoginDTO = { email: "jane@example.com", password: "secret" }
 
     await act(async () => {
-      await result.current.login(dto)
+      await result.current.login(dto, "customer")
     })
 
-    expect(AuthService.login).toHaveBeenCalledOnce()
-    expect(AuthService.login).toHaveBeenCalledWith(dto)
+    expect(AuthService.loginAsCustomer).toHaveBeenCalledOnce()
+    expect(AuthService.loginAsCustomer).toHaveBeenCalledWith(dto)
   })
 
   it("sets user after a successful login", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {}) // flush Phase 2 (refreshSession settle)
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     expect(result.current.user).toEqual(mockUser)
@@ -123,9 +180,10 @@ describe("login", () => {
 
   it("sets token after a successful login", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     expect(result.current.token).toBe("access-token-abc")
@@ -133,9 +191,10 @@ describe("login", () => {
 
   it("sets isAuthenticated to true after login", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     expect(result.current.isAuthenticated).toBe(true)
@@ -143,9 +202,10 @@ describe("login", () => {
 
   it("sets role from the returned user", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     expect(result.current.role).toBe("BUYER")
@@ -153,21 +213,22 @@ describe("login", () => {
 
   it("resets isLoading to false after login completes", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     expect(result.current.isLoading).toBe(false)
   })
 
   it("resets isLoading to false even when login throws", async () => {
-    vi.mocked(AuthService.login).mockRejectedValue(new Error("Invalid credentials"))
+    vi.mocked(AuthService.loginAsCustomer).mockRejectedValue(new Error("Invalid credentials"))
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
       try {
-        await result.current.login({ email: "bad@example.com", password: "wrong" })
+        await result.current.login({ email: "bad@example.com", password: "wrong" }, "customer")
       } catch {
         // expected
       }
@@ -176,16 +237,61 @@ describe("login", () => {
     expect(result.current.isLoading).toBe(false)
   })
 
-  it("propagates errors thrown by AuthService.login", async () => {
+  it("propagates errors thrown by the login service", async () => {
     const loginError = new Error("Invalid credentials")
-    vi.mocked(AuthService.login).mockRejectedValue(loginError)
+    vi.mocked(AuthService.loginAsCustomer).mockRejectedValue(loginError)
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await expect(
       act(async () => {
-        await result.current.login({ email: "bad@example.com", password: "wrong" })
+        await result.current.login({ email: "bad@example.com", password: "wrong" }, "customer")
       })
     ).rejects.toThrow("Invalid credentials")
+  })
+
+  it("saves token, user, and portal to sessionStorage after login", async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
+    })
+
+    expect(saveAuthSession).toHaveBeenCalledOnce()
+    expect(saveAuthSession).toHaveBeenCalledWith(mockUser, "customer")
+  })
+
+  it("calls AuthService.loginAsSeller when portal is 'seller'", async () => {
+    const sellerUser: User = { ...mockUser, role: "SELLER" }
+    vi.mocked(AuthService.loginAsSeller).mockResolvedValue({
+      ...mockTokensResponse,
+      user: sellerUser,
+    })
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    const dto: LoginDTO = { email: "seller@example.com", password: "secret" }
+
+    await act(async () => {
+      await result.current.login(dto, "seller")
+    })
+
+    expect(AuthService.loginAsSeller).toHaveBeenCalledOnce()
+    expect(AuthService.loginAsSeller).toHaveBeenCalledWith(dto)
+  })
+
+  it("calls AuthService.loginAsAdmin when portal is 'admin'", async () => {
+    const adminUser: User = { ...mockUser, role: "ADMIN" }
+    vi.mocked(AuthService.loginAsAdmin).mockResolvedValue({
+      ...mockTokensResponse,
+      user: adminUser,
+    })
+    const { result } = renderHook(() => useAuth(), { wrapper })
+    const dto: LoginDTO = { email: "admin@example.com", password: "secret" }
+
+    await act(async () => {
+      await result.current.login(dto, "admin")
+    })
+
+    expect(AuthService.loginAsAdmin).toHaveBeenCalledOnce()
+    expect(AuthService.loginAsAdmin).toHaveBeenCalledWith(dto)
   })
 
   it("sets sellerStatus from sellerProfile when user is a SELLER", async () => {
@@ -198,15 +304,16 @@ describe("login", () => {
         status: "APPROVED",
       },
     }
-    vi.mocked(AuthService.login).mockResolvedValue({
+    vi.mocked(AuthService.loginAsSeller).mockResolvedValue({
       ...mockTokensResponse,
       user: sellerUser,
     })
 
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
-      await result.current.login({ email: "seller@example.com", password: "pass" })
+      await result.current.login({ email: "seller@example.com", password: "pass" }, "seller")
     })
 
     expect(result.current.sellerStatus).toBe("APPROVED")
@@ -218,15 +325,17 @@ describe("login", () => {
 describe("logout", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(AuthService.login).mockResolvedValue(mockTokensResponse)
+    vi.mocked(refreshSession).mockRejectedValue(new Error("no session"))
+    vi.mocked(AuthService.loginAsCustomer).mockResolvedValue(mockTokensResponse)
     vi.mocked(AuthService.logout).mockResolvedValue(undefined)
   })
 
   it("calls AuthService.logout", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
     await act(async () => {
       await result.current.logout()
@@ -237,9 +346,10 @@ describe("logout", () => {
 
   it("clears user after logout", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     expect(result.current.user).not.toBeNull()
@@ -253,9 +363,10 @@ describe("logout", () => {
 
   it("clears token after logout", async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
+    await act(async () => {})
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     expect(result.current.token).not.toBeNull()
@@ -271,7 +382,7 @@ describe("logout", () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
     await act(async () => {
       await result.current.logout()
@@ -284,7 +395,7 @@ describe("logout", () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
     await act(async () => {
       await result.current.logout()
@@ -293,12 +404,28 @@ describe("logout", () => {
     expect(result.current.isLoading).toBe(false)
   })
 
+  it("clears sessionStorage after logout", async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
+    })
+
+    expect(saveAuthSession).toHaveBeenCalled()
+
+    await act(async () => {
+      await result.current.logout()
+    })
+
+    expect(clearAuthSession).toHaveBeenCalled()
+  })
+
   it("clears user and token even when AuthService.logout throws", async () => {
     vi.mocked(AuthService.logout).mockRejectedValue(new Error("Network error"))
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await act(async () => {
-      await result.current.login({ email: "jane@example.com", password: "secret" })
+      await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
     })
 
     await act(async () => {
@@ -320,6 +447,7 @@ describe("logout", () => {
 describe("register", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(refreshSession).mockRejectedValue(new Error("no session"))
     vi.mocked(AuthService.register).mockResolvedValue({
       userId: "new-user-001",
       email: "new@example.com",
@@ -418,11 +546,122 @@ describe("register", () => {
   })
 })
 
+// ── session restore on mount (page reload) ────────────────────────────────────
+// Two restore paths:
+//   A) Cold start (no sessionStorage) — waits for refreshSession() to settle.
+//      isLoading stays true until then so the UI shows a spinner, not "Anmelden".
+//   B) sessionStorage hit — restores immediately without waiting for the network.
+//      A background refresh is still attempted to rotate the token, but failures
+//      are silenced; the tab stays logged in for the token's remaining TTL.
+
+describe("session restore on mount — cold start (no sessionStorage)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    sessionStorage.clear()
+  })
+
+  it("isLoading is true before refreshSession resolves", () => {
+    // Never-resolving promise simulates an in-flight request
+    vi.mocked(refreshSession).mockReturnValue(new Promise(() => {}))
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    // isLoading must be true while refresh is pending
+    expect(result.current.isLoading).toBe(true)
+    expect(result.current.isAuthenticated).toBe(false)
+  })
+
+  it("restores session when refreshSession succeeds", async () => {
+    vi.mocked(refreshSession).mockResolvedValue(mockTokensResponse as never)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(result.current.user).toEqual(mockUser)
+    expect(result.current.token).toBe("access-token-abc")
+    expect(result.current.isLoading).toBe(false)
+  })
+
+  it("stays logged out and sets isLoading=false when refreshSession fails", async () => {
+    vi.mocked(refreshSession).mockRejectedValue(new Error("no session"))
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    expect(result.current.isAuthenticated).toBe(false)
+    expect(result.current.user).toBeNull()
+    expect(result.current.isLoading).toBe(false)
+  })
+})
+
+describe("session restore on mount — sessionStorage hit (page navigation)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    // Simulate a previously saved session — no token stored (H-S3)
+    vi.mocked(loadAuthSession).mockReturnValue({
+      user: mockUser,
+      portal: "customer",
+    })
+  })
+
+  it("restores user optimistically from sessionStorage before network completes", () => {
+    // refreshSession never resolves — Phase 2 still in flight
+    vi.mocked(refreshSession).mockReturnValue(new Promise(() => {}))
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    // User is available immediately; token comes via Phase 2
+    expect(result.current.user).toEqual(mockUser)
+    expect(result.current.token).toBeNull()
+    expect(result.current.isAuthenticated).toBe(false)
+  })
+
+  it("isLoading stays true until Phase 2 (refreshSession) completes", () => {
+    vi.mocked(refreshSession).mockReturnValue(new Promise(() => {}))
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    expect(result.current.isLoading).toBe(true)
+  })
+
+  it("always calls refreshSession to obtain a fresh access token", async () => {
+    vi.mocked(refreshSession).mockResolvedValue(mockTokensResponse as never)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    // Phase 2 always runs — token never lives in sessionStorage
+    expect(refreshSession).toHaveBeenCalledOnce()
+    expect(result.current.token).toBe("access-token-abc")
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(result.current.isLoading).toBe(false)
+  })
+
+  it("clears user and session when refreshSession fails (refresh cookie expired)", async () => {
+    vi.mocked(refreshSession).mockRejectedValue(new Error("no cookie"))
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    expect(result.current.isAuthenticated).toBe(false)
+    expect(result.current.user).toBeNull()
+    expect(result.current.token).toBeNull()
+    expect(result.current.isLoading).toBe(false)
+    expect(clearAuthSession).toHaveBeenCalled()
+  })
+})
+
 // ── setUser ────────────────────────────────────────────────────────────────────
 
 describe("setUser", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(refreshSession).mockRejectedValue(new Error("no session"))
   })
 
   it("replaces the current user", async () => {
@@ -443,5 +682,168 @@ describe("setUser", () => {
     })
 
     expect(result.current.role).toBe("ADMIN")
+  })
+})
+
+// ── logout-race: in-flight refresh must not resurrect session ─────────────────
+//
+// Scenario: user loads a page → Phase 2 kicks off refreshSession() → user clicks
+// logout before refresh resolves → refresh resolves with a valid token. Without
+// the generation guard, Phase 2 would call setUser/setToken and undo the logout.
+
+describe("session restore — logout during in-flight refresh", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    _testAuthGen = 0
+    sessionStorage.clear()
+    vi.mocked(AuthService.logout).mockResolvedValue(undefined)
+  })
+
+  it("does not restore user/token when refreshSession resolves after logout", async () => {
+    // Hold refreshSession pending; we'll resolve it manually after logout.
+    let resolveRefresh!: (v: TokensResponse) => void
+    vi.mocked(refreshSession).mockReturnValue(
+      new Promise<TokensResponse>((resolve) => {
+        resolveRefresh = resolve
+      }) as never
+    )
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    // Trigger logout while Phase-2 refresh is still pending.
+    await act(async () => {
+      await result.current.logout()
+    })
+
+    expect(result.current.user).toBeNull()
+    expect(result.current.token).toBeNull()
+    expect(bumpAuthGeneration).toHaveBeenCalled()
+
+    // Now the stale refresh resolves — it must NOT restore state.
+    await act(async () => {
+      resolveRefresh(mockTokensResponse)
+      await Promise.resolve()
+    })
+
+    expect(result.current.user).toBeNull()
+    expect(result.current.token).toBeNull()
+    expect(result.current.isAuthenticated).toBe(false)
+  })
+})
+
+// ── refresh returns user: null — /users/me fallback ───────────────────────────
+//
+// Backend behaviour (HAR 2026-05-24): POST /api/v1/auth/refresh returns
+//   { accessToken, expiresIn, user: null }
+// and GET /api/v1/users/me responds 403 for ADMIN portal tokens. Frühere
+// Implementierung räumte in dem Fall die ganze Session leer → Admin wurde
+// nach jedem Reload ausgeloggt. Diese Tests halten die robuste Fallback-Kette
+// fest:
+//   1) /users/me ok → fresh user übernehmen
+//   2) /users/me fails + persisted user → persisted user behalten
+//   3) /users/me fails + kein persisted user → Session wird verworfen
+
+describe("session restore — refresh returns user: null (fallback to /users/me)", () => {
+  const refreshNoUser: TokensResponse = {
+    accessToken: "fresh-access-token",
+    user: null as unknown as User, // Backend liefert literal null
+    expiresIn: 3600,
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    _testAuthGen = 0
+    sessionStorage.clear()
+  })
+
+  it("uses /users/me result when refresh.user is null and call succeeds", async () => {
+    vi.mocked(loadAuthSession).mockReturnValue(null)
+    vi.mocked(refreshSession).mockResolvedValue(refreshNoUser as never)
+    vi.mocked(UserService.getCurrentUser).mockResolvedValue(mockUser)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    expect(UserService.getCurrentUser).toHaveBeenCalledOnce()
+    expect(result.current.user).toEqual(mockUser)
+    expect(result.current.token).toBe("fresh-access-token")
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(result.current.isLoading).toBe(false)
+  })
+
+  it("keeps persisted user when refresh.user is null and /users/me throws (ADMIN 403 case)", async () => {
+    // Phase 1: sessionStorage already restored an ADMIN user (last server-confirmed identity)
+    const adminUser: User = { ...mockUser, role: "ADMIN" }
+    vi.mocked(loadAuthSession).mockReturnValue({ user: adminUser, portal: "admin" })
+    vi.mocked(refreshSession).mockResolvedValue(refreshNoUser as never)
+    // /users/me returns 403 (typical backend behaviour for admin portal tokens)
+    vi.mocked(UserService.getCurrentUser).mockRejectedValue(
+      Object.assign(new Error("Forbidden"), { status: 403 })
+    )
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    // Session must survive — persisted user remains, token is the fresh one.
+    expect(result.current.user).toEqual(adminUser)
+    expect(result.current.token).toBe("fresh-access-token")
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(result.current.role).toBe("ADMIN")
+    expect(result.current.isLoading).toBe(false)
+    expect(clearAuthSession).not.toHaveBeenCalled()
+  })
+
+  it("builds a stub user from JWT claims when /users/me throws and no persisted user (Playwright case)", async () => {
+    // Playwright's storageState only persists cookies — sessionStorage is
+    // empty in fresh test contexts. The fallback must therefore not depend
+    // on sessionStorage: trusting the access-token claims (which the backend
+    // has already validated) gives a role-correct stub user.
+    vi.mocked(loadAuthSession).mockReturnValue(null)
+    vi.mocked(refreshSession).mockResolvedValue(refreshNoUser as never)
+    vi.mocked(UserService.getCurrentUser).mockRejectedValue(
+      Object.assign(new Error("Forbidden"), { status: 403 })
+    )
+    vi.mocked(decodeJwtClaims).mockReturnValue({
+      sub: "admin-uuid",
+      email: "admin@example.com",
+      role: "ADMIN",
+      iat: 1700000000,
+      exp: 1700003600,
+    })
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    expect(result.current.user).not.toBeNull()
+    expect(result.current.user?.id).toBe("admin-uuid")
+    expect(result.current.user?.email).toBe("admin@example.com")
+    expect(result.current.user?.role).toBe("ADMIN")
+    expect(result.current.role).toBe("ADMIN")
+    expect(result.current.token).toBe("fresh-access-token")
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(result.current.isLoading).toBe(false)
+    expect(clearAuthSession).not.toHaveBeenCalled()
+    // Stub should also be saved so subsequent reloads can use Phase 1 directly.
+    expect(saveAuthSession).toHaveBeenCalled()
+  })
+
+  it("clears session when refresh.user is null, /users/me throws, no persisted user, and JWT is unparseable", async () => {
+    vi.mocked(loadAuthSession).mockReturnValue(null)
+    vi.mocked(refreshSession).mockResolvedValue(refreshNoUser as never)
+    vi.mocked(UserService.getCurrentUser).mockRejectedValue(new Error("Forbidden"))
+    vi.mocked(decodeJwtClaims).mockReturnValue(null)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    expect(result.current.user).toBeNull()
+    expect(result.current.token).toBeNull()
+    expect(result.current.isAuthenticated).toBe(false)
+    expect(result.current.isLoading).toBe(false)
+    expect(clearAuthSession).toHaveBeenCalled()
   })
 })

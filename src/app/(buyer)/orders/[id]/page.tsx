@@ -1,4 +1,4 @@
-import OrderDetail from "@/src/components/OrderDetail"
+import OrderDetail from "@/src/components/features/orders/OrderDetail"
 
 export default function OrderDetailPage() {
   return <OrderDetail />

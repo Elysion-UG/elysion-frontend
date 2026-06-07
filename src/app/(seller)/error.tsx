@@ -1,0 +1,17 @@
+"use client"
+
+import { RouteErrorFallback } from "@/src/components/shared/RouteErrorFallback"
+
+export default function SellerError(props: {
+  error: Error & { digest?: string }
+  reset: () => void
+}) {
+  return (
+    <RouteErrorFallback
+      {...props}
+      routeGroup="seller"
+      homeHref="/seller/dashboard"
+      homeLabel="Dashboard"
+    />
+  )
+}

@@ -28,14 +28,14 @@ Next.js 16 frontend for **Elysion**, a marketplace for sustainably certified tex
 
 ```bash
 # 1. Install dependencies
-npm install
+bun install
 
 # 2. Configure environment
 cp .env.example .env.local
 # Edit .env.local — set NEXT_PUBLIC_API_URL
 
 # 3. Start dev server
-npm run dev
+bun run dev
 # → http://localhost:3000
 ```
 
@@ -45,6 +45,14 @@ npm run dev
 # .env.local
 NEXT_PUBLIC_API_URL=http://localhost:8080                               # local backend
 # NEXT_PUBLIC_API_URL=https://marketplace-backend-1-1w30.onrender.com  # production
+
+# Stripe — REQUIRED for checkout payments. Without it, PaymentStep disables payment.
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...                          # Stripe publishable key
+
+# Portal subdomains (see .env.example for full list)
+NEXT_PUBLIC_SELLER_DOMAIN=seller.localhost:3000
+NEXT_PUBLIC_ADMIN_DOMAIN=admin.localhost:3000
+NEXT_PUBLIC_BUYER_DOMAIN=localhost:3000
 ```
 
 ---
@@ -53,13 +61,13 @@ NEXT_PUBLIC_API_URL=http://localhost:8080                               # local 
 
 | Command                 | Description                  |
 | ----------------------- | ---------------------------- |
-| `npm run dev`           | Dev server (localhost:3000)  |
-| `npm run build`         | Production build             |
-| `npm run lint`          | ESLint                       |
-| `npm run format:check`  | Prettier check               |
-| `npm run typecheck`     | TypeScript type check        |
-| `npm run test`          | Unit tests (Vitest)          |
-| `npm run test:coverage` | Unit tests + coverage report |
+| `bun run dev`           | Dev server (localhost:3000)  |
+| `bun run build`         | Production build             |
+| `bun run lint`          | ESLint                       |
+| `bun run format:check`  | Prettier check               |
+| `bun run typecheck`     | TypeScript type check        |
+| `bun run test`          | Unit tests (Vitest)          |
+| `bun run test:coverage` | Unit tests + coverage report |
 
 ---
 
@@ -83,11 +91,11 @@ src/
       cart/               — Cart
       checkout/           — Checkout (3-step: address → preview → confirm)
       orders/             — Orders, OrderDetail
-      products/           — SustainableShop, ProductDetail, ProductForm, RecommendationsWidget
+      products/           — SustainableShop, ProductDetail, ProductForm, RecommendationsWidget, ProducerPage
       profile/            — Profil, AddressForm, Praeferenzen
-      seller/             — SellerDashboard
+      seller/             — SellerDashboard (tab-based: products, orders, certificates, profile, settlements, ship modal)
     layout/               — PageLayout (sticky header, nav, cart badge)
-    shared/               — About, Contact, ProducerPage
+    shared/               — About, Contact
     ui/                   — shadcn/ui base components (Button, Dialog, Card, ...)
   context/
     AuthContext.tsx        — Auth state (user, token, role, isAuthenticated)
@@ -158,46 +166,56 @@ All backend modules are fully integrated:
 | Orders (Buyer + Seller)                                     | `order.service.ts`, `seller-order.service.ts` | Orders, OrderDetail, SellerDashboard                                                  |
 | Matching / Recommendations                                  | `recommendation.service.ts`                   | RecommendationsWidget                                                                 |
 | File Upload                                                 | `file.service.ts`                             | ProductForm, SellerDashboard                                                          |
-| Payments (Mock)                                             | `payment.service.ts`                          | Checkout                                                                              |
+| Payments (Stripe)                                           | `payment.service.ts`                          | Checkout / PaymentStep (Stripe Elements — needs `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`) |
 
 ---
 
 ## Testing
 
 ```bash
-npm run test             # run all tests
-npm run test:coverage    # with coverage report
+bun run test             # run all tests
+bun run test:coverage    # with coverage report
 ```
 
 - **Framework:** Vitest + @testing-library/react
-- **Coverage:** ~97% (266 tests)
 - **Test files:** `*.test.ts` / `*.test.tsx` co-located with source files
-- Services, contexts, hooks, and lib utilities are covered
+- **Coverage thresholds (enforced in `vitest.config.ts`):**
+  - Global: ≥ 50 % lines/functions/statements, ≥ 40 % branches
+  - `src/lib/**` and `src/services/**`: ≥ 75 % lines (business logic)
+  - `src/context/**`: ≥ 70 % lines
+- Services, contexts, hooks, and lib utilities are the primary covered surface;
+  feature components are covered incrementally — see `vitest.config.ts` for
+  the exact include/exclude scope.
 
 ---
 
 ## Known Open Items
 
-| Item                                                          | Status                                                          |
-| ------------------------------------------------------------- | --------------------------------------------------------------- |
-| `POST /api/v1/auth/resend-verification`                       | Backend endpoint not yet implemented — UI built, call is mocked |
-| Skeleton loading states (Cart, Orders, OrderDetail, Checkout) | Planned — P5-2                                                  |
-| Toast coverage in SellerDashboard (ship / status update)      | Planned — P5-1                                                  |
-| Stripe payment integration                                    | Planned — `PaymentService` ready, Checkout uses MOCK            |
-| Guest checkout                                                | Planned — Phase 2                                               |
-| Wishlist / favorites                                          | Planned — Phase 2                                               |
-| Returns / refund UI                                           | Planned — Phase 2                                               |
+> Full launch-readiness assessment and open items: [`docs/LAUNCH_READINESS.md`](./docs/LAUNCH_READINESS.md)
+
+| Item                                             | Status                                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` config      | 🔴 Launch blocker — Stripe integration is built, key missing in env            |
+| Legal pages (Impressum/Datenschutz/AGB/Widerruf) | 🔴 Launch blocker — page scaffolds exist, contain `[PLATZHALTER]` data         |
+| Public seller/producer profile                   | ✅ `ProducerPage` shows real seller products; richer profile endpoint optional |
+| Contact form API                                 | ✅ `Contact.tsx` uses a `mailto:` fallback; backend endpoint optional          |
+| Monitoring persistence                           | 🟡 `monitoring.service.ts` missing — admin monitoring is in-memory only        |
+| Guest checkout                                   | Planned — Phase 2                                                              |
+| Wishlist / favorites                             | Planned — Phase 2                                                              |
+| Returns / refund UI (buyer-facing)               | Planned — Phase 2                                                              |
 
 ---
 
 ## Documentation
 
-| File                      | Description                                                              |
-| ------------------------- | ------------------------------------------------------------------------ |
-| `docs/api-integration.md` | Complete API integration reference (all endpoints, DTOs, error handling) |
-| `docs/BACKEND_QUIRKS.md`  | Known API response discrepancies (field names, missing wrappers)         |
-| `docs/CODE_STANDARDS.md`  | Naming conventions, architecture patterns, code review checklist         |
-| `docs/CICD_PIPELINE.md`   | GitHub Actions workflows, quality gates, pre-commit hooks                |
-| `docs/ROADMAP.md`         | Development roadmap — Phase 1 status, Phase 2 plans                      |
-| `docs/INDEX.md`           | Topic → SSOT reference map for contributors                              |
-| `docs/archive/`           | Superseded and planning-phase documents                                  |
+| File                       | Description                                                              |
+| -------------------------- | ------------------------------------------------------------------------ |
+| `docs/LAUNCH_READINESS.md` | Consolidated launch readiness — current state + open items (blockers)    |
+| `docs/COMPLIANCE.md`       | German/EU legal compliance plan (DSGVO, Impressum, AGB, BFSG)            |
+| `docs/api-integration.md`  | Complete API integration reference (all endpoints, DTOs, error handling) |
+| `docs/BACKEND_QUIRKS.md`   | Known API response discrepancies (field names, missing wrappers)         |
+| `docs/CODE_STANDARDS.md`   | Naming conventions, architecture patterns, code review checklist         |
+| `docs/CICD_PIPELINE.md`    | GitHub Actions workflows, quality gates, pre-commit hooks                |
+| `docs/ROADMAP.md`          | Development roadmap — Phase 1 status, Phase 2 plans                      |
+| `docs/INDEX.md`            | Topic → SSOT reference map for contributors                              |
+| `docs/archive/`            | Superseded and planning-phase documents                                  |

@@ -3,9 +3,10 @@ import { apiRequest } from "@/src/lib/api-client"
 import { AdminService } from "./admin.service"
 import type { PagedResponse, AdminUserListItem } from "@/src/types"
 
-vi.mock("@/src/lib/api-client", () => ({
-  apiRequest: vi.fn(),
-}))
+vi.mock("@/src/lib/api-client", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/src/lib/api-client")>()
+  return { ...actual, apiRequest: vi.fn() }
+})
 
 const mockApiRequest = vi.mocked(apiRequest)
 
@@ -13,7 +14,7 @@ const mockPagedResponse = <T>(items: T[]): PagedResponse<T> => ({
   items,
   page: 0,
   size: 20,
-  totalElements: items.length,
+  totalItems: items.length,
   totalPages: 1,
 })
 
@@ -41,16 +42,18 @@ describe("AdminService", () => {
       status: "ACTIVE",
     })
 
+    // page is zero-indexed: page 1 → page=0 in query
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/admin/users?page=1&size=10&search=alice&role=BUYER&status=ACTIVE"
+      "/api/v1/admin/users?page=0&size=10&search=alice&role=BUYER&status=ACTIVE"
     )
   })
 
   it("listUsers — omits absent params", async () => {
     mockApiRequest.mockResolvedValue(mockPagedResponse([]))
 
-    await AdminService.listUsers({ page: 0 })
+    await AdminService.listUsers({ page: 1 })
 
+    // page 1 → page=0
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/users?page=0")
   })
 
@@ -71,50 +74,50 @@ describe("AdminService", () => {
     expect(result).toEqual(mockUser)
   })
 
-  it("suspendUser — calls PATCH /api/v1/admin/users/:id/suspend", async () => {
+  it("suspendUser — calls POST /api/v1/admin/users/:id/suspend", async () => {
     mockApiRequest.mockResolvedValue({ userId: "u1", status: "SUSPENDED" })
 
     const result = await AdminService.suspendUser("u1")
 
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/admin/users/u1/suspend",
-      expect.objectContaining({ method: "PATCH" })
+      expect.objectContaining({ method: "POST" })
     )
     expect(result).toMatchObject({ userId: "u1", status: "SUSPENDED" })
   })
 
-  it("activateUser — calls PATCH /api/v1/admin/users/:id/activate", async () => {
+  it("activateUser — calls POST /api/v1/admin/users/:id/unsuspend", async () => {
     mockApiRequest.mockResolvedValue({ userId: "u1", status: "ACTIVE" })
 
     const result = await AdminService.activateUser("u1")
 
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/admin/users/u1/activate",
-      expect.objectContaining({ method: "PATCH" })
+      "/api/v1/admin/users/u1/unsuspend",
+      expect.objectContaining({ method: "POST" })
     )
     expect(result).toMatchObject({ status: "ACTIVE" })
   })
 
   // ── Seller profile review ────────────────────────────────────────────
 
-  it("approveSellerProfile — calls POST /api/v1/admin/seller-profiles/:id/approve", async () => {
+  it("approveSellerProfile — calls POST /api/v1/admin/sellers/:id/approve", async () => {
     mockApiRequest.mockResolvedValue({ id: "sp1", status: "APPROVED" })
 
     await AdminService.approveSellerProfile("sp1")
 
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/admin/seller-profiles/sp1/approve",
+      "/api/v1/admin/sellers/sp1/approve",
       expect.objectContaining({ method: "POST" })
     )
   })
 
-  it("rejectSellerProfile — calls POST /api/v1/admin/seller-profiles/:id/reject with reason", async () => {
+  it("rejectSellerProfile — calls POST /api/v1/admin/sellers/:id/reject with reason", async () => {
     mockApiRequest.mockResolvedValue({ id: "sp1", status: "REJECTED" })
 
     await AdminService.rejectSellerProfile("sp1", "Incomplete docs")
 
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/admin/seller-profiles/sp1/reject",
+      "/api/v1/admin/sellers/sp1/reject",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({ reason: "Incomplete docs" }),
@@ -122,13 +125,13 @@ describe("AdminService", () => {
     )
   })
 
-  it("suspendSellerProfile — calls POST /api/v1/admin/seller-profiles/:id/suspend with reason", async () => {
+  it("suspendSellerProfile — calls POST /api/v1/admin/sellers/:id/suspend with reason", async () => {
     mockApiRequest.mockResolvedValue({ id: "sp1", status: "SUSPENDED" })
 
     await AdminService.suspendSellerProfile("sp1", "Policy violation")
 
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/admin/seller-profiles/sp1/suspend",
+      "/api/v1/admin/sellers/sp1/suspend",
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({ reason: "Policy violation" }),
@@ -175,12 +178,12 @@ describe("AdminService", () => {
 
   // ── List endpoints ────────────────────────────────────────────────────
 
-  it("listSellers — calls GET /api/v1/admin/seller-profiles with no params", async () => {
+  it("listSellers — calls GET /api/v1/admin/sellers with no params", async () => {
     mockApiRequest.mockResolvedValue(mockPagedResponse([]))
 
     await AdminService.listSellers()
 
-    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/seller-profiles")
+    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/sellers")
   })
 
   it("listSellers — appends page, size, status params", async () => {
@@ -189,7 +192,7 @@ describe("AdminService", () => {
     await AdminService.listSellers({ page: 0, size: 5, status: "PENDING" })
 
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/admin/seller-profiles?page=0&size=5&status=PENDING"
+      "/api/v1/admin/sellers?page=0&size=5&status=PENDING"
     )
   })
 
@@ -227,26 +230,26 @@ describe("AdminService", () => {
     )
   })
 
-  it("activateProduct — calls PATCH /api/v1/admin/products/:id/activate", async () => {
+  it("activateProduct — calls POST /api/v1/admin/products/:id/activate", async () => {
     mockApiRequest.mockResolvedValue({ id: "p1", status: "ACTIVE" })
 
     const result = await AdminService.activateProduct("p1")
 
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/admin/products/p1/activate",
-      expect.objectContaining({ method: "PATCH" })
+      expect.objectContaining({ method: "POST" })
     )
     expect(result).toMatchObject({ status: "ACTIVE" })
   })
 
-  it("deactivateProduct — calls PATCH /api/v1/admin/products/:id/deactivate", async () => {
+  it("deactivateProduct — calls POST /api/v1/admin/products/:id/deactivate", async () => {
     mockApiRequest.mockResolvedValue({ id: "p1", status: "INACTIVE" })
 
     const result = await AdminService.deactivateProduct("p1")
 
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/admin/products/p1/deactivate",
-      expect.objectContaining({ method: "PATCH" })
+      expect.objectContaining({ method: "POST" })
     )
     expect(result).toMatchObject({ status: "INACTIVE" })
   })
@@ -339,5 +342,44 @@ describe("AdminService", () => {
       expect.objectContaining({ method: "POST" })
     )
     expect(result).toEqual({ expiredCount: 7 })
+  })
+
+  // ── Commission & payouts ───────────────────────────────────────────────
+
+  it("updateSellerCommission — PATCH /api/v1/admin/sellers/:id/commission with rate body", async () => {
+    mockApiRequest.mockResolvedValue({ id: "s1", commissionRate: 12 })
+
+    await AdminService.updateSellerCommission("s1", 12)
+
+    expect(mockApiRequest).toHaveBeenCalledWith(
+      "/api/v1/admin/sellers/s1/commission",
+      expect.objectContaining({ method: "PATCH", body: JSON.stringify({ commissionRate: 12 }) })
+    )
+  })
+
+  it("listDuePayouts — calls GET /api/v1/admin/payouts/due", async () => {
+    mockApiRequest.mockResolvedValue([])
+
+    const result = await AdminService.listDuePayouts()
+
+    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/payouts/due")
+    expect(result).toEqual([])
+  })
+
+  it("runPayout — POST /api/v1/admin/payouts/run with sellerId body", async () => {
+    mockApiRequest.mockResolvedValue({
+      payoutId: "p1",
+      sellerId: "s1",
+      amount: 5000,
+      status: "PENDING",
+      createdAt: "",
+    })
+
+    await AdminService.runPayout("s1")
+
+    expect(mockApiRequest).toHaveBeenCalledWith(
+      "/api/v1/admin/payouts/run",
+      expect.objectContaining({ method: "POST", body: JSON.stringify({ sellerId: "s1" }) })
+    )
   })
 })

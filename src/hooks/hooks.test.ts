@@ -1,10 +1,8 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi } from "vitest"
 import { renderHook } from "@testing-library/react"
 import React from "react"
-import { AuthProvider } from "@/src/context/AuthContext"
-import { CartProvider } from "@/src/context/CartContext"
-import { useAuth } from "./useAuth"
-import { useCart } from "./useCart"
+import { AuthProvider, useAuth } from "@/src/context/AuthContext"
+import { CartProvider, useCart } from "@/src/context/CartContext"
 
 vi.mock("@/src/services/auth.service", () => ({
   AuthService: {
@@ -13,6 +11,17 @@ vi.mock("@/src/services/auth.service", () => ({
     logout: vi.fn(),
     refresh: vi.fn(),
   },
+}))
+
+vi.mock("@/src/lib/api-client", () => ({
+  setAccessToken: vi.fn(),
+  refreshSession: vi.fn().mockRejectedValue(new Error("no session")),
+  loadAuthSession: vi.fn().mockReturnValue(null),
+  saveAuthSession: vi.fn(),
+  clearAuthSession: vi.fn(),
+  getAuthGeneration: vi.fn(() => 0),
+  bumpAuthGeneration: vi.fn(),
+  AUTH_SESSION_KEY: "auth_session",
 }))
 
 describe("useAuth hook", () => {
@@ -32,8 +41,9 @@ describe("useAuth hook", () => {
 
 describe("useCart hook", () => {
   it("returns cart context when used inside CartProvider", () => {
+    // CartProvider calls useAuth() internally, so it must be nested inside AuthProvider
     const wrapper = ({ children }: { children: React.ReactNode }) =>
-      React.createElement(CartProvider, null, children)
+      React.createElement(AuthProvider, null, React.createElement(CartProvider, null, children))
     const { result } = renderHook(() => useCart(), { wrapper })
     expect(result.current).toBeDefined()
     expect(result.current.cart).toBeDefined()

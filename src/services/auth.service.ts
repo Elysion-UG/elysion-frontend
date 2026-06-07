@@ -2,16 +2,30 @@
  * AuthService — real API calls to the backend authentication endpoints.
  *
  * Endpoints (base: /api/v1/auth):
- *   POST /register          — register BUYER or SELLER
- *   POST /login             — returns accessToken in JSON + refreshToken as HttpOnly cookie
- *   POST /refresh           — rotates refresh token (cookie), returns new accessToken
- *   POST /logout            — revokes refresh token, clears cookie
- *   POST /verify-email      — verify email with one-time token
- *   POST /forgot-password   — trigger password reset email (always 200 to prevent enumeration)
- *   POST /reset-password    — set new password with reset token
+ *   POST /register              — register BUYER or SELLER
+ *   POST /customer/login        — customer portal login
+ *   POST /seller/login          — seller portal login
+ *   POST /admin/login           — admin portal login
+ *   POST /refresh               — rotates refresh token (cookie), returns new accessToken
+ *   POST /logout                — revokes refresh token, clears cookie
+ *   POST /verify-email          — verify email with one-time token
+ *   GET  /verify-email?token=   — link-friendly email verification
+ *   POST /resend-verification   — resend verification email
+ *   POST /forgot-password       — trigger password reset email (always 200 to prevent enumeration)
+ *   POST /reset-password        — set new password with reset token
+ *   GET  /reset-password?token= — validate reset token (link-friendly, does not consume token)
  */
 import { apiRequest } from "@/src/lib/api-client"
+import { parseApiResponse, tokensResponseSchema } from "@/src/lib/api-schemas"
 import type { LoginDTO, RegisterDTO, TokensResponse } from "@/src/types"
+
+async function loginRequest(path: string, dto: LoginDTO): Promise<TokensResponse> {
+  const raw = await apiRequest<unknown>(path, {
+    method: "POST",
+    body: JSON.stringify(dto),
+  })
+  return parseApiResponse(tokensResponseSchema, raw, path)
+}
 
 export const AuthService = {
   async register(dto: RegisterDTO): Promise<{ userId: string; email: string }> {
@@ -21,11 +35,19 @@ export const AuthService = {
     })
   },
 
-  async login(dto: LoginDTO): Promise<TokensResponse> {
-    return apiRequest("/api/v1/auth/login", {
-      method: "POST",
-      body: JSON.stringify(dto),
-    })
+  /** Login for BUYER users on the customer portal. */
+  async loginAsCustomer(dto: LoginDTO): Promise<TokensResponse> {
+    return loginRequest("/api/v1/auth/customer/login", dto)
+  },
+
+  /** Login for SELLER users on the seller portal. */
+  async loginAsSeller(dto: LoginDTO): Promise<TokensResponse> {
+    return loginRequest("/api/v1/auth/seller/login", dto)
+  },
+
+  /** Login for ADMIN users on the admin portal. */
+  async loginAsAdmin(dto: LoginDTO): Promise<TokensResponse> {
+    return loginRequest("/api/v1/auth/admin/login", dto)
   },
 
   /**
@@ -33,20 +55,24 @@ export const AuthService = {
    * Returns a new access token and rotates the refresh cookie.
    */
   async refresh(): Promise<TokensResponse> {
-    return apiRequest("/api/v1/auth/refresh", {
-      method: "POST",
-      body: "{}",
-    })
+    // Pass skipRetry=true — if the refresh endpoint itself returns 401,
+    // we must not re-enter tryRefreshAndRetry, which would cause infinite recursion.
+    const raw = await apiRequest<unknown>(
+      "/api/v1/auth/refresh",
+      { method: "POST", body: "{}" },
+      true
+    )
+    return parseApiResponse(tokensResponseSchema, raw, "/api/v1/auth/refresh")
   },
 
   /**
    * Revokes the current refresh token and clears the HttpOnly cookie.
+   * skipRetry=true — a 401 on logout means "no active session to revoke",
+   * which is fine. We must not trigger tryRefreshAndRetry here because that
+   * would show a spurious "Sitzung abgelaufen" toast and re-redirect to "/".
    */
   async logout(): Promise<void> {
-    return apiRequest("/api/v1/auth/logout", {
-      method: "POST",
-      body: "{}",
-    })
+    return apiRequest("/api/v1/auth/logout", { method: "POST", body: "{}" }, true)
   },
 
   async verifyEmail(token: string): Promise<void> {
@@ -70,6 +96,21 @@ export const AuthService = {
     return apiRequest("/api/v1/auth/reset-password", {
       method: "POST",
       body: JSON.stringify({ token, newPassword }),
+    })
+  },
+
+  /** Always responds 200 to prevent email enumeration. */
+  async resendVerification(email: string): Promise<void> {
+    return apiRequest("/api/v1/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    })
+  },
+
+  /** Validates a password reset token without consuming it. Throws on 4xx. */
+  async validateResetToken(token: string): Promise<void> {
+    return apiRequest(`/api/v1/auth/reset-password?token=${encodeURIComponent(token)}`, {
+      method: "GET",
     })
   },
 }

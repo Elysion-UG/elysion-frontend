@@ -25,6 +25,16 @@ docs/*.docx
 
 # Build artifacts
 tsconfig.tsbuildinfo
+package-lock.json
 # Test coverage output
 coverage/
 *.tsbuildinfo
+
+# Playwright
+playwright-report/
+test-results/
+e2e/.auth/
+
+# Local integration tests (not for CI/CD)
+vitest.integration.config.ts
+src/__integration__/
