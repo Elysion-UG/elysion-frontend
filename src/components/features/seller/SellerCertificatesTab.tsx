@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { Plus, Award, RefreshCw, Loader2, ExternalLink } from "lucide-react"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import { CertificateService } from "@/src/services/certificate.service"
@@ -199,8 +200,11 @@ export default function SellerCertificatesTab() {
     }
   }, [])
 
-  useEffect(() => {
+  const runCertsEffect = useEffectEvent(() => {
     fetchCerts()
+  })
+  useEffect(() => {
+    runCertsEffect()
   }, [fetchCerts])
 
   return (

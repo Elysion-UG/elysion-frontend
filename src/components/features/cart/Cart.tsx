@@ -7,14 +7,13 @@ import { CartSkeleton } from "./CartSkeleton"
 import { useCart } from "@/src/context/CartContext"
 import { formatEuro, centsToEuro } from "@/src/lib/currency"
 import { toast } from "sonner"
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useMounted } from "@/src/hooks/use-mounted"
 
 export default function Cart() {
   const { cart, isLoading, updateItem, removeItem } = useCart()
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => setMounted(true), [])
+  const mounted = useMounted()
 
   const handleUpdateQty = async (itemId: string, newQty: number) => {
     if (newQty < 1) return

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { useParams } from "next/navigation"
 import { Package, Truck, CheckCircle2, Clock, XCircle, RotateCcw } from "lucide-react"
 import { AdminService } from "@/src/services/admin.service"
@@ -193,8 +194,11 @@ export default function AdminOrderDetailView() {
     }
   }, [id])
 
-  useEffect(() => {
+  const runEffect = useEffectEvent(() => {
     load()
+  })
+  useEffect(() => {
+    runEffect()
   }, [load])
 
   if (isLoading) {

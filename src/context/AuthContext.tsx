@@ -30,6 +30,7 @@ import {
   decodeJwtClaims,
   type AuthPortal,
 } from "@/src/lib/api-client"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -95,12 +96,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // for the network. The access token is intentionally NOT stored in
   // sessionStorage (H-S3) — Phase 2 always fetches a fresh one via the
   // HttpOnly refresh cookie. isLoading stays true until Phase 2 completes.
-  useLayoutEffect(() => {
+  const restoreSession = useEffectEvent(() => {
     const persisted = loadAuthSession()
     if (!persisted) return
     if (isValidUser(persisted.user)) {
       setUser(persisted.user)
     }
+  })
+
+  useLayoutEffect(() => {
+    restoreSession()
   }, [])
 
   // ── Phase 2: async token fetch on every page load ──────────────────────────

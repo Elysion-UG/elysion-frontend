@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { Loader2, Building2, Leaf } from "lucide-react"
 import { SellerProfileService } from "@/src/services/seller-profile.service"
 import { SellerValueProfileService } from "@/src/services/seller-value-profile.service"
@@ -87,9 +88,12 @@ export default function SellerProfileTab() {
     }
   }, [])
 
-  useEffect(() => {
+  const runProfileEffect = useEffectEvent(() => {
     fetchProfile()
     fetchValueProfile()
+  })
+  useEffect(() => {
+    runProfileEffect()
   }, [fetchProfile, fetchValueProfile])
 
   // ── Save company profile ──

@@ -1,7 +1,8 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useMounted } from "@/src/hooks/use-mounted"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -35,9 +36,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => setMounted(true), [])
+  const mounted = useMounted()
 
   const handleLogout = async () => {
     setLoggingOut(true)

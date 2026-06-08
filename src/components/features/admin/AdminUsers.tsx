@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { useRouter } from "next/navigation"
 import type { User, UserRole, AccountStatus } from "@/src/types"
 import { UserService } from "@/src/services/user.service"
@@ -65,8 +66,11 @@ export default function AdminUsers() {
     }
   }, [page, searchQuery, filterRole, filterStatus])
 
-  useEffect(() => {
+  const runLoadUsers = useEffectEvent(() => {
     loadUsers()
+  })
+  useEffect(() => {
+    runLoadUsers()
   }, [loadUsers])
 
   return (

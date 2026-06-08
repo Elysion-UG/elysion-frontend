@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { Truck, BarChart3, RefreshCw, Loader2, ChevronRight, DollarSign } from "lucide-react"
 import { SellerOrderService } from "@/src/services/seller-order.service"
 import type { OrderGroupDetail } from "@/src/types"
@@ -30,8 +31,11 @@ export default function SellerOrdersTab() {
     }
   }, [])
 
-  useEffect(() => {
+  const runOrdersEffect = useEffectEvent(() => {
     fetchOrders()
+  })
+  useEffect(() => {
+    runOrdersEffect()
   }, [fetchOrders])
 
   const handleOrderStatus = async (groupId: string, status: string) => {

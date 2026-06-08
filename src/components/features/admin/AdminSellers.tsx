@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { useRouter } from "next/navigation"
 import { CheckCircle2, XCircle, Ban, Loader2 } from "lucide-react"
 import { AdminService } from "@/src/services/admin.service"
@@ -143,8 +144,11 @@ export default function AdminSellers() {
     }
   }, [page, statusFilter, searchQuery])
 
-  useEffect(() => {
+  const runEffect = useEffectEvent(() => {
     load()
+  })
+  useEffect(() => {
+    runEffect()
   }, [load])
 
   const handleApprove = async (seller: AdminSellerListItem) => {

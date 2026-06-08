@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import {
   DollarSign,
   Loader2,
@@ -96,8 +97,11 @@ export default function AdminFinance() {
     }
   }
 
-  useEffect(() => {
+  const runEffect = useEffectEvent(() => {
     if (tab !== "maintenance") load()
+  })
+  useEffect(() => {
+    runEffect()
   }, [load, tab])
 
   const runMaintenance = async (action: "tokens" | "orders") => {

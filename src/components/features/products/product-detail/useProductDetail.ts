@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { toast } from "sonner"
 import { ProductService } from "@/src/services/product.service"
 import { CertificateService } from "@/src/services/certificate.service"
@@ -22,11 +23,11 @@ export function useProductDetail(slug: string | null): UseProductDetailResult {
   const [error, setError] = useState<string | null>(null)
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
 
-  useEffect(() => {
+  const loadProduct = useEffectEvent(() => {
     if (!slug) {
       setError("Kein Produkt ausgewählt.")
       setIsLoading(false)
-      return
+      return undefined
     }
 
     let cancelled = false
@@ -55,6 +56,10 @@ export function useProductDetail(slug: string | null): UseProductDetailResult {
     return () => {
       cancelled = true
     }
+  })
+
+  useEffect(() => {
+    return loadProduct()
   }, [slug])
 
   return { product, certificates, isLoading, error, selectedVariant, setSelectedVariant }

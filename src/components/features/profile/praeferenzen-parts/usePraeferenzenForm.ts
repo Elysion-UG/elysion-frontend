@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import type { ValuesProfileType } from "@/src/types"
@@ -31,7 +32,7 @@ export function usePraeferenzenForm(): UsePraeferenzenForm {
     useState<Record<string, Record<string, number>>>(defaultExtendedWeights)
   const [isSaving, setIsSaving] = useState(false)
 
-  useEffect(() => {
+  const syncFormFromProfile = useEffectEvent(() => {
     if (!profile) return
     setProfileType(profile.activeProfileType)
     if (profile.simpleProfile) {
@@ -46,6 +47,10 @@ export function usePraeferenzenForm(): UsePraeferenzenForm {
         return next
       })
     }
+  })
+
+  useEffect(() => {
+    syncFormFromProfile()
   }, [profile])
 
   const setSimpleWeight = useCallback((categoryId: string, weight: number) => {
