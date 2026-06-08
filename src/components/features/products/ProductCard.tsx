@@ -39,6 +39,7 @@ export default function ProductCard({ product, onProductClick, onSellerClick }: 
 
   return (
     <div
+      data-testid="product-card"
       onClick={() => onProductClick(product.slug, product.id)}
       className="group cursor-pointer overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-sage-200 hover:shadow-lg"
     >
