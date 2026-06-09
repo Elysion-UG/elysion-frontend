@@ -51,15 +51,16 @@
 
 ### 1.2 Auszahlungs-Workflow (Seller Payouts)
 
-**Status:** ENTSCHIEDEN (2026-06-01) — Frontend umgesetzt, Backend offen
+**Status:** ENTSCHIEDEN (2026-06-01) · **Timing aktualisiert 2026-06-10** (s. Änderungshinweis) — Frontend umgesetzt, Backend offen
 
 **Entscheidungen:**
 
-- **Auslöser:** **Manuelle Admin-Freigabe** auf festem Rhythmus (kein Cronjob, keine Selbstauslösung durch Seller).
+- **Auslöser:** **Manuelle Admin-Freigabe** auf festem wöchentlichem Rhythmus (keine Selbstauslösung durch Seller). _Ob die wöchentliche Freigabe automatisiert (Cron, mittwochs) statt manuell erfolgt, ist offen — s. Issue._
 - **Ausführungsweg:** **Echte Stripe-Auszahlung über Stripe Connect (Express-Accounts)**. Stripe übernimmt KYC/Compliance und IBAN-Verwaltung (→ entschärft §2.1-KYC); die Plattform behält Provisions-Kontrolle (`application_fee`) und Branding.
-- **Intervall:** **Monatlich** — der Admin gibt 1×/Monat alle fälligen Settlements gesammelt frei.
+- **Intervall:** **Wöchentlich** — Auszahlungstag ist **Mittwoch**; ausgezahlt werden alle Settlements, deren 7-Tage-Haltefrist bis dahin abgelaufen ist. _(geändert 2026-06-10 — zuvor: monatlich.)_
+- **Haltefrist:** **7 Tage** ab Erfüllung des Auslösers, bevor ein Settlement auszahlbar wird (Schutz im Retouren-/Storno-Fenster). _Werktage vs. Kalendertage noch zu bestätigen._
 - **Mindestbetrag:** **keiner** (zeitbasiert statt betragsbasiert) → kein Vortrag/keine Sperre nötig.
-- **Settlement-Auslöser:** ab Order-Status **`DELIVERED`** (= bestehender Code, kein Change).
+- **Settlement-Auslöser:** ab Order-Status **`DELIVERED`** (unverändert) **+ 7-Tage-Haltefrist**; Auszahlung am darauffolgenden Mittwoch.
 - **Benachrichtigung:** **eigene gebrandete Plattform-E-Mail** bei Auszahlung (zusätzlich zu Stripes eigener Benachrichtigung).
 
 > ⚠️ **Scope-Hinweis:** „Echte Stripe-Auszahlung" ist KEIN no-code-MVP-Punkt mehr, sondern ein echtes Backend-Feature (Connect-Onboarding, Webhooks, `createPayout()` ersetzt das bestehende `ConflictException`-Stub). Verschiebt den Funktions-Launch entsprechend.
@@ -81,6 +82,10 @@
 
 - Settlement-Berechtigung: Zahlung erfolgreich UND OrderGroup delivered
 - Pro OrderGroup eine eigene Settlement-Zeile
+
+**Änderungshinweis (2026-06-10):**
+
+Auszahlungs-Timing präzisiert (beantwortete IT-Frage): Intervall **monatlich → wöchentlich**, fester **Auszahlungstag Mittwoch**, **7-Tage-Haltefrist** vor Auszahlbarkeit. Der **Auslöser bleibt `DELIVERED`** (kein Wechsel auf reine Stripe-Bestätigung) — schützt vor Auszahlung im Retouren-Fenster. Offen: 7 Tage Werktage oder Kalendertage; ob die wöchentliche Freigabe automatisiert (Cron) oder weiter per Admin erfolgt. Umsetzung: Elysion-UG/elysion-marketplace-backend#111 (Scope auf wöchentlich/Mittwoch/Haltefrist aktualisiert).
 
 ---
 
@@ -104,26 +109,47 @@ Das Backend ist production-ready (Stripe API v2026-03-23). Das Frontend nutzt no
 - Frontend: Stripe Elements in `PaymentStep.tsx` verdrahtet — benötigt `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 - Live-Schaltung = Setzen von `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (FE) + `APP_STRIPE_SECRET_KEY`/`APP_STRIPE_WEBHOOK_SECRET` (BE), siehe `docs/LAUNCH_READINESS.md` B1–B3
 
+**Zahlungsarten zum Launch (entschieden 2026-06-10):**
+
+Stripe `PaymentElement` (in `PaymentStep.tsx`) rendert die im Stripe-Dashboard aktivierten Methoden — die Auswahl ist daher primär **Konfiguration + Kommunikation**, kein Checkout-Umbau.
+
+- **Zum Launch:** Kreditkarte (Visa/MC, **3DS2/SCA-Pflicht**), **PayPal** (~2,49 % + 0,35 €), **Apple Pay & Google Pay** (~1,5 %, nur unterstützte Geräte, **Domain-Registrierung** nötig), **Klarna** (2,99 % + 0,35 €, Kauf auf Rechnung — Stripe stellt das Geld direkt bereit).
+- **Fast-Follow (nicht Launch):** **SEPA-Lastschrift** — wegen Mandat-Handling zunächst zurückgestellt.
+- Gebühren je Methode trägt der **Seller**, separat ausgewiesen (s. §1.1).
+
+Umsetzung: Elysion-UG/elysion-marketplace-backend#141 (Stripe-Methoden/SCA/async-Webhooks) · Elysion-UG/elysion-frontend#55 (Zahlarten-Kommunikation, Apple/Google-Pay-Domain).
+
 ---
 
 ### 1.4 Rückgaben & Erstattungen
 
-**Status:** OFFEN
+**Status:** TEILWEISE ENTSCHIEDEN — Refund-Berechtigungen entschieden (2026-06-10); Zeitfenster/Restocking offen
 
 Backend unterstützt vollständige und teilweise Rückerstattungen. Keine Self-Service-UI für Käufer vorhanden.
 
-**Offene Fragen:**
+**Refund-Berechtigungen (entschieden 2026-06-10):**
 
-- Können Käufer selbst Rückgaben/Erstattungen beantragen (Account-Bereich)?
-- Zeitfenster für Erstattungen (14 Tage, 30 Tage, 60 Tage)?
+| Rolle               | Refund auslösen                         | Umfang                                                                                        |
+| ------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------- |
+| **Seller**          | **Eigenständig, ohne Elysion-Freigabe** | Full + Partial — Marktstandard; Seller kennt den Sachverhalt (Retoure, Defekt, Teillieferung) |
+| **Elysion (Admin)** | **Als Eskalation**                      | Full + Partial — wenn Seller nicht reagiert, bei Disputes, bei Betrug                         |
+| **Buyer**           | **Nie direkt**                          | Kann nur eine **Rückgabe beantragen** (Antrag, kein Refund)                                   |
+
+- **Settlement-Wirkung:** Bei Refund wird die Elysion-Kommission erstattet, die nicht erstattete Stripe-Fee dem Seller abgezogen (s. §1.1 / Backend #140); Auswirkung auf die Auszahlung über die Haltefrist (§1.2).
+- **Buyer-Rückgabe-Flow** (Antrag → Genehmigung → Refund) ist im **Miro-BPMN „Retoure"** spezifiziert und wird als **eigenes Thema** umgesetzt (noch nicht in den unten verlinkten Issues).
+
+**Noch offen:**
+
+- Zeitfenster für Erstattungen (14 / 30 / 60 Tage)?
 - Vollerstattung oder Restocking-Gebühr?
-- Wer genehmigt Erstattungen (Admin, Seller, automatisch)?
-- Eskalationsprozess bei Streitigkeiten?
+- Detaillierter Eskalations-/Dispute-Prozess (über die Rollenzuordnung hinaus)
 
 **Bereits entschieden (überschreibbar):**
 
-- Nur Admins können aktuell Erstattungen auslösen (API)
-- Kein Käufer-seitiger Rückgabe-Flow (Phase 2 geplant)
+- ~~Nur Admins können Erstattungen auslösen (API)~~ → **überholt (2026-06-10):** Seller lösen Full/Partial eigenständig aus, Admin nur als Eskalation
+- Käufer-seitiger Rückgabe-Flow: als **Antrag** vorgesehen (kein direkter Refund) — Umsetzung als eigenes Thema (Miro-BPMN)
+
+**Umsetzung:** Elysion-UG/elysion-marketplace-backend#142 (Seller-/Admin-Refund-Berechtigungen) · Elysion-UG/elysion-frontend#56 (Seller-Refund-UI).
 
 ---
 
@@ -138,6 +164,65 @@ Kein automatischer Abgleich mit Stripe vorhanden.
 - Wie oft soll ein Abgleich mit Stripe stattfinden (täglich, wöchentlich)?
 - Wie werden fehlende Webhooks erkannt und behandelt?
 - Wer ist zuständig bei Zahlungsdifferenzen?
+
+---
+
+### 1.6 Payment-Robustheit / Edge-Cases
+
+**Status:** ENTSCHIEDEN (2026-06-10)
+
+Beantwortete IT-Fragen zu Zahlungs-Sonderfällen. Ausgangslage im Code: Stripe captured **sofort** (`automatic_payment_methods`, kein `capture_method=manual`); `OrderExpiryService` storniert abgelaufene Pending-Orders bereits.
+
+**Szenario 1 — Stripe-Autorisierung läuft ab (vor Versandfähigkeit):**
+
+- **Lösung:** **Immediate Capture** (bereits aktiv) + **48h-Versand-SLA** für Seller — Ware muss binnen **48 h** nach Capture versandfähig/versendet sein.
+
+**Szenario 2 — Webhook kommt zu spät (Zahlung existiert, Order bereits storniert):**
+
+- **Lösung:** **Grace Period 30–60 Min.** vor Auto-Stornierung; trifft die Zahlung danach trotzdem ein → **automatischer Refund** + Kunden-E-Mail („Ihre Zahlung wurde erstattet, bitte bestellen Sie erneut").
+- Beantwortet die offene Entscheidung in #121 (Late-Success → **automatischer Refund**, nicht manuelle Reaktivierung).
+
+**Szenario 3 — BNPL-Stornierung (Klarna):**
+
+- **Lösung:** Stornierung/Retoure einer Klarna-Order löst **automatisch** eine Klarna-API-Rückbuchung aus, damit der Kunde keine Rechnung über den vollen Betrag erhält. **Pflichtschritt im Retoure-/Refund-Flow** (Klarna ist Launch-Zahlart, s. §1.3).
+
+**Szenario 4 — Vorkasse/Überweisung:**
+
+- **Entscheidung:** **Nicht angeboten** — zu fehleranfällig. (Konsistent mit §1.3: nur Stripe-Methoden.)
+
+**Umsetzung:** Elysion-UG/elysion-marketplace-backend#143 (48h-SLA) · #144 (Klarna-Reversal) · #121 (Grace Period + Auto-Refund) · Elysion-UG/elysion-frontend#57 (48h-SLA-Anzeige Seller).
+
+---
+
+### 1.7 Settlement-Verbindlichkeit & Einspruchsfrist
+
+**Status:** ENTSCHIEDEN (2026-06-10)
+
+- Die im **Seller-Dashboard angezeigte laufende Übersicht ist unverbindlich** (rein informativ).
+- **Verbindlich** ist ausschließlich der **wöchentliche Settlement-Bericht** nach **Ablauf der Einspruchsfrist**.
+- **Nachträglich** eingehende Chargebacks, Rückbuchungen oder Korrekturen werden mit dem **jeweils nächsten Settlement** verrechnet (nicht rückwirkend in einen bereits verbindlichen Bericht).
+
+> Offen: ob die **Einspruchsfrist** mit der **7-Tage-Haltefrist** (§1.2) zusammenfällt oder eine eigene Frist ist — bei Umsetzung zu klären.
+
+**Umsetzung:** Elysion-UG/elysion-marketplace-backend#145 (Settlement-Lifecycle informativ→verbindlich, Einspruchsfrist, Verrechnung) · Elysion-UG/elysion-frontend#58 (Dashboard: „unverbindlich"-Kennzeichnung + verbindlicher Wochenbericht).
+
+---
+
+### 1.8 Duplicate Charges / Duplicate Orders
+
+**Status:** ENTSCHIEDEN (2026-06-10) — mehrstufige Prävention, Restfälle manuell
+
+Residual-Duplikate, die durch alle automatischen Ebenen rutschen, werden **manuell** geprüft und entschieden (Storno + Refund oder Freigabe). Mehrstufige Prävention und Ist-Stand im Code:
+
+| #   | Mechanismus                                                                                                | Ebene           | Stand im Code                                                                                 |
+| --- | ---------------------------------------------------------------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------- |
+| 1   | **Button-Lock** im Checkout (Doppelklick verhindert)                                                       | Frontend        | ✅ vorhanden (`PaymentStep.tsx`, Submit während Request deaktiviert)                          |
+| 2   | **Idempotency Key** bei jedem Stripe-Request (+ Stripe-seitiger Unique Constraint)                         | Backend         | ✅ vorhanden (`PaymentIntentService` / `StripeHttpApiClient`)                                 |
+| 3   | **Duplikat-Check vor Order-Anlage** (`customer_id` + Cart-Hash < 120 s → bestehende Order zurückgeben)     | Backend         | ⚠️ **fehlt** — nur Duplicate-**PaymentIntent**-Blocking vorhanden, kein Cart-Hash/120 s-Guard |
+| 4   | **Webhook-Deduplizierung** (Event-ID, Doppel-Delivery ignorieren)                                          | Backend         | ✅ vorhanden (`providerEventId`-Idempotenz, `recordWebhookDuplicate`)                         |
+| 5   | **Täglicher Scan** (gleiche E-Mail + Lieferadresse + Line Items + < 30 min → Flag → manuelle Entscheidung) | Backend + Admin | ⚠️ **fehlt** — kein Scan-Job, keine Admin-Review-Sicht                                        |
+
+**Umsetzung der Lücken:** Elysion-UG/elysion-marketplace-backend#146 (Mechanismus 3 + 5) · Elysion-UG/elysion-frontend#59 (Admin-Review-UI für geflaggte Duplikate).
 
 ---
 
