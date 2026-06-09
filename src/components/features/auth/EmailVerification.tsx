@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Mail, CheckCircle, XCircle, RefreshCw, ArrowLeft, Loader2 } from "lucide-react"
 import { AuthService } from "@/src/services/auth.service"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { toast } from "sonner"
 
 type VerifyStatus = "loading" | "success" | "error" | "awaiting"
@@ -11,16 +12,15 @@ export default function EmailVerification() {
   const [status, setStatus] = useState<VerifyStatus>("awaiting")
   const [isResending, setIsResending] = useState(false)
   const [resendCount, setResendCount] = useState(0)
-  const [lastResendAt, setLastResendAt] = useState<number | null>(null)
+  const [resendCoolingDown, setResendCoolingDown] = useState(false)
   const [email, setEmail] = useState("")
 
   const MAX_RESENDS = 3
   const RESEND_COOLDOWN_MS = 60_000 // 60 seconds between resends
 
   const resendBlocked = resendCount >= MAX_RESENDS
-  const resendCoolingDown = lastResendAt !== null && Date.now() - lastResendAt < RESEND_COOLDOWN_MS
 
-  useEffect(() => {
+  const verifyTokenFromUrl = useEffectEvent(() => {
     const params = new URLSearchParams(window.location.search)
     const token = params.get("token")
     if (token) {
@@ -33,7 +33,18 @@ export default function EmailVerification() {
           setStatus("error")
         })
     }
+  })
+
+  useEffect(() => {
+    verifyTokenFromUrl()
   }, [])
+
+  // Lift the resend cooldown out of the timer-in-handler so it cancels on unmount
+  useEffect(() => {
+    if (!resendCoolingDown) return
+    const id = setTimeout(() => setResendCoolingDown(false), RESEND_COOLDOWN_MS)
+    return () => clearTimeout(id)
+  }, [resendCoolingDown])
 
   const handleResendEmail = async () => {
     if (!email.trim()) {
@@ -52,7 +63,7 @@ export default function EmailVerification() {
     try {
       await AuthService.resendVerification(email.trim())
       setResendCount((c) => c + 1)
-      setLastResendAt(Date.now())
+      setResendCoolingDown(true)
       toast.success("Verifizierungs-E-Mail wurde erneut gesendet!")
     } catch {
       toast.error("Fehler beim erneuten Senden.")

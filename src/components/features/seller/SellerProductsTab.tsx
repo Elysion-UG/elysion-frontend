@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { Plus, Edit, Package, RefreshCw, Loader2, CheckCircle2, Clock, Trash2 } from "lucide-react"
 import { ProductService } from "@/src/services/product.service"
 import ProductForm from "@/src/components/features/products/ProductForm"
@@ -48,8 +49,11 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
     }
   }, [userId, isApproved])
 
-  useEffect(() => {
+  const runProductsEffect = useEffectEvent(() => {
     fetchProducts()
+  })
+  useEffect(() => {
+    runProductsEffect()
   }, [fetchProducts])
 
   const handleStatusChange = async (productId: string, status: ProductStatus) => {

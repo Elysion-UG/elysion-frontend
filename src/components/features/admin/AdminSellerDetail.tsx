@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Loader2, CheckCircle2, XCircle, Ban, ExternalLink, Percent } from "lucide-react"
@@ -56,8 +57,11 @@ export default function AdminSellerDetailView() {
     }
   }, [id])
 
-  useEffect(() => {
+  const runEffect = useEffectEvent(() => {
     load()
+  })
+  useEffect(() => {
+    runEffect()
   }, [load])
 
   const handleApprove = async () => {

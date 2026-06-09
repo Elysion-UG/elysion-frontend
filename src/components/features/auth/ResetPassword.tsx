@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import Link from "next/link"
 import { Lock, Eye, EyeOff, CheckCircle2, XCircle, Loader2, AlertTriangle } from "lucide-react"
 import { AuthService } from "@/src/services/auth.service"
@@ -19,7 +20,7 @@ export default function ResetPassword() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
 
-  useEffect(() => {
+  const validateTokenFromUrl = useEffectEvent(() => {
     const params = new URLSearchParams(window.location.search)
     const t = params.get("token")
     if (!t) {
@@ -34,6 +35,10 @@ export default function ResetPassword() {
       .catch(() => {
         setStatus("invalid-token")
       })
+  })
+
+  useEffect(() => {
+    validateTokenFromUrl()
   }, [])
 
   const pwValidation = validatePassword(password)

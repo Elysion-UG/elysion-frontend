@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react"
 
 import { cn } from "@/src/lib/utils"
 import { Button } from "@/src/components/ui/button"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 
 type CarouselApi = UseEmblaCarouselType[1]
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>
@@ -92,16 +93,23 @@ const Carousel = React.forwardRef<
     setApi(api)
   }, [api, setApi])
 
+  const syncSelectedState = useEffectEvent(() => {
+    if (api) {
+      onSelect(api)
+    }
+  })
+
   React.useEffect(() => {
     if (!api) {
       return
     }
 
-    onSelect(api)
+    syncSelectedState()
     api.on("reInit", onSelect)
     api.on("select", onSelect)
 
     return () => {
+      api?.off("reInit", onSelect)
       api?.off("select", onSelect)
     }
   }, [api, onSelect])

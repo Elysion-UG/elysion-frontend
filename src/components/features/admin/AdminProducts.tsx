@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { useRouter } from "next/navigation"
 import { Loader2, ToggleLeft, ToggleRight, ExternalLink } from "lucide-react"
 import { cn } from "@/src/lib/utils"
@@ -79,8 +80,11 @@ export default function AdminProducts() {
     }
   }, [page, statusFilter, searchQuery])
 
-  useEffect(() => {
+  const runEffect = useEffectEvent(() => {
     load()
+  })
+  useEffect(() => {
+    runEffect()
   }, [load])
 
   const handleActivate = async (p: AdminProductListItem) => {

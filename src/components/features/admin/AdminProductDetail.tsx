@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { ExternalLink, Loader2, ToggleLeft, ToggleRight, ShieldCheck } from "lucide-react"
@@ -38,8 +39,11 @@ export default function AdminProductDetailView() {
     }
   }, [id])
 
-  useEffect(() => {
+  const runEffect = useEffectEvent(() => {
     load()
+  })
+  useEffect(() => {
+    runEffect()
   }, [load])
 
   const handleActivate = async () => {
