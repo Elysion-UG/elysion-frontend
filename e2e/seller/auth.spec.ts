@@ -56,15 +56,17 @@ test.describe("Seller – Login", () => {
     await context.close()
   })
 
-  test("Nicht eingeloggter User sieht Pending-Banner statt Produkte", async ({ page }) => {
-    // Eigener Context ohne Auth-State
+  test("Nicht eingeloggter User wird vom Dashboard auf Login umgeleitet", async ({ page }) => {
+    // Eigener Context ohne Auth-State → SellerGuard muss greifen
     const context = await page.context().browser()!.newContext()
     const freshPage = await context.newPage()
 
     await freshPage.goto("http://seller.localhost:3000/seller-dashboard")
-    await expect(freshPage.getByText("Verkäuferkonto wird geprüft")).toBeVisible({
-      timeout: 5_000,
-    })
+
+    // SellerGuard leitet auf die Seller-Login-Seite um, Dashboard bleibt verborgen
+    await expect(freshPage).toHaveURL(/login\/seller/, { timeout: 5_000 })
+    await expect(freshPage.getByRole("heading", { name: "Willkommen zurück" })).toBeVisible()
+    await expect(freshPage.getByText("Verkäuferkonto wird geprüft")).toHaveCount(0)
 
     await context.close()
   })
