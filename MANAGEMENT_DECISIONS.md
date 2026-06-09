@@ -20,15 +20,18 @@
 
 ### 1.1 Plattformgebühr / Seller-Commission
 
-**Status:** ENTSCHIEDEN (2026-06-01) — Frontend umgesetzt, Backend offen
+**Status:** ENTSCHIEDEN (2026-06-01) · **Fee-Modell aktualisiert 2026-06-10** (s. Änderungshinweis) — Frontend umgesetzt, Backend offen
 
 **Entscheidungen:**
 
-- **Höhe:** Default **15 %** für neue Seller.
+- **Höhe:** Default **15 %** Take Rate für neue Seller.
 - **Struktur:** **Pro Seller individuell**, vom Admin anpassbar (kein globaler Flat-Satz, keine automatische Volumen-Staffelung).
 - **Bezugsgröße:** Provision auf den **Warenwert pro OrderGroup, exkl. Versand**. Versandkosten bleiben provisionsfrei beim Seller.
-- **Stripe-Transaktionsgebühr:** trägt die **Plattform** (aus ihrer Provision); die Seller-Abrechnung bleibt „Brutto − Provision = Auszahlung".
-- **Seller-Einblick:** Seller sieht im Dashboard **Brutto, Gebühr (€) und Auszahlung** pro Bestellung — **nicht** den Prozentsatz (da Sätze pro Seller variieren).
+- **Stripe-Transaktionsgebühr:** trägt der **Seller** und wird **pro Transaktion separat** in der Seller-Abrechnung ausgewiesen (ca. 1,5 % + 0,25 €, **nicht** in die Take Rate eingepreist). Datenquelle ist das **Stripe-Charge-Objekt**. _(geändert 2026-06-10 — zuvor: trägt die Plattform.)_
+- **Refund-Gebühren:** Bei Retoure erstattet Stripe die ursprüngliche Transaktionsgebühr **nicht** — diese nicht erstattete Stripe-Fee wird dem Seller von der **nächsten Auszahlung** abgezogen. Die **Elysion-Kommission wird bei Retoure erstattet** (kein Plattform-Verdienst bei Retoure).
+- **Chargeback-Kosten:** **15 € Stripe-Fee pro Chargeback + Streitbetrag** werden dem **verursachenden Seller** zugeordnet und von der Auszahlung abgezogen. Elysion kann den Chargeback bei Stripe anfechten; bei Erfolg wird dem Seller rückerstattet.
+- **Pilot-Konditionen:** keine Monatsgebühren, keine Startgebühren für Pilot-Seller — Kosten entstehen **nur bei Verkauf** (15 % Take Rate + Stripe-Fees).
+- **Seller-Einblick:** Seller sieht im Dashboard pro Bestellung **Brutto, Elysion-Kommission (€) und Stripe-Fee (€)** sowie etwaige **Refund-/Chargeback-Abzüge** und die **Netto-Auszahlung** — **nicht** den Prozentsatz (da Sätze pro Seller variieren).
 
 **Frontend umgesetzt (2026-06-01):**
 
@@ -45,7 +48,11 @@
 **Bereits entschieden (überschreibbar):**
 
 - Beträge werden als Integer (Cent) gespeichert, niemals als Float
-- `settlement.platformFee` und `settlement.sellerNet` werden pro OrderGroup berechnet
+- Settlement-Line-Items pro OrderGroup: **Bruttoumsatz → Elysion-Kommission → Stripe-Fee → Refund-Fee-Abzug → Chargeback-Abzug → Netto-Auszahlung**
+
+**Änderungshinweis (2026-06-10):**
+
+Auf Basis beantworteter IT-/Management-Fragen wurde das Fee-Modell präzisiert: Die **Stripe-Transaktionsgebühr trägt nun der Seller** (separat ausgewiesen) statt der Plattform; zusätzlich neu geregelt sind **Refund-Fee-Abzug** und **Chargeback-Abzug** (15 € + Streitbetrag). Technische Grundlage: Stripe Connect, **Destination-Charge-Modell** (Elysion = Platform-Account, Seller = Connected Accounts); das Abrechnungsmodul führt separate Line Items. Umsetzung: Elysion-UG/elysion-marketplace-backend#140 (Backend) · Elysion-UG/elysion-frontend#53 (Frontend-Anzeige).
 
 ---
 
