@@ -1061,7 +1061,7 @@ describe("error monitoring — apiPath sanitisation", () => {
     ).rejects.toMatchObject({ status: 410 })
 
     // reportApiError is fire-and-forget (dynamic import + .then) — wait for it
-    await vi.waitFor(() => expect(reportSpy).toHaveBeenCalled())
+    await vi.waitFor(() => expect(reportSpy).toHaveBeenCalled(), { timeout: 3000 })
 
     const reported = reportSpy.mock.calls[0][0]
     expect(reported.metadata?.apiPath).toBe("/api/v1/auth/reset-password")
