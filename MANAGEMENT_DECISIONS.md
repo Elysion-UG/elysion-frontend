@@ -498,15 +498,15 @@ Noch nicht implementiert.
 
 Diese Punkte sind technische Bugs mit Sicherheitsrelevanz. Management muss Priorität und Zeitplan bestätigen:
 
-_Status-Update 2026-06-10 (Code-/Issue-Verifikation): Punkt 1 ist behoben (BE#61 geschlossen). Punkt 2 ist im Backend-Code bestätigt weiterhin offen (`AuthRateLimitFilter.clientIp()` vertraut dem ersten XFF-Eintrag); Frontend-Gegenstück FE#32. Punkte 3–5 sind unverifiziert — weder Issue noch bestätigter Fix gefunden._
+_Status-Update 2026-06-10 (Code-/Issue-Verifikation): Punkt 1 ist behoben (BE#61 geschlossen). Punkt 2 ist behoben (BE#149 + FE#32): Backend nutzt Tomcats RemoteIpValve statt client-vertrauendem XFF-Parsing; der Frontend-Auth-Proxy sendet die Vercel-verifizierte Client-IP als `X-Client-IP`, authentifiziert per Shared Secret (`AUTH_PROXY_SECRET` ↔ `APP_AUTH_RATE_LIMIT_TRUSTED_PROXY_SECRET`). Punkte 3–5 sind unverifiziert — weder Issue noch bestätigter Fix gefunden (→ BE#150)._
 
-| #   | Problem                                                                               | Aufwand | Kritikalität           |
-| --- | ------------------------------------------------------------------------------------- | ------- | ---------------------- |
-| 1   | ~~**E-Mail-Constraint lehnt gültige Corporate-Mails ab**~~ ✅ behoben (BE#61)         | —       | erledigt               |
-| 2   | **Rate-Limit-Bypass via X-Forwarded-For** (Brute-Force möglich) — **bestätigt offen** | ~4h     | P0 — Sicherheitsrisiko |
-| 3   | **Race-Condition bei Refresh-Token** (parallele Requests erzeugen 2 gültige Tokens)   | ~3h     | P0 — Session-Hijacking |
-| 4   | **Password-Reset-Links zeigen auf Backend** statt auf Frontend                        | ~2h     | P1 — UX-Blocker        |
-| 5   | **Refresh-Cookie-Pfad zu eng** (`/api/v1/auth` statt `/api/v1`)                       | ~1h     | P1                     |
+| #   | Problem                                                                             | Aufwand | Kritikalität           |
+| --- | ----------------------------------------------------------------------------------- | ------- | ---------------------- |
+| 1   | ~~**E-Mail-Constraint lehnt gültige Corporate-Mails ab**~~ ✅ behoben (BE#61)       | —       | erledigt               |
+| 2   | ~~**Rate-Limit-Bypass via X-Forwarded-For**~~ ✅ behoben (BE#149 + FE#32)           | —       | erledigt               |
+| 3   | **Race-Condition bei Refresh-Token** (parallele Requests erzeugen 2 gültige Tokens) | ~3h     | P0 — Session-Hijacking |
+| 4   | **Password-Reset-Links zeigen auf Backend** statt auf Frontend                      | ~2h     | P1 — UX-Blocker        |
+| 5   | **Refresh-Cookie-Pfad zu eng** (`/api/v1/auth` statt `/api/v1`)                     | ~1h     | P1                     |
 
 ---
 

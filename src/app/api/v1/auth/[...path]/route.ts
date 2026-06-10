@@ -25,21 +25,57 @@ function resolveBackendUrl(): string {
   return "http://localhost:8080"
 }
 
+/**
+ * Client IP as determined by the hosting platform (#32).
+ *
+ * On Vercel, x-real-ip is set by the edge to the observed client IP and
+ * cannot be client-spoofed — that is the primary source. x-forwarded-for
+ * is appended to (not replaced), so only the LAST entry is platform-added;
+ * the fallback therefore reads the rightmost entry, never the leftmost
+ * (which is client-controlled). Outside Vercel (local dev) both headers are
+ * client-controlled, but the backend only trusts the forwarded IP when
+ * AUTH_PROXY_SECRET is configured and matches — which is only the case on
+ * deployed environments.
+ */
+function platformClientIp(request: NextRequest): string {
+  const realIp = request.headers.get("x-real-ip")
+  if (realIp && isPlausibleIp(realIp.trim())) return realIp.trim()
+  const lastForwardedFor = request.headers.get("x-forwarded-for")?.split(",").at(-1)?.trim()
+  if (lastForwardedFor && isPlausibleIp(lastForwardedFor)) return lastForwardedFor
+  return "127.0.0.1"
+}
+
+// Light sanity check (IPv4/IPv6 charset + length) before forwarding the value
+// upstream — never relay arbitrary header content as an IP.
+function isPlausibleIp(value: string): boolean {
+  return value.length <= 45 && /^[0-9a-fA-F.:]+$/.test(value) && /[.:]/.test(value)
+}
+
 async function proxy(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params
   const subpath = path.join("/")
   const url = new URL(request.url)
   const qs = url.search
 
-  const forwardedFor =
-    request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? "127.0.0.1"
-  const realIp = request.headers.get("x-real-ip") ?? forwardedFor.split(",")[0].trim()
+  const clientIp = platformClientIp(request)
 
   const outgoingHeaders: Record<string, string> = {
     "Content-Type": request.headers.get("content-type") ?? "application/json",
     Cookie: request.headers.get("cookie") ?? "",
-    "X-Forwarded-For": forwardedFor,
-    "X-Real-IP": realIp,
+    // Forward only the platform-verified client IP — never the raw,
+    // client-controlled header chain (rate-limit spoofing, see #32).
+    // X-Real-IP is deliberately NOT forwarded: the backend must never treat
+    // a client-influenced header as trusted; X-Client-IP + proxy secret is
+    // the only trusted channel.
+    "X-Forwarded-For": clientIp,
+    "X-Client-IP": clientIp,
+  }
+
+  // Shared secret that lets the backend trust X-Client-IP for rate limiting
+  // (backend: app.auth.rate-limit.trusted-proxy-secret, see backend#149).
+  const proxySecret = process.env.AUTH_PROXY_SECRET
+  if (proxySecret) {
+    outgoingHeaders["X-Auth-Proxy-Secret"] = proxySecret
   }
 
   const authorization = request.headers.get("authorization")
