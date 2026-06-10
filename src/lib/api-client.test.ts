@@ -67,6 +67,15 @@ describe("buildQuery", () => {
   it("stringifies numbers and booleans", () => {
     expect(buildQuery({ active: true, count: 42 })).toBe("?active=true&count=42")
   })
+
+  it("expands array values into a repeatable param", () => {
+    expect(buildQuery({ material: ["leinen", "hanf"] })).toBe("?material=leinen&material=hanf")
+  })
+
+  it("skips empty arrays and blank array items", () => {
+    expect(buildQuery({ material: [] })).toBe("")
+    expect(buildQuery({ material: ["leinen", ""] })).toBe("?material=leinen")
+  })
 })
 
 // ── ApiError ───────────────────────────────────────────────────────────────────

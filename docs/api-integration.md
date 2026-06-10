@@ -193,10 +193,14 @@ POST /api/v1/admin/maintenance/cleanup-refresh-tokens → { deletedCount }
 POST /api/v1/admin/maintenance/expire-pending-orders  → { expiredCount }
 
 GET  /api/v1/products                   → ProductPage (custom pagination: items[], totalItems, page)
+                                          Filter: search, categoryId, sellerId, minPrice, maxPrice,
+                                          material (repeatable: ?material=leinen&material=hanf), sort, page, size
 GET  /api/v1/products/{slug}            → ProductDetail
-POST /api/v1/products                   → ProductCommandResponse
-PATCH /api/v1/products/{id}             → ProductCommandResponse
+POST /api/v1/products                   → ProductCommandResponse  (Body: optional materialIds: string[])
+PATCH /api/v1/products/{id}             → ProductCommandResponse  (materialIds: null=unverändert, []=leeren)
 PATCH /api/v1/products/{id}/status      → ProductCommandResponse
+
+GET  /api/v1/materials                  → Material[]  (Stammdaten: id, slug, name — Filter-Facette + Seller-Formular)
 
 GET  /api/v1/cart                       → Cart
 POST /api/v1/cart/items                 → Cart

@@ -123,6 +123,8 @@ export type {
   PayoutDueItem,
 } from "./admin"
 
+export type { Material } from "./material"
+
 export type { SellerPayoutAccountStatus, SellerPayoutAccount, PayoutOnboardingLink } from "./payout"
 
 export type { Recommendation } from "./recommendations"
