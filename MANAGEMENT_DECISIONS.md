@@ -226,6 +226,23 @@ Residual-Duplikate, die durch alle automatischen Ebenen rutschen, werden **manue
 
 ---
 
+### 1.9 Fehlerkommunikation im Checkout & Payment
+
+**Status:** ENTSCHIEDEN (2026-06-10) — Kommunikationsprinzip
+
+**Grundsatz:** Fehler werden **nur** dann gegenüber dem Kunden kommuniziert, wenn wir sicher sind, dass dem Kunden ein **Nachteil entsteht, der unsere Versprechen überschreitet** (z. B. zugesagte Lieferzeit, ein Zahlungsproblem auf unserer Seite). Interne/transiente Fehler ohne Kundennachteil werden **nicht** aktiv kommuniziert (still behandeln / retryen / loggen).
+
+**Wenn kommuniziert wird, immer offen und transparent:**
+
+1. **welche Instanz** den Fehler verursacht hat (Kunde, Plattform/Elysion, Seller, Zahlungsdienstleister), und
+2. die **konkreten Konsequenzen** für den Kunden (was passiert jetzt, was ist zu tun).
+
+Heutiger Stand: generische Meldungen (z. B. „Bestellung konnte nicht abgeschlossen werden", „Zahlung fehlgeschlagen") ohne Instanz-/Konsequenz-Angabe → an das Prinzip anzugleichen.
+
+**Umsetzung:** Elysion-UG/elysion-marketplace-backend#147 (Fehler-Attribution: Instanz + Konsequenz in Payment-/Checkout-Fehlerantworten) · Elysion-UG/elysion-frontend#60 (Checkout-/Payment-Fehlermeldungen an das Prinzip angleichen).
+
+---
+
 ## II. Seller-Management & Zertifizierung
 
 ### 2.1 Seller-Zulassungsprozess
