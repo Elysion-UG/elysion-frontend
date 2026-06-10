@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { DollarSign, RefreshCw, Loader2 } from "lucide-react"
 import { SellerOrderService } from "@/src/services/seller-order.service"
 import type { Settlement } from "@/src/types"
@@ -39,8 +40,11 @@ export default function SellerSettlementsTab() {
     }
   }, [])
 
-  useEffect(() => {
+  const runSettlementsEffect = useEffectEvent(() => {
     fetchSettlements()
+  })
+  useEffect(() => {
+    runSettlementsEffect()
   }, [fetchSettlements])
 
   return (

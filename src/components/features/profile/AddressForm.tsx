@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { X, Loader2 } from "lucide-react"
 import type { Address, AddressDTO, AddressType } from "@/src/types"
 import { toCountryCode, toCountryName } from "@/src/lib/country"
@@ -26,7 +27,7 @@ export default function AddressForm({ isOpen, onClose, onSave, address }: Addres
   const [isDefault, setIsDefault] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
-  useEffect(() => {
+  const syncFormFromAddress = useEffectEvent(() => {
     if (address) {
       setType(address.type)
       setFirstName(address.firstName)
@@ -48,6 +49,10 @@ export default function AddressForm({ isOpen, onClose, onSave, address }: Addres
       setCountry("Deutschland")
       setIsDefault(false)
     }
+  })
+
+  useEffect(() => {
+    syncFormFromAddress()
   }, [address, isOpen])
 
   const handleSubmit = async (e: React.FormEvent) => {

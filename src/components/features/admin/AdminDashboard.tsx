@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import Link from "next/link"
 import {
   Users,
@@ -115,8 +116,11 @@ export default function AdminDashboard() {
     }
   }, [])
 
-  useEffect(() => {
+  const runEffect = useEffectEvent(() => {
     loadDashboard()
+  })
+  useEffect(() => {
+    runEffect()
   }, [loadDashboard])
 
   if (error) {

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { useParams, useRouter } from "next/navigation"
 import {
   ArrowLeft,
@@ -95,8 +96,11 @@ export default function AdminCertificateDetail() {
     }
   }, [params.id])
 
-  useEffect(() => {
+  const runEffect = useEffectEvent(() => {
     load()
+  })
+  useEffect(() => {
+    runEffect()
   }, [load])
 
   const handleVerify = async () => {

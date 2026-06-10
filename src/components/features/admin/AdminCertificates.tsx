@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { useRouter } from "next/navigation"
 import { CheckCircle2, XCircle, ExternalLink } from "lucide-react"
 import { CertificateService } from "@/src/services/certificate.service"
@@ -51,8 +52,11 @@ export default function AdminCertificates() {
     }
   }, [filter])
 
-  useEffect(() => {
+  const runEffect = useEffectEvent(() => {
     load()
+  })
+  useEffect(() => {
+    runEffect()
   }, [load])
 
   const handleVerify = async (cert: Certificate) => {

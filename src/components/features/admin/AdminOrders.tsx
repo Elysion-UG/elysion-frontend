@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { useRouter } from "next/navigation"
 import { AdminService } from "@/src/services/admin.service"
 import type { AdminOrderListItem, OrderStatus } from "@/src/types"
@@ -67,8 +68,11 @@ export default function AdminOrders() {
     }
   }, [page, statusFilter, searchQuery])
 
-  useEffect(() => {
+  const runEffect = useEffectEvent(() => {
     load()
+  })
+  useEffect(() => {
+    runEffect()
   }, [load])
 
   return (

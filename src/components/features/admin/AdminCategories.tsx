@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { Plus, Loader2, RefreshCw } from "lucide-react"
 import { CategoryService, buildCategoryTree } from "@/src/services/category.service"
 import type { CategoryTreeNode, CategoryCreateDTO, CategoryUpdateDTO, Category } from "@/src/types"
@@ -68,8 +69,11 @@ export default function AdminCategories() {
     }
   }, [])
 
-  useEffect(() => {
+  const runEffect = useEffectEvent(() => {
     load()
+  })
+  useEffect(() => {
+    runEffect()
   }, [load])
 
   const parentOptions = useMemo(() => flattenTree(tree), [tree])
