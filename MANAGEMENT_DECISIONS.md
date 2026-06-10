@@ -55,10 +55,10 @@
 
 **Entscheidungen:**
 
-- **Auslöser:** **Manuelle Admin-Freigabe** auf festem wöchentlichem Rhythmus (keine Selbstauslösung durch Seller). _Ob die wöchentliche Freigabe automatisiert (Cron, mittwochs) statt manuell erfolgt, ist offen — s. Issue._
+- **Auslöser:** **Manuelle Admin-Freigabe** an einem **festen Mittwoch-Rhythmus** (keine Selbstauslösung durch Seller). _Festlegung 2026-06-10 (logisch, überschreibbar): für den Pilot **manuell** statt Cron — geringe Stückzahl, manueller Review schützt vor Fehl-/Betrugs-Payouts; **Cron-Automatisierung als spätere Option**._
 - **Ausführungsweg:** **Echte Stripe-Auszahlung über Stripe Connect (Express-Accounts)**. Stripe übernimmt KYC/Compliance und IBAN-Verwaltung (→ entschärft §2.1-KYC); die Plattform behält Provisions-Kontrolle (`application_fee`) und Branding.
 - **Intervall:** **Wöchentlich** — Auszahlungstag ist **Mittwoch**; ausgezahlt werden alle Settlements, deren 7-Tage-Haltefrist bis dahin abgelaufen ist. _(geändert 2026-06-10 — zuvor: monatlich.)_
-- **Haltefrist:** **7 Tage** ab Erfüllung des Auslösers, bevor ein Settlement auszahlbar wird (Schutz im Retouren-/Storno-Fenster). _Werktage vs. Kalendertage noch zu bestätigen._
+- **Haltefrist:** **7 Kalendertage** ab Erfüllung des Auslösers, bevor ein Settlement auszahlbar wird (Schutz im Retouren-/Storno-Fenster). _Festlegung 2026-06-10 (logisch): Kalendertage statt Werktage — vorhersehbar bei fixem Mittwochs-Payout; Stripe-Dispute-/Payout-Fenster sind kalenderbasiert._
 - **Mindestbetrag:** **keiner** (zeitbasiert statt betragsbasiert) → kein Vortrag/keine Sperre nötig.
 - **Settlement-Auslöser:** ab Order-Status **`DELIVERED`** (unverändert) **+ 7-Tage-Haltefrist**; Auszahlung am darauffolgenden Mittwoch.
 - **Benachrichtigung:** **eigene gebrandete Plattform-E-Mail** bei Auszahlung (zusätzlich zu Stripes eigener Benachrichtigung).
@@ -85,7 +85,7 @@
 
 **Änderungshinweis (2026-06-10):**
 
-Auszahlungs-Timing präzisiert (beantwortete IT-Frage): Intervall **monatlich → wöchentlich**, fester **Auszahlungstag Mittwoch**, **7-Tage-Haltefrist** vor Auszahlbarkeit. Der **Auslöser bleibt `DELIVERED`** (kein Wechsel auf reine Stripe-Bestätigung) — schützt vor Auszahlung im Retouren-Fenster. Offen: 7 Tage Werktage oder Kalendertage; ob die wöchentliche Freigabe automatisiert (Cron) oder weiter per Admin erfolgt. Umsetzung: Elysion-UG/elysion-marketplace-backend#111 (Scope auf wöchentlich/Mittwoch/Haltefrist aktualisiert).
+Auszahlungs-Timing präzisiert (beantwortete IT-Frage): Intervall **monatlich → wöchentlich**, fester **Auszahlungstag Mittwoch**, **7-Tage-Haltefrist** vor Auszahlbarkeit. Der **Auslöser bleibt `DELIVERED`** (kein Wechsel auf reine Stripe-Bestätigung) — schützt vor Auszahlung im Retouren-Fenster. **Logisch festgelegt (2026-06-10):** Haltefrist = **7 Kalendertage**; Freigabe **manuell** an festem Mittwoch (Cron später). Umsetzung: Elysion-UG/elysion-marketplace-backend#111 (Scope auf wöchentlich/Mittwoch/Haltefrist aktualisiert).
 
 ---
 
@@ -138,11 +138,14 @@ Backend unterstützt vollständige und teilweise Rückerstattungen. Keine Self-S
 - **Settlement-Wirkung:** Bei Refund wird die Elysion-Kommission erstattet, die nicht erstattete Stripe-Fee dem Seller abgezogen (s. §1.1 / Backend #140); Auswirkung auf die Auszahlung über die Haltefrist (§1.2).
 - **Buyer-Rückgabe-Flow** (Antrag → Genehmigung → Refund) ist im **Miro-BPMN „Retoure"** spezifiziert und wird als **eigenes Thema** umgesetzt (noch nicht in den unten verlinkten Issues).
 
+**Festlegung (2026-06-10, logisch — Rechtsstandard):**
+
+- **Zeitfenster:** **14 Tage gesetzliches Widerrufsrecht** als Standard (Kulanz darüber hinaus möglich) — konsistent mit dem bereits im Shop ausgewiesenen „14 Tage Widerrufsrecht".
+- **Keine Restocking-Gebühr** — beim gesetzlichen Widerruf grundsätzlich unzulässig und passt zur kundenfreundlichen/nachhaltigen Positionierung.
+
 **Noch offen:**
 
-- Zeitfenster für Erstattungen (14 / 30 / 60 Tage)?
-- Vollerstattung oder Restocking-Gebühr?
-- Detaillierter Eskalations-/Dispute-Prozess (über die Rollenzuordnung hinaus)
+- Detaillierter Eskalations-/Dispute-Prozess (über die Rollenzuordnung hinaus) — folgt mit dem Miro-BPMN „Retoure".
 
 **Bereits entschieden (überschreibbar):**
 
@@ -202,7 +205,7 @@ Beantwortete IT-Fragen zu Zahlungs-Sonderfällen. Ausgangslage im Code: Stripe c
 - **Verbindlich** ist ausschließlich der **wöchentliche Settlement-Bericht** nach **Ablauf der Einspruchsfrist**.
 - **Nachträglich** eingehende Chargebacks, Rückbuchungen oder Korrekturen werden mit dem **jeweils nächsten Settlement** verrechnet (nicht rückwirkend in einen bereits verbindlichen Bericht).
 
-> Offen: ob die **Einspruchsfrist** mit der **7-Tage-Haltefrist** (§1.2) zusammenfällt oder eine eigene Frist ist — bei Umsetzung zu klären.
+**Festlegung (2026-06-10, logisch):** Die **Einspruchsfrist entspricht der 7-Kalendertage-Haltefrist** (§1.2) — **eine** einzige Frist, kein zweiter Timer. Nach ihrem Ablauf wird der Wochenbericht **verbindlich** und am selben Mittwoch ausgezahlt (Verbindlichkeit + Auszahlung fallen zusammen).
 
 **Umsetzung:** Elysion-UG/elysion-marketplace-backend#145 (Settlement-Lifecycle informativ→verbindlich, Einspruchsfrist, Verrechnung) · Elysion-UG/elysion-frontend#58 (Dashboard: „unverbindlich"-Kennzeichnung + verbindlicher Wochenbericht).
 
