@@ -93,13 +93,13 @@ Ein Journalist (oder ein Konkurrent) lud ein gefälschtes GOTS-Zertifikat hoch �
 
 Die P0-Lücken waren seit März 2026 dokumentiert (`MANAGEMENT_DECISIONS.md` §5.4). Stand 2026-06-10 verifiziert:
 
-| §5.4-Punkt                                  | Status                                                                                                                                             |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| E-Mail-Constraint lehnt gültige Adressen ab | ✅ behoben (BE#61 geschlossen)                                                                                                                     |
-| Rate-Limit-Bypass via X-Forwarded-For       | ❌ **offen** — `AuthRateLimitFilter.clientIp()` vertraut blind dem ersten XFF-Eintrag; **kein Backend-Issue** (FE#32 deckt nur den Frontend-Proxy) |
-| Refresh-Token-Race-Condition                | ⚠️ unverifiziert — kein Issue auffindbar                                                                                                           |
-| Password-Reset-Links zeigen auf Backend     | ⚠️ unverifiziert                                                                                                                                   |
-| Refresh-Cookie-Pfad zu eng                  | ⚠️ unverifiziert                                                                                                                                   |
+| §5.4-Punkt                                  | Status                                                                                                                                 |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| E-Mail-Constraint lehnt gültige Adressen ab | ✅ behoben (BE#61 geschlossen)                                                                                                         |
+| Rate-Limit-Bypass via X-Forwarded-For       | ✅ behoben (BE#149 + FE#32) — RemoteIpValve statt XFF-Vertrauen; Auth-Proxy sendet Vercel-verifizierte `X-Client-IP` mit Shared Secret |
+| Refresh-Token-Race-Condition                | ⚠️ unverifiziert — kein Issue auffindbar                                                                                               |
+| Password-Reset-Links zeigen auf Backend     | ⚠️ unverifiziert                                                                                                                       |
+| Refresh-Cookie-Pfad zu eng                  | ⚠️ unverifiziert                                                                                                                       |
 
 Dazu: keine Account-Sperrung bei Brute-Force (§5.1, als BLOCKER markiert — **kein Issue**), keine serverseitige Auth-Schicht im Frontend (FE#68), 8 offene `security`-Issues im Frontend. Ein Credential-Stuffing-Angriff auf Buyer-Accounts mit hinterlegten Adressen wurde zur DSGVO-Meldepflicht binnen 72 h — und wurde spät bemerkt, weil die Monitoring-Persistenz (BE#115) nie gebaut wurde.
 
