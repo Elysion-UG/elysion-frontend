@@ -79,11 +79,11 @@ Die Prod-DB ist im Projektverlauf **schon einmal gelöscht worden** (alter Rende
 
 **Wahrscheinlichkeit: niedrig · Schaden: tödlich**
 
-Ein Journalist (oder ein Konkurrent) lud ein gefälschtes GOTS-Zertifikat hoch — es wurde verifiziert, das Produkt ging live. Es gibt keinen dokumentierten Prozess, wie ein Admin ein Zertifikat tatsächlich validiert (z. B. Abgleich gegen die öffentlichen Zertifikatsregister von GOTS/Fairtrade/OEKO-TEX). Die Story „Nachhaltigkeits-Marketplace prüft Zertifikate nicht" zerstörte genau das Asset, das Elysion von Amazon unterscheidet. Verschärfend lag im selben Pfad eine bekannte XSS-Lücke Seller→Admin über die Zertifikats-`documentUrl` (FE#64).
+Ein Journalist (oder ein Konkurrent) lud ein gefälschtes GOTS-Zertifikat hoch — es wurde verifiziert, das Produkt ging live. Es gibt keinen dokumentierten Prozess, wie ein Admin ein Zertifikat tatsächlich validiert (z. B. Abgleich gegen die öffentlichen Zertifikatsregister von GOTS/Fairtrade/OEKO-TEX). Die Story „Nachhaltigkeits-Marketplace prüft Zertifikate nicht" zerstörte genau das Asset, das Elysion von Amazon unterscheidet. Verschärfend lag im selben Pfad eine XSS-Lücke Seller→Admin über die Zertifikats-`documentUrl` (FE#64) — ✅ inzwischen behoben (Full-Stack: nur `http(s)` erlaubt, Render unsicherer URLs als Plaintext).
 
 **Zusätzlich konzeptionell:** `LEVEL_2`/`LEVEL_3` (§2.2) sind semantisch undefiniert — das Werteprofil-Matching (der zweite USP) matcht auf undefinierte Kategorien.
 
-**Gegenmittel:** Verifikations-SOP schreiben (Registerabgleich, Vier-Augen-Prinzip bei Erstverifizierung eines Sellers); FE#64 fixen; §2.2-Semantik definieren. → **SOP und Stufen-Semantik haben kein Issue.**
+**Gegenmittel:** Verifikations-SOP schreiben (Registerabgleich, Vier-Augen-Prinzip bei Erstverifizierung eines Sellers); ~~FE#64 fixen~~ ✅ erledigt; §2.2-Semantik definieren. → **SOP und Stufen-Semantik haben kein Issue.**
 
 ---
 
