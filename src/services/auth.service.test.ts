@@ -177,4 +177,21 @@ describe("AuthService", () => {
       })
     )
   })
+
+  it("validateResetToken — sends token via POST body, never in the URL", async () => {
+    mockApiRequest.mockResolvedValue(undefined)
+
+    await AuthService.validateResetToken("reset-token-abc")
+
+    expect(mockApiRequest).toHaveBeenCalledWith(
+      "/api/v1/auth/reset-password/validate",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ token: "reset-token-abc" }),
+      })
+    )
+    const calledPath = mockApiRequest.mock.calls[0][0] as string
+    expect(calledPath).not.toContain("?")
+    expect(calledPath).not.toContain("reset-token-abc")
+  })
 })
