@@ -17,6 +17,7 @@ import {
   Building,
 } from "lucide-react"
 import { CertificateService } from "@/src/services/certificate.service"
+import { safeHttpUrl } from "@/src/lib/safe-url"
 import type { Certificate } from "@/src/types"
 import {
   ADMIN_CERTIFICATE_STATUS_LABEL as statusLabel,
@@ -135,6 +136,8 @@ export default function AdminCertificateDetail() {
       </div>
     )
   }
+
+  const safeDocumentUrl = safeHttpUrl(cert.documentUrl)
 
   return (
     <div className="animate-fade-up">
@@ -269,15 +272,24 @@ export default function AdminCertificateDetail() {
           <h2 className="mb-3 font-mono text-sm font-semibold uppercase tracking-wider text-slate-400">
             Dokument
           </h2>
-          <a
-            href={cert.documentUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg border border-cyber-800/60 bg-cyber-950/40 px-4 py-2.5 text-sm font-medium text-cyber-400 transition-colors hover:bg-cyber-900/40 hover:text-cyber-300"
-          >
-            <ExternalLink className="h-4 w-4" />
-            Dokument öffnen
-          </a>
+          {safeDocumentUrl ? (
+            <a
+              href={safeDocumentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-cyber-800/60 bg-cyber-950/40 px-4 py-2.5 text-sm font-medium text-cyber-400 transition-colors hover:bg-cyber-900/40 hover:text-cyber-300"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Dokument öffnen
+            </a>
+          ) : (
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-amber-500">
+                ⚠ Unsichere Dokument-URL — kein Link (nur http/https erlaubt)
+              </p>
+              <p className="break-all font-mono text-xs text-slate-500">{cert.documentUrl}</p>
+            </div>
+          )}
         </div>
       )}
 
