@@ -1030,6 +1030,46 @@ describe("429 rate-limit handling", () => {
   })
 })
 
+// ── Error monitoring — apiPath must never contain query strings ──────────────
+//
+// Query params can carry secrets (e.g. one-time password-reset tokens). The
+// monitoring metadata persists apiPath in the backend, so reportApiError must
+// strip everything after "?" (issue #66).
+
+describe("error monitoring — apiPath sanitisation", () => {
+  beforeEach(() => {
+    setAccessToken(null)
+    vi.stubGlobal("fetch", vi.fn())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    setAccessToken(null)
+  })
+
+  it("strips the query string from apiPath when reporting a failed request", async () => {
+    const { errorStore } = await import("@/src/lib/error-store")
+    const reportSpy = vi.spyOn(errorStore, "report")
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(mockFetchResponse(410, { message: "Token expired" }, false))
+    )
+
+    await expect(
+      apiRequest("/api/v1/auth/reset-password?token=super-secret-token")
+    ).rejects.toMatchObject({ status: 410 })
+
+    // reportApiError is fire-and-forget (dynamic import + .then) — wait for it
+    await vi.waitFor(() => expect(reportSpy).toHaveBeenCalled())
+
+    const reported = reportSpy.mock.calls[0][0]
+    expect(reported.metadata?.apiPath).toBe("/api/v1/auth/reset-password")
+    expect(JSON.stringify(reported)).not.toContain("super-secret-token")
+    reportSpy.mockRestore()
+  })
+})
+
 // ── decodeJwtClaims ───────────────────────────────────────────────────────────
 // Used by AuthContext as a final fallback when /users/me 403s and no persisted
 // session exists. The decoder must NEVER throw on bad input — it always

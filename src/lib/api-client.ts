@@ -200,11 +200,13 @@ function reportApiError(
                 ? ("medium" as const)
                 : ("low" as const)
 
+      // Strip the query string — query params can carry secrets (e.g. one-time
+      // tokens) and must never reach the persisted error monitoring (issue #66).
       errorStore.report({
         severity,
         category,
         message,
-        metadata: { apiPath: path, statusCode: status },
+        metadata: { apiPath: path.split("?")[0], statusCode: status },
       })
     })
   } catch {
