@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { Loader2, Banknote, CheckCircle2, AlertTriangle } from "lucide-react"
 import { SellerPayoutService } from "@/src/services/seller-payout.service"
+import { assertStripeRedirectUrl } from "@/src/lib/stripe-redirect"
 import type { SellerPayoutAccount } from "@/src/types"
 import { toast } from "sonner"
 import { payoutAccountStatusLabel, payoutAccountStatusColor } from "./sellerDashboard.constants"
@@ -41,7 +42,7 @@ export default function SellerPayoutAccountCard() {
     setRedirecting(true)
     try {
       const { url } = await SellerPayoutService.createOnboardingLink()
-      window.location.href = url
+      window.location.href = assertStripeRedirectUrl(url)
     } catch {
       toast.error("Verbindung zu Stripe konnte nicht hergestellt werden.")
       setRedirecting(false)
