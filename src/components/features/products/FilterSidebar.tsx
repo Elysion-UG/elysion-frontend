@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { Leaf, ChevronDown, ChevronRight, Star, UserCircle } from "lucide-react"
+import { Leaf, ChevronDown, ChevronRight, Star, UserCircle, Shirt } from "lucide-react"
 import { formatEuro } from "@/src/lib/currency"
+import type { Material } from "@/src/types"
 import { sustainabilityFilters, importanceScale } from "./shop-constants"
 
 interface FilterSidebarProps {
@@ -12,6 +13,9 @@ interface FilterSidebarProps {
   onImportanceChange: (attribute: string, importance: string) => void
   priceRange: { min: number; max: number }
   onPriceRangeChange: (range: { min: number; max: number }) => void
+  materials: Material[]
+  selectedMaterials: string[]
+  onToggleMaterial: (slug: string) => void
   onPageReset: () => void
 }
 
@@ -22,6 +26,9 @@ export default function FilterSidebar({
   onImportanceChange,
   priceRange,
   onPriceRangeChange,
+  materials,
+  selectedMaterials,
+  onToggleMaterial,
   onPageReset,
 }: FilterSidebarProps) {
   const [expandedSections, setExpandedSections] = useState({
@@ -29,7 +36,10 @@ export default function FilterSidebar({
     categories: false,
   })
   const [expandedFilters, setExpandedFilters] = useState<Record<string, boolean>>({})
-  const [expandedFilterSections, setExpandedFilterSections] = useState({ price: true })
+  const [expandedFilterSections, setExpandedFilterSections] = useState({
+    price: true,
+    materials: true,
+  })
 
   const toggleSection = (key: "sustainability" | "categories") => {
     setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -192,6 +202,50 @@ export default function FilterSidebar({
           </div>
         )}
       </div>
+
+      {/* Material */}
+      {materials.length > 0 && (
+        <div className="border-t border-stone-100">
+          <button
+            onClick={() =>
+              setExpandedFilterSections((prev) => ({ ...prev, materials: !prev.materials }))
+            }
+            className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-colors hover:bg-stone-50"
+          >
+            <div className="flex items-center gap-2">
+              <Shirt className="h-3.5 w-3.5 text-sage-600" />
+              <span className="text-sm font-medium text-stone-700">Material</span>
+              {selectedMaterials.length > 0 && (
+                <span className="rounded-full bg-sage-100 px-1.5 py-0.5 text-[10px] font-medium text-sage-700">
+                  {selectedMaterials.length}
+                </span>
+              )}
+            </div>
+            {expandedFilterSections.materials ? (
+              <ChevronDown className="h-4 w-4 text-stone-400" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-stone-400" />
+            )}
+          </button>
+          {expandedFilterSections.materials && (
+            <ul className="space-y-1 px-4 pb-4">
+              {materials.map((material) => (
+                <li key={material.id}>
+                  <label className="flex cursor-pointer items-center gap-2.5 py-1 text-sm text-stone-600">
+                    <input
+                      type="checkbox"
+                      checked={selectedMaterials.includes(material.slug)}
+                      onChange={() => onToggleMaterial(material.slug)}
+                      className="h-4 w-4 rounded border-stone-300 text-sage-600 focus:ring-sage-300"
+                    />
+                    <span>{material.name}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   )
 }

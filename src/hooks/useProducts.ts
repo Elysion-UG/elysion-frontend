@@ -7,6 +7,7 @@ export const PRODUCTS_PAGE_SIZE = 12
 interface FetchProductsParams {
   search: string
   priceRange: { min: number; max: number }
+  materials: string[]
   apiSort: string | undefined
   currentPage: number
 }
@@ -16,6 +17,7 @@ async function fetchProducts(params: FetchProductsParams) {
     search: params.search || undefined,
     minPrice: params.priceRange.min > 0 ? params.priceRange.min : undefined,
     maxPrice: params.priceRange.max < 300 ? params.priceRange.max : undefined,
+    materials: params.materials.length > 0 ? params.materials : undefined,
     sort: params.apiSort,
     page: params.currentPage,
     size: PRODUCTS_PAGE_SIZE,

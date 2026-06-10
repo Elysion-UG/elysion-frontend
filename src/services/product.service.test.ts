@@ -59,6 +59,18 @@ describe("ProductService", () => {
       expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products?categoryId=cat_1")
     })
 
+    it("serializes materials as a repeatable material param", async () => {
+      mockApiRequest.mockResolvedValue(mockApiProductPage)
+      await ProductService.list({ materials: ["leinen", "hanf"] })
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products?material=leinen&material=hanf")
+    })
+
+    it("omits the material param for an empty materials array", async () => {
+      mockApiRequest.mockResolvedValue(mockApiProductPage)
+      await ProductService.list({ materials: [] })
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products")
+    })
+
     it("appends sellerId param", async () => {
       mockApiRequest.mockResolvedValue(mockApiProductPage)
       await ProductService.list({ sellerId: "sel_1" })
