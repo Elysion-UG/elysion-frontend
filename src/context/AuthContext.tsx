@@ -20,6 +20,7 @@ import type {
 } from "@/src/types"
 import { AuthService } from "@/src/services/auth.service"
 import {
+  ApiError,
   setAccessToken,
   refreshSession,
   saveAuthSession,
@@ -64,6 +65,24 @@ function userFromAccessToken(accessToken: string): User | null {
     status: "ACTIVE",
     createdAt: claims.iat ? new Date(claims.iat * 1000).toISOString() : new Date(0).toISOString(),
   }
+}
+
+/**
+ * Backoff-Verzögerungen für transiente Refresh-Fehler beim Session-Restore.
+ * Nur ein definitives 401 bedeutet „Refresh-Cookie ungültig" — Netzwerkfehler
+ * (Status 0), 429 und 5xx (z. B. Staging-Kaltstart) dürfen die Session nicht
+ * sofort beenden (#89).
+ */
+export const SESSION_RESTORE_RETRY_DELAYS_MS = [1_000, 3_000]
+
+/**
+ * Transient = der Refresh-Cookie ist möglicherweise noch gültig, nur die
+ * Zustellung ist gescheitert: Netzwerkfehler (Status 0), Rate-Limit (429)
+ * oder Server-/Infrastrukturfehler (5xx). Alles andere — insbesondere 401 —
+ * ist eine definitive Ablehnung des Cookies.
+ */
+function isTransientRefreshError(err: unknown): boolean {
+  return err instanceof ApiError && (err.status === 0 || err.status === 429 || err.status >= 500)
 }
 
 // ── Context ────────────────────────────────────────────────────────────────────
@@ -118,7 +137,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // after a logout that happened while this refresh was in flight.
   useEffect(() => {
     const gen = getAuthGeneration()
-    refreshSession()
+    let cancelled = false
+
+    // Transiente Fehler (Netzwerk, 429, 5xx) mit Backoff erneut versuchen —
+    // eine definitive Ablehnung (401) bricht sofort ab. isLoading bleibt
+    // während der Retries true, sodass Guards den Spinner statt des
+    // Login-Prompts zeigen.
+    const refreshWithRetry = async (): Promise<unknown> => {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          return await refreshSession()
+        } catch (err) {
+          const outOfRetries = attempt >= SESSION_RESTORE_RETRY_DELAYS_MS.length
+          if (
+            !isTransientRefreshError(err) ||
+            outOfRetries ||
+            cancelled ||
+            gen !== getAuthGeneration()
+          ) {
+            throw err
+          }
+          await new Promise((resolve) =>
+            setTimeout(resolve, SESSION_RESTORE_RETRY_DELAYS_MS[attempt])
+          )
+          // Während des Sleeps kann unmount/logout passiert sein — vor dem
+          // nächsten Netzwerk-Call erneut prüfen.
+          if (cancelled || gen !== getAuthGeneration()) throw err
+        }
+      }
+    }
+
+    refreshWithRetry()
       .then(async (res) => {
         if (gen !== getAuthGeneration()) return // logout happened mid-refresh
         const tokens = res as TokensResponse
@@ -140,7 +189,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // the access token itself is valid. We fall back in this order:
           //   1) persisted user from sessionStorage (richest data — set during login)
           //   2) JWT claims of the fresh access token (lean stub, role-correct)
-          //   3) propagate to outer catch and log out
+          //   3) log out inline — NICHT zum äußeren .catch propagieren, sonst
+          //      würde z. B. ein 503 von /users/me dort fälschlich als
+          //      transienter REFRESH-Fehler klassifiziert (#89-Review).
           // The access token has already been accepted by the backend, so trusting
           // its claims for role-gated UI is safe.
           try {
@@ -162,7 +213,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setUser(persisted.user)
             } else {
               const stub = userFromAccessToken(tokens.accessToken)
-              if (!stub) throw err
+              if (!stub) {
+                // User-Identität nicht auflösbar — definitiv ausloggen.
+                setAccessToken(null)
+                setToken(null)
+                setUser(null)
+                clearAuthSession()
+                return
+              }
               const portal: AuthPortal =
                 stub.role === "SELLER" ? "seller" : stub.role === "ADMIN" ? "admin" : "customer"
               setUser(stub)
@@ -171,18 +229,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       })
-      .catch(() => {
+      .catch(async (err: unknown) => {
         if (gen !== getAuthGeneration()) return
-        // No valid refresh cookie — stay logged out.
         setAccessToken(null)
-        setUser(null)
         setToken(null)
+
+        // Transienter Fehler (Netzwerk 0, 429, 5xx): persistierte Session und
+        // optimistisch wiederhergestellten User behalten, damit der nächste
+        // Reload/Request die Session über den Refresh-Cookie wiederherstellen
+        // kann — kein stiller Logout durch Verbindungsprobleme (#89).
+        if (isTransientRefreshError(err)) {
+          const persisted = loadAuthSession()
+          if (persisted) {
+            const { toast } = await import("sonner")
+            if (gen !== getAuthGeneration()) return // Auth-Wechsel während Import
+            toast.error("Sitzung konnte nicht wiederhergestellt werden — bitte Seite neu laden.")
+          }
+          return
+        }
+
+        // Definitives 401: kein gültiger Refresh-Cookie — ausgeloggt bleiben.
+        setUser(null)
         clearAuthSession()
       })
       .finally(() => {
         if (gen !== getAuthGeneration()) return
         setIsLoading(false)
       })
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const isAuthenticated = !!token && !!user

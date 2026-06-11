@@ -24,6 +24,29 @@ const config = [
       "@next/next/no-html-link-for-pages": "error",
       "@next/next/no-assign-module-variable": "error",
 
+      // Rohe <a href="/...">-Anchors auf interne Routen erzwingen einen
+      // Full-Page-Reload, der den In-Memory-Access-Token verwirft und eine
+      // Refresh-Token-Rotation erzwingt — intermittierender Logout (#89).
+      // no-html-link-for-pages greift nur im Pages-Router, daher eigene Regel.
+      // Cross-Subdomain-Links (sellerUrl()/adminUrl()) nutzen Expressions und
+      // sind bewusst nicht betroffen.
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            'JSXOpeningElement[name.name="a"] > JSXAttribute[name.name="href"] > Literal[value=/^\\u002F(?!\\u002F)/]',
+          message:
+            "Interne Links mit next/link statt rohem <a> rendern — ein Full-Page-Reload verwirft den In-Memory-Access-Token (#89).",
+        },
+        {
+          // gleiche Regel für href={"/..."} (Expression-Container mit String-Literal)
+          selector:
+            'JSXOpeningElement[name.name="a"] > JSXAttribute[name.name="href"] > JSXExpressionContainer > Literal[value=/^\\u002F(?!\\u002F)/]',
+          message:
+            "Interne Links mit next/link statt rohem <a> rendern — ein Full-Page-Reload verwirft den In-Memory-Access-Token (#89).",
+        },
+      ],
+
       // Hook purity/immutability — enforce as errors; codebase is clean today
       "react-hooks/immutability": "error",
       "react-hooks/purity": "error",
