@@ -498,15 +498,17 @@ Noch nicht implementiert.
 
 Diese Punkte sind technische Bugs mit Sicherheitsrelevanz. Management muss Priorität und Zeitplan bestätigen:
 
-_Status-Update 2026-06-10 (Code-/Issue-Verifikation): Punkt 1 ist behoben (BE#61 geschlossen). Punkt 2 ist behoben (BE#149 + FE#32): Backend nutzt Tomcats RemoteIpValve statt client-vertrauendem XFF-Parsing; der Frontend-Auth-Proxy sendet die Vercel-verifizierte Client-IP als `X-Client-IP`, authentifiziert per Shared Secret (`AUTH_PROXY_SECRET` ↔ `APP_AUTH_RATE_LIMIT_TRUSTED_PROXY_SECRET`). Punkte 3–5 sind unverifiziert — weder Issue noch bestätigter Fix gefunden (→ BE#150)._
+_Status-Update 2026-06-10 (Code-/Issue-Verifikation): Punkt 1 ist behoben (BE#61 geschlossen). Punkt 2 ist behoben (BE#149 + FE#32): Backend nutzt Tomcats RemoteIpValve statt client-vertrauendem XFF-Parsing; der Frontend-Auth-Proxy sendet die Vercel-verifizierte Client-IP als `X-Client-IP`, authentifiziert per Shared Secret (`AUTH_PROXY_SECRET` ↔ `APP_AUTH_RATE_LIMIT_TRUSTED_PROXY_SECRET`)._
 
-| #   | Problem                                                                             | Aufwand | Kritikalität           |
-| --- | ----------------------------------------------------------------------------------- | ------- | ---------------------- |
-| 1   | ~~**E-Mail-Constraint lehnt gültige Corporate-Mails ab**~~ ✅ behoben (BE#61)       | —       | erledigt               |
-| 2   | ~~**Rate-Limit-Bypass via X-Forwarded-For**~~ ✅ behoben (BE#149 + FE#32)           | —       | erledigt               |
-| 3   | **Race-Condition bei Refresh-Token** (parallele Requests erzeugen 2 gültige Tokens) | ~3h     | P0 — Session-Hijacking |
-| 4   | **Password-Reset-Links zeigen auf Backend** statt auf Frontend                      | ~2h     | P1 — UX-Blocker        |
-| 5   | **Refresh-Cookie-Pfad zu eng** (`/api/v1/auth` statt `/api/v1`)                     | ~1h     | P1                     |
+_Status-Update 2026-06-11 (Verifikation + Fix, BE#150): **Punkt 3 bestätigt und behoben** — `AuthService.refresh()` rotierte ohne Locking; im Parallel-Test erhielten 8 von 8 gleichzeitigen Refreshes mit demselben Token eine gültige Session. Fix: zeilengesperrter Token-Lookup (`SELECT … FOR UPDATE`), Regressionstest in `AuthFlowIT`. **Punkt 4 war bereits behoben** — Reset-/Verifikations-Links werden aus `app.frontend.url` generiert (Unit-Test `AuthServiceLinkGenerationTest` deckt dies ab), Frontend-Route `/reset-password` existiert. **Punkt 5 ist widerlegt** — der enge Cookie-Pfad ist beabsichtigt: Den Refresh-Cookie lesen ausschließlich `/auth/refresh` und `/auth/logout` (beide unter `/api/v1/auth`); eine Verbreiterung auf `/api/v1` würde das langlebige Token unnötig an jeden API-Request senden (Sicherheitsverschlechterung). Damit sind alle Punkte aus §5.4 geschlossen._
+
+| #   | Problem                                                                                | Aufwand | Kritikalität   |
+| --- | -------------------------------------------------------------------------------------- | ------- | -------------- |
+| 1   | ~~**E-Mail-Constraint lehnt gültige Corporate-Mails ab**~~ ✅ behoben (BE#61)          | —       | erledigt       |
+| 2   | ~~**Rate-Limit-Bypass via X-Forwarded-For**~~ ✅ behoben (BE#149 + FE#32)              | —       | erledigt       |
+| 3   | ~~**Race-Condition bei Refresh-Token**~~ ✅ bestätigt & behoben (BE#150)               | —       | erledigt       |
+| 4   | ~~**Password-Reset-Links zeigen auf Backend**~~ ✅ war bereits behoben (verifiziert)   | —       | erledigt       |
+| 5   | ~~**Refresh-Cookie-Pfad zu eng**~~ ❌ widerlegt — enger Pfad ist beabsichtigt (BE#150) | —       | kein Fix nötig |
 
 ---
 
