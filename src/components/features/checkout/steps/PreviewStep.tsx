@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { CreditCard, FileText, Loader2, MapPin, ShoppingBag } from "lucide-react"
 import type { CheckoutStartResponse } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
@@ -160,23 +161,23 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
           />
           <span className="text-sm text-slate-700">
             Ich habe die{" "}
-            <a
+            <Link
               href="/agb"
               target="_blank"
               rel="noopener noreferrer"
               className="text-teal-700 underline underline-offset-2 hover:text-teal-900"
             >
               AGB
-            </a>{" "}
+            </Link>{" "}
             und die{" "}
-            <a
+            <Link
               href="/widerruf"
               target="_blank"
               rel="noopener noreferrer"
               className="text-teal-700 underline underline-offset-2 hover:text-teal-900"
             >
               Widerrufsbelehrung
-            </a>{" "}
+            </Link>{" "}
             gelesen und akzeptiere diese. *
           </span>
         </label>

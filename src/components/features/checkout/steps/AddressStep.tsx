@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { ChevronRight, Loader2, MapPin } from "lucide-react"
 import type { Address } from "@/src/types"
 
@@ -28,9 +29,9 @@ export function AddressStep({
       {addresses.length === 0 ? (
         <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-6 text-center">
           <p className="mb-4 text-yellow-800">Du hast noch keine gespeicherte Adresse.</p>
-          <a href="/profil" className="font-medium text-teal-700 underline underline-offset-2">
+          <Link href="/profil" className="font-medium text-teal-700 underline underline-offset-2">
             Adresse in Profil hinzufügen
-          </a>
+          </Link>
         </div>
       ) : (
         <div className="mb-8 space-y-3">
