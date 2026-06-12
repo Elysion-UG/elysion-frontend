@@ -16,6 +16,7 @@ This index maps each topic to its primary documentation source.
 | [`docs/CICD_PIPELINE.md`](./CICD_PIPELINE.md)       | GitHub Actions workflows, quality gates, pre-commit hooks                             |
 | [`docs/ROADMAP.md`](./ROADMAP.md)                   | Development roadmap, phase status, open items                                         |
 | [`docs/monitoring-api.md`](./monitoring-api.md)     | Monitoring API spec: DB schema, endpoints, frontend integration for error persistence |
+| [`docs/PRE_MORTEM.md`](./PRE_MORTEM.md)             | Pre-mortem risk analysis: failure scenarios, mitigations, operations-readiness gaps   |
 | [`docs/archive/`](./archive/)                       | Superseded and planning-phase documents                                               |
 
 ## Topic → SSOT
@@ -34,4 +35,5 @@ This index maps each topic to its primary documentation source.
 | CI/CD pipeline details               | [`docs/CICD_PIPELINE.md`](./CICD_PIPELINE.md)       |
 | Feature roadmap & status             | [`docs/ROADMAP.md`](./ROADMAP.md)                   |
 | Monitoring API & error persistence   | [`docs/monitoring-api.md`](./monitoring-api.md)     |
+| Risk analysis & failure scenarios    | [`docs/PRE_MORTEM.md`](./PRE_MORTEM.md)             |
 | Branching & PR process               | [`CONTRIBUTING.md`](../CONTRIBUTING.md)             |

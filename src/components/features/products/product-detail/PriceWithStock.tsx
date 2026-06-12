@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { formatEuro } from "@/src/lib/currency"
 
 interface PriceWithStockProps {
@@ -23,9 +24,9 @@ export function PriceWithStock({ price, inStock }: PriceWithStockProps) {
       {/* § 1 PAngV: MwSt.-Hinweis */}
       <p className="mt-1 text-xs text-stone-400">
         inkl. MwSt.,{" "}
-        <a href="/versand" className="underline hover:text-stone-600">
+        <Link href="/versand" className="underline hover:text-stone-600">
           zzgl. Versandkosten
-        </a>
+        </Link>
       </p>
     </div>
   )

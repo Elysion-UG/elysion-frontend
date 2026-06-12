@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
+import Link from "next/link"
 import { toast } from "sonner"
 import { ChevronRight, ChevronLeft, Check, Leaf, Heart, Recycle, ShieldCheck } from "lucide-react"
 
@@ -287,18 +288,18 @@ export default function Onboarding() {
           <p className="text-xs text-green-700">
             Deine Angaben werden ausschließlich zur Verbesserung deiner Produktempfehlungen genutzt.
             Du kannst sie jederzeit unter{" "}
-            <a href="/praeferenzen" className="underline hover:text-green-900">
+            <Link href="/praeferenzen" className="underline hover:text-green-900">
               Präferenzen
-            </a>{" "}
+            </Link>{" "}
             anpassen. Details zur Verarbeitung findest du in unserer{" "}
-            <a
+            <Link
               href="/datenschutz"
               target="_blank"
               rel="noopener noreferrer"
               className="underline hover:text-green-900"
             >
               Datenschutzerklärung
-            </a>
+            </Link>
             .
           </p>
         </div>

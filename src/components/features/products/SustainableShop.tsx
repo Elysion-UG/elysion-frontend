@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Leaf, Loader2, AlertCircle, Search } from "lucide-react"
 import type { ProductDetail } from "@/src/types"
 import { useProducts, PRODUCTS_PAGE_SIZE } from "@/src/hooks/useProducts"
+import { useMaterials } from "@/src/hooks/useMaterials"
 import { useAuth } from "@/src/context/AuthContext"
 import { useBuyerValueProfile } from "@/src/hooks/useBuyerValueProfile"
 import {
@@ -33,8 +34,10 @@ export default function SustainableShop() {
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [priceRange, setPriceRange] = useState({ min: 0, max: 300 })
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>([])
   const [sortBy, setSortBy] = useState("newest")
   const [currentPage, setCurrentPage] = useState(0)
+  const { data: materials } = useMaterials()
   const [sustainabilityImportance, setSustainabilityImportance] =
     useState<Record<string, string>>(MIDDLE_IMPORTANCE)
 
@@ -78,6 +81,14 @@ export default function SustainableShop() {
     setSearch("")
     setDebouncedSearch("")
     setPriceRange({ min: 0, max: 300 })
+    setSelectedMaterials([])
+    setCurrentPage(0)
+  }
+
+  const handleToggleMaterial = (slug: string) => {
+    setSelectedMaterials((prev) =>
+      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+    )
     setCurrentPage(0)
   }
 
@@ -86,6 +97,7 @@ export default function SustainableShop() {
   const { data, isLoading, isFetching, error, refetch } = useProducts({
     search: debouncedSearch,
     priceRange,
+    materials: selectedMaterials,
     apiSort,
     currentPage,
   })
@@ -148,6 +160,9 @@ export default function SustainableShop() {
           onImportanceChange={handleImportanceChange}
           priceRange={priceRange}
           onPriceRangeChange={setPriceRange}
+          materials={materials ?? []}
+          selectedMaterials={selectedMaterials}
+          onToggleMaterial={handleToggleMaterial}
           onPageReset={() => setCurrentPage(0)}
         />
 
@@ -171,14 +186,14 @@ export default function SustainableShop() {
 
           {/* Skeleton — shown only on first load */}
           {isLoading && (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: PRODUCTS_PAGE_SIZE }).map((_, i) => (
                 <div
                   key={i}
                   className="overflow-hidden rounded-xl border border-stone-100 bg-white shadow-sm"
                 >
                   <div className="aspect-square animate-pulse bg-sage-50" />
-                  <div className="space-y-2.5 p-4">
+                  <div className="space-y-2.5 p-3 sm:p-4">
                     <div className="h-3 w-1/3 animate-pulse rounded-full bg-sage-100" />
                     <div className="h-4 w-3/4 animate-pulse rounded-full bg-stone-100" />
                     <div className="h-3 w-full animate-pulse rounded-full bg-stone-100" />
@@ -236,7 +251,7 @@ export default function SustainableShop() {
           {/* Products Grid */}
           {!isLoading && !error && products.length > 0 && (
             <div
-              className={`grid gap-5 transition-opacity duration-200 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isFetching ? "opacity-60" : "opacity-100"}`}
+              className={`grid grid-cols-2 gap-3 transition-opacity duration-200 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4 ${isFetching ? "opacity-60" : "opacity-100"}`}
             >
               {products.map((product) => (
                 <ProductCard

@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState } from "react"
+import Link from "next/link"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import { X, Mail, User, Building2, XCircle } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
@@ -324,14 +325,14 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                   />
                   <span className="text-xs text-stone-600">
                     Ich habe die{" "}
-                    <a
+                    <Link
                       href="/datenschutz"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sage-600 underline hover:text-sage-800"
                     >
                       Datenschutzerklärung
-                    </a>{" "}
+                    </Link>{" "}
                     gelesen und stimme der Verarbeitung meiner Daten zu. *
                   </span>
                 </label>

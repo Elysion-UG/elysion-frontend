@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Recycle, Shield, Truck } from "lucide-react"
 
 export function ShippingInfo() {
@@ -11,9 +12,9 @@ export function ShippingInfo() {
         <Shield className="h-4 w-4 text-sage-500" />
         <span>
           14 Tage gesetzliches Widerrufsrecht (
-          <a href="/widerruf" className="underline hover:text-sage-900">
+          <Link href="/widerruf" className="underline hover:text-sage-900">
             Details
-          </a>
+          </Link>
           )
         </span>
       </div>

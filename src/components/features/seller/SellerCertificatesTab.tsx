@@ -5,6 +5,7 @@ import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { Plus, Award, RefreshCw, Loader2, ExternalLink } from "lucide-react"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import { CertificateService } from "@/src/services/certificate.service"
+import { isSafeHttpUrl, safeHttpUrl } from "@/src/lib/safe-url"
 import type { Certificate, CertificateType } from "@/src/types"
 import { toast } from "sonner"
 import { StatusBadge } from "@/src/components/shared"
@@ -34,6 +35,10 @@ function CertForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
     }
     if (!documentUrl.trim()) {
       toast.error("Bitte Dokument-URL eingeben.")
+      return
+    }
+    if (!isSafeHttpUrl(documentUrl.trim())) {
+      toast.error("Dokument-URL muss mit http:// oder https:// beginnen.")
       return
     }
     setIsSaving(true)
@@ -254,51 +259,54 @@ export default function SellerCertificatesTab() {
           </div>
         ) : (
           <div className="divide-y divide-slate-100">
-            {certs.map((cert) => (
-              <div key={cert.id} className="flex items-start gap-4 p-5">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-teal-100">
-                  <Award className="h-5 w-5 text-teal-600" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium text-slate-800">{cert.title}</p>
-                    <StatusBadge
-                      label={certStatusLabel[cert.status]}
-                      colorClasses={certStatusColor[cert.status]}
-                    />
-                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
-                      {cert.certificateType}
-                    </span>
+            {certs.map((cert) => {
+              const safeDocumentUrl = safeHttpUrl(cert.documentUrl)
+              return (
+                <div key={cert.id} className="flex items-start gap-4 p-5">
+                  <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-teal-100">
+                    <Award className="h-5 w-5 text-teal-600" />
                   </div>
-                  {cert.issuerName && (
-                    <p className="mt-0.5 text-sm text-slate-500">{cert.issuerName}</p>
-                  )}
-                  {cert.rejectionReason && (
-                    <p className="mt-1 text-xs text-red-600">Abgelehnt: {cert.rejectionReason}</p>
-                  )}
-                  {cert.expiryDate && (
-                    <p className="mt-0.5 text-xs text-slate-400">
-                      Gültig bis: {new Date(cert.expiryDate).toLocaleDateString("de-DE")}
-                    </p>
-                  )}
-                  {cert.documentUrl && (
-                    <a
-                      href={cert.documentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-1 inline-flex items-center gap-1 text-xs text-teal-600 hover:text-teal-700"
-                    >
-                      <ExternalLink className="h-3 w-3" /> Dokument ansehen
-                    </a>
-                  )}
-                  {cert.status === "VERIFIED" && (
-                    <p className="mt-1 text-xs text-slate-400">
-                      Zum Produkt verknüpfen: Produktbearbeitung → Zertifikate
-                    </p>
-                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-slate-800">{cert.title}</p>
+                      <StatusBadge
+                        label={certStatusLabel[cert.status]}
+                        colorClasses={certStatusColor[cert.status]}
+                      />
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+                        {cert.certificateType}
+                      </span>
+                    </div>
+                    {cert.issuerName && (
+                      <p className="mt-0.5 text-sm text-slate-500">{cert.issuerName}</p>
+                    )}
+                    {cert.rejectionReason && (
+                      <p className="mt-1 text-xs text-red-600">Abgelehnt: {cert.rejectionReason}</p>
+                    )}
+                    {cert.expiryDate && (
+                      <p className="mt-0.5 text-xs text-slate-400">
+                        Gültig bis: {new Date(cert.expiryDate).toLocaleDateString("de-DE")}
+                      </p>
+                    )}
+                    {safeDocumentUrl && (
+                      <a
+                        href={safeDocumentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 inline-flex items-center gap-1 text-xs text-teal-600 hover:text-teal-700"
+                      >
+                        <ExternalLink className="h-3 w-3" /> Dokument ansehen
+                      </a>
+                    )}
+                    {cert.status === "VERIFIED" && (
+                      <p className="mt-1 text-xs text-slate-400">
+                        Zum Produkt verknüpfen: Produktbearbeitung → Zertifikate
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

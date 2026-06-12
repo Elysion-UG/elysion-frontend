@@ -112,6 +112,8 @@ export const ProductService = {
         sellerId: params.sellerId,
         minPrice: params.minPrice,
         maxPrice: params.maxPrice,
+        // Backend expects the repeatable param name `material`.
+        material: params.materials,
         sort: params.sort,
         page: params.page,
         size: params.size,

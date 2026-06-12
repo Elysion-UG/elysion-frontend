@@ -316,6 +316,23 @@ Die Typen `STANDARD | LEVEL_2 | LEVEL_3` sind technisch implementiert, aber sema
 
 ---
 
+### 2.4 Zertifikats-Verifikationsprozess (Prüf-SOP)
+
+**Status:** OFFEN — BLOCKER (vor Seller-Onboarding) · _neu aufgenommen 2026-06-10 (Pre-Mortem-Analyse)_
+
+Die technische Verifikation (Admin klickt „verify") ist implementiert — aber es ist nicht definiert, **was der Admin dabei fachlich prüft**. Die Glaubwürdigkeit der Zertifikate ist der Kern-USP der Plattform; ein durchgerutschtes gefälschtes Zertifikat wäre ein PR-Totalschaden (siehe `docs/PRE_MORTEM.md` Szenario 6).
+
+**Offene Fragen:**
+
+- Gegen welche Quellen wird geprüft? (Öffentliche Zertifikatsregister: GOTS Public Database, Fairtrade FLOCERT, OEKO-TEX Label Check etc.)
+- Was gilt als gültiger Nachweis — PDF-Scan allein, oder Pflicht-Abgleich von Zertifikatsnummer + Aussteller + Gültigkeitsdatum gegen das Register?
+- Vier-Augen-Prinzip bei der Erstverifizierung eines neuen Sellers?
+- Stichproben / wiederkehrende Re-Checks bei bestehenden Sellern?
+- Eskalationsprozess bei Fälschungsverdacht (Seller-Suspendierung, Produkt-Sofort-Deaktivierung, rechtliche Schritte)?
+- Welche Zertifikate/Siegel werden überhaupt anerkannt (Whitelist)?
+
+---
+
 ## III. Produkte & Inventar
 
 ### 3.1 Produkt-Status-Maschine
@@ -453,7 +470,7 @@ Aktuell keine Account-Sperre implementiert. Nur IP-basiertes Rate-Limiting (das 
 
 **Status:** OFFEN
 
-Backend ist implementiert; der Resend-Endpunkt fehlt im Backend. E-Mail-Verifizierung ist aktuell optional.
+Backend ist implementiert; ~~der Resend-Endpunkt fehlt im Backend~~ _(überholt — Resend-Endpunkt seit BE#90 vorhanden, verifiziert 2026-06-10)_. E-Mail-Verifizierung ist aktuell optional.
 
 **Offene Fragen:**
 
@@ -481,13 +498,17 @@ Noch nicht implementiert.
 
 Diese Punkte sind technische Bugs mit Sicherheitsrelevanz. Management muss Priorität und Zeitplan bestätigen:
 
-| #   | Problem                                                                                     | Aufwand | Kritikalität                 |
-| --- | ------------------------------------------------------------------------------------------- | ------- | ---------------------------- |
-| 1   | **E-Mail-Constraint lehnt gültige Corporate-Mails ab** (z. B. `vorname.nachname@domain.de`) | ~2h     | P0 — blockiert Registrierung |
-| 2   | **Rate-Limit-Bypass via X-Forwarded-For** (Brute-Force möglich)                             | ~4h     | P0 — Sicherheitsrisiko       |
-| 3   | **Race-Condition bei Refresh-Token** (parallele Requests erzeugen 2 gültige Tokens)         | ~3h     | P0 — Session-Hijacking       |
-| 4   | **Password-Reset-Links zeigen auf Backend** statt auf Frontend                              | ~2h     | P1 — UX-Blocker              |
-| 5   | **Refresh-Cookie-Pfad zu eng** (`/api/v1/auth` statt `/api/v1`)                             | ~1h     | P1                           |
+_Status-Update 2026-06-10 (Code-/Issue-Verifikation): Punkt 1 ist behoben (BE#61 geschlossen). Punkt 2 ist behoben (BE#149 + FE#32): Backend nutzt Tomcats RemoteIpValve statt client-vertrauendem XFF-Parsing; der Frontend-Auth-Proxy sendet die Vercel-verifizierte Client-IP als `X-Client-IP`, authentifiziert per Shared Secret (`AUTH_PROXY_SECRET` ↔ `APP_AUTH_RATE_LIMIT_TRUSTED_PROXY_SECRET`)._
+
+_Status-Update 2026-06-11 (Verifikation + Fix, BE#150): **Punkt 3 bestätigt und behoben** — `AuthService.refresh()` rotierte ohne Locking; im Parallel-Test erhielten 8 von 8 gleichzeitigen Refreshes mit demselben Token eine gültige Session. Fix: zeilengesperrter Token-Lookup (`SELECT … FOR UPDATE`), Regressionstest in `AuthFlowIT`. **Punkt 4 war bereits behoben** — Reset-/Verifikations-Links werden aus `app.frontend.url` generiert (Unit-Test `AuthServiceLinkGenerationTest` deckt dies ab), Frontend-Route `/reset-password` existiert. **Punkt 5 ist widerlegt** — der enge Cookie-Pfad ist beabsichtigt: Den Refresh-Cookie lesen ausschließlich `/auth/refresh` und `/auth/logout` (beide unter `/api/v1/auth`); eine Verbreiterung auf `/api/v1` würde das langlebige Token unnötig an jeden API-Request senden (Sicherheitsverschlechterung). Damit sind alle Punkte aus §5.4 geschlossen._
+
+| #   | Problem                                                                                | Aufwand | Kritikalität   |
+| --- | -------------------------------------------------------------------------------------- | ------- | -------------- |
+| 1   | ~~**E-Mail-Constraint lehnt gültige Corporate-Mails ab**~~ ✅ behoben (BE#61)          | —       | erledigt       |
+| 2   | ~~**Rate-Limit-Bypass via X-Forwarded-For**~~ ✅ behoben (BE#149 + FE#32)              | —       | erledigt       |
+| 3   | ~~**Race-Condition bei Refresh-Token**~~ ✅ bestätigt & behoben (BE#150)               | —       | erledigt       |
+| 4   | ~~**Password-Reset-Links zeigen auf Backend**~~ ✅ war bereits behoben (verifiziert)   | —       | erledigt       |
+| 5   | ~~**Refresh-Cookie-Pfad zu eng**~~ ❌ widerlegt — enger Pfad ist beabsichtigt (BE#150) | —       | kein Fix nötig |
 
 ---
 
@@ -618,6 +639,39 @@ Keine eigene Identitätsprüfung für Seller implementiert (an Stripe Connect de
 
 ---
 
+### 8.4 Marketplace-Betreiber-Pflichten (DAC7, VerpackG, GPSR, Textilkennzeichnung, Green Claims)
+
+**Status:** OFFEN — teils BLOCKER · _neu aufgenommen 2026-06-10 (Pre-Mortem-Analyse)_
+
+Diese Pflichten treffen **Elysion als Plattformbetreiber** (nicht nur die Seller) und kommen bislang in keinem Dokument vor (`docs/COMPLIANCE.md` deckt nur Shop-Recht ab: Impressum, AGB, Widerruf, DSGVO, BFSG). Empfehlung: anwaltliche Prüfung explizit auf Betreiber-Pflichten ausweiten.
+
+| Pflicht                            | Kern                                                                                            | Zu entscheiden                                                                                        |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **DAC7 / PStTG**                   | Plattformen müssen Seller-Umsätze jährlich ans BZSt melden                                      | Wer übernimmt die Meldung (Steuerberater?), welche Seller-Daten müssen dafür ab Tag 1 erhoben werden? |
+| **VerpackG § 9**                   | Marktplätze dürfen nur für LUCID-registrierte Seller anbieten (Prüfpflicht!)                    | LUCID-Registrierungsnummer als Pflichtfeld im Seller-Onboarding? Prüfprozess?                         |
+| **GPSR** (seit 12/2024)            | Verantwortliche Person in der EU + Sicherheitsangaben pro Produkt; Marketplace-Mitverantwortung | Pflichtfelder am Produkt? Prüfung beim Listing?                                                       |
+| **Textilkennzeichnungs-VO**        | Faserzusammensetzung ist Pflichtangabe bei Textilien                                            | Material-Angabe vom optionalen Filter zum Pflichtfeld machen?                                         |
+| **EmpCo / Green Claims** (ab 2026) | Generische Umweltaussagen („nachhaltig", „klimaneutral") ohne Nachweis werden verboten          | Wording-Richtlinie für Plattform-Texte **und** Seller-Produkttexte; wer prüft Seller-Claims?          |
+
+**Hinweis:** Für eine Plattform, die mit „nachhaltig zertifiziert" wirbt, ist insbesondere EmpCo/Green Claims existenziell — Abmahnrisiko trifft zuerst den sichtbarsten Akteur (die Plattform).
+
+---
+
+### 8.5 Rechnungsstellung (Käufer-Rechnung & Provisionsabrechnung)
+
+**Status:** OFFEN — BLOCKER (spätestens mit erster Abrechnung) · _neu aufgenommen 2026-06-10 (Pre-Mortem-Analyse)_
+
+Es existiert keinerlei Rechnungs-Funktionalität — weder im Datenmodell (`Invoice` fehlt) noch als UI. Stripe liefert nur eine `receiptUrl` (Zahlungsbeleg ≠ Rechnung).
+
+**Offene Fragen:**
+
+- **Käufer-Rechnung:** Wer stellt sie aus — der Seller (Marktplatz-Standard) oder die Plattform im Namen des Sellers? Muss die Plattform den Sellern dafür ein Werkzeug bereitstellen?
+- **Provisionsabrechnung:** Elysion muss den Sellern eine **umsatzsteuerkonforme Rechnung über die Provision** stellen (Pflicht der Plattform selbst). Format, Rhythmus (mit dem wöchentlichen Settlement-Bericht, §1.7?), USt-Ausweis?
+- Zusammenhang mit §8.1 (MwSt.): ohne VAT-Entscheidung ist keine korrekte Rechnung möglich.
+- Aufbewahrung (GoBD, 10 Jahre) — wo werden Rechnungen archiviert?
+
+---
+
 ## IX. Infrastruktur & Betrieb
 
 ### 9.1 Dateispeicher für Bilder & Dokumente
@@ -699,6 +753,16 @@ Keine eigene Identitätsprüfung für Seller implementiert (an Stripe Connect de
 | 19  | Seller Analytics Dashboard         | Seller-Experience     |
 | 20  | Mehrsprachigkeit (DE/EN)           | Internationalisierung |
 
+### Neu aufgenommen (2026-06-10 — aus Pre-Mortem-Analyse, `docs/PRE_MORTEM.md`)
+
+| #   | Thema                                                                                      | Bereich              | Einstufung                       |
+| --- | ------------------------------------------------------------------------------------------ | -------------------- | -------------------------------- |
+| 21  | Zertifikats-Verifikations-SOP (§2.4)                                                       | Vertrauen / Kern-USP | Kritisch — vor Seller-Onboarding |
+| 22  | Marketplace-Betreiber-Pflichten (§8.4: DAC7, VerpackG, GPSR, Textil-KennzVO, Green Claims) | Compliance           | Kritisch — teils vor Go-Live     |
+| 23  | Rechnungsstellung Käufer + Provisionsrechnung (§8.5)                                       | Finanzen / Steuern   | Kritisch — mit erster Abrechnung |
+| 24  | Go-to-Market & Pilot-Erfolgskriterien (§12.1)                                              | Strategie            | Kritisch — vor Launch            |
+| 25  | Unit Economics / Seller-Marge (§12.2)                                                      | Strategie            | Hoch                             |
+
 ---
 
 ## XI. Bereits getroffene Architekturentscheidungen (nur mit größerem Aufwand änderbar)
@@ -714,6 +778,37 @@ Diese Entscheidungen sind tief im Code verankert. Eine Änderung würde Datenban
 | **Spring-Page-Format für Produktliste**    | `{ content[], totalElements, totalPages, size, number }`  | Mittel                          |
 | **Soft-Delete für User**                   | `deleted_at` Timestamp statt Hard-Delete                  | Mittel — DSGVO-Logik            |
 | **Multi-OrderGroup-Modell**                | Eine Parent-Order, N OrderGroups (pro Seller)             | Sehr hoch — Kern-Bestellmodell  |
+
+---
+
+## XII. Geschäftsstrategie & Pilot
+
+_Neu aufgenommen 2026-06-10 (Pre-Mortem-Analyse, siehe `docs/PRE_MORTEM.md`)._
+
+### 12.1 Go-to-Market & Pilot-Erfolgskriterien
+
+**Status:** OFFEN — aus Pre-Mortem-Sicht das größte Einzelrisiko (Szenario 3)
+
+Die gesamte Projektdokumentation enthält kein Go-to-Market-Artefakt. Für einen Two-Sided-Marketplace ist das Henne-Ei-Problem (Seller brauchen Käufer, Käufer brauchen Angebot) das Hauptrisiko — unabhängig von der technischen Qualität.
+
+**Offene Fragen:**
+
+- **Pilot-Definition:** Wie viele Seller, welches GMV-Ziel, welches Zeitfenster? Ab wann gilt der Pilot als Erfolg, ab wann wird abgebrochen/pivotiert?
+- **Seller-Akquise:** Wer spricht wie viele Ziel-Seller an (nachhaltige Textil-Labels)? Pipeline, Zuständigkeit, Pitch?
+- **Käufer-Akquise:** Welche Kanäle (SEO, Social, Presse, Kooperationen mit den Zertifizierern selbst)? Budget?
+- **Launch-Form:** Stiller Soft-Launch mit Pilot-Sellern vs. öffentlicher Launch mit Presse?
+
+### 12.2 Unit Economics / Seller-Marge
+
+**Status:** OFFEN
+
+Das Fee-Modell (§1.1: 15 % Take Rate + Seller trägt Stripe-Fee + Refund-/Chargeback-Abzüge) ist entschieden, aber nie aus Seller-Sicht durchgerechnet. Nachhaltige Textil-Labels haben dünne Margen; Textil-E-Commerce hat 30–50 % Retourenquote.
+
+**Offene Fragen:**
+
+- Beispielrechnung: Was bleibt einem Seller bei einer typischen 60-€-Bestellung netto — und was bei einer retournierten?
+- Ab welchem Warenkorbwert ist ein Verkauf für den Seller profitabel? (Relevant für Mindestbestellwert-/Versandkosten-Politik)
+- Ist die 15 %-Take-Rate gegenüber Alternativen (eigener Shopify-Shop, Avocadostore, Etsy) konkurrenzfähig argumentierbar?
 
 ---
 

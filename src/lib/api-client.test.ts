@@ -67,6 +67,15 @@ describe("buildQuery", () => {
   it("stringifies numbers and booleans", () => {
     expect(buildQuery({ active: true, count: 42 })).toBe("?active=true&count=42")
   })
+
+  it("expands array values into a repeatable param", () => {
+    expect(buildQuery({ material: ["leinen", "hanf"] })).toBe("?material=leinen&material=hanf")
+  })
+
+  it("skips empty arrays and blank array items", () => {
+    expect(buildQuery({ material: [] })).toBe("")
+    expect(buildQuery({ material: ["leinen", ""] })).toBe("?material=leinen")
+  })
 })
 
 // ── ApiError ───────────────────────────────────────────────────────────────────
@@ -1018,6 +1027,46 @@ describe("429 rate-limit handling", () => {
       status: 429,
       message: "Zu viele Anfragen — bitte in 15s erneut versuchen.",
     })
+  })
+})
+
+// ── Error monitoring — apiPath must never contain query strings ──────────────
+//
+// Query params can carry secrets (e.g. one-time password-reset tokens). The
+// monitoring metadata persists apiPath in the backend, so reportApiError must
+// strip everything after "?" (issue #66).
+
+describe("error monitoring — apiPath sanitisation", () => {
+  beforeEach(() => {
+    setAccessToken(null)
+    vi.stubGlobal("fetch", vi.fn())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    setAccessToken(null)
+  })
+
+  it("strips the query string from apiPath when reporting a failed request", async () => {
+    const { errorStore } = await import("@/src/lib/error-store")
+    const reportSpy = vi.spyOn(errorStore, "report")
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(mockFetchResponse(410, { message: "Token expired" }, false))
+    )
+
+    await expect(
+      apiRequest("/api/v1/auth/reset-password?token=super-secret-token")
+    ).rejects.toMatchObject({ status: 410 })
+
+    // reportApiError is fire-and-forget (dynamic import + .then) — wait for it
+    await vi.waitFor(() => expect(reportSpy).toHaveBeenCalled(), { timeout: 3000 })
+
+    const reported = reportSpy.mock.calls[0][0]
+    expect(reported.metadata?.apiPath).toBe("/api/v1/auth/reset-password")
+    expect(JSON.stringify(reported)).not.toContain("super-secret-token")
+    reportSpy.mockRestore()
   })
 })
 

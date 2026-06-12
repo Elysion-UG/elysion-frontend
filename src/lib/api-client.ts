@@ -63,14 +63,24 @@ export function clearAuthSession(): void {
 /**
  * Builds a URL query string from a plain object.
  * Skips undefined, null, and empty-string values; includes 0 and false.
+ * Array values become a repeatable param (e.g. material=leinen&material=hanf).
  * Returns "?key=val&..." or "" when nothing to include.
  */
 export function buildQuery(
-  params: Record<string, string | number | boolean | undefined | null>
+  params: Record<string, string | number | boolean | string[] | undefined | null>
 ): string {
   const q = new URLSearchParams()
   for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== null && value !== "") {
+    if (value === undefined || value === null || value === "") {
+      continue
+    }
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (item !== undefined && item !== null && item !== "") {
+          q.append(key, String(item))
+        }
+      }
+    } else {
       q.set(key, String(value))
     }
   }
@@ -190,11 +200,13 @@ function reportApiError(
                 ? ("medium" as const)
                 : ("low" as const)
 
+      // Strip the query string — query params can carry secrets (e.g. one-time
+      // tokens) and must never reach the persisted error monitoring (issue #66).
       errorStore.report({
         severity,
         category,
         message,
-        metadata: { apiPath: path, statusCode: status },
+        metadata: { apiPath: path.split("?")[0], statusCode: status },
       })
     })
   } catch {

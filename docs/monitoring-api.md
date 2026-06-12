@@ -511,6 +511,8 @@ export interface PersistedErrorEvent {
 
 Das Frontend sendet Events im `FrontendErrorEvent`-Format. Das Backend extrahiert promoted Felder aus `metadata` und speichert den Rest als JSONB:
 
+> **Sicherheit:** `metadata.apiPath` enthält **nie** einen Query-String — `reportApiError` (`api-client.ts`) kappt alles ab `?`, da Query-Parameter Secrets tragen können (z. B. One-Time-Tokens, siehe #66).
+
 | Frontend Feld               | DB Spalte          | Transformation                    |
 | --------------------------- | ------------------ | --------------------------------- |
 | `id`                        | `client_event_id`  | Direkt übernommen                 |

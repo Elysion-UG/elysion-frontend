@@ -13,7 +13,7 @@
  *   POST /resend-verification   — resend verification email
  *   POST /forgot-password       — trigger password reset email (always 200 to prevent enumeration)
  *   POST /reset-password        — set new password with reset token
- *   GET  /reset-password?token= — validate reset token (link-friendly, does not consume token)
+ *   POST /reset-password/validate — validate reset token (does not consume token)
  */
 import { apiRequest } from "@/src/lib/api-client"
 import { parseApiResponse, tokensResponseSchema } from "@/src/lib/api-schemas"
@@ -107,10 +107,15 @@ export const AuthService = {
     })
   },
 
-  /** Validates a password reset token without consuming it. Throws on 4xx. */
+  /**
+   * Validates a password reset token without consuming it. Throws on 4xx.
+   * Token travels in the body — never in the URL, so it cannot leak into
+   * access logs or error monitoring (issue #66).
+   */
   async validateResetToken(token: string): Promise<void> {
-    return apiRequest(`/api/v1/auth/reset-password?token=${encodeURIComponent(token)}`, {
-      method: "GET",
+    return apiRequest("/api/v1/auth/reset-password/validate", {
+      method: "POST",
+      body: JSON.stringify({ token }),
     })
   },
 }

@@ -122,12 +122,12 @@ export default function Cart() {
 
                 <div className="min-w-0 flex-1">
                   {item.productSlug ? (
-                    <a
+                    <Link
                       href={`/product?slug=${item.productSlug}`}
                       className="block truncate text-sm font-semibold text-stone-800 hover:text-sage-700"
                     >
                       {item.productName ?? "Produkt"}
-                    </a>
+                    </Link>
                   ) : (
                     <span className="block truncate font-semibold text-stone-800">
                       {item.productName ?? "Produkt"}
@@ -197,13 +197,16 @@ export default function Cart() {
               <span>Gesamt</span>
               <span>{formatEuro(subtotal)}</span>
             </div>
-            <a
+            {/* Muss Client-Navigation sein (next/link): ein Full-Page-Reload verwirft
+                den In-Memory-Access-Token und erzwingt eine Refresh-Token-Rotation,
+                die den User intermittierend ausloggt (#89). */}
+            <Link
               href="/checkout"
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sage-700"
             >
               Zur Kasse
               <ArrowRight className="h-4 w-4" />
-            </a>
+            </Link>
           </div>
         </div>
       </div>

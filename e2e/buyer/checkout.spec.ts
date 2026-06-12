@@ -24,6 +24,36 @@ test.describe("Buyer – Cart & Checkout", () => {
     await expect(cart.title.or(cart.emptyHeading)).toBeVisible({ timeout: 10_000 })
   })
 
+  test("Zur-Kasse-Link navigiert client-seitig zum Checkout ohne Login-Prompt (#89)", async ({
+    page,
+  }) => {
+    const cart = new CartPage(page)
+    const checkout = new CheckoutPage(page)
+    await cart.goto()
+    await expect(cart.title.or(cart.emptyHeading)).toBeVisible({ timeout: 10_000 })
+
+    // Nur prüfbar, wenn der Seed-Warenkorb Items hat (sonst kein Zur-Kasse-Link).
+    test.skip((await cart.checkoutLink.count()) === 0, "Warenkorb leer — kein Zur-Kasse-Link")
+
+    // Marker auf window: überlebt nur Client-Navigation (next/link). Ein rohes
+    // <a href> würde einen Full-Page-Reload auslösen, den In-Memory-Access-Token
+    // verwerfen und eine Refresh-Rotation erzwingen — Regression von #89.
+    await page.evaluate(() => {
+      ;(window as Window & { __noReloadMarker?: boolean }).__noReloadMarker = true
+    })
+
+    await cart.checkoutLink.click()
+
+    // Eingeloggter Buyer muss direkt im Adress-Schritt landen — kein Login-Prompt.
+    await expect(checkout.addressHeading).toBeVisible({ timeout: 10_000 })
+    await expect(checkout.loginRequiredHeading).toHaveCount(0)
+
+    const markerSurvived = await page.evaluate(
+      () => (window as Window & { __noReloadMarker?: boolean }).__noReloadMarker === true
+    )
+    expect(markerSurvived, "Navigation war ein Full-Page-Reload statt next/link (#89)").toBe(true)
+  })
+
   test("Checkout-Seite zeigt Adress-Schritt für eingeloggten Buyer", async ({ page }) => {
     const checkout = new CheckoutPage(page)
     await checkout.goto()

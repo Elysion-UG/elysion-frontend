@@ -70,7 +70,7 @@ export default function ProductCard({ product, onProductClick, onSellerClick }: 
       </div>
 
       {/* Card body */}
-      <div className="space-y-1.5 p-4">
+      <div className="space-y-1.5 p-3 sm:p-4">
         {sellerName && (
           <button
             onClick={(e) => onSellerClick(e, product.seller?.userId)}

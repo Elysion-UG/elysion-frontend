@@ -25,6 +25,29 @@ vi.mock("@/src/services/user.service", () => ({
   },
 }))
 
+// AuthContext dynamically imports sonner (guest-cart-merge toast, transienter
+// Refresh-Fehler) — mock it so tests don't pull the real toast renderer.
+vi.mock("sonner", () => ({
+  toast: { error: vi.fn(), success: vi.fn(), info: vi.fn() },
+}))
+
+// AuthContext narrows refresh errors via `instanceof ApiError` — the mocked
+// api-client must therefore export a structurally identical class. vi.hoisted
+// makes it available inside the hoisted vi.mock factory.
+const { MockApiError } = vi.hoisted(() => {
+  class MockApiError extends Error {
+    readonly status: number
+    readonly body: unknown
+    constructor(status: number, message: string, body?: unknown) {
+      super(message)
+      this.name = "ApiError"
+      this.status = status
+      this.body = body
+    }
+  }
+  return { MockApiError }
+})
+
 // Mock api-client to control refreshSession directly and avoid the module-level
 // _refreshInFlight cache bleeding between tests. All session-storage helpers are
 // mocked as no-ops so tests control sessionStorage themselves via the Web API.
@@ -33,6 +56,7 @@ vi.mock("@/src/services/user.service", () => ({
 // what the real implementation does.
 let _testAuthGen = 0
 vi.mock("@/src/lib/api-client", () => ({
+  ApiError: MockApiError,
   setAccessToken: vi.fn(),
   refreshSession: vi.fn(),
   saveAuthSession: vi.fn(),
@@ -653,6 +677,96 @@ describe("session restore on mount — sessionStorage hit (page navigation)", ()
     expect(result.current.token).toBeNull()
     expect(result.current.isLoading).toBe(false)
     expect(clearAuthSession).toHaveBeenCalled()
+  })
+})
+
+// ── session restore — transiente Refresh-Fehler (#89) ─────────────────────────
+//
+// Ein Full-Page-Reload (z. B. via rohem <a>-Link) verwirft den In-Memory-Token
+// und macht den Session-Restore vom Refresh-Endpoint abhängig. Transiente
+// Fehler (Netzwerk 0, 429, 5xx) dürfen dabei NICHT zum stillen Logout führen —
+// nur ein definitives 401 bedeutet „Refresh-Cookie ungültig".
+
+describe("session restore — transiente Refresh-Fehler (#89)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    _testAuthGen = 0
+    sessionStorage.clear()
+    vi.mocked(loadAuthSession).mockReturnValue({ user: mockUser, portal: "customer" })
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it("retries after a transient network failure and restores the session", async () => {
+    vi.useFakeTimers()
+    vi.mocked(refreshSession)
+      .mockRejectedValueOnce(new MockApiError(0, "Netzwerkfehler") as never)
+      .mockResolvedValueOnce(mockTokensResponse as never)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    // Während des Retry-Backoffs bleibt isLoading true (Guards zeigen Spinner,
+    // nicht den Login-Prompt).
+    expect(result.current.isLoading).toBe(true)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000)
+    })
+
+    expect(refreshSession).toHaveBeenCalledTimes(2)
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(result.current.token).toBe("access-token-abc")
+    expect(result.current.isLoading).toBe(false)
+  })
+
+  it("keeps the persisted session when all retries fail transiently (kein stiller Logout)", async () => {
+    vi.useFakeTimers()
+    vi.mocked(refreshSession).mockRejectedValue(new MockApiError(0, "Netzwerkfehler") as never)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10_000)
+    })
+
+    // Initial + 2 Retries, dann aufgeben — aber Session NICHT löschen:
+    // der Refresh-Cookie ist möglicherweise noch gültig.
+    expect(refreshSession).toHaveBeenCalledTimes(3)
+    expect(result.current.user).toEqual(mockUser)
+    expect(clearAuthSession).not.toHaveBeenCalled()
+    expect(result.current.isLoading).toBe(false)
+  })
+
+  it("retries on 5xx (Staging-Kaltstart) without clearing the session", async () => {
+    vi.useFakeTimers()
+    vi.mocked(refreshSession)
+      .mockRejectedValueOnce(new MockApiError(503, "Service Unavailable") as never)
+      .mockResolvedValueOnce(mockTokensResponse as never)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000)
+    })
+
+    expect(result.current.isAuthenticated).toBe(true)
+    expect(clearAuthSession).not.toHaveBeenCalled()
+  })
+
+  it("does NOT retry on a definitive 401 and clears the session immediately", async () => {
+    vi.mocked(refreshSession).mockRejectedValue(new MockApiError(401, "Unauthorized") as never)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await act(async () => {})
+
+    expect(refreshSession).toHaveBeenCalledOnce()
+    expect(result.current.user).toBeNull()
+    expect(result.current.isAuthenticated).toBe(false)
+    expect(clearAuthSession).toHaveBeenCalled()
+    expect(result.current.isLoading).toBe(false)
   })
 })
 
