@@ -151,7 +151,7 @@ damit kein Drift entsteht.
 
 - **Bun** (primärer Package Manager — `npm install -g bun` oder [bun.sh](https://bun.sh))
 - **Node.js 22** (LTS, als Fallback für Tools, die Bun nicht unterstützen)
-- Zugang zum Backend-Repo (`../marketplace-backend/`) für lokale Entwicklung
+- Zugang zum Backend-Repo (`../elysion-marketplace-backend/`) für lokale Entwicklung
 
 ### Lokales Setup
 

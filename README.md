@@ -3,7 +3,7 @@
 Next.js 16 frontend for **Elysion**, a marketplace for sustainably certified textile products. Buyers discover and purchase certified products matched to their personal value profile. Sellers manage their catalogue and orders. Admins oversee the platform.
 
 **Backend:** Spring Boot REST API → `https://marketplace-backend-1-1w30.onrender.com`
-**Backend repo:** `../marketplace-backend/`
+**Backend repo:** `../elysion-marketplace-backend/`
 
 ---
 
