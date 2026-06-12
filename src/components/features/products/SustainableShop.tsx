@@ -186,14 +186,14 @@ export default function SustainableShop() {
 
           {/* Skeleton — shown only on first load */}
           {isLoading && (
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: PRODUCTS_PAGE_SIZE }).map((_, i) => (
                 <div
                   key={i}
                   className="overflow-hidden rounded-xl border border-stone-100 bg-white shadow-sm"
                 >
                   <div className="aspect-square animate-pulse bg-sage-50" />
-                  <div className="space-y-2.5 p-4">
+                  <div className="space-y-2.5 p-3 sm:p-4">
                     <div className="h-3 w-1/3 animate-pulse rounded-full bg-sage-100" />
                     <div className="h-4 w-3/4 animate-pulse rounded-full bg-stone-100" />
                     <div className="h-3 w-full animate-pulse rounded-full bg-stone-100" />
@@ -251,7 +251,7 @@ export default function SustainableShop() {
           {/* Products Grid */}
           {!isLoading && !error && products.length > 0 && (
             <div
-              className={`grid gap-5 transition-opacity duration-200 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${isFetching ? "opacity-60" : "opacity-100"}`}
+              className={`grid grid-cols-2 gap-3 transition-opacity duration-200 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4 ${isFetching ? "opacity-60" : "opacity-100"}`}
             >
               {products.map((product) => (
                 <ProductCard
