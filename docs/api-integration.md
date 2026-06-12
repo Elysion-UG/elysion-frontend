@@ -2,7 +2,7 @@
 
 **Backend URL:** `https://marketplace-backend-1-1w30.onrender.com`
 **API-Prefix:** `/api/v1`
-**Vollständige Backend-Docs:** `../../marketplace-backend/docs/api-for-v0.md`
+**Vollständige Backend-Docs:** `../../elysion-marketplace-backend/docs/api-for-v0.md`
 
 ---
 
