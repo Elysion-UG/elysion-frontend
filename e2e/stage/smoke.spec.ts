@@ -16,10 +16,15 @@ const BUYER_URL = process.env.STAGE_BUYER_URL || "https://elysion-stage.vercel.a
 const SELLER_URL = process.env.STAGE_SELLER_URL || "https://elysion-stage-seller.vercel.app"
 const ADMIN_URL = process.env.STAGE_ADMIN_URL || "https://elysion-stage-admin.vercel.app"
 
+// Keine Passwort-Fallbacks (FE#65): Die Staging-Passwörter sind von den
+// dokumentierten lokalen Seed-Passwörtern entkoppelt und existieren nur als
+// Secrets (GitHub Actions: E2E_*_PASSWORD; lokal: ~\.elysion\deploy.env).
+// Fehlen sie, werden die Login-Tests übersprungen statt mit eingebauten
+// Credentials zu laufen.
 const SELLER_EMAIL = process.env.E2E_SELLER_EMAIL || "seller1@greenthread.dev"
-const SELLER_PASSWORD = process.env.E2E_SELLER_PASSWORD || "Seller123!"
+const SELLER_PASSWORD = process.env.E2E_SELLER_PASSWORD
 const ADMIN_EMAIL = process.env.E2E_ADMIN_EMAIL || "admin@marketplace.dev"
-const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || "Admin123!"
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD
 
 // Sammelt CSP-Verstöße — die wichtigste Regression aus FE#23.
 // Ausgenommen: Vercels eigene Preview-Tooling-Scripts (vercel.live) — die
@@ -60,11 +65,12 @@ test.describe("Stage-Smoke", () => {
   })
 
   test("Seller-Portal: Login mit Seed-Account erreicht das Dashboard", async ({ page }) => {
+    test.skip(!SELLER_PASSWORD, "E2E_SELLER_PASSWORD nicht gesetzt — Login-Test übersprungen.")
     const cspErrors = collectCspErrors(page)
 
     await page.goto(`${SELLER_URL}/login/seller`, { waitUntil: "networkidle" })
     await fillStable(page, "ihre@firma.de", SELLER_EMAIL)
-    await fillStable(page, "Passwort", SELLER_PASSWORD)
+    await fillStable(page, "Passwort", SELLER_PASSWORD!)
     await page.getByRole("button", { name: "Anmelden" }).click()
 
     await page.waitForURL("**/seller-dashboard**", { timeout: 30_000 })
@@ -76,11 +82,12 @@ test.describe("Stage-Smoke", () => {
   })
 
   test("Admin-Portal: Login mit Seed-Account erreicht das Admin-Panel", async ({ page }) => {
+    test.skip(!ADMIN_PASSWORD, "E2E_ADMIN_PASSWORD nicht gesetzt — Login-Test übersprungen.")
     const cspErrors = collectCspErrors(page)
 
     await page.goto(`${ADMIN_URL}/login/admin`, { waitUntil: "networkidle" })
     await fillStable(page, "admin@elysion.de", ADMIN_EMAIL)
-    await fillStable(page, "Passwort", ADMIN_PASSWORD)
+    await fillStable(page, "Passwort", ADMIN_PASSWORD!)
     await page.getByRole("button", { name: "Anmelden" }).click()
 
     await page.waitForURL("**/admin/**", { timeout: 30_000 })
