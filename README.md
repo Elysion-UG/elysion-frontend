@@ -81,7 +81,6 @@ src/
     (buyer)/              — Buyer routes (/cart, /checkout, /orders, /profil, ...)
     (public)/             — Public routes (/, /product, /about, /contact, /producer)
     (seller)/             — Seller routes (/seller-dashboard)
-    dev/                  — Development playground (/dev/*)
     layout.tsx            — Root layout (fonts, metadata, Providers)
     providers.tsx         — Client providers (AuthProvider, CartProvider, Toaster)
   components/

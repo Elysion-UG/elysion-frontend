@@ -566,14 +566,12 @@ Kein Rabattsystem implementiert. Nicht im Roadmap erwähnt.
 
 ### 7.1 `/dev`-Routen in Production
 
-**Status:** OFFEN — Sicherheitsrelevant
+**Status:** ERLEDIGT (2026-04-03)
 
-Entwicklerrouten (`/dev/*`) sind ohne Umgebungsschutz live. Können internen Zustand leaken.
-
-**Offene Fragen:**
-
-- Routen entfernen oder mit Env-Variable schützen?
-- Nur für internes Testing behalten oder löschen?
+Die Entwicklerrouten (`/dev/*`, API-Test-Playground) wurden mit Commit `7d7ae13`
+(„chore: remove dead files and dev tooling") vollständig gelöscht — die Frage
+„schützen oder löschen?" ist damit durch Löschung entschieden. Verifiziert
+2026-06-13 gegen Staging: alle `/dev/*`-Pfade liefern 404 (Issue #71).
 
 ---
 
