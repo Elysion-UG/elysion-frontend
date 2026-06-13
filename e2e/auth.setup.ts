@@ -2,6 +2,11 @@
  * Auth Setup — läuft einmal vor allen Seller-Tests.
  * Loggt den Seller ein und speichert den Refresh-Cookie (HttpOnly).
  * Alle Seller-Tests laden diesen State und bekommen via Refresh ein frisches Access-Token.
+ *
+ * SECURITY (FE#65): Die hier codierten Credentials sind die LOKALEN
+ * Seed-Accounts (docs/seed-data.sql) und gelten nur gegen ein lokales Backend.
+ * Auf Staging sind die Passwörter rotiert (nur als Secrets verfügbar); in
+ * Produktion dürfen diese Accounts niemals angelegt werden.
  */
 import { test as setup } from "@playwright/test"
 import { fileURLToPath } from "url"

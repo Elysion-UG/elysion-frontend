@@ -1,6 +1,11 @@
 /**
  * Admin Auth Setup — läuft einmal vor allen Admin-Tests.
  * Siehe e2e/auth.setup.ts für die Gesamt-Strategie (Refresh-Cookie persistieren).
+ *
+ * SECURITY (FE#65): Die hier codierten Credentials sind die LOKALEN
+ * Seed-Accounts (docs/seed-data.sql) und gelten nur gegen ein lokales Backend.
+ * Auf Staging sind die Passwörter rotiert (nur als Secrets verfügbar); in
+ * Produktion dürfen diese Accounts niemals angelegt werden.
  */
 import { test as setup } from "@playwright/test"
 import { fileURLToPath } from "url"

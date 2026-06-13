@@ -16,6 +16,8 @@
  */
 import { test, expect } from "@playwright/test"
 
+// SECURITY (FE#65): Lokale Seed-Accounts — gelten nur gegen ein lokales Backend,
+// auf Staging rotiert, dürfen in Produktion niemals existieren.
 const BUYER = { email: "buyer1@example.dev", password: "Buyer123!" }
 const SELLER = { email: "seller1@greenthread.dev", password: "Seller123!" }
 const INVALID_CREDS_MESSAGE = "Ungültige Anmeldedaten. Bitte versuchen Sie es erneut."
