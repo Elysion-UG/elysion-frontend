@@ -266,7 +266,7 @@ export default function SustainableShop() {
 
           {/* Pagination */}
           {!isLoading && totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 pt-4">
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
               <button
                 onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
                 disabled={currentPage === 0}

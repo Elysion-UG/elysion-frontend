@@ -3,7 +3,7 @@
 ## Elysion Sustainable Marketplace
 
 **Erstellt:** 2026-03-31
-**Scope:** Frontend (v0-sustainable-online-shop) + Backend (marketplace-backend)
+**Scope:** Frontend (elysion-frontend) + Backend (elysion-marketplace-backend)
 **Stand:** Phase 1 (MVP) abgeschlossen; Phase 2 in Planung
 
 ---

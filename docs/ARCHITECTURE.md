@@ -1,4 +1,4 @@
-# Frontend-Architektur — v0-sustainable-online-shop
+# Frontend-Architektur — elysion-frontend
 
 > Architektonische Leitplanken für das Next.js-Frontend. Ergänzt `CLAUDE.md`
 > (Projekt-Überblick), `README.md` (Setup) und `docs/api-integration.md`
