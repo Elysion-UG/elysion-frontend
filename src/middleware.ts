@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { DEFAULT_BACKEND_HOST } from "@/src/lib/constants/backend-host.mjs"
 
 // ── Startup guard ──────────────────────────────────────────────────────────
 // Fail fast if portal domains are not configured. Without these, the middleware
@@ -82,10 +83,9 @@ function buyerOrigin(request: NextRequest): string {
 
 const isDev = process.env.NODE_ENV !== "production"
 
-// Backend host for img-src / connect-src. Falls back to the production deployment
-// so existing setups keep working without an explicit configuration.
-const BACKEND_HOST =
-  process.env.NEXT_PUBLIC_BACKEND_HOST || "marketplace-backend-1-1w30.onrender.com"
+// Backend host for img-src / connect-src. Default lives in a single shared
+// constant (see backend-host.mjs); override via NEXT_PUBLIC_BACKEND_HOST.
+const BACKEND_HOST = process.env.NEXT_PUBLIC_BACKEND_HOST || DEFAULT_BACKEND_HOST
 const BACKEND_ORIGIN = `https://${BACKEND_HOST}`
 
 function buildCsp(nonce: string): string {
