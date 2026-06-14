@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query"
 import { ProductService } from "@/src/services/product.service"
-import type { ProductDetail } from "@/src/types"
 
 export const PRODUCTS_PAGE_SIZE = 12
 
@@ -24,7 +23,7 @@ async function fetchProducts(params: FetchProductsParams) {
   })
 
   return {
-    products: page.content as ProductDetail[],
+    products: page.content,
     totalElements: page.totalElements,
     totalPages: page.totalPages,
   }

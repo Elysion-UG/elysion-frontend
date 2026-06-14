@@ -9,7 +9,7 @@
  * Response envelope: { status: "success"|"error", message: string|null, data: T }
  */
 
-import type { User } from "@/src/types"
+import type { User, TokensResponse } from "@/src/types"
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ""
 
@@ -247,8 +247,6 @@ function buildRateLimitError(path: string, response: Response): ApiError {
 // both call POST /auth/refresh with the same cookie. Refresh-token rotation
 // invalidates the cookie on the first use, so the second call would fail and
 // either kick the user to home or leave the auth state empty.
-type TokensResponse = { accessToken: string; user: unknown; expiresIn: number }
-
 let _refreshInFlight: Promise<TokensResponse> | null = null
 
 export async function refreshSession(): Promise<TokensResponse> {

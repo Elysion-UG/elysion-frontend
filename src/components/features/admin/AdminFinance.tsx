@@ -98,7 +98,7 @@ export default function AdminFinance() {
   }
 
   const runEffect = useEffectEvent(() => {
-    if (tab !== "maintenance") load()
+    if (tab !== "maintenance") void load()
   })
   useEffect(() => {
     runEffect()
@@ -357,7 +357,7 @@ export default function AdminFinance() {
                               </TableCell>
                               <TableCell className="px-3 py-2.5 text-right">
                                 <button
-                                  onClick={() => releasePayout(d)}
+                                  onClick={() => void releasePayout(d)}
                                   disabled={!canRelease || releasingSellerId === d.sellerId}
                                   title={
                                     canRelease
@@ -437,7 +437,7 @@ export default function AdminFinance() {
                         Löscht abgelaufene Refresh-Token-Einträge aus der Datenbank.
                       </p>
                       <button
-                        onClick={() => runMaintenance("tokens")}
+                        onClick={() => void runMaintenance("tokens")}
                         disabled={maintenanceLoading === "tokens"}
                         className="flex items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-800/60 px-4 py-2 text-sm font-medium text-slate-300 hover:border-cyber-700/60 hover:text-cyber-400 disabled:opacity-60"
                       >
@@ -457,7 +457,7 @@ export default function AdminFinance() {
                         Markiert überfällige PENDING_PAYMENT-Bestellungen als CANCELLED.
                       </p>
                       <button
-                        onClick={() => runMaintenance("orders")}
+                        onClick={() => void runMaintenance("orders")}
                         disabled={maintenanceLoading === "orders"}
                         className="flex items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-800/60 px-4 py-2 text-sm font-medium text-slate-300 hover:border-cyber-700/60 hover:text-cyber-400 disabled:opacity-60"
                       >
