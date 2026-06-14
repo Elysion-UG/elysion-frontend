@@ -117,4 +117,12 @@ async function fillLoginAndSubmit(
     await expect(passwordInput).toHaveValue(password, { timeout: 1_000 })
   }).toPass({ timeout: 20_000 })
   await page.getByRole("button", { name: "Anmelden" }).click()
+
+  // Credentials wurden beim Klick bereits synchron in den Login-Request
+  // übernommen. Felder danach leeren, damit ein etwaiger Fehler-Snapshot
+  // (Playwrights error-context.md, nur bei Fehlschlag) das Passwort nicht im
+  // Klartext leakt (FE#106). Bei erfolgreichem Login navigiert die Seite weg
+  // → fill() wirft, was hier bewusst ignoriert wird.
+  await passwordInput.fill("").catch(() => {})
+  await emailInput.fill("").catch(() => {})
 }
