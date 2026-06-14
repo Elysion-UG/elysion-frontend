@@ -69,9 +69,7 @@ test.describe("Stage-Smoke", () => {
     const cspErrors = collectCspErrors(page)
 
     await page.goto(`${SELLER_URL}/login/seller`, { waitUntil: "networkidle" })
-    await fillStable(page, "ihre@firma.de", SELLER_EMAIL)
-    await fillStable(page, "Passwort", SELLER_PASSWORD!)
-    await page.getByRole("button", { name: "Anmelden" }).click()
+    await fillLoginAndSubmit(page, "ihre@firma.de", SELLER_EMAIL, SELLER_PASSWORD!)
 
     await page.waitForURL("**/seller-dashboard**", { timeout: 30_000 })
     await expect(page.getByRole("heading", { name: "Produkte", exact: true })).toBeVisible({
@@ -86,9 +84,7 @@ test.describe("Stage-Smoke", () => {
     const cspErrors = collectCspErrors(page)
 
     await page.goto(`${ADMIN_URL}/login/admin`, { waitUntil: "networkidle" })
-    await fillStable(page, "admin@elysion.de", ADMIN_EMAIL)
-    await fillStable(page, "Passwort", ADMIN_PASSWORD!)
-    await page.getByRole("button", { name: "Anmelden" }).click()
+    await fillLoginAndSubmit(page, "admin@elysion.de", ADMIN_EMAIL, ADMIN_PASSWORD!)
 
     await page.waitForURL("**/admin/**", { timeout: 30_000 })
 
@@ -96,16 +92,29 @@ test.describe("Stage-Smoke", () => {
   })
 })
 
-// Hydration-sicheres Ausfüllen: Auf Stage rendert SSR das Formular, bevor
-// React hydratisiert — ein zu frühes fill() wird beim Hydratisieren von den
-// Controlled-Inputs zurückgesetzt (leerer Submit). Daher: füllen und so lange
-// nachprüfen/nachfüllen, bis der Wert stabil im Input steht.
-async function fillStable(page: Page, placeholder: string, value: string): Promise<void> {
-  const input = page.getByPlaceholder(placeholder)
-  await expect(input).toBeVisible({ timeout: 15_000 })
+// Hydration-sicheres Login: Auf Stage rendert SSR das Formular, bevor React
+// hydratisiert — ein zu frühes fill() wird beim Hydratisieren von den
+// Controlled-Inputs zurückgesetzt (leerer Submit). Ein Per-Feld-Check reicht
+// nicht: Wird die E-Mail einzeln verifiziert und DANACH das Passwort gefüllt,
+// kann die Hydration die E-Mail in der Lücke wieder leeren (FE#107 — Snapshot
+// zeigte leere E-Mail bei gefülltem Passwort → 401). Daher: beide Felder füllen
+// und unmittelbar vor dem Submit GEMEINSAM stabil halten, dann erst klicken.
+async function fillLoginAndSubmit(
+  page: Page,
+  emailPlaceholder: string,
+  email: string,
+  password: string
+): Promise<void> {
+  const emailInput = page.getByPlaceholder(emailPlaceholder)
+  const passwordInput = page.getByPlaceholder("Passwort")
+  await expect(emailInput).toBeVisible({ timeout: 15_000 })
   await expect(async () => {
-    await input.fill(value)
+    if ((await emailInput.inputValue()) !== email) await emailInput.fill(email)
+    if ((await passwordInput.inputValue()) !== password) await passwordInput.fill(password)
     await page.waitForTimeout(300)
-    await expect(input).toHaveValue(value, { timeout: 1_000 })
+    // Beide Werte müssen GLEICHZEITIG stehen bleiben, sonst nachfüllen.
+    await expect(emailInput).toHaveValue(email, { timeout: 1_000 })
+    await expect(passwordInput).toHaveValue(password, { timeout: 1_000 })
   }).toPass({ timeout: 20_000 })
+  await page.getByRole("button", { name: "Anmelden" }).click()
 }
