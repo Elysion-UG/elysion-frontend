@@ -167,6 +167,51 @@ describe("ProductService", () => {
       })
     })
 
+    it("maps inStock from the API item", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...mockApiProductPage,
+        items: [
+          {
+            id: "p1",
+            slug: "eco-shirt",
+            name: "Eco Shirt",
+            price: 29.9,
+            currency: "EUR",
+            primaryImage: null,
+            seller: null,
+            createdAt: "2026-01-01T00:00:00Z",
+            matchScore: null,
+            inStock: false,
+          },
+        ],
+        totalItems: 1,
+      })
+      const result = await ProductService.list()
+      expect(result.content[0].inStock).toBe(false)
+    })
+
+    it("defaults inStock to true when the API omits it", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...mockApiProductPage,
+        items: [
+          {
+            id: "p1",
+            slug: "eco-shirt",
+            name: "Eco Shirt",
+            price: 29.9,
+            currency: "EUR",
+            primaryImage: null,
+            seller: null,
+            createdAt: "2026-01-01T00:00:00Z",
+            matchScore: null,
+          },
+        ],
+        totalItems: 1,
+      })
+      const result = await ProductService.list()
+      expect(result.content[0].inStock).toBe(true)
+    })
+
     it("maps pagination fields (totalItems→totalElements, page→number)", async () => {
       mockApiRequest.mockResolvedValue({
         items: [],

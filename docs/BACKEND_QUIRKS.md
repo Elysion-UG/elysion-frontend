@@ -30,7 +30,7 @@ Raw backend response shape (before normalization):
 }
 ```
 
-`ProductService.list()` normalizes this internally to `ProductPage`. Each item contains `primaryImage: string | null` (mapped to `imageUrls: [primaryImage]`) and `seller.id` (mapped to `seller.userId`). There is no `basePrice` — only `price`.
+`ProductService.list()` normalizes this internally to `ProductPage`. Each item contains `primaryImage: string | null` (mapped to `imageUrls: [primaryImage]`) and `seller.id` (mapped to `seller.userId`). There is no `basePrice` — only `price`. Each item also carries `inStock: boolean` (sellable = at least one variant with `stock − reserved > 0`; products without variant-level stock tracking report `true`); absent on older API responses → normalized to `true`.
 
 ---
 

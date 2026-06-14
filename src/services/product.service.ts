@@ -44,6 +44,7 @@ interface ApiProductListItem {
   createdAt: string
   matchScore: number | null
   status?: string
+  inStock?: boolean
 }
 
 interface ApiProductPage {
@@ -128,6 +129,8 @@ export const ProductService = {
         price: item.price,
         currency: item.currency,
         status: item.status,
+        // Backend reports availability per list item; absent (older API) → assume available.
+        inStock: item.inStock ?? true,
         imageUrls: item.primaryImage ? [item.primaryImage] : undefined,
         seller: item.seller?.id
           ? { userId: item.seller.id, companyName: item.seller.companyName }

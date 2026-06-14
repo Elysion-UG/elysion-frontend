@@ -36,6 +36,8 @@ export default function ProductCard({ product, onProductClick, onSellerClick }: 
   const image = getProductImage(product)
   const price = getProductPrice(product)
   const certs = product.certificates ?? []
+  // Only mark as sold out when the API explicitly reports it; unknown stays available.
+  const soldOut = product.inStock === false
 
   return (
     <div
@@ -49,9 +51,17 @@ export default function ProductCard({ product, onProductClick, onSellerClick }: 
           src={image}
           alt={product.name ?? product.title ?? "Produkt"}
           fill
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          className={`object-cover transition-transform duration-300 group-hover:scale-105 ${
+            soldOut ? "opacity-60 grayscale" : ""
+          }`}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
         />
+
+        {soldOut && (
+          <div className="absolute inset-x-0 bottom-0 bg-stone-900/70 py-1 text-center text-[11px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
+            Ausverkauft
+          </div>
+        )}
 
         {/* Certificate count badge */}
         {certs.length > 0 && (
@@ -107,7 +117,11 @@ export default function ProductCard({ product, onProductClick, onSellerClick }: 
 
         <div className="flex items-center justify-between pt-2">
           <span className="text-base font-bold text-stone-900">{formatEuro(price)}</span>
-          <span className="text-[10px] font-medium text-sage-600">Auf Lager</span>
+          <span
+            className={`text-[10px] font-medium ${soldOut ? "text-stone-400" : "text-sage-600"}`}
+          >
+            {soldOut ? "Ausverkauft" : "Auf Lager"}
+          </span>
         </div>
       </div>
     </div>
