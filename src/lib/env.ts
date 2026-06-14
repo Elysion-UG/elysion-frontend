@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { DEFAULT_BACKEND_HOST } from "./constants/backend-host.mjs"
 
 const envSchema = z.object({
   NEXT_PUBLIC_API_URL: z.string().url().default("http://localhost:8080"),
@@ -7,8 +8,8 @@ const envSchema = z.object({
   BUYER_DOMAIN: z.string().min(1, "BUYER_DOMAIN must be set (e.g. localhost:3000)"),
   // Backend image/CSP allowlist host (no protocol, no path).
   // Used by next.config.mjs (remotePatterns) and middleware.ts (CSP img-src/connect-src).
-  // Default = production fallback so existing deployments keep working.
-  NEXT_PUBLIC_BACKEND_HOST: z.string().min(1).default("marketplace-backend-1-1w30.onrender.com"),
+  // Default lives in a single shared constant (see constants/backend-host.mjs).
+  NEXT_PUBLIC_BACKEND_HOST: z.string().min(1).default(DEFAULT_BACKEND_HOST),
 })
 
 const _env = envSchema.safeParse({
