@@ -38,7 +38,7 @@ export default function AdminUsers() {
   const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
   const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
+  const [page, setPage] = useState(0)
   const [totalPages, setTotalPages] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
   const [filterRole, setFilterRole] = useState<UserRole | "">("")
@@ -56,8 +56,8 @@ export default function AdminUsers() {
         role: filterRole || undefined,
         status: filterStatus || undefined,
       })
-      setUsers(res.data)
-      setTotal(res.total)
+      setUsers(res.items)
+      setTotal(res.totalItems)
       setTotalPages(res.totalPages)
     } catch {
       toast.error("Fehler beim Laden der Benutzer.")
@@ -82,7 +82,7 @@ export default function AdminUsers() {
           value={searchQuery}
           onChange={(v) => {
             setSearchQuery(v)
-            setPage(1)
+            setPage(0)
           }}
           placeholder="Name oder E-Mail suchen..."
         />
@@ -90,7 +90,7 @@ export default function AdminUsers() {
           value={filterRole}
           onChange={(e) => {
             setFilterRole(e.target.value as UserRole | "")
-            setPage(1)
+            setPage(0)
           }}
           className={ADMIN_SELECT_CLASS}
         >
@@ -103,7 +103,7 @@ export default function AdminUsers() {
           value={filterStatus}
           onChange={(e) => {
             setFilterStatus(e.target.value as AccountStatus | "")
-            setPage(1)
+            setPage(0)
           }}
           className={ADMIN_SELECT_CLASS}
         >
@@ -169,7 +169,11 @@ export default function AdminUsers() {
           </TableBody>
         </Table>
 
-        <AdminTablePagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        <AdminTablePagination
+          page={page + 1}
+          totalPages={totalPages}
+          onPageChange={(p) => setPage(p - 1)}
+        />
       </AdminTableContainer>
     </div>
   )

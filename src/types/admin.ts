@@ -41,24 +41,6 @@ export interface AdminDashboardData {
 
 // ── Admin Types ────────────────────────────────────────────────────
 
-/** Frontend-shaped paginated response (used by components) */
-export interface PaginatedResponse<T> {
-  data: T[]
-  total: number
-  page: number
-  pageSize: number
-  totalPages: number
-}
-
-/** Backend-shaped paginated response envelope */
-export interface PagedResponse<T> {
-  items: T[]
-  page: number
-  size: number
-  totalItems: number
-  totalPages: number
-}
-
 export interface AdminUserListParams {
   page: number
   pageSize: number

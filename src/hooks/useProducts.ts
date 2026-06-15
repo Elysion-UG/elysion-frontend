@@ -27,8 +27,8 @@ async function fetchProducts(params: FetchProductsParams) {
   })
 
   return {
-    products: page.content,
-    totalElements: page.totalElements,
+    products: page.items,
+    totalElements: page.totalItems,
     totalPages: page.totalPages,
   }
 }

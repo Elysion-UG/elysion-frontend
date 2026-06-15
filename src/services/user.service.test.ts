@@ -112,11 +112,11 @@ describe("UserService", () => {
         totalPages: 1,
       })
       const res = await UserService.getUsers({ page: 1, pageSize: 100 })
-      expect(res.total).toBe(2)
-      expect(res.data).toHaveLength(2)
-      expect(res.data[0].id).toBe("usr_1")
-      expect(res.page).toBe(1)
-      expect(res.pageSize).toBe(100)
+      expect(res.totalItems).toBe(2)
+      expect(res.items).toHaveLength(2)
+      expect(res.items[0].id).toBe("usr_1")
+      expect(res.page).toBe(0)
+      expect(res.size).toBe(100)
       expect(res.totalPages).toBe(1)
     })
 
@@ -130,7 +130,7 @@ describe("UserService", () => {
       })
       const res = await UserService.getUsers({ page: 1, pageSize: 100, role: "SELLER" })
       expect(mockApiRequest).toHaveBeenCalledWith(expect.stringContaining("role=SELLER"))
-      expect(res.data[0].role).toBe("SELLER")
+      expect(res.items[0].role).toBe("SELLER")
     })
 
     it("paginates correctly", async () => {
@@ -142,7 +142,7 @@ describe("UserService", () => {
         totalPages: 3,
       })
       const res = await UserService.getUsers({ page: 1, pageSize: 2 })
-      expect(res.data).toHaveLength(2)
+      expect(res.items).toHaveLength(2)
       expect(res.totalPages).toBe(3)
     })
   })

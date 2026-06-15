@@ -1,5 +1,6 @@
 import { apiRequest, buildQuery } from "@/src/lib/api-client"
 import { errorStore } from "@/src/lib/error-store"
+import { normalizePage } from "@/src/lib/normalize-page"
 import { orderGroupStatusSchema, orderStatusSchema } from "@/src/lib/api-schemas"
 import type { Order, OrderDetail, OrderGroup, OrderItem } from "@/src/types"
 import { type ApiOrderProductSnapshot, normalizeSnapshot } from "./_order-normalizers"
@@ -138,7 +139,7 @@ export const OrderService = {
     const res = await apiRequest<{ items?: Order[] } | Order[]>(
       `/api/v1/orders${buildQuery({ page: params.page, size: params.size, status: params.status })}`
     )
-    return Array.isArray(res) ? res : ((res as { items?: Order[] }).items ?? [])
+    return normalizePage<Order, Order>(res).items
   },
 
   async getById(id: string): Promise<OrderDetail> {

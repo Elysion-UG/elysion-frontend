@@ -1,11 +1,10 @@
 import { apiRequest } from "@/src/lib/api-client"
 import type {
   User,
-  PaginatedResponse,
+  Page,
   AdminUserListParams,
   AccountStatus,
   SellerStatus,
-  PagedResponse,
   AdminUserListItem,
   SellerProfile,
 } from "@/src/types"
@@ -33,7 +32,7 @@ export const UserService = {
   },
 
   // ── Admin: User Management ─────────────────────────────────────────
-  async getUsers(params: AdminUserListParams): Promise<PaginatedResponse<User>> {
+  async getUsers(params: AdminUserListParams): Promise<Page<User>> {
     const res = await AdminService.listUsers({
       page: params.page,
       pageSize: params.pageSize,
@@ -41,7 +40,7 @@ export const UserService = {
       role: params.role,
       status: params.status,
     })
-    // Backend returns PagedResponse with userId (not id) per API spec.
+    // Backend returns the paginated envelope with userId (not id) per API spec.
     type RichItem = AdminUserListItem & {
       userId: string
       firstName?: string
@@ -49,9 +48,9 @@ export const UserService = {
       phone?: string
       sellerProfile?: SellerProfile
     }
-    const paged = res as PagedResponse<RichItem>
+    const paged = res as Page<RichItem>
     return {
-      data: paged.items.map((item) => ({
+      items: paged.items.map((item) => ({
         id: item.userId,
         email: item.email,
         firstName: item.firstName ?? "",
@@ -63,9 +62,9 @@ export const UserService = {
         sellerProfile: item.sellerProfile,
         createdAt: item.createdAt,
       })),
-      total: paged.totalItems,
-      page: params.page,
-      pageSize: params.pageSize,
+      page: paged.page,
+      size: paged.size,
+      totalItems: paged.totalItems,
       totalPages: paged.totalPages,
     }
   },

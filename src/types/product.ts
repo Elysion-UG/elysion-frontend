@@ -97,14 +97,6 @@ export interface ProductListParams {
   size?: number
 }
 
-export interface ProductPage {
-  content: ProductDetail[]
-  totalElements: number
-  totalPages: number
-  size: number
-  number: number
-}
-
 export interface ProductCreateDTO {
   name?: string
   title?: string

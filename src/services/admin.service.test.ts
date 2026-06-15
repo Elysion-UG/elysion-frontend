@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeEach } from "vitest"
 import { apiRequest } from "@/src/lib/api-client"
 import { AdminService } from "./admin.service"
-import type { PagedResponse, AdminUserListItem } from "@/src/types"
+import type { Page, AdminUserListItem } from "@/src/types"
 
 vi.mock("@/src/lib/api-client", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/src/lib/api-client")>()
@@ -10,7 +10,7 @@ vi.mock("@/src/lib/api-client", async (importOriginal) => {
 
 const mockApiRequest = vi.mocked(apiRequest)
 
-const mockPagedResponse = <T>(items: T[]): PagedResponse<T> => ({
+const mockPagedResponse = <T>(items: T[]): Page<T> => ({
   items,
   page: 0,
   size: 20,
@@ -42,9 +42,9 @@ describe("AdminService", () => {
       status: "ACTIVE",
     })
 
-    // page is zero-indexed: page 1 → page=0 in query
+    // page is passed through 0-based, consistent with all list endpoints (#36)
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/admin/users?page=0&size=10&search=alice&role=BUYER&status=ACTIVE"
+      "/api/v1/admin/users?page=1&size=10&search=alice&role=BUYER&status=ACTIVE"
     )
   })
 
@@ -53,8 +53,7 @@ describe("AdminService", () => {
 
     await AdminService.listUsers({ page: 1 })
 
-    // page 1 → page=0
-    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/users?page=0")
+    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/users?page=1")
   })
 
   it("getUser — calls GET /api/v1/admin/users/:id", async () => {
