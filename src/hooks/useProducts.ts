@@ -3,6 +3,10 @@ import { ProductService } from "@/src/services/product.service"
 
 export const PRODUCTS_PAGE_SIZE = 12
 
+// Obergrenze des Preisfilter-Sliders (EUR). Steht der Wert auf dem Maximum,
+// wird kein maxPrice an die API gesendet (= „nach oben offen").
+export const MAX_PRICE_EUR = 300
+
 interface FetchProductsParams {
   search: string
   priceRange: { min: number; max: number }
@@ -15,7 +19,7 @@ async function fetchProducts(params: FetchProductsParams) {
   const page = await ProductService.list({
     search: params.search || undefined,
     minPrice: params.priceRange.min > 0 ? params.priceRange.min : undefined,
-    maxPrice: params.priceRange.max < 300 ? params.priceRange.max : undefined,
+    maxPrice: params.priceRange.max < MAX_PRICE_EUR ? params.priceRange.max : undefined,
     materials: params.materials.length > 0 ? params.materials : undefined,
     sort: params.apiSort,
     page: params.currentPage,

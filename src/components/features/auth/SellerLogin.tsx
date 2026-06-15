@@ -13,6 +13,7 @@ import { AuthSubmitButton } from "@/src/components/features/auth/_shared/AuthSub
 import { ForgotPasswordPanel } from "@/src/components/features/auth/_shared/ForgotPasswordPanel"
 import { PasswordStrengthHints } from "@/src/components/features/auth/_shared/PasswordStrengthHints"
 import { useAuthLoginHandler } from "@/src/components/features/auth/_shared/useAuthLoginHandler"
+import { textInputClass } from "@/src/components/features/auth/_shared/form-styles"
 
 type View = "login" | "register" | "forgot"
 
@@ -22,9 +23,6 @@ const FEATURES = [
   { icon: Award, text: "Produktverwaltung mit Status-Tracking" },
   { icon: Banknote, text: "Transparente Auszahlungen und Abrechnungen" },
 ]
-
-const textInputClass =
-  "w-full rounded-xl border border-stone-300 px-3 py-2.5 text-sm focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
 
 export default function SellerLogin() {
   const { register, isLoading } = useAuth()
@@ -253,7 +251,7 @@ export default function SellerLogin() {
                       value={regFirstName}
                       onChange={(e) => setRegFirstName(e.target.value)}
                       required
-                      className={textInputClass}
+                      className={`${textInputClass} text-sm`}
                     />
                   </div>
                   <div>
@@ -265,7 +263,7 @@ export default function SellerLogin() {
                       value={regLastName}
                       onChange={(e) => setRegLastName(e.target.value)}
                       required
-                      className={textInputClass}
+                      className={`${textInputClass} text-sm`}
                     />
                   </div>
                 </div>
@@ -315,7 +313,7 @@ export default function SellerLogin() {
                       value={regCompany}
                       onChange={(e) => setRegCompany(e.target.value)}
                       required
-                      className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
+                      className={`${textInputClass} bg-white text-sm`}
                     />
                   </div>
                   <div>
@@ -326,7 +324,7 @@ export default function SellerLogin() {
                       onChange={(e) => setRegVatId(e.target.value)}
                       required
                       placeholder="DE123456789"
-                      className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
+                      className={`${textInputClass} bg-white text-sm`}
                     />
                   </div>
                   <div>
@@ -337,7 +335,7 @@ export default function SellerLogin() {
                       onChange={(e) => setRegIban(e.target.value)}
                       required
                       placeholder="DE89 3704 0044 …"
-                      className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-sm focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
+                      className={`${textInputClass} bg-white text-sm`}
                     />
                   </div>
                 </div>
