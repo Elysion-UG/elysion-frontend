@@ -100,12 +100,12 @@ const MAX_ENTRIES = 500
 const RATE_WINDOW_MS = 30 * 60 * 1000 // 30 minutes
 
 class ErrorStore {
-  private readonly buffer: FrontendErrorEvent[] = []
+  private buffer: FrontendErrorEvent[] = []
   private readonly listeners = new Set<ErrorStoreListener>()
   private isReporting = false
 
   // ── Flush state ──
-  private readonly unflushed: FrontendErrorEvent[] = []
+  private unflushed: FrontendErrorEvent[] = []
   private flushTimer: ReturnType<typeof setInterval> | null = null
   private autoFlushStarted = false
   private isFlushing = false
@@ -132,9 +132,9 @@ class ErrorStore {
       }
 
       this.buffer.push(event)
-      // FIFO eviction
+      // FIFO eviction — keep the most recent MAX_ENTRIES (copy, no in-place splice).
       if (this.buffer.length > MAX_ENTRIES) {
-        this.buffer.splice(0, this.buffer.length - MAX_ENTRIES)
+        this.buffer = this.buffer.slice(-MAX_ENTRIES)
       }
 
       // Queue for backend persistence (independent of display eviction)
@@ -190,9 +190,9 @@ class ErrorStore {
       if (!res.ok) throw new Error(`monitoring ingest failed: ${res.status}`)
 
       const sent = new Set(batch.map((e) => e.id))
-      for (let i = this.unflushed.length - 1; i >= 0; i--) {
-        if (sent.has(this.unflushed[i].id)) this.unflushed.splice(i, 1)
-      }
+      // Drop successfully-sent events by rebuilding the queue (copy, not in-place
+      // splice) — preserves order and any events queued during the await above.
+      this.unflushed = this.unflushed.filter((e) => !sent.has(e.id))
       this.consecutiveFailures = 0
       this.nextFlushAllowedAt = 0
     } catch {
@@ -230,9 +230,9 @@ class ErrorStore {
     }
   }
 
-  /** Return all stored events (oldest first). */
+  /** Return all stored events (oldest first) as an immutable snapshot. */
   getAll(): readonly FrontendErrorEvent[] {
-    return this.buffer
+    return [...this.buffer]
   }
 
   /** Return the most recent `n` events (newest first). */
@@ -289,8 +289,8 @@ class ErrorStore {
 
   /** Remove all stored events (display buffer + pending flush queue). */
   clear(): void {
-    this.buffer.length = 0
-    this.unflushed.length = 0
+    this.buffer = []
+    this.unflushed = []
   }
 }
 

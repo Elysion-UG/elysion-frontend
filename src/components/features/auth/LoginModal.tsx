@@ -16,6 +16,7 @@ import { AuthSubmitButton } from "@/src/components/features/auth/_shared/AuthSub
 import { ForgotPasswordPanel } from "@/src/components/features/auth/_shared/ForgotPasswordPanel"
 import { PasswordStrengthHints } from "@/src/components/features/auth/_shared/PasswordStrengthHints"
 import { useAuthLoginHandler } from "@/src/components/features/auth/_shared/useAuthLoginHandler"
+import { textInputClass } from "@/src/components/features/auth/_shared/form-styles"
 
 interface LoginModalProps {
   isOpen: boolean
@@ -23,9 +24,6 @@ interface LoginModalProps {
 }
 
 type ModalView = "login" | "register" | "forgot"
-
-const textInputClass =
-  "w-full rounded-xl border border-stone-300 px-3 py-2.5 text-stone-800 focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
 
 export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const { register, isLoading } = useAuth()
@@ -259,7 +257,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     value={regFirstName}
                     onChange={(e) => setRegFirstName(e.target.value)}
                     required
-                    className={textInputClass}
+                    className={`${textInputClass} text-stone-800`}
                   />
                 </div>
                 <div>
@@ -272,7 +270,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                     value={regLastName}
                     onChange={(e) => setRegLastName(e.target.value)}
                     required
-                    className={textInputClass}
+                    className={`${textInputClass} text-stone-800`}
                   />
                 </div>
               </div>

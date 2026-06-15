@@ -1,24 +1,34 @@
 import { apiRequest, buildQuery } from "@/src/lib/api-client"
+import { errorStore } from "@/src/lib/error-store"
 import { orderGroupStatusSchema, orderStatusSchema } from "@/src/lib/api-schemas"
 import type { Order, OrderDetail, OrderGroup, OrderItem } from "@/src/types"
 import { type ApiOrderProductSnapshot, normalizeSnapshot } from "./_order-normalizers"
 
 // Safely narrow a backend status string to one of our known enum values.
 // Unknown values from the server fall back to a sane default and are reported
-// to the console so contract drift is visible during development. This is
-// preferable to `as` casts that silently render an undefined status badge.
+// to the error store so contract drift is visible without using console.* in
+// production. This is preferable to `as` casts that silently render an
+// undefined status badge.
 function parseOrderStatus(raw: string | undefined): OrderDetail["status"] {
   if (!raw) return undefined
   const result = orderStatusSchema.safeParse(raw)
   if (result.success) return result.data
-  console.warn(`[order.service] unknown order status from backend: ${raw}`)
+  errorStore.report({
+    severity: "low",
+    category: "api",
+    message: `[order.service] unknown order status from backend: ${raw}`,
+  })
   return "PENDING"
 }
 
 function parseOrderGroupStatus(raw: string): OrderGroup["status"] {
   const result = orderGroupStatusSchema.safeParse(raw)
   if (result.success) return result.data
-  console.warn(`[order.service] unknown order-group status from backend: ${raw}`)
+  errorStore.report({
+    severity: "low",
+    category: "api",
+    message: `[order.service] unknown order-group status from backend: ${raw}`,
+  })
   return "PENDING"
 }
 
