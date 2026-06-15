@@ -60,7 +60,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
     try {
       await ProductService.updateStatus(productId, { status })
       toast.success(`Status auf "${productStatusLabel[status]}" gesetzt.`)
-      fetchProducts()
+      void fetchProducts()
     } catch {
       toast.error("Status konnte nicht geändert werden.")
     }
@@ -75,7 +75,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
     try {
       await ProductService.delete(productId)
       toast.success("Produkt gelöscht.")
-      fetchProducts()
+      void fetchProducts()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Produkt konnte nicht gelöscht werden."
       toast.error(msg)
@@ -109,7 +109,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
           <h2 className="text-xl font-semibold text-slate-800">Ihre Produkte</h2>
           <div className="flex items-center gap-2">
             <button
-              onClick={fetchProducts}
+              onClick={() => void fetchProducts()}
               className="text-slate-400 transition-colors hover:text-slate-600"
               title="Aktualisieren"
             >
@@ -193,7 +193,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                         </button>
                         {status === "DRAFT" && (
                           <button
-                            onClick={() => handleStatusChange(product.id, "REVIEW")}
+                            onClick={() => void handleStatusChange(product.id, "REVIEW")}
                             className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800 hover:bg-amber-200"
                           >
                             Zur Prüfung
@@ -201,7 +201,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                         )}
                         {status === "ACTIVE" && (
                           <button
-                            onClick={() => handleStatusChange(product.id, "INACTIVE")}
+                            onClick={() => void handleStatusChange(product.id, "INACTIVE")}
                             className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-200"
                           >
                             Deaktivieren
@@ -209,7 +209,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                         )}
                         {status === "INACTIVE" && (
                           <button
-                            onClick={() => handleStatusChange(product.id, "ACTIVE")}
+                            onClick={() => void handleStatusChange(product.id, "ACTIVE")}
                             className="rounded bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800 hover:bg-emerald-200"
                           >
                             Aktivieren
@@ -217,7 +217,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                         )}
                         {status === "DRAFT" && (
                           <button
-                            onClick={() => handleDelete(product.id, product.title)}
+                            onClick={() => void handleDelete(product.id, product.title)}
                             className="text-red-500 transition-colors hover:text-red-700"
                             title="Produkt löschen"
                           >

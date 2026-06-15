@@ -143,7 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // eine definitive Ablehnung (401) bricht sofort ab. isLoading bleibt
     // während der Retries true, sodass Guards den Spinner statt des
     // Login-Prompts zeigen.
-    const refreshWithRetry = async (): Promise<unknown> => {
+    const refreshWithRetry = async (): Promise<TokensResponse> => {
       for (let attempt = 0; ; attempt++) {
         try {
           return await refreshSession()
@@ -168,9 +168,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     refreshWithRetry()
-      .then(async (res) => {
+      .then(async (tokens) => {
         if (gen !== getAuthGeneration()) return // logout happened mid-refresh
-        const tokens = res as TokensResponse
         setToken(tokens.accessToken)
         setAccessToken(tokens.accessToken)
 
@@ -281,8 +280,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             ? AuthService.loginAsAdmin
             : AuthService.loginAsCustomer
       const res = await loginFn(dto)
-      // login response always includes user
-      const loggedInUser = res.user!
+      // Login-Response enthält normalerweise den User; bei null sauberer Fehler
+      // statt eines TypeErrors beim Zugriff weiter unten.
+      if (!res.user) {
+        throw new Error("Login-Response ohne User")
+      }
+      const loggedInUser = res.user
       // Bump generation so any in-flight refreshes from the previous auth state
       // don't overwrite this fresh token when they resolve.
       bumpAuthGeneration()
