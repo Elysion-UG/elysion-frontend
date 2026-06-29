@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useEffectEvent } from "@/src/hooks/use-effect-event"
+import { useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
 import { CheckCircle2, XCircle, ExternalLink } from "lucide-react"
 import { CertificateService } from "@/src/services/certificate.service"
@@ -12,188 +11,156 @@ import {
   ADMIN_CERTIFICATE_STATUS_COLOR as statusColor,
 } from "@/src/lib/constants"
 import {
-  PageHeader,
-  AdminFilterBar,
+  AdminListPage,
   RefreshButton,
-  AdminTableContainer,
   GenericRejectModal,
-  ADMIN_TH_CLASS,
-  ADMIN_THEAD_CLASS,
-  ADMIN_TR_CLICKABLE_CLASS,
   ADMIN_SELECT_CLASS,
 } from "@/src/components/shared"
-import { cn } from "@/src/lib/utils"
 import StatusBadge from "@/src/components/shared/StatusBadge"
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from "@/src/components/ui/table"
+import { TableCell } from "@/src/components/ui/table"
+import { useAdminList } from "@/src/hooks/useAdminList"
 import { toast } from "sonner"
 
 export default function AdminCertificates() {
   const router = useRouter()
-  const [certs, setCerts] = useState<Certificate[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [filter, setFilter] = useState<CertificateStatus | "">("")
   const [rejectTarget, setRejectTarget] = useState<Certificate | null>(null)
 
-  const load = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const all = await CertificateService.adminListAll()
-      setCerts(filter ? all.filter((c) => c.status === filter) : all)
-    } catch {
-      toast.error("Fehler beim Laden der Zertifikate.")
-    } finally {
-      setIsLoading(false)
+  // CertificateService.adminListAll returns the full array (no server-side
+  // pagination); wrap it as a single page so the shared list scaffold applies.
+  const fetchPage = useCallback(async () => {
+    const all = await CertificateService.adminListAll()
+    return {
+      items: filter ? all.filter((c) => c.status === filter) : all,
+      totalPages: 1,
     }
   }, [filter])
 
-  const runEffect = useEffectEvent(() => {
-    load()
+  const { items, isLoading, reload } = useAdminList({
+    fetchPage,
+    errorMessage: "Fehler beim Laden der Zertifikate.",
   })
-  useEffect(() => {
-    runEffect()
-  }, [load])
 
   const handleVerify = async (cert: Certificate) => {
     try {
       await CertificateService.verify(cert.id)
       toast.success(`"${cert.title}" verifiziert.`)
-      load()
+      reload()
     } catch {
       toast.error("Fehler beim Verifizieren.")
     }
   }
 
   return (
-    <div>
-      <PageHeader
-        title="Zertifikat-Prüfung"
-        subtitle="Nachhaltigkeitszertifikate prüfen und freigeben"
-      />
-
-      <AdminFilterBar>
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as CertificateStatus | "")}
-          className={ADMIN_SELECT_CLASS}
-        >
-          <option value="">Alle Status</option>
-          {(["PENDING", "VERIFIED", "REJECTED", "EXPIRED"] as CertificateStatus[]).map((s) => (
-            <option key={s} value={s}>
-              {statusLabel[s]}
-            </option>
-          ))}
-        </select>
-        <RefreshButton onClick={load} />
-      </AdminFilterBar>
-
-      <AdminTableContainer
-        isLoading={isLoading}
-        isEmpty={certs.length === 0}
-        emptyMessage="Keine Zertifikate gefunden."
-      >
-        <Table>
-          <TableHeader className={ADMIN_THEAD_CLASS}>
-            <TableRow>
-              <TableHead className={ADMIN_TH_CLASS}>Titel</TableHead>
-              <TableHead className={ADMIN_TH_CLASS}>Typ</TableHead>
-              <TableHead className={ADMIN_TH_CLASS}>Aussteller</TableHead>
-              <TableHead className={ADMIN_TH_CLASS}>Status</TableHead>
-              <TableHead className={ADMIN_TH_CLASS}>Gültig bis</TableHead>
-              <TableHead className={ADMIN_TH_CLASS}>Dokument</TableHead>
-              <TableHead className={cn(ADMIN_TH_CLASS, "text-right")}>Aktionen</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {certs.map((cert) => {
-              const safeDocumentUrl = safeHttpUrl(cert.documentUrl)
-              return (
-                <TableRow
-                  key={cert.id}
-                  onClick={() => router.push(`/admin/certificates/${cert.id}`)}
-                  className={ADMIN_TR_CLICKABLE_CLASS}
+    <AdminListPage<Certificate>
+      title="Zertifikat-Prüfung"
+      subtitle="Nachhaltigkeitszertifikate prüfen und freigeben"
+      filters={
+        <>
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as CertificateStatus | "")}
+            className={ADMIN_SELECT_CLASS}
+          >
+            <option value="">Alle Status</option>
+            {(["PENDING", "VERIFIED", "REJECTED", "EXPIRED"] as CertificateStatus[]).map((s) => (
+              <option key={s} value={s}>
+                {statusLabel[s]}
+              </option>
+            ))}
+          </select>
+          <RefreshButton onClick={reload} />
+        </>
+      }
+      columns={[
+        { header: "Titel" },
+        { header: "Typ" },
+        { header: "Aussteller" },
+        { header: "Status" },
+        { header: "Gültig bis" },
+        { header: "Dokument" },
+        { header: "Aktionen", className: "text-right" },
+      ]}
+      rows={items}
+      isLoading={isLoading}
+      emptyMessage="Keine Zertifikate gefunden."
+      getRowKey={(cert) => cert.id}
+      onRowClick={(cert) => router.push(`/admin/certificates/${cert.id}`)}
+      renderRow={(cert) => {
+        const safeDocumentUrl = safeHttpUrl(cert.documentUrl)
+        return (
+          <>
+            <TableCell className="px-4 py-3 font-medium text-slate-200">{cert.title}</TableCell>
+            <TableCell className="px-4 py-3 text-xs text-slate-500">
+              {cert.certificateType}
+            </TableCell>
+            <TableCell className="px-4 py-3 text-slate-500">{cert.issuerName ?? "–"}</TableCell>
+            <TableCell className="px-4 py-3">
+              <StatusBadge
+                label={statusLabel[cert.status]}
+                colorClasses={statusColor[cert.status]}
+              />
+              {cert.rejectionReason && (
+                <p className="mt-0.5 text-xs text-red-400">{cert.rejectionReason}</p>
+              )}
+            </TableCell>
+            <TableCell className="px-4 py-3 text-sm text-slate-500">
+              {cert.expiryDate ? new Date(cert.expiryDate).toLocaleDateString("de-DE") : "–"}
+            </TableCell>
+            <TableCell className="px-4 py-3">
+              {safeDocumentUrl ? (
+                <a
+                  href={safeDocumentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="flex items-center gap-1 text-xs text-cyber-500 hover:text-cyber-400"
                 >
-                  <TableCell className="px-4 py-3 font-medium text-slate-200">
-                    {cert.title}
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-xs text-slate-500">
-                    {cert.certificateType}
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-slate-500">
-                    {cert.issuerName ?? "–"}
-                  </TableCell>
-                  <TableCell className="px-4 py-3">
-                    <StatusBadge
-                      label={statusLabel[cert.status]}
-                      colorClasses={statusColor[cert.status]}
-                    />
-                    {cert.rejectionReason && (
-                      <p className="mt-0.5 text-xs text-red-400">{cert.rejectionReason}</p>
-                    )}
-                  </TableCell>
-                  <TableCell className="px-4 py-3 text-sm text-slate-500">
-                    {cert.expiryDate ? new Date(cert.expiryDate).toLocaleDateString("de-DE") : "–"}
-                  </TableCell>
-                  <TableCell className="px-4 py-3">
-                    {safeDocumentUrl ? (
-                      <a
-                        href={safeDocumentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="flex items-center gap-1 text-xs text-cyber-500 hover:text-cyber-400"
-                      >
-                        <ExternalLink className="h-3 w-3" /> Dokument
-                      </a>
-                    ) : cert.documentUrl ? (
-                      <span className="text-xs text-amber-500" title="Unsichere URL — kein Link">
-                        ⚠ unsichere URL
-                      </span>
-                    ) : (
-                      <span className="text-xs text-slate-600">–</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      {cert.status === "PENDING" && (
-                        <>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleVerify(cert)
-                            }}
-                            className="rounded-lg p-1.5 text-emerald-500 transition-colors hover:bg-emerald-900/40"
-                            title="Verifizieren"
-                          >
-                            <CheckCircle2 className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setRejectTarget(cert)
-                            }}
-                            className="rounded-lg p-1.5 text-red-500 transition-colors hover:bg-red-900/40"
-                            title="Ablehnen"
-                          >
-                            <XCircle className="h-4 w-4" />
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
-      </AdminTableContainer>
-
+                  <ExternalLink className="h-3 w-3" /> Dokument
+                </a>
+              ) : cert.documentUrl ? (
+                <span className="text-xs text-amber-500" title="Unsichere URL — kein Link">
+                  ⚠ unsichere URL
+                </span>
+              ) : (
+                <span className="text-xs text-slate-600">–</span>
+              )}
+            </TableCell>
+            <TableCell className="px-4 py-3">
+              <div className="flex items-center justify-end gap-2">
+                {cert.status === "PENDING" && (
+                  <>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleVerify(cert)
+                      }}
+                      className="rounded-lg p-1.5 text-emerald-500 transition-colors hover:bg-emerald-900/40"
+                      title="Verifizieren"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setRejectTarget(cert)
+                      }}
+                      className="rounded-lg p-1.5 text-red-500 transition-colors hover:bg-red-900/40"
+                      title="Ablehnen"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </TableCell>
+          </>
+        )
+      }}
+      page={0}
+      totalPages={1}
+      onPageChange={() => {}}
+    >
       {rejectTarget && (
         <GenericRejectModal
           title="Zertifikat ablehnen"
@@ -202,11 +169,11 @@ export default function AdminCertificates() {
             await CertificateService.reject(rejectTarget.id, reason)
             toast.success("Zertifikat abgelehnt.")
             setRejectTarget(null)
-            load()
+            reload()
           }}
           onClose={() => setRejectTarget(null)}
         />
       )}
-    </div>
+    </AdminListPage>
   )
 }
