@@ -36,7 +36,7 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
 
     ProductService.list({ size: 200 })
       .then(async (page) => {
-        const found = page.content.filter((p) => missing.includes(p.id))
+        const found = page.items.filter((p) => missing.includes(p.id))
         if (found.length === 0) return
 
         const entries = await Promise.all(

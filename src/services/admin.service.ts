@@ -41,7 +41,7 @@ import type {
   AdminPayoutItem,
   PayoutDueItem,
   Settlement,
-  PagedResponse,
+  Page,
   OrderStatus,
   SellerProfile,
 } from "@/src/types"
@@ -51,12 +51,11 @@ export const AdminService = {
     return apiRequest("/api/v1/admin/dashboard")
   },
 
-  async listUsers(
-    params: Partial<AdminUserListParams> = {}
-  ): Promise<PagedResponse<AdminUserListItem>> {
+  async listUsers(params: Partial<AdminUserListParams> = {}): Promise<Page<AdminUserListItem>> {
     return apiRequest(
       `/api/v1/admin/users${buildQuery({
-        page: params.page !== undefined ? params.page - 1 : undefined,
+        // 0-based page index, consistent with every other list endpoint (#36).
+        page: params.page,
         size: params.pageSize,
         search: params.search,
         role: params.role,
@@ -146,7 +145,7 @@ export const AdminService = {
 
   async listSellers(
     params: { page?: number; size?: number; status?: string } = {}
-  ): Promise<PagedResponse<AdminSellerListItem>> {
+  ): Promise<Page<AdminSellerListItem>> {
     return apiRequest(
       `/api/v1/admin/sellers${buildQuery({ page: params.page, size: params.size, status: params.status })}`
     )
@@ -158,7 +157,7 @@ export const AdminService = {
 
   async listOrders(
     params: { page?: number; size?: number; status?: OrderStatus } = {}
-  ): Promise<PagedResponse<AdminOrderListItem>> {
+  ): Promise<Page<AdminOrderListItem>> {
     return apiRequest(
       `/api/v1/admin/orders${buildQuery({ page: params.page, size: params.size, status: params.status })}`
     )
@@ -166,7 +165,7 @@ export const AdminService = {
 
   async listProducts(
     params: { page?: number; size?: number; search?: string; status?: string } = {}
-  ): Promise<PagedResponse<AdminProductListItem>> {
+  ): Promise<Page<AdminProductListItem>> {
     return apiRequest(
       `/api/v1/admin/products${buildQuery({ page: params.page, size: params.size, search: params.search, status: params.status })}`
     )
@@ -186,31 +185,25 @@ export const AdminService = {
 
   async listPayments(
     params: { page?: number; size?: number } = {}
-  ): Promise<PagedResponse<AdminPaymentItem>> {
+  ): Promise<Page<AdminPaymentItem>> {
     return apiRequest(
       `/api/v1/admin/payments${buildQuery({ page: params.page, size: params.size })}`
     )
   },
 
-  async listRefunds(
-    params: { page?: number; size?: number } = {}
-  ): Promise<PagedResponse<AdminRefundItem>> {
+  async listRefunds(params: { page?: number; size?: number } = {}): Promise<Page<AdminRefundItem>> {
     return apiRequest(
       `/api/v1/admin/refunds${buildQuery({ page: params.page, size: params.size })}`
     )
   },
 
-  async listSettlements(
-    params: { page?: number; size?: number } = {}
-  ): Promise<PagedResponse<Settlement>> {
+  async listSettlements(params: { page?: number; size?: number } = {}): Promise<Page<Settlement>> {
     return apiRequest(
       `/api/v1/admin/settlements${buildQuery({ page: params.page, size: params.size })}`
     )
   },
 
-  async listPayouts(
-    params: { page?: number; size?: number } = {}
-  ): Promise<PagedResponse<AdminPayoutItem>> {
+  async listPayouts(params: { page?: number; size?: number } = {}): Promise<Page<AdminPayoutItem>> {
     return apiRequest(
       `/api/v1/admin/payouts${buildQuery({ page: params.page, size: params.size })}`
     )

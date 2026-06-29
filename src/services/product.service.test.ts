@@ -20,11 +20,11 @@ const mockApiProductPage = {
 
 // Normalised internal shape after ProductService.list() transforms the response
 const mockProductPage = {
-  content: [],
-  totalElements: 0,
-  totalPages: 0,
+  items: [],
+  page: 0,
   size: 10,
-  number: 0,
+  totalItems: 0,
+  totalPages: 0,
 }
 
 const mockProductInternalDetail = {
@@ -139,7 +139,7 @@ describe("ProductService", () => {
         totalItems: 1,
       })
       const result = await ProductService.list()
-      expect(result.content[0].imageUrls).toEqual(["https://example.com/img.jpg"])
+      expect(result.items[0].imageUrls).toEqual(["https://example.com/img.jpg"])
     })
 
     it("maps seller.id to seller.userId", async () => {
@@ -161,7 +161,7 @@ describe("ProductService", () => {
         totalItems: 1,
       })
       const result = await ProductService.list()
-      expect(result.content[0].seller).toEqual({
+      expect(result.items[0].seller).toEqual({
         userId: "seller-uuid",
         companyName: "Eco Store",
       })
@@ -187,7 +187,7 @@ describe("ProductService", () => {
         totalItems: 1,
       })
       const result = await ProductService.list()
-      expect(result.content[0].inStock).toBe(false)
+      expect(result.items[0].inStock).toBe(false)
     })
 
     it("defaults inStock to true when the API omits it", async () => {
@@ -209,7 +209,7 @@ describe("ProductService", () => {
         totalItems: 1,
       })
       const result = await ProductService.list()
-      expect(result.content[0].inStock).toBe(true)
+      expect(result.items[0].inStock).toBe(true)
     })
 
     it("maps pagination fields (totalItems→totalElements, page→number)", async () => {
@@ -221,8 +221,8 @@ describe("ProductService", () => {
         totalPages: 4,
       })
       const result = await ProductService.list()
-      expect(result.totalElements).toBe(42)
-      expect(result.number).toBe(2)
+      expect(result.totalItems).toBe(42)
+      expect(result.page).toBe(2)
       expect(result.totalPages).toBe(4)
       expect(result.size).toBe(12)
     })

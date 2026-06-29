@@ -52,7 +52,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
     setProductsLoading(true)
     try {
       const page = await ProductService.list({ sellerId: userId, size: 100 })
-      setProducts(page.content)
+      setProducts(page.items)
     } catch {
       toast.error("Produkte konnten nicht geladen werden.")
     } finally {

@@ -10,7 +10,7 @@
  * Spezifikation: `docs/monitoring-api.md`.
  */
 import { apiRequest, buildQuery } from "@/src/lib/api-client"
-import type { PagedResponse, PersistedErrorEvent, ErrorStoreStats } from "@/src/types"
+import type { Page, PersistedErrorEvent, ErrorStoreStats } from "@/src/types"
 
 export interface MonitoringErrorListParams {
   page?: number
@@ -23,9 +23,7 @@ export interface MonitoringErrorListParams {
 }
 
 export const MonitoringService = {
-  async getErrors(
-    params: MonitoringErrorListParams = {}
-  ): Promise<PagedResponse<PersistedErrorEvent>> {
+  async getErrors(params: MonitoringErrorListParams = {}): Promise<Page<PersistedErrorEvent>> {
     return apiRequest(
       `/api/v1/admin/monitoring/errors${buildQuery({
         page: params.page,

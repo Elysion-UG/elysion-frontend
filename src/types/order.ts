@@ -122,14 +122,6 @@ export interface OrderGroupDetail {
   createdAt: string
 }
 
-export interface OrderGroupsPage {
-  items: OrderGroupDetail[]
-  page: number
-  size: number
-  totalItems: number
-  totalPages: number
-}
-
 export interface ShipOrderDTO {
   trackingNumber: string
   carrier?: string

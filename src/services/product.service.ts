@@ -88,8 +88,9 @@ interface ApiProductDetail {
   matchScore?: number | null
   matchBreakdown?: unknown
 }
+import { normalizePage } from "@/src/lib/normalize-page"
 import type {
-  ProductPage,
+  Page,
   ProductListParams,
   ProductDetail,
   ProductInternalDetail,
@@ -105,7 +106,7 @@ import type {
 export const ProductService = {
   // ── Public ────────────────────────────────────────────────────────
 
-  async list(params: ProductListParams = {}): Promise<ProductPage> {
+  async list(params: ProductListParams = {}): Promise<Page<ProductDetail>> {
     const raw = await apiRequest<ApiProductPage>(
       `/api/v1/products${buildQuery({
         search: params.search,
@@ -120,28 +121,22 @@ export const ProductService = {
         size: params.size,
       })}`
     )
-    return {
-      content: raw.items.map((item) => ({
-        id: item.id,
-        slug: item.slug,
-        name: item.name,
-        title: item.name,
-        price: item.price,
-        currency: item.currency,
-        status: item.status,
-        // Backend reports availability per list item; absent (older API) → assume available.
-        inStock: item.inStock ?? true,
-        imageUrls: item.primaryImage ? [item.primaryImage] : undefined,
-        seller: item.seller?.id
-          ? { userId: item.seller.id, companyName: item.seller.companyName }
-          : undefined,
-        createdAt: item.createdAt,
-      })),
-      totalElements: raw.totalItems,
-      totalPages: raw.totalPages,
-      size: raw.size,
-      number: raw.page,
-    }
+    return normalizePage(raw, (item) => ({
+      id: item.id,
+      slug: item.slug,
+      name: item.name,
+      title: item.name,
+      price: item.price,
+      currency: item.currency,
+      status: item.status,
+      // Backend reports availability per list item; absent (older API) → assume available.
+      inStock: item.inStock ?? true,
+      imageUrls: item.primaryImage ? [item.primaryImage] : undefined,
+      seller: item.seller?.id
+        ? { userId: item.seller.id, companyName: item.seller.companyName }
+        : undefined,
+      createdAt: item.createdAt,
+    }))
   },
 
   async getBySlug(slug: string): Promise<ProductDetail> {
