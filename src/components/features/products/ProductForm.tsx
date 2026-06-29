@@ -3,15 +3,18 @@
 import { useState, useEffect } from "react"
 import { X, Loader2 } from "lucide-react"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
+import { useMaterials } from "@/src/hooks/useMaterials"
 import { ProductService } from "@/src/services/product.service"
 import { CategoryService } from "@/src/services/category.service"
 import type {
   ProductCreateDTO,
   ProductUpdateDTO,
   ProductCommandResponse,
+  ProductImage,
   Category,
 } from "@/src/types"
 import { toast } from "sonner"
+import ProductImageManager from "./ProductImageManager"
 
 interface ProductFormProps {
   /** If provided, form is in edit mode */
@@ -25,7 +28,10 @@ interface ProductFormProps {
     categoryId?: string
     taxRate?: number
     currency?: string
+    materialIds?: string[]
   }
+  /** Product images for the image manager (edit mode only) */
+  initialImages?: ProductImage[]
   onClose: () => void
   onSaved: (result: ProductCommandResponse) => void
 }
@@ -33,6 +39,7 @@ interface ProductFormProps {
 export default function ProductForm({
   productId,
   initialValues,
+  initialImages,
   onClose,
   onSaved,
 }: ProductFormProps) {
@@ -45,14 +52,41 @@ export default function ProductForm({
   const [categoryId, setCategoryId] = useState(initialValues?.categoryId ?? "")
   const [taxRate, setTaxRate] = useState(String(initialValues?.taxRate ?? "19"))
   const [currency] = useState(initialValues?.currency ?? "EUR")
+  const [selectedMaterials, setSelectedMaterials] = useState<string[]>(
+    initialValues?.materialIds ?? []
+  )
   const [categories, setCategories] = useState<Category[]>([])
   const [isSaving, setIsSaving] = useState(false)
+  const { data: materials } = useMaterials()
 
   useEffect(() => {
     CategoryService.list()
       .then(setCategories)
       .catch(() => {})
   }, [])
+
+  // In edit mode, load the product's assigned materials so saving doesn't wipe
+  // them (update replaces the assignment with whatever is submitted).
+  useEffect(() => {
+    if (!productId) return
+    let active = true
+    ProductService.getById(productId)
+      .then((detail) => {
+        if (active && detail.materials) {
+          setSelectedMaterials(detail.materials.map((m) => m.id))
+        }
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [productId])
+
+  const toggleMaterial = (id: string) => {
+    setSelectedMaterials((prev) =>
+      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
+    )
+  }
 
   const handleSubmit = async () => {
     if (!name.trim()) {
@@ -84,6 +118,7 @@ export default function ProductForm({
           categoryId,
           taxRate: parseFloat(taxRate) || 19,
           currency,
+          materialIds: selectedMaterials,
         }
         result = await ProductService.update(productId, dto)
         toast.success("Produkt aktualisiert.")
@@ -96,6 +131,7 @@ export default function ProductForm({
           categoryId,
           taxRate: parseFloat(taxRate) || 19,
           currency,
+          materialIds: selectedMaterials,
         }
         result = await ProductService.create(dto)
         toast.success("Produkt erstellt. Es befindet sich im Entwurfsstatus.")
@@ -214,7 +250,35 @@ export default function ProductForm({
             </select>
           </div>
 
-          {!isEdit && (
+          {materials && materials.length > 0 && (
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-700">Material</label>
+              <div className="flex flex-wrap gap-2">
+                {materials.map((material) => {
+                  const checked = selectedMaterials.includes(material.id)
+                  return (
+                    <button
+                      key={material.id}
+                      type="button"
+                      onClick={() => toggleMaterial(material.id)}
+                      aria-pressed={checked}
+                      className={`rounded-full border px-3 py-1 text-sm transition-colors ${
+                        checked
+                          ? "border-teal-600 bg-teal-50 text-teal-700"
+                          : "border-slate-300 text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {material.name}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {isEdit && productId ? (
+            <ProductImageManager productId={productId} initialImages={initialImages ?? []} />
+          ) : (
             <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-700">
               Das Produkt wird als <strong>Entwurf</strong> erstellt. Nach dem Erstellen können Sie
               Bilder hinzufügen und das Produkt zur Prüfung einreichen.

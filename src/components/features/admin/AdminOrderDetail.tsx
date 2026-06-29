@@ -1,20 +1,17 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { useParams, useRouter } from "next/navigation"
-import {
-  ArrowLeft,
-  Loader2,
-  Package,
-  Truck,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  RotateCcw,
-} from "lucide-react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
+import { useParams } from "next/navigation"
+import { Package, Truck, CheckCircle2, Clock, XCircle, RotateCcw } from "lucide-react"
 import { AdminService } from "@/src/services/admin.service"
 import type { AdminOrderDetail, AdminOrderGroup, OrderStatus } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
+import {
+  ADMIN_ORDER_STATUS_LABEL as statusLabel,
+  ADMIN_ORDER_GROUP_STATUS_LABEL as groupStatusLabel,
+} from "@/src/lib/constants"
+import { BackButton, LoadingFullPage, StatusBadge } from "@/src/components/shared"
 import { toast } from "sonner"
 
 // Ordered steps for the progress track (excludes terminal states CANCELLED/REFUNDED)
@@ -27,27 +24,6 @@ const ORDER_STEPS: OrderStatus[] = [
   "SHIPPED",
   "DELIVERED",
 ]
-
-const statusLabel: Record<OrderStatus, string> = {
-  PENDING_PAYMENT: "Zahlung ausstehend",
-  PENDING: "Ausstehend",
-  PAID: "Bezahlt",
-  CONFIRMED: "Bestätigt",
-  PROCESSING: "In Bearbeitung",
-  SHIPPED: "Versandt",
-  DELIVERED: "Geliefert",
-  CANCELLED: "Storniert",
-  REFUNDED: "Erstattet",
-}
-
-const groupStatusLabel: Record<string, string> = {
-  PENDING: "Ausstehend",
-  CONFIRMED: "Bestätigt",
-  PROCESSING: "In Bearbeitung",
-  SHIPPED: "Versandt",
-  DELIVERED: "Geliefert",
-  CANCELLED: "Storniert",
-}
 
 function OrderProgress({ status }: { status: OrderStatus }) {
   const isTerminal = status === "CANCELLED" || status === "REFUNDED"
@@ -142,8 +118,9 @@ function GroupCard({ group }: { group: AdminOrderGroup }) {
     <div className="rounded-lg border border-slate-800/60 bg-slate-800/30 p-4">
       <div className="mb-3 flex items-center justify-between gap-4">
         <span className="font-mono text-xs text-slate-500">{group.id.slice(0, 8)}…</span>
-        <span
-          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+        <StatusBadge
+          label={groupStatusLabel[group.status] ?? group.status}
+          colorClasses={
             group.status === "DELIVERED"
               ? "bg-emerald-900/40 text-emerald-400"
               : group.status === "SHIPPED"
@@ -151,10 +128,8 @@ function GroupCard({ group }: { group: AdminOrderGroup }) {
                 : group.status === "CANCELLED"
                   ? "bg-red-900/40 text-red-400"
                   : "bg-slate-800 text-slate-400"
-          }`}
-        >
-          {groupStatusLabel[group.status] ?? group.status}
-        </span>
+          }
+        />
       </div>
       <dl className="space-y-1 text-sm">
         <div className="flex justify-between">
@@ -204,7 +179,6 @@ function GroupCard({ group }: { group: AdminOrderGroup }) {
 
 export default function AdminOrderDetailView() {
   const { id } = useParams<{ id: string }>()
-  const router = useRouter()
   const [order, setOrder] = useState<AdminOrderDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
@@ -220,16 +194,15 @@ export default function AdminOrderDetailView() {
     }
   }, [id])
 
-  useEffect(() => {
+  const runEffect = useEffectEvent(() => {
     load()
+  })
+  useEffect(() => {
+    runEffect()
   }, [load])
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-cyber-500" />
-      </div>
-    )
+    return <LoadingFullPage />
   }
 
   if (!order) {
@@ -238,12 +211,7 @@ export default function AdminOrderDetailView() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-300"
-      >
-        <ArrowLeft className="h-4 w-4" /> Zurück
-      </button>
+      <BackButton />
 
       {/* Header */}
       <div className="rounded-xl border border-slate-800/60 bg-slate-900/60 p-6">

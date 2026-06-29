@@ -3,7 +3,9 @@
  *
  * Endpoints (base: /api/v1/auth):
  *   POST /register              — register BUYER or SELLER
- *   POST /login                 — unified login for all roles (BUYER, SELLER, ADMIN)
+ *   POST /customer/login        — customer portal login
+ *   POST /seller/login          — seller portal login
+ *   POST /admin/login           — admin portal login
  *   POST /refresh               — rotates refresh token (cookie), returns new accessToken
  *   POST /logout                — revokes refresh token, clears cookie
  *   POST /verify-email          — verify email with one-time token
@@ -11,14 +13,19 @@
  *   POST /resend-verification   — resend verification email
  *   POST /forgot-password       — trigger password reset email (always 200 to prevent enumeration)
  *   POST /reset-password        — set new password with reset token
- *   GET  /reset-password?token= — validate reset token (link-friendly, does not consume token)
- *
- * Note: The backend has a single /login endpoint for all portals.
- * The portal distinction (customer/seller/admin) is a frontend-only concept
- * used for routing and UI context after login.
+ *   POST /reset-password/validate — validate reset token (does not consume token)
  */
 import { apiRequest } from "@/src/lib/api-client"
+import { parseApiResponse, tokensResponseSchema } from "@/src/lib/api-schemas"
 import type { LoginDTO, RegisterDTO, TokensResponse } from "@/src/types"
+
+async function loginRequest(path: string, dto: LoginDTO): Promise<TokensResponse> {
+  const raw = await apiRequest<unknown>(path, {
+    method: "POST",
+    body: JSON.stringify(dto),
+  })
+  return parseApiResponse(tokensResponseSchema, raw, path)
+}
 
 export const AuthService = {
   async register(dto: RegisterDTO): Promise<{ userId: string; email: string }> {
@@ -30,26 +37,17 @@ export const AuthService = {
 
   /** Login for BUYER users on the customer portal. */
   async loginAsCustomer(dto: LoginDTO): Promise<TokensResponse> {
-    return apiRequest("/api/v1/auth/login", {
-      method: "POST",
-      body: JSON.stringify(dto),
-    })
+    return loginRequest("/api/v1/auth/customer/login", dto)
   },
 
   /** Login for SELLER users on the seller portal. */
   async loginAsSeller(dto: LoginDTO): Promise<TokensResponse> {
-    return apiRequest("/api/v1/auth/login", {
-      method: "POST",
-      body: JSON.stringify(dto),
-    })
+    return loginRequest("/api/v1/auth/seller/login", dto)
   },
 
   /** Login for ADMIN users on the admin portal. */
   async loginAsAdmin(dto: LoginDTO): Promise<TokensResponse> {
-    return apiRequest("/api/v1/auth/login", {
-      method: "POST",
-      body: JSON.stringify(dto),
-    })
+    return loginRequest("/api/v1/auth/admin/login", dto)
   },
 
   /**
@@ -59,7 +57,12 @@ export const AuthService = {
   async refresh(): Promise<TokensResponse> {
     // Pass skipRetry=true — if the refresh endpoint itself returns 401,
     // we must not re-enter tryRefreshAndRetry, which would cause infinite recursion.
-    return apiRequest("/api/v1/auth/refresh", { method: "POST", body: "{}" }, true)
+    const raw = await apiRequest<unknown>(
+      "/api/v1/auth/refresh",
+      { method: "POST", body: "{}" },
+      true
+    )
+    return parseApiResponse(tokensResponseSchema, raw, "/api/v1/auth/refresh")
   },
 
   /**
@@ -93,6 +96,26 @@ export const AuthService = {
     return apiRequest("/api/v1/auth/reset-password", {
       method: "POST",
       body: JSON.stringify({ token, newPassword }),
+    })
+  },
+
+  /** Always responds 200 to prevent email enumeration. */
+  async resendVerification(email: string): Promise<void> {
+    return apiRequest("/api/v1/auth/resend-verification", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    })
+  },
+
+  /**
+   * Validates a password reset token without consuming it. Throws on 4xx.
+   * Token travels in the body — never in the URL, so it cannot leak into
+   * access logs or error monitoring (issue #66).
+   */
+  async validateResetToken(token: string): Promise<void> {
+    return apiRequest("/api/v1/auth/reset-password/validate", {
+      method: "POST",
+      body: JSON.stringify({ token }),
     })
   },
 }

@@ -19,19 +19,9 @@ export interface User {
 export interface SellerProfile {
   id: string
   companyName: string
+  status: SellerStatus
   vatId?: string
   iban?: string
-  status: SellerStatus
-  rejectionReason?: string
-  approvedAt?: string
-  rejectedAt?: string
-}
-
-export interface AuthState {
-  user: User | null
-  token: string | null
-  isAuthenticated: boolean
-  isLoading: boolean
 }
 
 // ── Registration DTO ───────────────────────────────────────────────
@@ -62,17 +52,14 @@ export interface LoginDTO {
   password: string
 }
 
-export interface LoginResponse {
-  token: string
-  user: User
-}
-
 /** Returned by /auth/{portal}/login and /auth/refresh */
 export interface TokensResponse {
   accessToken: string
   /** Present on login, null on refresh */
   user: User | null
   expiresIn: number
+  /** True when a guest cart was merged into the user cart during login */
+  guestCartMerged?: boolean
 }
 
 // ── Address Types ──────────────────────────────────────────────────
@@ -105,19 +92,3 @@ export interface AddressDTO {
 
 // ── Values Profile Types ───────────────────────────────────────────
 export type ValuesProfileType = "none" | "simple" | "extended"
-
-export interface SimpleValuesProfile {
-  type: "simple"
-  categories: Record<string, number> // categoryId -> weight 0-100
-}
-
-export interface ExtendedValuesProfile {
-  type: "extended"
-  categories: Record<string, Record<string, number>> // categoryId -> { subId -> weight 0-100 }
-}
-
-export interface NoValuesProfile {
-  type: "none"
-}
-
-export type ValuesProfile = NoValuesProfile | SimpleValuesProfile | ExtendedValuesProfile

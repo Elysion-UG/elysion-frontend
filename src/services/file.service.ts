@@ -1,7 +1,5 @@
-import { apiRequest, apiUpload } from "@/src/lib/api-client"
+import { apiRequest, apiUpload, API_BASE } from "@/src/lib/api-client"
 import type { FileCategory, FileLinkTarget, FileUploadResponse, FileMetadata } from "@/src/types"
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"
 
 export const FileService = {
   /**
@@ -65,6 +63,22 @@ export const FileService = {
     await apiRequest(`/api/v1/files/${fileId}/unlink`, {
       method: "POST",
       body: JSON.stringify({ target, targetId }),
+    })
+  },
+
+  /**
+   * Replace a linked file with another uploaded file.
+   * POST /api/v1/files/{fileId}/replace
+   */
+  async replace(
+    fileId: string,
+    newFileId: string,
+    targetType: FileLinkTarget,
+    targetId: string
+  ): Promise<FileMetadata> {
+    return apiRequest<FileMetadata>(`/api/v1/files/${fileId}/replace`, {
+      method: "POST",
+      body: JSON.stringify({ newFileId, targetType, targetId }),
     })
   },
 

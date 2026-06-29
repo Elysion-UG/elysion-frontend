@@ -20,7 +20,7 @@ export default function CookieConsentBanner() {
       role="dialog"
       aria-modal="false"
       aria-label="Cookie-Einwilligung"
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-stone-200 bg-white shadow-xl sm:bottom-4 sm:left-4 sm:right-auto sm:max-w-sm sm:rounded-xl sm:border"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-stone-200 bg-white shadow-xl sm:bottom-4 sm:left-auto sm:right-4 sm:max-w-sm sm:rounded-xl sm:border"
     >
       <div className="p-5">
         <div className="mb-3 flex items-center gap-2">

@@ -1,0 +1,83 @@
+name: Stage Smoke
+
+# Basis-Verifikation der Staging-Umgebung (FE#24): Buyer-Shop rendert
+# Produkte (Hydration!), Seller-/Admin-Login erreichen ihre Dashboards,
+# keine CSP-Verstöße. Läuft nach jedem Stage-Push, täglich und manuell.
+
+on:
+  push:
+    branches: [stage]
+  schedule:
+    - cron: "0 6 * * *" # täglich 6:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage-smoke
+  cancel-in-progress: false
+
+env:
+  STAGE_API_URL: https://elysion-backend-stage.onrender.com
+  STAGE_BUYER_URL: https://elysion-stage.vercel.app
+  STAGE_SELLER_URL: https://elysion-stage-seller.vercel.app
+  STAGE_ADMIN_URL: https://elysion-stage-admin.vercel.app
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+
+      # Nach einem Push auf stage brauchen Render (~10 min Docker-Build) und
+      # Vercel (~2 min) Zeit. Wir warten, bis das Backend den NEUEN Stand
+      # ausliefert bzw. mindestens gesund antwortet — inkl. Kaltstart-Toleranz.
+      - name: Auf Backend warten (Deploy/Kaltstart)
+        run: |
+          echo "Warte auf $STAGE_API_URL ..."
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 \
+              "$STAGE_API_URL/api/v1/products?size=1" || true)
+            if [ "$code" = "200" ]; then
+              echo "Backend bereit (Versuch $i)"
+              exit 0
+            fi
+            echo "Versuch $i: HTTP $code — warte 15 s"
+            sleep 15
+          done
+          echo "::error::Backend nach 15 Minuten nicht erreichbar"
+          exit 1
+
+      # Bei Push auf stage zusätzlich kurz puffern, damit Vercel den neuen
+      # Stand an die branch-gebundenen Domains gehängt hat.
+      - name: Vercel-Puffer (nur bei Push)
+        if: github.event_name == 'push'
+        run: sleep 120
+
+      - name: Stage-Smoke ausführen
+        env:
+          E2E_SELLER_EMAIL: ${{ secrets.E2E_SELLER_EMAIL }}
+          E2E_SELLER_PASSWORD: ${{ secrets.E2E_SELLER_PASSWORD }}
+          E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
+          E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
+        run: bunx playwright test --project=stage-smoke
+
+      - name: Report hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage-smoke-report-${{ github.run_number }}
+          path: playwright-report/
+          # Kurze Retention: Fehler-Snapshots können sensible Felder enthalten (FE#106).
+          retention-days: 3

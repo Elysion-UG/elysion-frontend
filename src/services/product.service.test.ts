@@ -2,10 +2,10 @@ import { vi, describe, it, expect, beforeEach } from "vitest"
 import { apiRequest } from "@/src/lib/api-client"
 import { ProductService } from "./product.service"
 
-vi.mock("@/src/lib/api-client", () => ({
-  apiRequest: vi.fn(),
-  apiUpload: vi.fn(),
-}))
+vi.mock("@/src/lib/api-client", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/src/lib/api-client")>()
+  return { ...actual, apiRequest: vi.fn(), apiUpload: vi.fn() }
+})
 
 const mockApiRequest = vi.mocked(apiRequest)
 
@@ -20,18 +20,11 @@ const mockApiProductPage = {
 
 // Normalised internal shape after ProductService.list() transforms the response
 const mockProductPage = {
-  content: [],
-  totalElements: 0,
-  totalPages: 0,
+  items: [],
+  page: 0,
   size: 10,
-  number: 0,
-}
-
-const mockProductDetail = {
-  id: "prod_1",
-  slug: "eco-shirt",
-  name: "Eco Shirt",
-  price: 29.99,
+  totalItems: 0,
+  totalPages: 0,
 }
 
 const mockProductInternalDetail = {
@@ -64,6 +57,18 @@ describe("ProductService", () => {
       mockApiRequest.mockResolvedValue(mockApiProductPage)
       await ProductService.list({ categoryId: "cat_1" })
       expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products?categoryId=cat_1")
+    })
+
+    it("serializes materials as a repeatable material param", async () => {
+      mockApiRequest.mockResolvedValue(mockApiProductPage)
+      await ProductService.list({ materials: ["leinen", "hanf"] })
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products?material=leinen&material=hanf")
+    })
+
+    it("omits the material param for an empty materials array", async () => {
+      mockApiRequest.mockResolvedValue(mockApiProductPage)
+      await ProductService.list({ materials: [] })
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products")
     })
 
     it("appends sellerId param", async () => {
@@ -134,7 +139,7 @@ describe("ProductService", () => {
         totalItems: 1,
       })
       const result = await ProductService.list()
-      expect(result.content[0].imageUrls).toEqual(["https://example.com/img.jpg"])
+      expect(result.items[0].imageUrls).toEqual(["https://example.com/img.jpg"])
     })
 
     it("maps seller.id to seller.userId", async () => {
@@ -156,10 +161,55 @@ describe("ProductService", () => {
         totalItems: 1,
       })
       const result = await ProductService.list()
-      expect(result.content[0].seller).toEqual({
+      expect(result.items[0].seller).toEqual({
         userId: "seller-uuid",
         companyName: "Eco Store",
       })
+    })
+
+    it("maps inStock from the API item", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...mockApiProductPage,
+        items: [
+          {
+            id: "p1",
+            slug: "eco-shirt",
+            name: "Eco Shirt",
+            price: 29.9,
+            currency: "EUR",
+            primaryImage: null,
+            seller: null,
+            createdAt: "2026-01-01T00:00:00Z",
+            matchScore: null,
+            inStock: false,
+          },
+        ],
+        totalItems: 1,
+      })
+      const result = await ProductService.list()
+      expect(result.items[0].inStock).toBe(false)
+    })
+
+    it("defaults inStock to true when the API omits it", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...mockApiProductPage,
+        items: [
+          {
+            id: "p1",
+            slug: "eco-shirt",
+            name: "Eco Shirt",
+            price: 29.9,
+            currency: "EUR",
+            primaryImage: null,
+            seller: null,
+            createdAt: "2026-01-01T00:00:00Z",
+            matchScore: null,
+          },
+        ],
+        totalItems: 1,
+      })
+      const result = await ProductService.list()
+      expect(result.items[0].inStock).toBe(true)
     })
 
     it("maps pagination fields (totalItems→totalElements, page→number)", async () => {
@@ -171,8 +221,8 @@ describe("ProductService", () => {
         totalPages: 4,
       })
       const result = await ProductService.list()
-      expect(result.totalElements).toBe(42)
-      expect(result.number).toBe(2)
+      expect(result.totalItems).toBe(42)
+      expect(result.page).toBe(2)
       expect(result.totalPages).toBe(4)
       expect(result.size).toBe(12)
     })
@@ -397,39 +447,6 @@ describe("ProductService", () => {
         "/api/v1/products/prod_1/variants/var_1",
         expect.objectContaining({ method: "DELETE" })
       )
-    })
-  })
-
-  // ── reserveVariant ───────────────────────────────────────────────────
-
-  describe("reserveVariant", () => {
-    it("POSTs to /api/v1/variants/{variantId}/reserve with quantity", async () => {
-      mockApiRequest.mockResolvedValue(null)
-      await ProductService.reserveVariant("var_1", 3)
-      expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/v1/variants/var_1/reserve",
-        expect.objectContaining({
-          method: "POST",
-          body: JSON.stringify({ quantity: 3 }),
-        })
-      )
-    })
-  })
-
-  // ── getProductCertificates ───────────────────────────────────────────
-
-  describe("getProductCertificates", () => {
-    it("GETs /api/v1/products/{productId}/certificates", async () => {
-      mockApiRequest.mockResolvedValue([])
-      await ProductService.getProductCertificates("prod_1")
-      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products/prod_1/certificates")
-    })
-
-    it("returns the certificates array", async () => {
-      const certs = [{ id: "cert_1", name: "GOTS" }]
-      mockApiRequest.mockResolvedValue(certs)
-      const result = await ProductService.getProductCertificates("prod_1")
-      expect(result).toEqual(certs)
     })
   })
 })

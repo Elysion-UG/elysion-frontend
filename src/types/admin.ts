@@ -1,26 +1,45 @@
 import type { UserRole, AccountStatus, SellerProfile, SellerStatus } from "./user"
-import type { OrderStatus } from "./order"
+import type { OrderStatus, OrderGroupStatus } from "./order"
 import type { ProductStatus } from "./product"
+import type { SellerPayoutAccountStatus } from "./payout"
+
+// ── Admin Dashboard ──────────────────────────────────────────────────
+
+export interface AdminDashboardUserMetrics {
+  total: number
+  buyers: number
+  sellers: number
+  admins: number
+}
+
+export interface AdminDashboardProductMetrics {
+  total: number
+  active: number
+  review: number
+}
+
+export interface AdminDashboardOrderMetrics {
+  total: number
+  pending: number
+  processing: number
+  shipped: number
+}
+
+export interface AdminDashboardCertificateMetrics {
+  total: number
+  pending: number
+  verified: number
+  rejected: number
+}
+
+export interface AdminDashboardData {
+  users: AdminDashboardUserMetrics
+  products: AdminDashboardProductMetrics
+  orders: AdminDashboardOrderMetrics
+  certificates: AdminDashboardCertificateMetrics
+}
 
 // ── Admin Types ────────────────────────────────────────────────────
-
-/** Frontend-shaped paginated response (used by components) */
-export interface PaginatedResponse<T> {
-  data: T[]
-  total: number
-  page: number
-  pageSize: number
-  totalPages: number
-}
-
-/** Backend-shaped paginated response envelope */
-export interface PagedResponse<T> {
-  items: T[]
-  page: number
-  size: number
-  totalItems: number
-  totalPages: number
-}
 
 export interface AdminUserListParams {
   page: number
@@ -67,7 +86,7 @@ export interface AdminOrderListItem {
 export interface AdminOrderGroup {
   id: string
   sellerId: string
-  status: OrderStatus
+  status: OrderGroupStatus
   subtotal: number
   shipping: number
   total: number
@@ -117,8 +136,41 @@ export interface AdminSellerDetail {
   userEmail: string
   companyName: string
   status: SellerStatus
+  /**
+   * Plattformgebühr für diesen Seller in Prozent (z. B. 15 = 15 %).
+   * Backend-Default für neue Seller: 15. Pro Seller vom Admin anpassbar.
+   * Bezugsgröße: Warenwert pro OrderGroup exkl. Versand.
+   */
+  commissionRate: number
   createdAt: string
   updatedAt?: string
+}
+
+/** DTO für `PATCH /api/v1/admin/sellers/{id}/commission` */
+export interface UpdateSellerCommissionDTO {
+  /** Prozentsatz 0–100, max. 2 Nachkommastellen */
+  commissionRate: number
+}
+
+/**
+ * Eine fällige Auszahlung pro Seller — aggregiert alle auszahlungsfähigen
+ * (Status PENDING, Order DELIVERED) Settlements. Quelle für die monatliche
+ * manuelle Admin-Freigabe.
+ */
+export interface PayoutDueItem {
+  sellerId: string
+  sellerName: string
+  /** Status des Stripe-Connect-Express-Kontos des Sellers */
+  payoutAccountStatus: SellerPayoutAccountStatus
+  /** Anzahl der zusammengefassten Settlement-Zeilen */
+  settlementCount: number
+  grossAmount: number
+  feeAmount: number
+  /** Auszahlbarer Nettobetrag (= Summe sellerNet) */
+  netAmount: number
+  currency?: string
+  /** Ältester eligibleAt-Zeitpunkt der enthaltenen Settlements */
+  oldestEligibleAt?: string
 }
 
 export interface AdminPaymentItem {

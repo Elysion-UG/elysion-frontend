@@ -4,12 +4,22 @@ import type { ValuesProfileType } from "./user"
 export type SellerValueProfileLevel = "STANDARD" | "LEVEL_2" | "LEVEL_3"
 
 export interface SellerValueProfile {
-  id: string
-  sellerId: string
+  sellerProfileId: string
   level: SellerValueProfileLevel
-  payload?: string
+  payload?: unknown
   score?: number
-  updatedAt: string
+}
+
+// ── Seller Product List Item ─────────────────────────────────────────
+export interface SellerProductListItem {
+  id: string
+  slug: string
+  name: string
+  status: string
+  price: number
+  currency: string
+  primaryImage?: string
+  createdAt: string
 }
 
 // ── Buyer Value Profile ──────────────────────────────────────────────

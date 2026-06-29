@@ -4,9 +4,13 @@ import {
   AUTH_SESSION_KEY,
   setAccessToken,
   getAccessToken,
+  buildQuery,
   apiRequest,
   apiRequestRaw,
   apiUpload,
+  getAuthGeneration,
+  bumpAuthGeneration,
+  decodeJwtClaims,
 } from "./api-client"
 
 // Mock dynamic imports used inside tryRefreshAndRetry to prevent loading the
@@ -24,12 +28,55 @@ vi.mock("sonner", () => ({
 
 function mockFetchResponse(status: number, body: unknown, ok?: boolean): Response {
   const resolvedOk = ok ?? (status >= 200 && status < 300)
+  // The api-client reads the body via response.text() and parses defensively
+  // (some upstream errors return non-JSON or empty bodies). Mock both `.text`
+  // and `.json` so old tests that read either continue to work.
+  const text = body === undefined || body === null ? "" : JSON.stringify(body)
   return {
     status,
     ok: resolvedOk,
+    text: vi.fn().mockResolvedValue(text),
     json: vi.fn().mockResolvedValue(body),
+    headers: new Headers(),
   } as unknown as Response
 }
+
+// ── buildQuery ────────────────────────────────────────────────────────────────
+
+describe("buildQuery", () => {
+  it("returns empty string when all values are undefined", () => {
+    expect(buildQuery({ page: undefined, size: undefined })).toBe("")
+  })
+
+  it("returns empty string for empty object", () => {
+    expect(buildQuery({})).toBe("")
+  })
+
+  it("builds a query string for a single param", () => {
+    expect(buildQuery({ page: 0 })).toBe("?page=0")
+  })
+
+  it("includes 0 and false but skips undefined, null, and empty string", () => {
+    expect(buildQuery({ a: 0, b: false, c: undefined, d: null, e: "" })).toBe("?a=0&b=false")
+  })
+
+  it("builds a query string for multiple params", () => {
+    expect(buildQuery({ page: 1, size: 20, search: "test" })).toBe("?page=1&size=20&search=test")
+  })
+
+  it("stringifies numbers and booleans", () => {
+    expect(buildQuery({ active: true, count: 42 })).toBe("?active=true&count=42")
+  })
+
+  it("expands array values into a repeatable param", () => {
+    expect(buildQuery({ material: ["leinen", "hanf"] })).toBe("?material=leinen&material=hanf")
+  })
+
+  it("skips empty arrays and blank array items", () => {
+    expect(buildQuery({ material: [] })).toBe("")
+    expect(buildQuery({ material: ["leinen", ""] })).toBe("?material=leinen")
+  })
+})
 
 // ── ApiError ───────────────────────────────────────────────────────────────────
 
@@ -489,9 +536,11 @@ describe("apiUpload", () => {
     const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(500, {}, false))
     vi.stubGlobal("fetch", mockFetch)
 
+    // After deduplication, all three request entry points share the generic
+    // "Request failed (...)" fallback. Upload-specific phrasing was dropped.
     await expect(apiUpload("/api/v1/files", new FormData())).rejects.toMatchObject({
       status: 500,
-      message: "Upload failed (500)",
+      message: "Request failed (500)",
     })
   })
 })
@@ -589,5 +638,489 @@ describe("regression — guest user 401 must not attempt token refresh", () => {
       status: 401,
       message: "Nicht autorisiert",
     })
+  })
+})
+
+// ── apiRequestRaw — success paths ─────────────────────────────────────────────
+
+describe("apiRequestRaw", () => {
+  beforeEach(() => {
+    setAccessToken(null)
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    setAccessToken(null)
+  })
+
+  it("returns raw body on 200", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { items: [1, 2, 3] }))
+    vi.stubGlobal("fetch", mockFetch)
+
+    const result = await apiRequestRaw("/api/v1/items")
+    expect(result).toEqual({ items: [1, 2, 3] })
+  })
+
+  it("returns null on 204", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ status: 204, ok: true, json: vi.fn() }))
+    const result = await apiRequestRaw("/api/v1/items/1")
+    expect(result).toBeNull()
+  })
+
+  it("throws ApiError on network failure", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Network Error")))
+    await expect(apiRequestRaw("/api/v1/items")).rejects.toMatchObject({
+      status: 0,
+      message: "Netzwerkfehler — bitte Internetverbindung prüfen",
+    })
+  })
+
+  it("throws ApiError on 500", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockFetchResponse(500, {}, false)))
+    await expect(apiRequestRaw("/api/v1/items")).rejects.toMatchObject({ status: 500 })
+  })
+
+  it("includes Authorization header when token is set", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, {}))
+    vi.stubGlobal("fetch", mockFetch)
+    setAccessToken("raw-token")
+
+    await apiRequestRaw("/api/v1/items")
+
+    const [, options] = mockFetch.mock.calls[0]
+    expect((options.headers as Record<string, string>)["Authorization"]).toBe("Bearer raw-token")
+  })
+})
+
+// ── apiUpload ──────────────────────────────────────────────────────────────────
+
+describe("apiUpload", () => {
+  beforeEach(() => {
+    setAccessToken(null)
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    setAccessToken(null)
+  })
+
+  it("returns data on 200", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { data: { id: "f1" } }))
+    vi.stubGlobal("fetch", mockFetch)
+
+    const form = new FormData()
+    const result = await apiUpload("/api/v1/files", form)
+    expect(result).toEqual({ id: "f1" })
+  })
+
+  it("throws ApiError on 400", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(mockFetchResponse(400, { message: "Bad file" }, false))
+    )
+    const form = new FormData()
+    await expect(apiUpload("/api/v1/files", form)).rejects.toMatchObject({
+      status: 400,
+      message: "Bad file",
+    })
+  })
+
+  it("throws ApiError on network failure", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")))
+    await expect(apiUpload("/api/v1/files", new FormData())).rejects.toMatchObject({ status: 0 })
+  })
+
+  it("includes Authorization header when token is set", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(mockFetchResponse(200, { data: {} }))
+    vi.stubGlobal("fetch", mockFetch)
+    setAccessToken("upload-token")
+
+    await apiUpload("/api/v1/files", new FormData())
+
+    const [, options] = mockFetch.mock.calls[0]
+    expect((options.headers as Record<string, string>)["Authorization"]).toBe("Bearer upload-token")
+  })
+})
+
+// ── Authenticated user 401 — refresh-and-retry ─────────────────────────────────
+//
+// These tests cover the tryRefreshAndRetry() happy path and the failure path.
+// An authenticated user (has access token) gets a 401 → the client should call
+// AuthService.refresh() → on success, retry the request; on failure, throw
+// ApiError(401, "Sitzung abgelaufen").
+
+describe("authenticated user 401 — refresh-and-retry", () => {
+  const refreshedTokensResponse = {
+    accessToken: "refreshed-access-token",
+    user: { id: "u1", email: "test@example.com", role: "BUYER" as const },
+    expiresIn: 3600,
+  }
+
+  beforeEach(async () => {
+    setAccessToken("valid-but-expired-token")
+    vi.stubGlobal("fetch", vi.fn())
+    const { AuthService } = await import("@/src/services/auth.service")
+
+    vi.mocked(AuthService.refresh).mockResolvedValue(refreshedTokensResponse as any)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    setAccessToken(null)
+    window.sessionStorage.removeItem(AUTH_SESSION_KEY)
+  })
+
+  it("apiRequest: network failure throws ApiError(0)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("Network Error")))
+    await expect(apiRequest("/api/v1/items")).rejects.toMatchObject({
+      status: 0,
+      message: "Netzwerkfehler — bitte Internetverbindung prüfen",
+    })
+  })
+
+  it("apiRequest: 401 → refresh succeeds → retries and returns data", async () => {
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce(mockFetchResponse(401, { message: "Unauthorized" }, false))
+      .mockResolvedValueOnce(mockFetchResponse(200, { data: { id: "item-1" } }))
+    vi.stubGlobal("fetch", mockFetch)
+
+    const result = await apiRequest<{ id: string }>("/api/v1/items")
+    expect(result).toEqual({ id: "item-1" })
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+  })
+
+  it("apiRequest: 401 → refresh fails → throws ApiError(401, 'Sitzung abgelaufen')", async () => {
+    const { AuthService } = await import("@/src/services/auth.service")
+    vi.mocked(AuthService.refresh).mockRejectedValue(new Error("Refresh failed"))
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(mockFetchResponse(401, { message: "Unauthorized" }, false))
+    )
+
+    await expect(apiRequest("/api/v1/items")).rejects.toMatchObject({
+      status: 401,
+      message: "Sitzung abgelaufen",
+    })
+  })
+
+  it("apiRequestRaw: 401 → refresh succeeds → retries and returns raw body", async () => {
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce(mockFetchResponse(401, { message: "Unauthorized" }, false))
+      .mockResolvedValueOnce(mockFetchResponse(200, { items: [1, 2, 3] }))
+    vi.stubGlobal("fetch", mockFetch)
+
+    const result = await apiRequestRaw<{ items: number[] }>("/api/v1/items")
+    expect(result).toEqual({ items: [1, 2, 3] })
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+  })
+
+  it("apiRequestRaw: 401 → refresh fails → throws ApiError(401, 'Sitzung abgelaufen')", async () => {
+    const { AuthService } = await import("@/src/services/auth.service")
+    vi.mocked(AuthService.refresh).mockRejectedValue(new Error("Refresh failed"))
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(mockFetchResponse(401, { message: "Unauthorized" }, false))
+    )
+
+    await expect(apiRequestRaw("/api/v1/items")).rejects.toMatchObject({
+      status: 401,
+      message: "Sitzung abgelaufen",
+    })
+  })
+
+  it("apiUpload: 401 → refresh succeeds → retries and returns data", async () => {
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce(mockFetchResponse(401, { message: "Unauthorized" }, false))
+      .mockResolvedValueOnce(mockFetchResponse(200, { data: { fileId: "f1" } }))
+    vi.stubGlobal("fetch", mockFetch)
+
+    const result = await apiUpload<{ fileId: string }>("/api/v1/files", new FormData())
+    expect(result).toEqual({ fileId: "f1" })
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+  })
+
+  it("apiUpload: 401 → refresh fails → throws ApiError(401, 'Sitzung abgelaufen')", async () => {
+    const { AuthService } = await import("@/src/services/auth.service")
+    vi.mocked(AuthService.refresh).mockRejectedValue(new Error("Refresh failed"))
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(mockFetchResponse(401, { message: "Unauthorized" }, false))
+    )
+
+    await expect(apiUpload("/api/v1/files", new FormData())).rejects.toMatchObject({
+      status: 401,
+      message: "Sitzung abgelaufen",
+    })
+  })
+
+  it("apiUpload: guest with persisted session, 401 → refresh succeeds → retries", async () => {
+    // No access token but has a persisted session (e.g. after page reload before Phase 2)
+    setAccessToken(null)
+    window.sessionStorage.setItem(
+      AUTH_SESSION_KEY,
+      JSON.stringify({ user: { id: "u1", email: "a@b.com", role: "BUYER" }, portal: "customer" })
+    )
+
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce(mockFetchResponse(401, { message: "Unauthorized" }, false))
+      .mockResolvedValueOnce(mockFetchResponse(200, { data: { fileId: "f2" } }))
+    vi.stubGlobal("fetch", mockFetch)
+
+    const result = await apiUpload<{ fileId: string }>("/api/v1/files", new FormData())
+    expect(result).toEqual({ fileId: "f2" })
+    expect(mockFetch).toHaveBeenCalledTimes(2)
+  })
+})
+
+// ── Auth generation counter ───────────────────────────────────────────────────
+//
+// Guards against late-apply: an in-flight refresh must not restore session
+// state after a logout that happened while the refresh was pending.
+
+describe("auth generation counter", () => {
+  it("getAuthGeneration is monotonically non-decreasing", () => {
+    const g1 = getAuthGeneration()
+    bumpAuthGeneration()
+    const g2 = getAuthGeneration()
+    expect(g2).toBeGreaterThan(g1)
+  })
+
+  it("bumpAuthGeneration is idempotent-per-call (each call increments by 1)", () => {
+    const before = getAuthGeneration()
+    bumpAuthGeneration()
+    bumpAuthGeneration()
+    expect(getAuthGeneration()).toBe(before + 2)
+  })
+})
+
+describe("authenticated user 401 — generation guard", () => {
+  const refreshedTokensResponse = {
+    accessToken: "refreshed-access-token",
+    user: { id: "u1", email: "test@example.com", role: "BUYER" as const },
+    expiresIn: 3600,
+  }
+
+  beforeEach(async () => {
+    setAccessToken("valid-but-expired-token")
+    vi.stubGlobal("fetch", vi.fn())
+    const { AuthService } = await import("@/src/services/auth.service")
+    vi.mocked(AuthService.refresh).mockResolvedValue(refreshedTokensResponse as any)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    setAccessToken(null)
+    window.sessionStorage.removeItem(AUTH_SESSION_KEY)
+  })
+
+  it("bumping the generation during an in-flight 401-retry causes the retry to fail", async () => {
+    const { AuthService } = await import("@/src/services/auth.service")
+    // refresh resolves only after the generation has been bumped
+    vi.mocked(AuthService.refresh).mockImplementation(async () => {
+      bumpAuthGeneration() // simulates a concurrent logout
+      return refreshedTokensResponse as any
+    })
+
+    const mockFetch = vi
+      .fn()
+      .mockResolvedValueOnce(mockFetchResponse(401, { message: "Unauthorized" }, false))
+    vi.stubGlobal("fetch", mockFetch)
+
+    await expect(apiRequest("/api/v1/items")).rejects.toMatchObject({
+      status: 401,
+      message: "Sitzung abgelaufen",
+    })
+    // The original request was tried once; no retry because generation changed
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+})
+
+// ── 429 Too Many Requests ─────────────────────────────────────────────────────
+
+describe("429 rate-limit handling", () => {
+  function mock429(retryAfter: string | null, options: { withBody?: boolean } = {}): Response {
+    const headers = new Headers()
+    if (retryAfter !== null) headers.set("retry-after", retryAfter)
+    return {
+      status: 429,
+      ok: false,
+      headers,
+      json: options.withBody
+        ? vi.fn().mockResolvedValue({ message: "Too Many Requests" })
+        : vi.fn().mockRejectedValue(new SyntaxError("Unexpected end of JSON input")),
+    } as unknown as Response
+  }
+
+  beforeEach(() => {
+    setAccessToken(null)
+    vi.stubGlobal("fetch", vi.fn())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    setAccessToken(null)
+  })
+
+  it("parses Retry-After seconds and surfaces a German-localised message", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mock429("30")))
+    await expect(
+      apiRequest("/api/v1/auth/customer/login", { method: "POST" })
+    ).rejects.toMatchObject({
+      status: 429,
+      message: "Zu viele Anfragen — bitte in 30s erneut versuchen.",
+      body: { retryAfter: 30 },
+    })
+  })
+
+  it("parses Retry-After as an HTTP-date and computes remaining seconds", async () => {
+    const future = new Date(Date.now() + 45_000).toUTCString()
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mock429(future)))
+    const err = (await apiRequest("/api/v1/auth/customer/login", { method: "POST" }).catch(
+      (e) => e
+    )) as ApiError
+    expect(err).toBeInstanceOf(ApiError)
+    expect(err.status).toBe(429)
+    // Tolerance of ±2 seconds for test execution timing
+    const retryAfter = (err.body as { retryAfter: number }).retryAfter
+    expect(retryAfter).toBeGreaterThanOrEqual(43)
+    expect(retryAfter).toBeLessThanOrEqual(46)
+  })
+
+  it("falls back to a generic message when Retry-After is missing", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mock429(null)))
+    await expect(
+      apiRequest("/api/v1/auth/customer/login", { method: "POST" })
+    ).rejects.toMatchObject({
+      status: 429,
+      message: "Zu viele Anfragen — bitte kurz warten und erneut versuchen.",
+      body: { retryAfter: null },
+    })
+  })
+
+  it("does not attempt to parse the body for body-less 429 responses", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(mock429("5"))
+    vi.stubGlobal("fetch", fetchMock)
+    await expect(
+      apiRequest("/api/v1/auth/customer/login", { method: "POST" })
+    ).rejects.toMatchObject({ status: 429 })
+    // Only one request; no crash from json() rejecting
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("applies to apiRequestRaw as well", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mock429("10")))
+    await expect(apiRequestRaw("/public/feed")).rejects.toMatchObject({
+      status: 429,
+      message: "Zu viele Anfragen — bitte in 10s erneut versuchen.",
+    })
+  })
+
+  it("applies to apiUpload as well", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mock429("15")))
+    const form = new FormData()
+    await expect(apiUpload("/api/v1/upload", form)).rejects.toMatchObject({
+      status: 429,
+      message: "Zu viele Anfragen — bitte in 15s erneut versuchen.",
+    })
+  })
+})
+
+// ── Error monitoring — apiPath must never contain query strings ──────────────
+//
+// Query params can carry secrets (e.g. one-time password-reset tokens). The
+// monitoring metadata persists apiPath in the backend, so reportApiError must
+// strip everything after "?" (issue #66).
+
+describe("error monitoring — apiPath sanitisation", () => {
+  beforeEach(() => {
+    setAccessToken(null)
+    vi.stubGlobal("fetch", vi.fn())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    setAccessToken(null)
+  })
+
+  it("strips the query string from apiPath when reporting a failed request", async () => {
+    const { errorStore } = await import("@/src/lib/error-store")
+    const reportSpy = vi.spyOn(errorStore, "report")
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(mockFetchResponse(410, { message: "Token expired" }, false))
+    )
+
+    await expect(
+      apiRequest("/api/v1/auth/reset-password?token=super-secret-token")
+    ).rejects.toMatchObject({ status: 410 })
+
+    // reportApiError is fire-and-forget (dynamic import + .then) — wait for it
+    await vi.waitFor(() => expect(reportSpy).toHaveBeenCalled(), { timeout: 3000 })
+
+    const reported = reportSpy.mock.calls[0][0]
+    expect(reported.metadata?.apiPath).toBe("/api/v1/auth/reset-password")
+    expect(JSON.stringify(reported)).not.toContain("super-secret-token")
+    reportSpy.mockRestore()
+  })
+})
+
+// ── decodeJwtClaims ───────────────────────────────────────────────────────────
+// Used by AuthContext as a final fallback when /users/me 403s and no persisted
+// session exists. The decoder must NEVER throw on bad input — it always
+// returns null or a well-typed claims object.
+
+describe("decodeJwtClaims", () => {
+  function makeJwt(payload: Record<string, unknown>): string {
+    const b64 = (s: string) => Buffer.from(s).toString("base64").replace(/=+$/, "")
+    return `${b64('{"alg":"HS256"}')}.${b64(JSON.stringify(payload))}.signature`
+  }
+
+  it("returns null for malformed tokens", () => {
+    expect(decodeJwtClaims("")).toBeNull()
+    expect(decodeJwtClaims("not.a.jwt")).toBeNull()
+    expect(decodeJwtClaims("only-one-part")).toBeNull()
+    expect(decodeJwtClaims("two.parts")).toBeNull()
+  })
+
+  it("returns null when required claims are missing", () => {
+    expect(decodeJwtClaims(makeJwt({ sub: "u", email: "e@e.com" }))).toBeNull() // no role
+    expect(decodeJwtClaims(makeJwt({ sub: "u", role: "ADMIN" }))).toBeNull() // no email
+    expect(decodeJwtClaims(makeJwt({ email: "e@e.com", role: "ADMIN" }))).toBeNull() // no sub
+  })
+
+  it("returns null when claim types are wrong", () => {
+    expect(decodeJwtClaims(makeJwt({ sub: 123, email: "e@e.com", role: "ADMIN" }))).toBeNull()
+    expect(decodeJwtClaims(makeJwt({ sub: "u", email: ["e"], role: "ADMIN" }))).toBeNull()
+  })
+
+  it("returns the claims object when all required fields are present", () => {
+    const claims = decodeJwtClaims(
+      makeJwt({
+        sub: "user-123",
+        email: "admin@example.com",
+        role: "ADMIN",
+        iat: 1700000000,
+        exp: 1700003600,
+      })
+    )
+    expect(claims).toEqual({
+      sub: "user-123",
+      email: "admin@example.com",
+      role: "ADMIN",
+      iat: 1700000000,
+      exp: 1700003600,
+    })
+  })
+
+  it("leaves iat/exp undefined when absent", () => {
+    const claims = decodeJwtClaims(makeJwt({ sub: "u", email: "e@e.com", role: "BUYER" }))
+    expect(claims?.iat).toBeUndefined()
+    expect(claims?.exp).toBeUndefined()
   })
 })

@@ -1,11 +1,14 @@
-import { apiRequest } from "@/src/lib/api-client"
+import { apiRequest, buildQuery } from "@/src/lib/api-client"
+import { normalizePage } from "@/src/lib/normalize-page"
 import type {
   OrderGroupDetail,
   OrderGroupStatus,
+  Page,
+  Settlement,
   ShipOrderDTO,
-  SettlementsPage,
   ShippingAddress,
 } from "@/src/types"
+import { type ApiOrderProductSnapshot, normalizeSnapshot } from "./_order-normalizers"
 
 export interface SellerOrderListParams {
   page?: number
@@ -16,17 +19,6 @@ export interface SellerOrderListParams {
 // ── Raw backend types ─────────────────────────────────────────────────────────
 // Backend sends SellerOrderGroupResponse with different field names than
 // the frontend OrderGroupDetail type. These interfaces reflect the actual JSON.
-
-interface ApiOrderProductSnapshot {
-  id?: string
-  name?: string
-  slug?: string
-  seller?: { id?: string }
-  variantId?: string
-  sku?: string
-  options?: Array<{ type: string; value: string }>
-  currency?: string
-}
 
 interface ApiOrderItem {
   id: string
@@ -73,31 +65,23 @@ function normalizeOrderGroup(raw: ApiOrderGroup): OrderGroupDetail {
       subtotal: item.lineTotal,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
-      productSnapshot: item.product
-        ? {
-            productId: item.product.id,
-            productName: item.product.name,
-            productSlug: item.product.slug,
-            sellerId: item.product.seller?.id,
-            variantId: item.product.variantId,
-            sku: item.product.sku,
-            options: item.product.options,
-            currency: item.product.currency,
-          }
-        : undefined,
+      productSnapshot: item.product ? normalizeSnapshot(item.product) : undefined,
     })),
   }
 }
 
 export const SellerOrderService = {
-  async list(params: SellerOrderListParams = {}): Promise<OrderGroupDetail[]> {
-    const search = new URLSearchParams()
-    if (params.page !== undefined) search.set("page", String(params.page))
-    if (params.size !== undefined) search.set("size", String(params.size))
-    if (params.status) search.set("status", params.status)
-    const qs = search.toString()
-    const raw = await apiRequest<ApiOrderGroup[]>(`/api/v1/seller/orders${qs ? `?${qs}` : ""}`)
-    return raw.map(normalizeOrderGroup)
+  async list(params: SellerOrderListParams = {}): Promise<Page<OrderGroupDetail>> {
+    const raw = await apiRequest<{
+      items: ApiOrderGroup[]
+      page: number
+      size: number
+      totalItems: number
+      totalPages: number
+    }>(
+      `/api/v1/seller/orders${buildQuery({ page: params.page, size: params.size, status: params.status })}`
+    )
+    return normalizePage(raw, normalizeOrderGroup)
   },
 
   async getById(orderGroupId: string): Promise<OrderGroupDetail> {
@@ -129,11 +113,7 @@ export const SellerOrderService = {
     return normalizeOrderGroup(raw)
   },
 
-  async listSettlements(params: { page?: number; size?: number } = {}): Promise<SettlementsPage> {
-    const search = new URLSearchParams()
-    if (params.page !== undefined) search.set("page", String(params.page))
-    if (params.size !== undefined) search.set("size", String(params.size))
-    const qs = search.toString()
-    return apiRequest<SettlementsPage>(`/api/v1/seller/settlements${qs ? `?${qs}` : ""}`)
+  async listSettlements(): Promise<Settlement[]> {
+    return apiRequest<Settlement[]>("/api/v1/seller/settlements")
   },
 }

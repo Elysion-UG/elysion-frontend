@@ -32,8 +32,10 @@ export function CookieConsentProvider({ children }: { children: React.ReactNode 
   // Read persisted decision on mount — use sessionStorage for this flag
   // (it is a technical necessity to remember the answer within a session)
   useEffect(() => {
+    // SSR-safe hydration from sessionStorage — must run after mount.
     const stored = sessionStorage.getItem(STORAGE_KEY)
     if (stored === "accepted" || stored === "declined") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStatus(stored)
     }
     setIsHydrated(true)

@@ -16,6 +16,9 @@ vi.mock("@/src/hooks/useProducts", () => ({
   useProducts: () => mockUseProducts(),
   PRODUCTS_PAGE_SIZE: 12,
 }))
+vi.mock("@/src/hooks/useMaterials", () => ({
+  useMaterials: () => ({ data: [] }),
+}))
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),

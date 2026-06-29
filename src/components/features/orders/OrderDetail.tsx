@@ -1,11 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
+import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Package, Truck, CheckCircle2, Loader2, ChevronLeft, MapPin } from "lucide-react"
+import { Package, Truck, CheckCircle2, ChevronLeft, MapPin } from "lucide-react"
 import { OrderService } from "@/src/services/order.service"
+import { OrderDetailSkeleton } from "./OrderDetailSkeleton"
 import { ProductService } from "@/src/services/product.service"
-import type { OrderDetail as OrderDetailType, OrderStatus, OrderGroupStatus } from "@/src/types"
+import type { OrderDetail as OrderDetailType } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
 import { toCountryName } from "@/src/lib/country"
 import {
@@ -13,36 +16,12 @@ import {
   saveProductDisplay,
   type ProductDisplayEntry,
 } from "@/src/lib/product-display-cache"
-
-const orderStatusLabel: Record<OrderStatus, string> = {
-  PENDING_PAYMENT: "Zahlung ausstehend",
-  PENDING: "Ausstehend",
-  PAID: "Bezahlt",
-  CONFIRMED: "Bestätigt",
-  PROCESSING: "In Bearbeitung",
-  SHIPPED: "Versandt",
-  DELIVERED: "Geliefert",
-  CANCELLED: "Storniert",
-  REFUNDED: "Erstattet",
-}
-
-const groupStatusLabel: Record<OrderGroupStatus, string> = {
-  PENDING: "Ausstehend",
-  CONFIRMED: "Bestätigt",
-  PROCESSING: "In Bearbeitung",
-  SHIPPED: "Versandt",
-  DELIVERED: "Geliefert",
-  CANCELLED: "Storniert",
-}
-
-const groupStatusColor: Record<OrderGroupStatus, string> = {
-  PENDING: "bg-yellow-100 text-yellow-800",
-  CONFIRMED: "bg-blue-100 text-blue-800",
-  PROCESSING: "bg-orange-100 text-orange-800",
-  SHIPPED: "bg-purple-100 text-purple-800",
-  DELIVERED: "bg-green-100 text-green-800",
-  CANCELLED: "bg-red-100 text-red-800",
-}
+import {
+  BUYER_ORDER_STATUS_LABEL as orderStatusLabel,
+  BUYER_ORDER_GROUP_STATUS_LABEL as groupStatusLabel,
+  BUYER_ORDER_GROUP_STATUS_COLOR as groupStatusColor,
+} from "@/src/lib/constants"
+import { StatusBadge } from "@/src/components/shared"
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("de-DE", {
@@ -109,14 +88,10 @@ export default function OrderDetail() {
     )
       .then((entries) => setDisplayMap((prev) => ({ ...prev, ...Object.fromEntries(entries) })))
       .catch(() => {})
-  }, [order])
+  }, [order, displayMap])
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-7 w-7 animate-spin text-sage-500" />
-      </div>
-    )
+    return <OrderDetailSkeleton />
   }
 
   if (error || !order) {
@@ -127,13 +102,13 @@ export default function OrderDetail() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <a
+      <Link
         href="/orders"
         className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-stone-400 transition-colors hover:text-sage-600"
       >
         <ChevronLeft className="h-4 w-4" />
         Alle Bestellungen
-      </a>
+      </Link>
 
       <div className="mb-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -179,11 +154,11 @@ export default function OrderDetail() {
         >
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-stone-700">Verkäufer-Paket</h2>
-            <span
-              className={`rounded-full px-2.5 py-1 text-xs font-medium ${groupStatusColor[group.status]}`}
-            >
-              {groupStatusLabel[group.status]}
-            </span>
+            <StatusBadge
+              label={groupStatusLabel[group.status]}
+              colorClasses={groupStatusColor[group.status]}
+              className="px-2.5 py-1"
+            />
           </div>
 
           {group.shipment?.trackingNumber && (
@@ -211,9 +186,9 @@ export default function OrderDetail() {
               const options = snap?.options ?? []
               return (
                 <div key={idx} className="flex gap-3">
-                  <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-sage-50">
+                  <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-sage-50">
                     {imageUrl ? (
-                      <img src={imageUrl} alt={name} className="h-full w-full object-cover" />
+                      <Image src={imageUrl} alt={name} fill className="object-cover" sizes="56px" />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-stone-300">
                         <Package className="h-6 w-6" />

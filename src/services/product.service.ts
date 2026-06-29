@@ -12,6 +12,7 @@
  *   POST   /api/v1/products                              — create product
  *   PATCH  /api/v1/products/{id}                         — update product
  *   PATCH  /api/v1/products/{id}/status                  — status transition
+ *   DELETE /api/v1/products/{id}                         — delete product
  *   POST   /api/v1/products/{id}/images                  — add image
  *   DELETE /api/v1/products/{id}/images/{imageId}        — remove image
  *   PATCH  /api/v1/products/{id}/images/order            — reorder images
@@ -26,7 +27,7 @@
  *     data.items (not content), data.totalItems (not totalElements), data.page (not number)
  *     → ProductService.list() normalises this to the internal ProductPage type
  */
-import { apiRequest } from "@/src/lib/api-client"
+import { apiRequest, buildQuery } from "@/src/lib/api-client"
 
 // ── Raw API types (list endpoint) ─────────────────────────────────────────────
 // These reflect the actual JSON the backend returns inside data{}.
@@ -43,6 +44,7 @@ interface ApiProductListItem {
   createdAt: string
   matchScore: number | null
   status?: string
+  inStock?: boolean
 }
 
 interface ApiProductPage {
@@ -79,15 +81,16 @@ interface ApiProductDetail {
   basePrice?: number
   currency?: string
   taxRate?: number
-  images?: Array<{ url: string; altText?: string; order?: number }>
+  images?: Array<{ id?: string; url: string; altText?: string; order?: number }>
   variants?: ApiProductVariant[]
   seller?: { id: string; companyName?: string; firstName?: string; lastName?: string } | null
   category?: { id?: string; name: string; slug?: string } | null
   matchScore?: number | null
   matchBreakdown?: unknown
 }
+import { normalizePage } from "@/src/lib/normalize-page"
 import type {
-  ProductPage,
+  Page,
   ProductListParams,
   ProductDetail,
   ProductInternalDetail,
@@ -103,38 +106,37 @@ import type {
 export const ProductService = {
   // ── Public ────────────────────────────────────────────────────────
 
-  async list(params: ProductListParams = {}): Promise<ProductPage> {
-    const query = new URLSearchParams()
-    if (params.search) query.set("search", params.search)
-    if (params.categoryId) query.set("categoryId", params.categoryId)
-    if (params.sellerId) query.set("sellerId", params.sellerId)
-    if (params.minPrice !== undefined) query.set("minPrice", String(params.minPrice))
-    if (params.maxPrice !== undefined) query.set("maxPrice", String(params.maxPrice))
-    if (params.sort) query.set("sort", params.sort)
-    if (params.page !== undefined) query.set("page", String(params.page))
-    if (params.size !== undefined) query.set("size", String(params.size))
-    const qs = query.toString()
-    const raw = await apiRequest<ApiProductPage>(`/api/v1/products${qs ? `?${qs}` : ""}`)
-    return {
-      content: raw.items.map((item) => ({
-        id: item.id,
-        slug: item.slug,
-        name: item.name,
-        title: item.name,
-        price: item.price,
-        currency: item.currency,
-        status: item.status,
-        imageUrls: item.primaryImage ? [item.primaryImage] : undefined,
-        seller: item.seller?.id
-          ? { userId: item.seller.id, companyName: item.seller.companyName }
-          : undefined,
-        createdAt: item.createdAt,
-      })),
-      totalElements: raw.totalItems,
-      totalPages: raw.totalPages,
-      size: raw.size,
-      number: raw.page,
-    }
+  async list(params: ProductListParams = {}): Promise<Page<ProductDetail>> {
+    const raw = await apiRequest<ApiProductPage>(
+      `/api/v1/products${buildQuery({
+        search: params.search,
+        categoryId: params.categoryId,
+        sellerId: params.sellerId,
+        minPrice: params.minPrice,
+        maxPrice: params.maxPrice,
+        // Backend expects the repeatable param name `material`.
+        material: params.materials,
+        sort: params.sort,
+        page: params.page,
+        size: params.size,
+      })}`
+    )
+    return normalizePage(raw, (item) => ({
+      id: item.id,
+      slug: item.slug,
+      name: item.name,
+      title: item.name,
+      price: item.price,
+      currency: item.currency,
+      status: item.status,
+      // Backend reports availability per list item; absent (older API) → assume available.
+      inStock: item.inStock ?? true,
+      imageUrls: item.primaryImage ? [item.primaryImage] : undefined,
+      seller: item.seller?.id
+        ? { userId: item.seller.id, companyName: item.seller.companyName }
+        : undefined,
+      createdAt: item.createdAt,
+    }))
   },
 
   async getBySlug(slug: string): Promise<ProductDetail> {
@@ -150,7 +152,7 @@ export const ProductService = {
       basePrice: raw.basePrice,
       currency: raw.currency,
       taxRate: raw.taxRate,
-      images: raw.images?.map((img) => ({ url: img.url, position: img.order })),
+      images: raw.images?.map((img) => ({ id: img.id, url: img.url, position: img.order })),
       variants: raw.variants?.map((v) => ({
         id: v.id,
         sku: v.sku,
@@ -178,7 +180,7 @@ export const ProductService = {
   // ── Authenticated ─────────────────────────────────────────────────
 
   async getById(id: string): Promise<ProductInternalDetail> {
-    return apiRequest(`/api/v1/products/by-id/${id}`)
+    return apiRequest<ProductInternalDetail>(`/api/v1/products/by-id/${id}`)
   },
 
   // ── Seller commands ───────────────────────────────────────────────
@@ -251,14 +253,7 @@ export const ProductService = {
     })
   },
 
-  async reserveVariant(variantId: string, quantity: number): Promise<null> {
-    return apiRequest(`/api/v1/variants/${variantId}/reserve`, {
-      method: "POST",
-      body: JSON.stringify({ quantity }),
-    })
-  },
-
-  async getProductCertificates(productId: string): Promise<unknown[]> {
-    return apiRequest(`/api/v1/products/${productId}/certificates`)
+  async delete(id: string): Promise<void> {
+    return apiRequest(`/api/v1/products/${id}`, { method: "DELETE" })
   },
 }

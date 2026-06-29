@@ -7,10 +7,10 @@
 import { vi, describe, it, expect, beforeEach } from "vitest"
 import { apiRequest, apiUpload } from "@/src/lib/api-client"
 
-vi.mock("@/src/lib/api-client", () => ({
-  apiRequest: vi.fn(),
-  apiUpload: vi.fn(),
-}))
+vi.mock("@/src/lib/api-client", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/src/lib/api-client")>()
+  return { ...actual, apiRequest: vi.fn(), apiUpload: vi.fn() }
+})
 
 const mockApiRequest = vi.mocked(apiRequest)
 const mockApiUpload = vi.mocked(apiUpload)
@@ -125,7 +125,7 @@ describe("CartService", () => {
       "/api/v1/cart/items",
       expect.objectContaining({
         method: "POST",
-        body: JSON.stringify({ variantId: "v1", quantity: 2 }),
+        body: JSON.stringify({ quantity: 2, variantId: "v1" }),
       })
     )
   })
@@ -160,9 +160,20 @@ describe("CategoryService", () => {
   })
 
   it("tree calls GET /api/v1/categories/tree", async () => {
-    mockApiRequest.mockResolvedValue([])
-    await CategoryService.tree()
+    const nested = [
+      {
+        id: "root",
+        name: "Root",
+        slug: "root",
+        level: 1,
+        order: 1,
+        children: [{ id: "child", name: "Child", slug: "child", level: 2, order: 1, children: [] }],
+      },
+    ]
+    mockApiRequest.mockResolvedValue(nested)
+    const tree = await CategoryService.tree()
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/categories/tree")
+    expect(tree).toEqual(nested)
   })
 
   it("create calls POST /api/v1/categories", async () => {
@@ -184,12 +195,21 @@ describe("CategoryService", () => {
     )
   })
 
-  it("updateStatus calls PATCH on status endpoint", async () => {
+  it("activate calls PATCH on activate endpoint", async () => {
     mockApiRequest.mockResolvedValue({ id: "c1" })
-    await CategoryService.updateStatus("c1", "INACTIVE")
+    await CategoryService.activate("c1")
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/categories/c1/status",
-      expect.objectContaining({ method: "PATCH", body: JSON.stringify({ status: "INACTIVE" }) })
+      "/api/v1/categories/c1/activate",
+      expect.objectContaining({ method: "PATCH" })
+    )
+  })
+
+  it("deactivate calls PATCH on deactivate endpoint", async () => {
+    mockApiRequest.mockResolvedValue({ id: "c1" })
+    await CategoryService.deactivate("c1")
+    expect(mockApiRequest).toHaveBeenCalledWith(
+      "/api/v1/categories/c1/deactivate",
+      expect.objectContaining({ method: "PATCH" })
     )
   })
 })
@@ -273,9 +293,9 @@ describe("CertificateService", () => {
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products/p1/certificates")
   })
 
-  it("listAll calls admin certificates endpoint", async () => {
+  it("adminListAll calls admin certificates endpoint", async () => {
     mockApiRequest.mockResolvedValue([])
-    await CertificateService.listAll()
+    await CertificateService.adminListAll()
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/certificates")
   })
 })
@@ -403,7 +423,7 @@ describe("PaymentService", () => {
       currency: "eur",
       status: "created",
     })
-    await PaymentService.createIntent({ orderId: "o1", amount: 100 })
+    await PaymentService.createIntent({ orderId: "o1", provider: "STRIPE" })
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/payments/create-intent",
       expect.objectContaining({ method: "POST" })
@@ -496,10 +516,10 @@ describe("SellerOrderService", () => {
     )
   })
 
-  it("listSettlements calls correct endpoint with params", async () => {
-    mockApiRequest.mockResolvedValue({ items: [] })
-    await SellerOrderService.listSettlements({ page: 0, size: 20 })
-    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/seller/settlements?page=0&size=20")
+  it("listSettlements calls correct endpoint", async () => {
+    mockApiRequest.mockResolvedValue([])
+    await SellerOrderService.listSettlements()
+    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/seller/settlements")
   })
 })
 

@@ -4,31 +4,33 @@ Known discrepancies between what the frontend types suggest and what the backend
 
 ---
 
-## Product List — Spring Page response
+## Product List — custom pagination response
 
 **Endpoint:** `GET /api/v1/products`
 
-The backend returns a raw Spring `Page<>` object, **not** the generic `ApiResponse` wrapper.
+The backend returns a **wrapped** `ApiResponse` with a custom pagination shape — **not** a Spring `Page<>` object and not the generic `PagedResponse<T>`.
 
 ```typescript
-// WRONG — do not use
-const data = await apiRequest<PagedResponse<Product>>("/api/v1/products")
+// WRONG — Spring Page shape doesn't apply here
+const data = await apiRequest<{ content: Product[]; totalElements: number }>("/api/v1/products")
 
-// CORRECT — use ProductPage
-const data = await apiRequest<ProductPage>("/api/v1/products")
+// CORRECT — use ProductPage (normalized by ProductService.list())
+const data = await ProductService.list(params)
 ```
 
-`ProductPage` shape:
+Raw backend response shape (before normalization):
 
 ```typescript
-interface ProductPage {
-  content: Product[]
-  totalElements: number
+{
+  items: ProductListItem[]   // not "content"
+  totalItems: number         // not "totalElements"
+  page: number               // not "number"
   totalPages: number
   size: number
-  number: number // current page index (0-based)
 }
 ```
+
+`ProductService.list()` normalizes this internally to `ProductPage`. Each item contains `primaryImage: string | null` (mapped to `imageUrls: [primaryImage]`) and `seller.id` (mapped to `seller.userId`). There is no `basePrice` — only `price`. Each item also carries `inStock: boolean` (sellable = at least one variant with `stock − reserved > 0`; products without variant-level stock tracking report `true`); absent on older API responses → normalized to `true`.
 
 ---
 
@@ -63,23 +65,27 @@ window.location.href = `/product?id=${product.id}`
 
 ---
 
-## Auth — resend verification endpoint not yet implemented
+## Auth — resend verification (implemented)
 
-`POST /api/v1/auth/resend-verification` is not yet implemented in the backend (verified as of 2026-03-28). The frontend UI exists but the service call is currently mocked/no-op. Do not wire it to a real call without confirming backend availability.
+`POST /api/v1/auth/resend-verification` is implemented on the backend and wired in the frontend
+(`AuthService.resendVerification()` → `auth.service.ts:103`, used by `EmailVerification.tsx`).
+This is a real call now — the earlier mock/no-op note is obsolete.
 
 ---
 
-## Stripe — backend is production-ready, frontend still uses mock
+## Stripe — fully integrated front-to-back
 
-The backend has a real Stripe integration (`StripeHttpApiClient`) as of the payment hardening release (2026-03-23). The frontend `PaymentService` still uses a mock flow.
+Both sides are integrated as of 2026-05. The backend has a real Stripe integration
+(`StripeHttpApiClient`, idempotent webhook processing, settlement tracking). The frontend uses
+Stripe Elements via `@stripe/react-stripe-js` in `src/components/features/checkout/PaymentStep.tsx`:
 
-**Do not activate the real Stripe path** without implementing the full frontend flow:
+- Payment Intent creation (`PaymentService.createIntent`)
+- Client-side confirmation with `<PaymentElement>`
+- Post-payment status polling (`PaymentService.getStatus`)
+- Webhook-based finalization handled by the backend
 
-- Stripe Payment Intent creation
-- Client-side confirmation (Stripe.js / Elements)
-- Webhook-based status updates (backend already handles these)
-
-Until then, keep `PaymentService` as-is and leave the mock in Checkout.
+**Only remaining gap:** `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` must be set in the environment.
+Without it, `stripePromise` is `null` and the payment step is disabled. See `LAUNCH_READINESS.md` (B1).
 
 ---
 

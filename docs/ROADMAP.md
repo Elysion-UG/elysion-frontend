@@ -2,9 +2,11 @@
 
 ## Elysion — Sustainable Online Shop
 
-**Stand:** 2026-03-28
+**Stand:** 2026-05-31
 **Tech Stack:** Next.js 16 (Frontend) + Spring Boot (Backend)
 **Team:** 2 Entwickler (Gründer)
+
+> Aktueller Launch-Status und offene Blocker: [`LAUNCH_READINESS.md`](./LAUNCH_READINESS.md)
 
 ---
 
@@ -36,7 +38,7 @@ Alle Kernfeatures sind implementiert und ins Backend integriert.
 - [x] Bestellungen (Buyer + Seller)
 - [x] Matching / Recommendations (mit Match-Score)
 - [x] File Upload
-- [x] Payments (Mock)
+- [x] Payments (Stripe Elements — Frontend voll integriert, benötigt nur `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`)
 
 ### Testing
 
@@ -45,21 +47,34 @@ Alle Kernfeatures sind implementiert und ins Backend integriert.
 
 ---
 
+## Launch-Blocker (vor Go-Live) — siehe LAUNCH_READINESS.md
+
+- [ ] **B1** `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` in `.env` setzen (Stripe-Integration ist fertig)
+- [ ] **B2/B3** Stripe Live-Secrets (Backend) + Webhook-Erreichbarkeit in Prod
+- [ ] **B4** Rechtstexte (Impressum/Datenschutz/AGB/Widerruf) + Kontaktdaten mit Echtdaten füllen, anwaltlich prüfen
+- [ ] **B5** Prod-Secrets + SMTP aktivieren, CORS/Cookies absichern
+- [ ] **B6** Plattformgebühr + Payout-Workflow entscheiden (MANAGEMENT_DECISIONS §1.1/§1.2)
+
 ## Phase 2 — Feature-Erweiterung (Geplant)
 
-### Polish & Hardening (P5)
+### Polish & Hardening (P5) — abgeschlossen
 
-- [ ] **P5-1** Toast-Benachrichtigungen vollständig: SellerDashboard (Ship, Status-Update)
+- [x] **P5-1** Toast-Benachrichtigungen vollständig: SellerDashboard (Ship, Status-Update)
 - [x] **P5-2a** Skeleton-Loading-States: SustainableShop (Produktlisting) — React Query Cache
-- [ ] **P5-2b** Skeleton-Loading-States: Cart, Orders, OrderDetail, Checkout
-- [ ] `POST /api/v1/auth/resend-verification` UI verdrahten (wartet auf Backend)
+- [x] **P5-2b** Skeleton-Loading-States: Cart, OrderDetail, Checkout, Profil, Präferenzen
+- [x] `POST /api/v1/auth/resend-verification` UI verdrahtet (Backend-Endpoint vorhanden, `EmailVerification.tsx`)
+- [x] Stripe-Zahlungsintegration (`PaymentStep.tsx` mit Stripe Elements — nur Key-Konfiguration offen, siehe B1)
 
 ### Neue Features
 
-- [ ] Stripe-Zahlungsintegration (`PaymentService` ist vorbereitet, Checkout-UI fehlt Zahlungsschritt)
+- [x] Producer-Seite auf echte Daten umgebaut (Seller-Produkte via `useSellerProducts`; Mock/Fake-Reviews entfernt)
+- [ ] Optionaler Public-Seller-Profil-Endpoint im Backend für reicheres Producer-Profil (Beschreibung, Seller-Zertifikate)
+- [x] Kontaktformular: `mailto:`-Fallback (Fake-Stub entfernt; Adresse via `NEXT_PUBLIC_SUPPORT_EMAIL`)
+- [ ] Optionaler Kontakt-Endpoint im Backend (serverseitige Speicherung/Weiterleitung)
+- [ ] Monitoring-Persistenz (`monitoring.service.ts` + Backend-Endpoint, Spec in `monitoring-api.md`)
 - [ ] Guest Checkout
 - [ ] Wishlist / Favoriten
-- [ ] Retouren- und Erstattungs-UI
+- [ ] Retouren- und Erstattungs-UI (Buyer-facing)
 - [ ] Seller Analytics Dashboard (Charts)
 - [ ] Bewertungs- und Rezensions-System
 
@@ -67,8 +82,8 @@ Alle Kernfeatures sind implementiert und ins Backend integriert.
 
 - [x] Session-Wiederherstellung nach Page-Reload (sessionStorage + useLayoutEffect, kein Auth-Flash)
 - [x] Next.js `router.push()` / `<Link>` statt `window.location.href`
-- [ ] `/dev`-Routen in Produktion absichern (Env-Guard)
-- [ ] E2E-Tests mit Playwright für kritische User-Flows
+- [x] `/dev`-Routen in Produktion absichern — durch vollständige Löschung der Routen erledigt (Commit `7d7ae13`, siehe Issue #71)
+- [x] E2E-Tests mit Playwright für kritische User-Flows
 
 ---
 

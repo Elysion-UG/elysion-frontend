@@ -1,35 +1,50 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import {
   DollarSign,
-  RefreshCw,
   Loader2,
   CreditCard,
   ArrowDownLeft,
   Banknote,
   Wrench,
+  HandCoins,
+  Send,
 } from "lucide-react"
 import { AdminService } from "@/src/services/admin.service"
-import type { AdminPaymentItem, AdminRefundItem, Settlement, AdminPayoutItem } from "@/src/types"
+import type {
+  AdminPaymentItem,
+  AdminRefundItem,
+  Settlement,
+  AdminPayoutItem,
+  PayoutDueItem,
+} from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
+import {
+  ADMIN_PAYMENT_STATUS_COLOR as paymentStatusColor,
+  ADMIN_SETTLEMENT_STATUS_COLOR as settlementStatusColor,
+} from "@/src/lib/constants"
+import {
+  PageHeader,
+  RefreshButton,
+  LoadingFullPage,
+  ADMIN_TH_CLASS,
+  ADMIN_THEAD_CLASS,
+  ADMIN_TR_CLASS,
+} from "@/src/components/shared"
+import StatusBadge from "@/src/components/shared/StatusBadge"
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/src/components/ui/table"
 import { toast } from "sonner"
 
-type Tab = "payments" | "refunds" | "settlements" | "payouts" | "maintenance"
-
-const paymentStatusColor: Record<string, string> = {
-  PENDING: "bg-yellow-900/40 text-yellow-400 ring-1 ring-yellow-700/40",
-  SUCCEEDED: "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40",
-  FAILED: "bg-red-900/40 text-red-400 ring-1 ring-red-700/40",
-  REFUNDED: "bg-slate-800 text-slate-500",
-}
-
-const settlementStatusColor: Record<string, string> = {
-  PENDING: "bg-yellow-900/40 text-yellow-400 ring-1 ring-yellow-700/40",
-  PROCESSING: "bg-blue-900/40 text-blue-400 ring-1 ring-blue-700/40",
-  PAID: "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40",
-  FAILED: "bg-red-900/40 text-red-400 ring-1 ring-red-700/40",
-}
+type Tab = "payments" | "refunds" | "settlements" | "due" | "payouts" | "maintenance"
 
 export default function AdminFinance() {
   const [tab, setTab] = useState<Tab>("payments")
@@ -37,8 +52,10 @@ export default function AdminFinance() {
   const [payments, setPayments] = useState<AdminPaymentItem[]>([])
   const [refunds, setRefunds] = useState<AdminRefundItem[]>([])
   const [settlements, setSettlements] = useState<Settlement[]>([])
+  const [duePayouts, setDuePayouts] = useState<PayoutDueItem[]>([])
   const [payouts, setPayouts] = useState<AdminPayoutItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [releasingSellerId, setReleasingSellerId] = useState<string | null>(null)
   const [maintenanceLoading, setMaintenanceLoading] = useState<string | null>(null)
 
   const load = useCallback(async () => {
@@ -53,6 +70,9 @@ export default function AdminFinance() {
       } else if (tab === "settlements") {
         const res = await AdminService.listSettlements({ page: 0, size: 50 })
         setSettlements(res.items ?? [])
+      } else if (tab === "due") {
+        const items = await AdminService.listDuePayouts()
+        setDuePayouts(items ?? [])
       } else if (tab === "payouts") {
         const res = await AdminService.listPayouts({ page: 0, size: 50 })
         setPayouts(res.items ?? [])
@@ -64,8 +84,24 @@ export default function AdminFinance() {
     }
   }, [tab])
 
+  const releasePayout = async (item: PayoutDueItem) => {
+    setReleasingSellerId(item.sellerId)
+    try {
+      await AdminService.runPayout(item.sellerId)
+      toast.success(`Auszahlung für ${item.sellerName} freigegeben.`)
+      setDuePayouts((prev) => prev.filter((d) => d.sellerId !== item.sellerId))
+    } catch {
+      toast.error("Auszahlung konnte nicht freigegeben werden.")
+    } finally {
+      setReleasingSellerId(null)
+    }
+  }
+
+  const runEffect = useEffectEvent(() => {
+    if (tab !== "maintenance") void load()
+  })
   useEffect(() => {
-    if (tab !== "maintenance") load()
+    runEffect()
   }, [load, tab])
 
   const runMaintenance = async (action: "tokens" | "orders") => {
@@ -89,22 +125,18 @@ export default function AdminFinance() {
     { id: "payments", label: "Zahlungen", icon: <CreditCard className="h-4 w-4" /> },
     { id: "refunds", label: "Erstattungen", icon: <ArrowDownLeft className="h-4 w-4" /> },
     { id: "settlements", label: "Abrechnungen", icon: <DollarSign className="h-4 w-4" /> },
+    { id: "due", label: "Fällige Auszahlungen", icon: <HandCoins className="h-4 w-4" /> },
     { id: "payouts", label: "Auszahlungen", icon: <Banknote className="h-4 w-4" /> },
     { id: "maintenance", label: "Wartung", icon: <Wrench className="h-4 w-4" /> },
   ]
 
   return (
     <div>
-      <div className="mb-6">
-        <h1 className="font-mono text-2xl font-bold tracking-wide text-slate-100">
-          Finanzen & Wartung
-        </h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Zahlungen, Erstattungen, Abrechnungen und System-Wartung
-        </p>
-      </div>
+      <PageHeader
+        title="Finanzen & Wartung"
+        subtitle="Zahlungen, Erstattungen, Abrechnungen und System-Wartung"
+      />
 
-      {/* Tabs */}
       <div className="overflow-hidden rounded-xl border border-slate-800/60 bg-slate-900/60">
         <div className="flex overflow-x-auto border-b border-slate-800/60">
           {tabs.map((t) => (
@@ -125,19 +157,12 @@ export default function AdminFinance() {
         <div className="p-6">
           {tab !== "maintenance" && (
             <div className="mb-4 flex justify-end">
-              <button
-                onClick={load}
-                className="flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-400 hover:text-slate-200"
-              >
-                <RefreshCw className="h-4 w-4" /> Aktualisieren
-              </button>
+              <RefreshButton onClick={load} />
             </div>
           )}
 
           {isLoading && tab !== "maintenance" ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-cyber-500" />
-            </div>
+            <LoadingFullPage />
           ) : (
             <>
               {/* Payments */}
@@ -146,52 +171,43 @@ export default function AdminFinance() {
                   {payments.length === 0 ? (
                     <p className="py-8 text-center text-slate-500">Keine Zahlungen gefunden.</p>
                   ) : (
-                    <table className="w-full text-sm">
-                      <thead className="border-b border-slate-800/60 bg-slate-800/30">
-                        <tr>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            ID
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Bestellung
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Status
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Betrag
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Datum
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/60">
+                    <Table>
+                      <TableHeader className={ADMIN_THEAD_CLASS}>
+                        <TableRow>
+                          <TableHead className={ADMIN_TH_CLASS}>ID</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Bestellung</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Status</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Betrag</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Datum</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {payments.map((p) => (
-                          <tr key={p.paymentId} className="transition-colors hover:bg-slate-800/30">
-                            <td className="px-3 py-2.5 font-mono text-xs text-slate-500">
+                          <TableRow key={p.paymentId} className={ADMIN_TR_CLASS}>
+                            <TableCell className="px-3 py-2.5 font-mono text-xs text-slate-500">
                               {p.paymentId.slice(0, 12)}…
-                            </td>
-                            <td className="px-3 py-2.5 text-slate-300">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-slate-300">
                               {p.orderNumber ?? p.orderId?.slice(0, 8) ?? "–"}
-                            </td>
-                            <td className="px-3 py-2.5">
-                              <span
-                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${paymentStatusColor[p.status] ?? "bg-slate-800 text-slate-500"}`}
-                              >
-                                {p.status}
-                              </span>
-                            </td>
-                            <td className="px-3 py-2.5 font-medium text-slate-200">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5">
+                              <StatusBadge
+                                label={p.status}
+                                colorClasses={
+                                  paymentStatusColor[p.status] ?? "bg-slate-800 text-slate-500"
+                                }
+                              />
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 font-medium text-slate-200">
                               {formatEuro(p.amount)}
-                            </td>
-                            <td className="px-3 py-2.5 text-slate-500">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-slate-500">
                               {new Date(p.createdAt).toLocaleDateString("de-DE")}
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   )}
                 </div>
               )}
@@ -202,50 +218,40 @@ export default function AdminFinance() {
                   {refunds.length === 0 ? (
                     <p className="py-8 text-center text-slate-500">Keine Erstattungen gefunden.</p>
                   ) : (
-                    <table className="w-full text-sm">
-                      <thead className="border-b border-slate-800/60 bg-slate-800/30">
-                        <tr>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            ID
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Payment-ID
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Betrag
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Grund
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Status
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Datum
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/60">
+                    <Table>
+                      <TableHeader className={ADMIN_THEAD_CLASS}>
+                        <TableRow>
+                          <TableHead className={ADMIN_TH_CLASS}>ID</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Payment-ID</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Betrag</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Grund</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Status</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Datum</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {refunds.map((r) => (
-                          <tr key={r.refundId} className="transition-colors hover:bg-slate-800/30">
-                            <td className="px-3 py-2.5 font-mono text-xs text-slate-500">
+                          <TableRow key={r.refundId} className={ADMIN_TR_CLASS}>
+                            <TableCell className="px-3 py-2.5 font-mono text-xs text-slate-500">
                               {r.refundId.slice(0, 12)}…
-                            </td>
-                            <td className="px-3 py-2.5 font-mono text-xs text-slate-500">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 font-mono text-xs text-slate-500">
                               {r.paymentId.slice(0, 12)}…
-                            </td>
-                            <td className="px-3 py-2.5 font-medium text-slate-200">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 font-medium text-slate-200">
                               {formatEuro(r.amount)}
-                            </td>
-                            <td className="px-3 py-2.5 text-slate-500">–</td>
-                            <td className="px-3 py-2.5 text-xs text-slate-400">{r.status}</td>
-                            <td className="px-3 py-2.5 text-slate-500">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-slate-500">–</TableCell>
+                            <TableCell className="px-3 py-2.5 text-xs text-slate-400">
+                              {r.status}
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-slate-500">
                               {new Date(r.createdAt).toLocaleDateString("de-DE")}
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   )}
                 </div>
               )}
@@ -256,63 +262,123 @@ export default function AdminFinance() {
                   {settlements.length === 0 ? (
                     <p className="py-8 text-center text-slate-500">Keine Abrechnungen gefunden.</p>
                   ) : (
-                    <table className="w-full text-sm">
-                      <thead className="border-b border-slate-800/60 bg-slate-800/30">
-                        <tr>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Verkäufer
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Zeitraum
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Brutto
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Gebühr
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Netto
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/60">
+                    <Table>
+                      <TableHeader className={ADMIN_THEAD_CLASS}>
+                        <TableRow>
+                          <TableHead className={ADMIN_TH_CLASS}>Verkäufer</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Zeitraum</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Brutto</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Gebühr</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Netto</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {settlements.map((s) => (
-                          <tr
-                            key={s.settlementId}
-                            className="transition-colors hover:bg-slate-800/30"
-                          >
-                            <td className="px-3 py-2.5 font-mono text-xs text-slate-500">
+                          <TableRow key={s.settlementId} className={ADMIN_TR_CLASS}>
+                            <TableCell className="px-3 py-2.5 font-mono text-xs text-slate-500">
                               {s.sellerId.slice(0, 8)}…
-                            </td>
-                            <td className="px-3 py-2.5 text-xs text-slate-400">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-xs text-slate-400">
                               {s.eligibleAt
                                 ? new Date(s.eligibleAt).toLocaleDateString("de-DE")
                                 : "–"}
-                            </td>
-                            <td className="px-3 py-2.5 text-slate-300">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-slate-300">
                               {formatEuro(s.grossAmount)}
-                            </td>
-                            <td className="px-3 py-2.5 text-red-400">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-red-400">
                               -{formatEuro(s.platformFeeAmount)}
-                            </td>
-                            <td className="px-3 py-2.5 font-medium text-emerald-400">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 font-medium text-emerald-400">
                               {formatEuro(s.netAmount)}
-                            </td>
-                            <td className="px-3 py-2.5">
-                              <span
-                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${settlementStatusColor[s.status] ?? "bg-slate-800 text-slate-500"}`}
-                              >
-                                {s.status}
-                              </span>
-                            </td>
-                          </tr>
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5">
+                              <StatusBadge
+                                label={s.status}
+                                colorClasses={
+                                  settlementStatusColor[s.status] ?? "bg-slate-800 text-slate-500"
+                                }
+                              />
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+              )}
+
+              {/* Fällige Auszahlungen */}
+              {tab === "due" && (
+                <div className="overflow-x-auto">
+                  <div className="mb-4 rounded-lg border border-slate-800/60 bg-slate-800/30 p-4 text-sm text-slate-400">
+                    Auszahlungen werden <span className="text-slate-200">monatlich</span> manuell
+                    freigegeben. Aufgeführt sind pro Verkäufer alle gelieferten, noch nicht
+                    ausgezahlten Abrechnungen. Eine Freigabe ist nur bei aktivem
+                    Stripe-Auszahlungskonto möglich.
+                  </div>
+                  {duePayouts.length === 0 ? (
+                    <p className="py-8 text-center text-slate-500">Keine fälligen Auszahlungen.</p>
+                  ) : (
+                    <Table>
+                      <TableHeader className={ADMIN_THEAD_CLASS}>
+                        <TableRow>
+                          <TableHead className={ADMIN_TH_CLASS}>Verkäufer</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Konto</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Abrechnungen</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Netto</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS} />
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {duePayouts.map((d) => {
+                          const canRelease = d.payoutAccountStatus === "ACTIVE"
+                          return (
+                            <TableRow key={d.sellerId} className={ADMIN_TR_CLASS}>
+                              <TableCell className="px-3 py-2.5 text-slate-300">
+                                {d.sellerName}
+                              </TableCell>
+                              <TableCell className="px-3 py-2.5">
+                                <StatusBadge
+                                  label={d.payoutAccountStatus}
+                                  colorClasses={
+                                    canRelease
+                                      ? "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40"
+                                      : "bg-amber-900/40 text-amber-400 ring-1 ring-amber-700/40"
+                                  }
+                                />
+                              </TableCell>
+                              <TableCell className="px-3 py-2.5 text-slate-400">
+                                {d.settlementCount}
+                              </TableCell>
+                              <TableCell className="px-3 py-2.5 font-medium text-emerald-400">
+                                {formatEuro(d.netAmount)}
+                              </TableCell>
+                              <TableCell className="px-3 py-2.5 text-right">
+                                <button
+                                  onClick={() => void releasePayout(d)}
+                                  disabled={!canRelease || releasingSellerId === d.sellerId}
+                                  title={
+                                    canRelease
+                                      ? "Auszahlung freigeben"
+                                      : "Verkäufer hat kein aktives Auszahlungskonto"
+                                  }
+                                  className="inline-flex items-center gap-1.5 rounded-lg border border-cyber-800/60 bg-cyber-950/30 px-3 py-1.5 text-xs text-cyber-400 hover:text-cyber-300 disabled:opacity-40"
+                                >
+                                  {releasingSellerId === d.sellerId ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                  ) : (
+                                    <Send className="h-3.5 w-3.5" />
+                                  )}
+                                  Freigeben
+                                </button>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
                   )}
                 </div>
               )}
@@ -323,40 +389,34 @@ export default function AdminFinance() {
                   {payouts.length === 0 ? (
                     <p className="py-8 text-center text-slate-500">Keine Auszahlungen gefunden.</p>
                   ) : (
-                    <table className="w-full text-sm">
-                      <thead className="border-b border-slate-800/60 bg-slate-800/30">
-                        <tr>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Verkäufer
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Betrag
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Status
-                          </th>
-                          <th className="px-3 py-2 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
-                            Datum
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/60">
+                    <Table>
+                      <TableHeader className={ADMIN_THEAD_CLASS}>
+                        <TableRow>
+                          <TableHead className={ADMIN_TH_CLASS}>Verkäufer</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Betrag</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Status</TableHead>
+                          <TableHead className={ADMIN_TH_CLASS}>Datum</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {payouts.map((p) => (
-                          <tr key={p.payoutId} className="transition-colors hover:bg-slate-800/30">
-                            <td className="px-3 py-2.5 text-slate-300">
+                          <TableRow key={p.payoutId} className={ADMIN_TR_CLASS}>
+                            <TableCell className="px-3 py-2.5 text-slate-300">
                               {p.sellerName ?? p.sellerId.slice(0, 8)}
-                            </td>
-                            <td className="px-3 py-2.5 font-medium text-slate-200">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 font-medium text-slate-200">
                               {formatEuro(p.amount)}
-                            </td>
-                            <td className="px-3 py-2.5 text-xs text-slate-400">{p.status}</td>
-                            <td className="px-3 py-2.5 text-slate-500">
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-xs text-slate-400">
+                              {p.status}
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5 text-slate-500">
                               {new Date(p.createdAt).toLocaleDateString("de-DE")}
-                            </td>
-                          </tr>
+                            </TableCell>
+                          </TableRow>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   )}
                 </div>
               )}
@@ -377,7 +437,7 @@ export default function AdminFinance() {
                         Löscht abgelaufene Refresh-Token-Einträge aus der Datenbank.
                       </p>
                       <button
-                        onClick={() => runMaintenance("tokens")}
+                        onClick={() => void runMaintenance("tokens")}
                         disabled={maintenanceLoading === "tokens"}
                         className="flex items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-800/60 px-4 py-2 text-sm font-medium text-slate-300 hover:border-cyber-700/60 hover:text-cyber-400 disabled:opacity-60"
                       >
@@ -397,7 +457,7 @@ export default function AdminFinance() {
                         Markiert überfällige PENDING_PAYMENT-Bestellungen als CANCELLED.
                       </p>
                       <button
-                        onClick={() => runMaintenance("orders")}
+                        onClick={() => void runMaintenance("orders")}
                         disabled={maintenanceLoading === "orders"}
                         className="flex items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-800/60 px-4 py-2 text-sm font-medium text-slate-300 hover:border-cyber-700/60 hover:text-cyber-400 disabled:opacity-60"
                       >

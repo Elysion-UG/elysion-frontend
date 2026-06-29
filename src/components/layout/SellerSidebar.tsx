@@ -1,18 +1,18 @@
 "use client"
 
 import Link from "next/link"
-import { useSearchParams, useRouter } from "next/navigation"
-import { Package, TrendingUp, Award, DollarSign, Leaf, LogOut, X, Menu } from "lucide-react"
+import { useSearchParams } from "next/navigation"
+import { Package, TrendingUp, Award, DollarSign, User, Leaf, LogOut, X, Menu } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
-import { AuthService } from "@/src/services/auth.service"
 
-type Tab = "products" | "orders" | "certificates" | "settlements"
+type Tab = "products" | "orders" | "certificates" | "settlements" | "profile"
 
 const NAV_ITEMS: { key: Tab; label: string; icon: React.ElementType }[] = [
   { key: "products", label: "Produkte", icon: Package },
   { key: "orders", label: "Bestellungen", icon: TrendingUp },
   { key: "certificates", label: "Zertifikate", icon: Award },
   { key: "settlements", label: "Auszahlungen", icon: DollarSign },
+  { key: "profile", label: "Profil", icon: User },
 ]
 
 interface SellerSidebarProps {
@@ -100,11 +100,11 @@ function SidebarContent({
 export default function SellerSidebar({ mobileOpen, onMobileClose }: SellerSidebarProps) {
   const searchParams = useSearchParams()
   const activeTab = (searchParams.get("tab") as Tab) ?? "products"
-  const router = useRouter()
+  const { logout } = useAuth()
 
   const handleLogout = async () => {
-    await AuthService.logout()
-    router.push("/login/seller")
+    await logout()
+    window.location.href = "/login/seller"
   }
 
   return (

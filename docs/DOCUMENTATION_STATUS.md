@@ -1,22 +1,25 @@
 # Dokumentationsstatus
 
-**Stand:** 2026-03-31
+**Stand:** 2026-05-31
 **Status:** Aktuell
 
 ---
 
 ## Aktive Dokumentation
 
-| Datei                     | Inhalt                                                                          | Status     |
-| ------------------------- | ------------------------------------------------------------------------------- | ---------- |
-| `README.md`               | Projekt-Übersicht, Setup, Architektur, implementierte Module                    | ✅ Aktuell |
-| `CONTRIBUTING.md`         | Branch-Strategie, Commit-Konventionen, PR-Prozess, CI-Übersicht                 | ✅ Aktuell |
-| `docs/api-integration.md` | Vollständige API-Integrations-Referenz (alle Endpoints, DTOs, Fehlerbehandlung) | ✅ Aktuell |
-| `docs/BACKEND_QUIRKS.md`  | Bekannte Abweichungen Backend-Response vs. Frontend-Typen                       | ✅ Aktuell |
-| `docs/CODE_STANDARDS.md`  | Namenskonventionen, Architekturmuster, Code-Review-Checkliste                   | ✅ Aktuell |
-| `docs/CICD_PIPELINE.md`   | GitHub Actions Workflows, Quality Gates, Pre-commit Hooks                       | ✅ Aktuell |
-| `docs/ROADMAP.md`         | Entwicklungs-Roadmap — Phase 1 abgeschlossen, Phase 2 geplant                   | ✅ Aktuell |
-| `docs/INDEX.md`           | Topic → SSOT Referenzkarte für Mitwirkende                                      | ✅ Aktuell |
+| Datei                      | Inhalt                                                                           | Status     |
+| -------------------------- | -------------------------------------------------------------------------------- | ---------- |
+| `docs/LAUNCH_READINESS.md` | Konsolidierter Launch-Stand FE+BE, offene Blocker und Findings (SSOT Go-Live)    | ✅ Aktuell |
+| `docs/COMPLIANCE.md`       | Compliance-Plan DE/EU-Recht (DSGVO, Impressum, AGB, BFSG, UWG)                   | ✅ Aktuell |
+| `README.md`                | Projekt-Übersicht, Setup, Architektur, implementierte Module                     | ✅ Aktuell |
+| `CONTRIBUTING.md`          | Branch-Strategie, Commit-Konventionen, PR-Prozess, CI-Übersicht, Bun-Setup       | ✅ Aktuell |
+| `docs/api-integration.md`  | Vollständige API-Integrations-Referenz (alle Endpoints, DTOs, Fehlerbehandlung)  | ✅ Aktuell |
+| `docs/BACKEND_QUIRKS.md`   | Bekannte Abweichungen Backend-Response vs. Frontend-Typen                        | ✅ Aktuell |
+| `docs/CODE_STANDARDS.md`   | Namenskonventionen, Architekturmuster, Code-Review-Checkliste                    | ✅ Aktuell |
+| `docs/CICD_PIPELINE.md`    | GitHub Actions Workflows, Quality Gates, Pre-commit Hooks                        | ✅ Aktuell |
+| `docs/ROADMAP.md`          | Entwicklungs-Roadmap — Phase 1 abgeschlossen, Phase 2 geplant                    | ✅ Aktuell |
+| `docs/INDEX.md`            | Topic → SSOT Referenzkarte für Mitwirkende                                       | ✅ Aktuell |
+| `docs/monitoring-api.md`   | Spezifikation: Backend-Persistenz für Frontend-Fehler (noch nicht implementiert) | 📋 Geplant |
 
 ---
 
@@ -40,7 +43,9 @@ Superseded und planungsphasenbezogene Dokumente (nicht mehr aktiv gepflegt):
 
 ---
 
-## Implementierungsstand (Stand: 2026-03-28)
+## Implementierungsstand (Stand: 2026-05-31)
+
+> Vollständiger Launch-Status inkl. offener Blocker: [`LAUNCH_READINESS.md`](./LAUNCH_READINESS.md)
 
 ### Phase 1 — MVP ✅ Abgeschlossen
 
@@ -63,16 +68,22 @@ Alle 16 Backend-Module sind vollständig ins Frontend integriert:
 | Orders (Buyer + Seller)    | ✅      | ✅  | ✅    |
 | Matching / Recommendations | ✅      | ✅  | —     |
 | File Upload                | ✅      | ✅  | —     |
-| Payments (Mock)            | ✅      | ✅  | —     |
+| Payments (Stripe)          | ✅      | ✅  | —     |
 
-**Testabdeckung:** ~97% (266 Tests)
+**Testabdeckung:** ~39 Unit-Test-Dateien + ~26 Playwright-E2E-Specs
 
-### Phase 2 — Geplant
+### Phase 2 — Status
 
-- Stripe-Zahlungsintegration (`PaymentService` ist vorbereitet)
-- Skeleton-Loading-States: SustainableShop ✅ done; Cart, Orders, OrderDetail, Checkout noch ausstehend
-- Toast-Abdeckung SellerDashboard vervollständigen
-- Guest Checkout
-- Wishlist / Favoriten
-- Retouren- und Erstattungs-UI
-- `POST /api/v1/auth/resend-verification` UI (wartet auf Backend-Implementierung)
+**Erledigt:**
+
+- Stripe-Zahlungsintegration im Frontend (`PaymentStep.tsx`, Stripe Elements) — offen ist nur die Key-Konfiguration
+- Skeleton-Loading-States: SustainableShop, Cart, OrderDetail, Checkout, Profil, Präferenzen
+- Toast-Abdeckung SellerDashboard
+- `POST /api/v1/auth/resend-verification` UI verdrahtet (Backend-Endpoint vorhanden)
+
+**Offen (Auswahl, vollständig in `LAUNCH_READINESS.md`):**
+
+- Public Seller-/Producer-Profil: ProducerPage läuft auf echten Produktdaten; optionaler reicher Profil-Endpoint im Backend offen
+- Kontaktformular: `mailto:`-Fallback aktiv; optionaler Backend-Endpoint offen
+- Monitoring-Persistenz
+- Guest Checkout, Wishlist / Favoriten, Retouren-/Erstattungs-UI

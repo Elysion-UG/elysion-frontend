@@ -1,5 +1,10 @@
+import { Suspense } from "react"
 import ProducerPage from "@/src/components/features/products/ProducerPage"
 
 export default function ProducerPageRoute() {
-  return <ProducerPage />
+  return (
+    <Suspense>
+      <ProducerPage />
+    </Suspense>
+  )
 }

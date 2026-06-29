@@ -1,3 +1,5 @@
+import Link from "next/link"
+
 export const metadata = {
   title: "Allgemeine Geschäftsbedingungen — Elysion",
 }
@@ -86,9 +88,9 @@ export default function AgbPage() {
         <p className="text-stone-700">
           Verbrauchern steht ein gesetzliches Widerrufsrecht zu. Die vollständige Widerrufsbelehrung
           sowie das Muster-Widerrufsformular finden Sie auf unserer{" "}
-          <a href="/widerruf" className="text-sage-600 underline hover:text-sage-800">
+          <Link href="/widerruf" className="text-sage-600 underline hover:text-sage-800">
             Widerrufsbelehrungsseite
-          </a>
+          </Link>
           .
         </p>
       </section>

@@ -14,6 +14,7 @@ export interface Order {
   id: string
   orderNumber?: string
   status: OrderStatus
+  paymentStatus?: string
   total?: number
   currency?: string
   createdAt: string
@@ -62,28 +63,6 @@ export interface OrderGroup {
   items: OrderItem[]
 }
 
-export interface OrderDetail {
-  id?: string
-  orderNumber?: string
-  status?: OrderStatus
-  createdAt?: string
-  shippingAddress?: {
-    firstName: string
-    lastName: string
-    street: string
-    houseNumber: string
-    postalCode: string
-    city: string
-    country: string
-  }
-  groups?: OrderGroup[]
-  subtotal?: number
-  shippingCost?: number
-  tax?: number | null
-  total?: number
-  currency?: string
-}
-
 /** Shipping address — only included by the backend for CONFIRMED/PROCESSING/SHIPPED orders. */
 export interface ShippingAddress {
   firstName: string
@@ -93,6 +72,20 @@ export interface ShippingAddress {
   postalCode: string
   city: string
   country: string
+}
+
+export interface OrderDetail {
+  id?: string
+  orderNumber?: string
+  status?: OrderStatus
+  createdAt?: string
+  shippingAddress?: ShippingAddress
+  groups?: OrderGroup[]
+  subtotal?: number
+  shippingCost?: number
+  tax?: number | null
+  total?: number
+  currency?: string
 }
 
 export interface OrderGroupDetail {
@@ -119,20 +112,14 @@ export interface OrderGroupDetail {
     updatedAt?: string
   }>
   totalAmount: number
+  subtotal?: number
+  shipping?: number
   currency?: string
   shipment?: { trackingNumber: string; carrier?: string } | null
   buyer?: { userId?: string; guestEmail?: string | null }
   /** Provided by backend only for shippable order states. DSGVO: use only for shipping, not marketing. */
   shippingAddress?: ShippingAddress
   createdAt: string
-}
-
-export interface OrderGroupsPage {
-  items: OrderGroupDetail[]
-  page: number
-  size: number
-  totalElements: number
-  totalPages: number
 }
 
 export interface ShipOrderDTO {
@@ -154,12 +141,4 @@ export interface Settlement {
   adjustmentRequired?: boolean
   eligibleAt?: string
   createdAt: string
-}
-
-export interface SettlementsPage {
-  items: Settlement[]
-  page: number
-  size: number
-  totalElements: number
-  totalPages: number
 }

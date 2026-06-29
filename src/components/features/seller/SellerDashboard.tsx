@@ -7,6 +7,7 @@ import SellerProductsTab from "./SellerProductsTab"
 import SellerOrdersTab from "./SellerOrdersTab"
 import SellerCertificatesTab from "./SellerCertificatesTab"
 import SellerSettlementsTab from "./SellerSettlementsTab"
+import SellerProfileTab from "./SellerProfileTab"
 import type { Tab } from "./sellerDashboard.constants"
 
 const PAGE_META: Record<Tab, { title: string; subtitle: string }> = {
@@ -14,17 +15,18 @@ const PAGE_META: Record<Tab, { title: string; subtitle: string }> = {
   orders: { title: "Bestellungen", subtitle: "Eingehende und laufende Bestellungen" },
   certificates: { title: "Zertifikate", subtitle: "Nachhaltigkeitsnachweise für Ihre Produkte" },
   settlements: { title: "Auszahlungen", subtitle: "Erlöse und Abrechnungen" },
+  profile: { title: "Profil", subtitle: "Firmenprofil und Nachhaltigkeitsprofil verwalten" },
 }
 
 export default function SellerDashboard() {
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
   const searchParams = useSearchParams()
   const activeTab = (searchParams.get("tab") as Tab) ?? "products"
 
   // Backend sets role="SELLER" on approve, role="BUYER" on reject/suspend —
   // so role is the reliable approval signal (sellerProfile.status is not returned by the API).
   const isApproved = user?.role === "SELLER"
-  const isPending = !isApproved
+  const isPending = !isLoading && !isApproved
   const { title, subtitle } = PAGE_META[activeTab] ?? PAGE_META.products
 
   return (
@@ -53,6 +55,7 @@ export default function SellerDashboard() {
       {activeTab === "orders" && <SellerOrdersTab />}
       {activeTab === "certificates" && <SellerCertificatesTab />}
       {activeTab === "settlements" && <SellerSettlementsTab />}
+      {activeTab === "profile" && <SellerProfileTab />}
     </div>
   )
 }

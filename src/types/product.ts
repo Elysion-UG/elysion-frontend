@@ -1,4 +1,5 @@
 import type { PublicCertificate } from "./certificate"
+import type { Material } from "./material"
 
 // ── Product Types ────────────────────────────────────────────────
 export type ProductStatus = "DRAFT" | "REVIEW" | "ACTIVE" | "INACTIVE" | "REJECTED"
@@ -55,8 +56,11 @@ export interface ProductDetail {
   seller?: ProductSeller
   sellerId?: string
   status?: ProductStatus | string
+  /** List API only: whether the product is currently sellable. Detail view derives stock from variants instead. */
+  inStock?: boolean
   variants?: ProductVariant[]
   certificates?: PublicCertificate[]
+  materials?: Material[]
   createdAt?: string
   updatedAt?: string
 }
@@ -86,17 +90,11 @@ export interface ProductListParams {
   sellerId?: string
   minPrice?: number
   maxPrice?: number
+  /** Material slugs; a product matches when linked to any of them. */
+  materials?: string[]
   sort?: string
   page?: number
   size?: number
-}
-
-export interface ProductPage {
-  content: ProductDetail[]
-  totalElements: number
-  totalPages: number
-  size: number
-  number: number
 }
 
 export interface ProductCreateDTO {
@@ -110,6 +108,8 @@ export interface ProductCreateDTO {
   currency?: string
   categoryId?: string
   imageUrls?: string[]
+  /** Material UUIDs to assign on create. */
+  materialIds?: string[]
 }
 
 export interface ProductUpdateDTO {
@@ -122,6 +122,8 @@ export interface ProductUpdateDTO {
   taxRate?: number
   currency?: string
   categoryId?: string
+  /** null/omitted = unchanged; any array (incl. []) = replace assignment. */
+  materialIds?: string[]
 }
 
 export interface ProductStatusUpdateDTO {
@@ -134,8 +136,9 @@ export interface ProductCommandResponse {
 }
 
 export interface ProductImageCreateDTO {
-  imageUrl: string
-  position?: number
+  fileId: string
+  altText?: string
+  order?: number
 }
 
 export interface ProductImageReorderDTO {

@@ -6,3 +6,6 @@ public
 .clone
 everything-claude-code
 coverage
+
+# Auto-generiert durch Next.js build — Inhalt wechselt zwischen Dev/Prod.
+next-env.d.ts

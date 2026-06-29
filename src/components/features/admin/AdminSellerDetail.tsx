@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Loader2, CheckCircle2, XCircle, Ban, ExternalLink } from "lucide-react"
+import { Loader2, CheckCircle2, XCircle, Ban, ExternalLink, Percent } from "lucide-react"
 import { AdminService } from "@/src/services/admin.service"
 import type {
   AdminSellerDetail,
@@ -11,37 +12,14 @@ import type {
   SellerStatus,
   ProductStatus,
 } from "@/src/types"
+import {
+  ADMIN_SELLER_STATUS_LABEL as sellerStatusLabel,
+  ADMIN_SELLER_DETAIL_STATUS_COLOR as sellerStatusColor,
+  ADMIN_PRODUCT_STATUS_LABEL as productStatusLabel,
+  ADMIN_PRODUCT_STATUS_COLOR as productStatusColor,
+} from "@/src/lib/constants"
+import { BackButton, LoadingFullPage, StatusBadge } from "@/src/components/shared"
 import { toast } from "sonner"
-
-const sellerStatusLabel: Record<SellerStatus, string> = {
-  PENDING: "Ausstehend",
-  APPROVED: "Genehmigt",
-  REJECTED: "Abgelehnt",
-  SUSPENDED: "Gesperrt",
-}
-
-const sellerStatusColor: Record<SellerStatus, string> = {
-  PENDING: "bg-amber-900/40 text-amber-400 ring-1 ring-amber-700/40",
-  APPROVED: "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40",
-  REJECTED: "bg-red-900/40 text-red-400 ring-1 ring-red-700/40",
-  SUSPENDED: "bg-slate-800 text-slate-500 ring-1 ring-slate-700/40",
-}
-
-const productStatusLabel: Record<ProductStatus, string> = {
-  DRAFT: "Entwurf",
-  REVIEW: "In Prüfung",
-  ACTIVE: "Aktiv",
-  INACTIVE: "Inaktiv",
-  REJECTED: "Abgelehnt",
-}
-
-const productStatusColor: Record<ProductStatus, string> = {
-  DRAFT: "bg-slate-800 text-slate-400",
-  REVIEW: "bg-amber-900/40 text-amber-400 ring-1 ring-amber-700/40",
-  ACTIVE: "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40",
-  INACTIVE: "bg-slate-800 text-slate-500",
-  REJECTED: "bg-red-900/40 text-red-400 ring-1 ring-red-700/40",
-}
 
 export default function AdminSellerDetailView() {
   const { id } = useParams<{ id: string }>()
@@ -54,12 +32,15 @@ export default function AdminSellerDetailView() {
   const [suspendReason, setSuspendReason] = useState("")
   const [showRejectInput, setShowRejectInput] = useState(false)
   const [showSuspendInput, setShowSuspendInput] = useState(false)
+  const [commissionInput, setCommissionInput] = useState("")
+  const [commissionSaving, setCommissionSaving] = useState(false)
 
   const load = useCallback(async () => {
     setIsLoading(true)
     try {
       const data = await AdminService.getSeller(id)
       setSeller(data)
+      setCommissionInput(data.commissionRate != null ? String(data.commissionRate) : "")
       // fetch all products and filter by this seller (no server-side seller filter available)
       AdminService.listProducts({ page: 0, size: 200 })
         .then((res) => {
@@ -76,8 +57,11 @@ export default function AdminSellerDetailView() {
     }
   }, [id])
 
-  useEffect(() => {
+  const runEffect = useEffectEvent(() => {
     load()
+  })
+  useEffect(() => {
+    runEffect()
   }, [load])
 
   const handleApprove = async () => {
@@ -110,6 +94,26 @@ export default function AdminSellerDetailView() {
     }
   }
 
+  const handleSaveCommission = async () => {
+    if (!seller) return
+    const rate = Number(commissionInput.replace(",", "."))
+    if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
+      toast.error("Bitte einen Prozentsatz zwischen 0 und 100 eingeben.")
+      return
+    }
+    setCommissionSaving(true)
+    try {
+      const updated = await AdminService.updateSellerCommission(seller.id, rate)
+      setSeller(updated)
+      setCommissionInput(String(updated.commissionRate))
+      toast.success(`Provision auf ${updated.commissionRate} % gesetzt.`)
+    } catch {
+      toast.error("Provision konnte nicht gespeichert werden.")
+    } finally {
+      setCommissionSaving(false)
+    }
+  }
+
   const handleSuspend = async () => {
     if (!seller || !suspendReason.trim()) return
     setActionLoading(true)
@@ -127,11 +131,7 @@ export default function AdminSellerDetailView() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-cyber-500" />
-      </div>
-    )
+    return <LoadingFullPage />
   }
 
   if (!seller) {
@@ -140,12 +140,7 @@ export default function AdminSellerDetailView() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-300"
-      >
-        <ArrowLeft className="h-4 w-4" /> Zurück
-      </button>
+      <BackButton />
 
       {/* Seller Info */}
       <div className="rounded-xl border border-slate-800/60 bg-slate-900/60 p-6">
@@ -154,11 +149,11 @@ export default function AdminSellerDetailView() {
             <h1 className="font-mono text-xl font-bold text-slate-100">{seller.companyName}</h1>
             <p className="mt-1 text-sm text-slate-500">{seller.userEmail}</p>
           </div>
-          <span
-            className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${sellerStatusColor[seller.status]}`}
-          >
-            {sellerStatusLabel[seller.status]}
-          </span>
+          <StatusBadge
+            label={sellerStatusLabel[seller.status]}
+            colorClasses={sellerStatusColor[seller.status]}
+            className="shrink-0 px-3 py-1"
+          />
         </div>
 
         <dl className="divide-y divide-slate-800/60">
@@ -255,6 +250,45 @@ export default function AdminSellerDetailView() {
         )}
       </div>
 
+      {/* Plattformgebühr */}
+      <div className="rounded-xl border border-slate-800/60 bg-slate-900/60 p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <Percent className="h-4 w-4 text-cyber-500" />
+          <h2 className="font-mono text-sm font-semibold uppercase tracking-wider text-slate-400">
+            Plattformgebühr
+          </h2>
+        </div>
+        <p className="mb-4 text-sm text-slate-500">
+          Provision auf den Warenwert (exkl. Versand) pro Bestellung. Default für neue Seller:
+          15&nbsp;%.
+        </p>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <input
+              type="number"
+              min={0}
+              max={100}
+              step={0.5}
+              value={commissionInput}
+              onChange={(e) => setCommissionInput(e.target.value)}
+              aria-label="Provision in Prozent"
+              className="w-32 rounded-lg border border-slate-700/60 bg-slate-800/60 py-2 pl-3 pr-8 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
+            />
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">
+              %
+            </span>
+          </div>
+          <button
+            onClick={handleSaveCommission}
+            disabled={commissionSaving || commissionInput.trim() === ""}
+            className="flex items-center gap-1.5 rounded-lg border border-cyber-800/60 bg-cyber-950/30 px-4 py-2 text-sm text-cyber-400 hover:text-cyber-300 disabled:opacity-40"
+          >
+            {commissionSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+            Speichern
+          </button>
+        </div>
+      </div>
+
       {/* Products */}
       <div className="rounded-xl border border-slate-800/60 bg-slate-900/60">
         <div className="border-b border-slate-800/60 px-5 py-4">
@@ -303,11 +337,10 @@ export default function AdminSellerDetailView() {
                     </div>
                   </td>
                   <td className="px-5 py-3">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${productStatusColor[p.status]}`}
-                    >
-                      {productStatusLabel[p.status]}
-                    </span>
+                    <StatusBadge
+                      label={productStatusLabel[p.status]}
+                      colorClasses={productStatusColor[p.status]}
+                    />
                   </td>
                   <td className="px-5 py-3 text-slate-500">
                     {new Date(p.createdAt).toLocaleDateString("de-DE")}

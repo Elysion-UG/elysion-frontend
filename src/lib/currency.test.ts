@@ -1,3 +1,4 @@
+import { describe, it, expect } from "vitest"
 import { formatEuro, centsToEuro, euroToCents, bpsToPercent, percentToBps } from "./currency"
 
 describe("currency utils", () => {

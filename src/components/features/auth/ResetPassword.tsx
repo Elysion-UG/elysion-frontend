@@ -2,30 +2,43 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
+import Link from "next/link"
 import { Lock, Eye, EyeOff, CheckCircle2, XCircle, Loader2, AlertTriangle } from "lucide-react"
 import { AuthService } from "@/src/services/auth.service"
 import { validatePassword } from "@/src/lib/validation"
 import { toast } from "sonner"
 
-type ResetStatus = "form" | "success" | "invalid-token"
+type ResetStatus = "validating" | "form" | "success" | "invalid-token"
 
 export default function ResetPassword() {
   const [token, setToken] = useState("")
-  const [status, setStatus] = useState<ResetStatus>("form")
+  const [status, setStatus] = useState<ResetStatus>("validating")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
 
-  useEffect(() => {
+  const validateTokenFromUrl = useEffectEvent(() => {
     const params = new URLSearchParams(window.location.search)
     const t = params.get("token")
     if (!t) {
       setStatus("invalid-token")
-    } else {
-      setToken(t)
+      return
     }
+    setToken(t)
+    AuthService.validateResetToken(t)
+      .then(() => {
+        setStatus("form")
+      })
+      .catch(() => {
+        setStatus("invalid-token")
+      })
+  })
+
+  useEffect(() => {
+    validateTokenFromUrl()
   }, [])
 
   const pwValidation = validatePassword(password)
@@ -58,6 +71,14 @@ export default function ResetPassword() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-4">
       <div className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-8 shadow-lg">
+        {status === "validating" && (
+          <div className="text-center">
+            <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-sage-600" />
+            <h1 className="mb-2 text-xl font-bold text-stone-800">Link wird geprüft...</h1>
+            <p className="text-stone-500">Bitte warten Sie einen Moment.</p>
+          </div>
+        )}
+
         {status === "invalid-token" && (
           <div className="text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
@@ -67,12 +88,12 @@ export default function ResetPassword() {
             <p className="mb-6 text-stone-600">
               Dieser Link zum Zurücksetzen des Passworts ist ungültig oder abgelaufen.
             </p>
-            <a
+            <Link
               href="/"
               className="inline-block rounded-xl bg-sage-600 px-6 py-2.5 font-semibold text-white transition-colors hover:bg-sage-700"
             >
               Zur Startseite
-            </a>
+            </Link>
           </div>
         )}
 
@@ -85,12 +106,12 @@ export default function ResetPassword() {
             <p className="mb-6 text-stone-600">
               Sie können sich jetzt mit Ihrem neuen Passwort anmelden.
             </p>
-            <a
+            <Link
               href="/"
               className="inline-block rounded-xl bg-sage-600 px-6 py-2.5 font-semibold text-white transition-colors hover:bg-sage-700"
             >
               Zur Anmeldung
-            </a>
+            </Link>
           </div>
         )}
 

@@ -1,7 +1,8 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useMounted } from "@/src/hooks/use-mounted"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -18,7 +19,7 @@ import {
   PackageSearch,
 } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
-import { useCart } from "@/src/hooks/useCart"
+import { useCart } from "@/src/context/CartContext"
 import LoginModal from "@/src/components/features/auth/LoginModal"
 import Footer from "@/src/components/layout/Footer"
 import { sellerUrl, adminUrl } from "@/src/lib/seller-url"
@@ -35,9 +36,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => setMounted(true), [])
+  const mounted = useMounted()
 
   const handleLogout = async () => {
     setLoggingOut(true)

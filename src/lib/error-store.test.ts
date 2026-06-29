@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest"
-import { errorStore, type ReportErrorInput } from "./error-store"
+import {
+  errorStore,
+  serializeErrorEvent,
+  buildErrorBatch,
+  type ReportErrorInput,
+} from "./error-store"
+import type { FrontendErrorEvent } from "@/src/types"
 
 function makeInput(overrides: Partial<ReportErrorInput> = {}): ReportErrorInput {
   return {
@@ -124,14 +130,22 @@ describe("ErrorStore", () => {
     expect(stats.errorsPerMinute).toBeGreaterThan(0)
   })
 
-  it("clear removes all events", () => {
+  it("clear removes all events (display buffer + flush queue)", () => {
     errorStore.report(makeInput())
     errorStore.report(makeInput())
     expect(errorStore.getAll()).toHaveLength(2)
+    expect(errorStore.getUnflushedCount()).toBe(2)
 
     errorStore.clear()
     expect(errorStore.getAll()).toHaveLength(0)
     expect(errorStore.getStats().total).toBe(0)
+    expect(errorStore.getUnflushedCount()).toBe(0)
+  })
+
+  it("queues reported events for backend flush", () => {
+    errorStore.report(makeInput())
+    errorStore.report(makeInput())
+    expect(errorStore.getUnflushedCount()).toBe(2)
   })
 
   it("includes url and userAgent in metadata automatically", () => {
@@ -156,5 +170,55 @@ describe("ErrorStore", () => {
     // Only the original event should be stored (recursive call is blocked)
     expect(errorStore.getAll()).toHaveLength(1)
     expect(errorStore.getAll()[0].message).toBe("trigger")
+  })
+})
+
+// ── Pure flush helpers ──────────────────────────────────────────────────────────
+
+function makeEvent(overrides: Partial<FrontendErrorEvent> = {}): FrontendErrorEvent {
+  return {
+    id: "evt-1",
+    timestamp: "2026-06-01T12:00:00.000Z",
+    severity: "high",
+    category: "api",
+    message: "boom",
+    stack: null,
+    metadata: {},
+    ...overrides,
+  }
+}
+
+describe("serializeErrorEvent", () => {
+  it("truncates message to 2000 chars", () => {
+    const out = serializeErrorEvent(makeEvent({ message: "x".repeat(5000) }))
+    expect(out.message).toHaveLength(2000)
+  })
+
+  it("truncates stack to 8 KB and preserves null", () => {
+    const truncated = serializeErrorEvent(makeEvent({ stack: "y".repeat(20_000) }))
+    expect(truncated.stack).toHaveLength(8 * 1024)
+    const nullStack = serializeErrorEvent(makeEvent({ stack: null }))
+    expect(nullStack.stack).toBeNull()
+  })
+
+  it("leaves short fields unchanged", () => {
+    const out = serializeErrorEvent(makeEvent({ message: "short", stack: "trace" }))
+    expect(out.message).toBe("short")
+    expect(out.stack).toBe("trace")
+  })
+})
+
+describe("buildErrorBatch", () => {
+  it("caps the batch at 50 events", () => {
+    const events = Array.from({ length: 120 }, (_, i) => makeEvent({ id: `e-${i}` }))
+    const batch = buildErrorBatch(events, "session-1")
+    expect(batch.events).toHaveLength(50)
+    expect(batch.sessionId).toBe("session-1")
+  })
+
+  it("serializes each event (truncation applied) and omits sessionId when absent", () => {
+    const batch = buildErrorBatch([makeEvent({ message: "z".repeat(3000) })])
+    expect(batch.events[0].message).toHaveLength(2000)
+    expect(batch.sessionId).toBeUndefined()
   })
 })

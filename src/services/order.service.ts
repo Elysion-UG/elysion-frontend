@@ -1,5 +1,37 @@
-import { apiRequest } from "@/src/lib/api-client"
-import type { Order, OrderDetail, OrderGroup, OrderItem, OrderProductSnapshot } from "@/src/types"
+import { apiRequest, buildQuery } from "@/src/lib/api-client"
+import { errorStore } from "@/src/lib/error-store"
+import { normalizePage } from "@/src/lib/normalize-page"
+import { orderGroupStatusSchema, orderStatusSchema } from "@/src/lib/api-schemas"
+import type { Order, OrderDetail, OrderGroup, OrderItem } from "@/src/types"
+import { type ApiOrderProductSnapshot, normalizeSnapshot } from "./_order-normalizers"
+
+// Safely narrow a backend status string to one of our known enum values.
+// Unknown values from the server fall back to a sane default and are reported
+// to the error store so contract drift is visible without using console.* in
+// production. This is preferable to `as` casts that silently render an
+// undefined status badge.
+function parseOrderStatus(raw: string | undefined): OrderDetail["status"] {
+  if (!raw) return undefined
+  const result = orderStatusSchema.safeParse(raw)
+  if (result.success) return result.data
+  errorStore.report({
+    severity: "low",
+    category: "api",
+    message: `[order.service] unknown order status from backend: ${raw}`,
+  })
+  return "PENDING"
+}
+
+function parseOrderGroupStatus(raw: string): OrderGroup["status"] {
+  const result = orderGroupStatusSchema.safeParse(raw)
+  if (result.success) return result.data
+  errorStore.report({
+    severity: "low",
+    category: "api",
+    message: `[order.service] unknown order-group status from backend: ${raw}`,
+  })
+  return "PENDING"
+}
 
 export interface OrderListParams {
   page?: number
@@ -8,17 +40,6 @@ export interface OrderListParams {
 }
 
 // ── Raw backend shapes ────────────────────────────────────────────────
-
-interface ApiOrderProductSnapshot {
-  id?: string
-  name?: string
-  slug?: string
-  seller?: { id?: string } | null
-  variantId?: string
-  sku?: string
-  options?: Array<{ type: string; value: string }>
-  currency?: string
-}
 
 interface ApiOrderItem {
   id: string
@@ -70,19 +91,6 @@ interface ApiOrderDetail {
 
 // ── Normalisation helpers ─────────────────────────────────────────────
 
-function normalizeSnapshot(raw: ApiOrderProductSnapshot | undefined | null): OrderProductSnapshot {
-  return {
-    productId: raw?.id,
-    productName: raw?.name,
-    productSlug: raw?.slug,
-    sellerId: raw?.seller?.id,
-    variantId: raw?.variantId,
-    sku: raw?.sku,
-    options: raw?.options,
-    currency: raw?.currency,
-  }
-}
-
 function normalizeItem(raw: ApiOrderItem): OrderItem {
   const rawSnap = raw.product ?? raw.productSnapshot
   return {
@@ -99,7 +107,7 @@ function normalizeGroup(raw: ApiOrderGroup): OrderGroup {
   return {
     id: raw.id,
     sellerId: raw.sellerId ?? raw.seller?.id,
-    status: raw.status as OrderGroup["status"],
+    status: parseOrderGroupStatus(raw.status),
     subtotal: raw.subtotal,
     shippingCost: raw.shippingCost ?? raw.shipping,
     shipment: raw.shipment,
@@ -111,7 +119,7 @@ function normalizeOrderDetail(raw: ApiOrderDetail): OrderDetail {
   return {
     id: raw.id,
     orderNumber: raw.orderNumber,
-    status: raw.status as OrderDetail["status"],
+    status: parseOrderStatus(raw.status),
     createdAt: raw.createdAt,
     shippingAddress: raw.shippingAddress,
     groups: (raw.groups ?? []).map(normalizeGroup),
@@ -127,16 +135,11 @@ function normalizeOrderDetail(raw: ApiOrderDetail): OrderDetail {
 
 export const OrderService = {
   async list(params: OrderListParams = {}): Promise<Order[]> {
-    const search = new URLSearchParams()
-    if (params.page !== undefined) search.set("page", String(params.page))
-    if (params.size !== undefined) search.set("size", String(params.size))
-    if (params.status) search.set("status", params.status)
-    const qs = search.toString()
     // Backend returns a paginated envelope { items, page, totalElements, totalPages }
     const res = await apiRequest<{ items?: Order[] } | Order[]>(
-      `/api/v1/orders${qs ? `?${qs}` : ""}`
+      `/api/v1/orders${buildQuery({ page: params.page, size: params.size, status: params.status })}`
     )
-    return Array.isArray(res) ? res : ((res as { items?: Order[] }).items ?? [])
+    return normalizePage<Order, Order>(res).items
   },
 
   async getById(id: string): Promise<OrderDetail> {

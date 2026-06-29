@@ -1,11 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
 import {
+  LayoutDashboard,
   Users,
   Store,
   Package,
+  FolderTree,
   ShoppingCart,
   DollarSign,
   Award,
@@ -16,7 +18,6 @@ import {
   Menu,
 } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
-import { AuthService } from "@/src/services/auth.service"
 
 interface NavItem {
   href: string
@@ -25,9 +26,11 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/users", label: "Benutzer", icon: Users },
   { href: "/admin/sellers", label: "Verkäufer", icon: Store },
   { href: "/admin/products", label: "Produkte", icon: Package },
+  { href: "/admin/categories", label: "Kategorien", icon: FolderTree },
   { href: "/admin/orders", label: "Bestellungen", icon: ShoppingCart },
   { href: "/admin/finance", label: "Finanzen", icon: DollarSign },
   { href: "/admin/certificates", label: "Zertifikate", icon: Award },
@@ -72,7 +75,7 @@ function SidebarContent({
           Navigation
         </p>
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const isActive = activePath.startsWith(href)
+          const isActive = href === "/admin" ? activePath === "/admin" : activePath.startsWith(href)
           return (
             <Link
               key={href}
@@ -123,11 +126,11 @@ function SidebarContent({
 
 export default function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebarProps) {
   const pathname = usePathname()
-  const router = useRouter()
+  const { logout } = useAuth()
 
   const handleLogout = async () => {
-    await AuthService.logout()
-    router.push("/login/admin")
+    await logout()
+    window.location.href = "/login/admin"
   }
 
   return (

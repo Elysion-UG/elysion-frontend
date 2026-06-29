@@ -3,7 +3,7 @@
 ## Elysion Sustainable Marketplace
 
 **Erstellt:** 2026-03-31
-**Scope:** Frontend (v0-sustainable-online-shop) + Backend (marketplace-backend)
+**Scope:** Frontend (elysion-frontend) + Backend (elysion-marketplace-backend)
 **Stand:** Phase 1 (MVP) abgeschlossen; Phase 2 in Planung
 
 ---
@@ -20,43 +20,79 @@
 
 ### 1.1 Plattformgebühr / Seller-Commission
 
-**Status:** OFFEN — BLOCKER (vor Payout-Feature)
+**Status:** ENTSCHIEDEN (2026-06-01) · **Fee-Modell aktualisiert 2026-06-10** (s. Änderungshinweis) — Frontend umgesetzt, Backend offen
 
-Das Datenbankmodell für Settlements und Auszahlungen ist fertig implementiert. Die Höhe der Plattformgebühr ist jedoch noch nicht festgelegt.
+**Entscheidungen:**
 
-**Offene Fragen:**
+- **Höhe:** Default **15 %** Take Rate für neue Seller.
+- **Struktur:** **Pro Seller individuell**, vom Admin anpassbar (kein globaler Flat-Satz, keine automatische Volumen-Staffelung).
+- **Bezugsgröße:** Provision auf den **Warenwert pro OrderGroup, exkl. Versand**. Versandkosten bleiben provisionsfrei beim Seller.
+- **Stripe-Transaktionsgebühr:** trägt der **Seller** und wird **pro Transaktion separat** in der Seller-Abrechnung ausgewiesen (ca. 1,5 % + 0,25 €, **nicht** in die Take Rate eingepreist). Datenquelle ist das **Stripe-Charge-Objekt**. _(geändert 2026-06-10 — zuvor: trägt die Plattform.)_
+- **Refund-Gebühren:** Bei Retoure erstattet Stripe die ursprüngliche Transaktionsgebühr **nicht** — diese nicht erstattete Stripe-Fee wird dem Seller von der **nächsten Auszahlung** abgezogen. Die **Elysion-Kommission wird bei Retoure erstattet** (kein Plattform-Verdienst bei Retoure).
+- **Chargeback-Kosten:** **15 € Stripe-Fee pro Chargeback + Streitbetrag** werden dem **verursachenden Seller** zugeordnet und von der Auszahlung abgezogen. Elysion kann den Chargeback bei Stripe anfechten; bei Erfolg wird dem Seller rückerstattet.
+- **Pilot-Konditionen:** keine Monatsgebühren, keine Startgebühren für Pilot-Seller — Kosten entstehen **nur bei Verkauf** (15 % Take Rate + Stripe-Fees).
+- **Seller-Einblick:** Seller sieht im Dashboard pro Bestellung **Brutto, Elysion-Kommission (€) und Stripe-Fee (€)** sowie etwaige **Refund-/Chargeback-Abzüge** und die **Netto-Auszahlung** — **nicht** den Prozentsatz (da Sätze pro Seller variieren).
 
-- Wie hoch ist die Plattformgebühr (z. B. 10 %, 15 %)?
-- Flat-Rate oder volumenbasierte Staffelung?
-- Kann die Gebühr pro Seller individuell angepasst werden (Admin UI)?
-- Können Seller ihre Abrechnungsdetails einsehen?
+**Frontend umgesetzt (2026-06-01):**
+
+- Admin-Provisions-Editor pro Seller (`AdminSellerDetail.tsx`, `AdminService.updateSellerCommission`)
+- `AdminSellerDetail.commissionRate` (Prozent) im Typmodell
+- Seller-Settlements-Tab zeigt Beträge ohne %-Satz (bereits konform)
+
+**Backend offen (Issue):**
+
+- Feld `commissionRate` auf `SellerProfile` (Default 15) + Nutzung in Settlement-Berechnung
+- Endpoint `PATCH /api/v1/admin/sellers/{id}/commission`
+- `AdminSellerDetail`-Response um `commissionRate` erweitern
 
 **Bereits entschieden (überschreibbar):**
 
 - Beträge werden als Integer (Cent) gespeichert, niemals als Float
-- `settlement.platformFee` und `settlement.sellerNet` werden pro OrderGroup berechnet
-- Kein Abrechnungs-UI für Admins vorhanden (nur API)
+- Settlement-Line-Items pro OrderGroup: **Bruttoumsatz → Elysion-Kommission → Stripe-Fee → Refund-Fee-Abzug → Chargeback-Abzug → Netto-Auszahlung**
+
+**Änderungshinweis (2026-06-10):**
+
+Auf Basis beantworteter IT-/Management-Fragen wurde das Fee-Modell präzisiert: Die **Stripe-Transaktionsgebühr trägt nun der Seller** (separat ausgewiesen) statt der Plattform; zusätzlich neu geregelt sind **Refund-Fee-Abzug** und **Chargeback-Abzug** (15 € + Streitbetrag). Technische Grundlage: Stripe Connect, **Destination-Charge-Modell** (Elysion = Platform-Account, Seller = Connected Accounts); das Abrechnungsmodul führt separate Line Items. Umsetzung: Elysion-UG/elysion-marketplace-backend#140 (Backend) · Elysion-UG/elysion-frontend#53 (Frontend-Anzeige).
 
 ---
 
 ### 1.2 Auszahlungs-Workflow (Seller Payouts)
 
-**Status:** OFFEN — BLOCKER (vor Seller-Onboarding)
+**Status:** ENTSCHIEDEN (2026-06-01) · **Timing aktualisiert 2026-06-10** (s. Änderungshinweis) — Frontend umgesetzt, Backend offen
 
-Das Backend-Modell ist vollständig. Der Auslöser und Ablauf der Auszahlung ist nicht entschieden.
+**Entscheidungen:**
 
-**Offene Fragen:**
+- **Auslöser:** **Manuelle Admin-Freigabe** an einem **festen Mittwoch-Rhythmus** (keine Selbstauslösung durch Seller). _Festlegung 2026-06-10 (logisch, überschreibbar): für den Pilot **manuell** statt Cron — geringe Stückzahl, manueller Review schützt vor Fehl-/Betrugs-Payouts; **Cron-Automatisierung als spätere Option**._
+- **Ausführungsweg:** **Echte Stripe-Auszahlung über Stripe Connect (Express-Accounts)**. Stripe übernimmt KYC/Compliance und IBAN-Verwaltung (→ entschärft §2.1-KYC); die Plattform behält Provisions-Kontrolle (`application_fee`) und Branding.
+- **Intervall:** **Wöchentlich** — Auszahlungstag ist **Mittwoch**; ausgezahlt werden alle Settlements, deren 7-Tage-Haltefrist bis dahin abgelaufen ist. _(geändert 2026-06-10 — zuvor: monatlich.)_
+- **Haltefrist:** **7 Kalendertage** ab Erfüllung des Auslösers, bevor ein Settlement auszahlbar wird (Schutz im Retouren-/Storno-Fenster). _Festlegung 2026-06-10 (logisch): Kalendertage statt Werktage — vorhersehbar bei fixem Mittwochs-Payout; Stripe-Dispute-/Payout-Fenster sind kalenderbasiert._
+- **Mindestbetrag:** **keiner** (zeitbasiert statt betragsbasiert) → kein Vortrag/keine Sperre nötig.
+- **Settlement-Auslöser:** ab Order-Status **`DELIVERED`** (unverändert) **+ 7-Tage-Haltefrist**; Auszahlung am darauffolgenden Mittwoch.
+- **Benachrichtigung:** **eigene gebrandete Plattform-E-Mail** bei Auszahlung (zusätzlich zu Stripes eigener Benachrichtigung).
 
-- Automatische Auszahlung (täglich/wöchentlich) oder manuelle Admin-Freigabe?
-- Wer löst die Auszahlung aus (Admin, Seller, Cronjob)?
-- Mindestauszahlungsbetrag (z. B. €50)?
-- Was passiert mit Guthaben unter dem Mindestauszahlungsbetrag (Vortrag oder Sperre)?
-- Erhalten Seller eine Auszahlungsbenachrichtigung per E-Mail?
+> ⚠️ **Scope-Hinweis:** „Echte Stripe-Auszahlung" ist KEIN no-code-MVP-Punkt mehr, sondern ein echtes Backend-Feature (Connect-Onboarding, Webhooks, `createPayout()` ersetzt das bestehende `ConflictException`-Stub). Verschiebt den Funktions-Launch entsprechend.
+
+**Frontend umgesetzt (2026-06-01):**
+
+- Seller-Onboarding-Karte „Auszahlungskonto verbinden" (`SellerPayoutAccountCard.tsx`, `SellerPayoutService`)
+- Admin-Tab „Fällige Auszahlungen" mit per-Seller-Freigabe (`AdminFinance.tsx`, `AdminService.listDuePayouts` / `runPayout`)
+
+**Backend offen (Issue):**
+
+- Stripe Connect Express: Account-Erstellung, Onboarding-Link, Status-Webhook
+- `GET /seller/payout-account`, `POST /seller/payout-account/onboarding-link`
+- `GET /admin/payouts/due`, `POST /admin/payouts/run` (löst Stripe-Transfer/Payout aus)
+- `createPayout()` implementieren (ersetzt `ConflictException`)
+- Gebrandetes Payout-E-Mail-Template
 
 **Bereits entschieden (überschreibbar):**
 
 - Settlement-Berechtigung: Zahlung erfolgreich UND OrderGroup delivered
 - Pro OrderGroup eine eigene Settlement-Zeile
+
+**Änderungshinweis (2026-06-10):**
+
+Auszahlungs-Timing präzisiert (beantwortete IT-Frage): Intervall **monatlich → wöchentlich**, fester **Auszahlungstag Mittwoch**, **7-Tage-Haltefrist** vor Auszahlbarkeit. Der **Auslöser bleibt `DELIVERED`** (kein Wechsel auf reine Stripe-Bestätigung) — schützt vor Auszahlung im Retouren-Fenster. **Logisch festgelegt (2026-06-10):** Haltefrist = **7 Kalendertage**; Freigabe **manuell** an festem Mittwoch (Cron später). Umsetzung: Elysion-UG/elysion-marketplace-backend#111 (Scope auf wöchentlich/Mittwoch/Haltefrist aktualisiert).
 
 ---
 
@@ -66,37 +102,64 @@ Das Backend-Modell ist vollständig. Der Auslöser und Ablauf der Auszahlung ist
 
 Das Backend ist production-ready (Stripe API v2026-03-23). Das Frontend nutzt noch einen Mock-Flow.
 
+**Update (2026-05):** Frontend und Backend sind inzwischen voll integriert (Stripe Elements in
+`PaymentStep.tsx`). Es fehlt nur noch die **Konfiguration** der Live-Keys — kein Code mehr offen.
+
 **Offene Fragen:**
 
-- Wann soll die echte Stripe-Integration aktiviert werden?
-- Wie werden bestehende Test-/Mock-Bestellungen behandelt?
-- Wer hält die Stripe-API-Keys (DevOps, Management)?
+- Wer hält die Stripe-API-Keys (DevOps, Management) und setzt sie in Prod?
+- Wie werden bestehende Test-/Mock-Bestellungen aus der Entwicklung behandelt?
 
-**Bereits entschieden (überschreibbar):**
+**Bereits entschieden / umgesetzt:**
 
-- Backend: `StripeHttpApiClient` ist vollständig implementiert
-- Frontend: `PaymentService` & `Checkout.tsx` verwenden noch Mock-Endpunkt
+- Backend: `StripeHttpApiClient` vollständig implementiert (Intent, idempotenter Webhook, Settlement)
+- Frontend: Stripe Elements in `PaymentStep.tsx` verdrahtet — benötigt `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+- Live-Schaltung = Setzen von `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (FE) + `APP_STRIPE_SECRET_KEY`/`APP_STRIPE_WEBHOOK_SECRET` (BE), siehe `docs/LAUNCH_READINESS.md` B1–B3
+
+**Zahlungsarten zum Launch (entschieden 2026-06-10):**
+
+Stripe `PaymentElement` (in `PaymentStep.tsx`) rendert die im Stripe-Dashboard aktivierten Methoden — die Auswahl ist daher primär **Konfiguration + Kommunikation**, kein Checkout-Umbau.
+
+- **Zum Launch:** Kreditkarte (Visa/MC, **3DS2/SCA-Pflicht**), **PayPal** (~2,49 % + 0,35 €), **Apple Pay & Google Pay** (~1,5 %, nur unterstützte Geräte, **Domain-Registrierung** nötig), **Klarna** (2,99 % + 0,35 €, Kauf auf Rechnung — Stripe stellt das Geld direkt bereit).
+- **Fast-Follow (nicht Launch):** **SEPA-Lastschrift** — wegen Mandat-Handling zunächst zurückgestellt.
+- Gebühren je Methode trägt der **Seller**, separat ausgewiesen (s. §1.1).
+
+Umsetzung: Elysion-UG/elysion-marketplace-backend#141 (Stripe-Methoden/SCA/async-Webhooks) · Elysion-UG/elysion-frontend#55 (Zahlarten-Kommunikation, Apple/Google-Pay-Domain).
 
 ---
 
 ### 1.4 Rückgaben & Erstattungen
 
-**Status:** OFFEN
+**Status:** TEILWEISE ENTSCHIEDEN — Refund-Berechtigungen entschieden (2026-06-10); Zeitfenster/Restocking offen
 
 Backend unterstützt vollständige und teilweise Rückerstattungen. Keine Self-Service-UI für Käufer vorhanden.
 
-**Offene Fragen:**
+**Refund-Berechtigungen (entschieden 2026-06-10):**
 
-- Können Käufer selbst Rückgaben/Erstattungen beantragen (Account-Bereich)?
-- Zeitfenster für Erstattungen (14 Tage, 30 Tage, 60 Tage)?
-- Vollerstattung oder Restocking-Gebühr?
-- Wer genehmigt Erstattungen (Admin, Seller, automatisch)?
-- Eskalationsprozess bei Streitigkeiten?
+| Rolle               | Refund auslösen                         | Umfang                                                                                        |
+| ------------------- | --------------------------------------- | --------------------------------------------------------------------------------------------- |
+| **Seller**          | **Eigenständig, ohne Elysion-Freigabe** | Full + Partial — Marktstandard; Seller kennt den Sachverhalt (Retoure, Defekt, Teillieferung) |
+| **Elysion (Admin)** | **Als Eskalation**                      | Full + Partial — wenn Seller nicht reagiert, bei Disputes, bei Betrug                         |
+| **Buyer**           | **Nie direkt**                          | Kann nur eine **Rückgabe beantragen** (Antrag, kein Refund)                                   |
+
+- **Settlement-Wirkung:** Bei Refund wird die Elysion-Kommission erstattet, die nicht erstattete Stripe-Fee dem Seller abgezogen (s. §1.1 / Backend #140); Auswirkung auf die Auszahlung über die Haltefrist (§1.2).
+- **Buyer-Rückgabe-Flow** (Antrag → Genehmigung → Refund) ist im **Miro-BPMN „Retoure"** spezifiziert und wird als **eigenes Thema** umgesetzt (noch nicht in den unten verlinkten Issues).
+
+**Festlegung (2026-06-10, logisch — Rechtsstandard):**
+
+- **Zeitfenster:** **14 Tage gesetzliches Widerrufsrecht** als Standard (Kulanz darüber hinaus möglich) — konsistent mit dem bereits im Shop ausgewiesenen „14 Tage Widerrufsrecht".
+- **Keine Restocking-Gebühr** — beim gesetzlichen Widerruf grundsätzlich unzulässig und passt zur kundenfreundlichen/nachhaltigen Positionierung.
+
+**Noch offen:**
+
+- Detaillierter Eskalations-/Dispute-Prozess (über die Rollenzuordnung hinaus) — folgt mit dem Miro-BPMN „Retoure".
 
 **Bereits entschieden (überschreibbar):**
 
-- Nur Admins können aktuell Erstattungen auslösen (API)
-- Kein Käufer-seitiger Rückgabe-Flow (Phase 2 geplant)
+- ~~Nur Admins können Erstattungen auslösen (API)~~ → **überholt (2026-06-10):** Seller lösen Full/Partial eigenständig aus, Admin nur als Eskalation
+- Käufer-seitiger Rückgabe-Flow: als **Antrag** vorgesehen (kein direkter Refund) — Umsetzung als eigenes Thema (Miro-BPMN)
+
+**Umsetzung:** Elysion-UG/elysion-marketplace-backend#142 (Seller-/Admin-Refund-Berechtigungen) · Elysion-UG/elysion-frontend#56 (Seller-Refund-UI).
 
 ---
 
@@ -111,6 +174,82 @@ Kein automatischer Abgleich mit Stripe vorhanden.
 - Wie oft soll ein Abgleich mit Stripe stattfinden (täglich, wöchentlich)?
 - Wie werden fehlende Webhooks erkannt und behandelt?
 - Wer ist zuständig bei Zahlungsdifferenzen?
+
+---
+
+### 1.6 Payment-Robustheit / Edge-Cases
+
+**Status:** ENTSCHIEDEN (2026-06-10)
+
+Beantwortete IT-Fragen zu Zahlungs-Sonderfällen. Ausgangslage im Code: Stripe captured **sofort** (`automatic_payment_methods`, kein `capture_method=manual`); `OrderExpiryService` storniert abgelaufene Pending-Orders bereits.
+
+**Szenario 1 — Stripe-Autorisierung läuft ab (vor Versandfähigkeit):**
+
+- **Lösung:** **Immediate Capture** (bereits aktiv) + **48h-Versand-SLA** für Seller — Ware muss binnen **48 h** nach Capture versandfähig/versendet sein.
+
+**Szenario 2 — Webhook kommt zu spät (Zahlung existiert, Order bereits storniert):**
+
+- **Lösung:** **Grace Period 30–60 Min.** vor Auto-Stornierung; trifft die Zahlung danach trotzdem ein → **automatischer Refund** + Kunden-E-Mail („Ihre Zahlung wurde erstattet, bitte bestellen Sie erneut").
+- Beantwortet die offene Entscheidung in #121 (Late-Success → **automatischer Refund**, nicht manuelle Reaktivierung).
+
+**Szenario 3 — BNPL-Stornierung (Klarna):**
+
+- **Lösung:** Stornierung/Retoure einer Klarna-Order löst **automatisch** eine Klarna-API-Rückbuchung aus, damit der Kunde keine Rechnung über den vollen Betrag erhält. **Pflichtschritt im Retoure-/Refund-Flow** (Klarna ist Launch-Zahlart, s. §1.3).
+
+**Szenario 4 — Vorkasse/Überweisung:**
+
+- **Entscheidung:** **Nicht angeboten** — zu fehleranfällig. (Konsistent mit §1.3: nur Stripe-Methoden.)
+
+**Umsetzung:** Elysion-UG/elysion-marketplace-backend#143 (48h-SLA) · #144 (Klarna-Reversal) · #121 (Grace Period + Auto-Refund) · Elysion-UG/elysion-frontend#57 (48h-SLA-Anzeige Seller).
+
+---
+
+### 1.7 Settlement-Verbindlichkeit & Einspruchsfrist
+
+**Status:** ENTSCHIEDEN (2026-06-10)
+
+- Die im **Seller-Dashboard angezeigte laufende Übersicht ist unverbindlich** (rein informativ).
+- **Verbindlich** ist ausschließlich der **wöchentliche Settlement-Bericht** nach **Ablauf der Einspruchsfrist**.
+- **Nachträglich** eingehende Chargebacks, Rückbuchungen oder Korrekturen werden mit dem **jeweils nächsten Settlement** verrechnet (nicht rückwirkend in einen bereits verbindlichen Bericht).
+
+**Festlegung (2026-06-10, logisch):** Die **Einspruchsfrist entspricht der 7-Kalendertage-Haltefrist** (§1.2) — **eine** einzige Frist, kein zweiter Timer. Nach ihrem Ablauf wird der Wochenbericht **verbindlich** und am selben Mittwoch ausgezahlt (Verbindlichkeit + Auszahlung fallen zusammen).
+
+**Umsetzung:** Elysion-UG/elysion-marketplace-backend#145 (Settlement-Lifecycle informativ→verbindlich, Einspruchsfrist, Verrechnung) · Elysion-UG/elysion-frontend#58 (Dashboard: „unverbindlich"-Kennzeichnung + verbindlicher Wochenbericht).
+
+---
+
+### 1.8 Duplicate Charges / Duplicate Orders
+
+**Status:** ENTSCHIEDEN (2026-06-10) — mehrstufige Prävention, Restfälle manuell
+
+Residual-Duplikate, die durch alle automatischen Ebenen rutschen, werden **manuell** geprüft und entschieden (Storno + Refund oder Freigabe). Mehrstufige Prävention und Ist-Stand im Code:
+
+| #   | Mechanismus                                                                                                | Ebene           | Stand im Code                                                                                 |
+| --- | ---------------------------------------------------------------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------- |
+| 1   | **Button-Lock** im Checkout (Doppelklick verhindert)                                                       | Frontend        | ✅ vorhanden (`PaymentStep.tsx`, Submit während Request deaktiviert)                          |
+| 2   | **Idempotency Key** bei jedem Stripe-Request (+ Stripe-seitiger Unique Constraint)                         | Backend         | ✅ vorhanden (`PaymentIntentService` / `StripeHttpApiClient`)                                 |
+| 3   | **Duplikat-Check vor Order-Anlage** (`customer_id` + Cart-Hash < 120 s → bestehende Order zurückgeben)     | Backend         | ⚠️ **fehlt** — nur Duplicate-**PaymentIntent**-Blocking vorhanden, kein Cart-Hash/120 s-Guard |
+| 4   | **Webhook-Deduplizierung** (Event-ID, Doppel-Delivery ignorieren)                                          | Backend         | ✅ vorhanden (`providerEventId`-Idempotenz, `recordWebhookDuplicate`)                         |
+| 5   | **Täglicher Scan** (gleiche E-Mail + Lieferadresse + Line Items + < 30 min → Flag → manuelle Entscheidung) | Backend + Admin | ⚠️ **fehlt** — kein Scan-Job, keine Admin-Review-Sicht                                        |
+
+**Umsetzung der Lücken:** Elysion-UG/elysion-marketplace-backend#146 (Mechanismus 3 + 5) · Elysion-UG/elysion-frontend#59 (Admin-Review-UI für geflaggte Duplikate).
+
+---
+
+### 1.9 Fehlerkommunikation im Checkout & Payment
+
+**Status:** ENTSCHIEDEN (2026-06-10) — Kommunikationsprinzip
+
+**Grundsatz:** Fehler werden **nur** dann gegenüber dem Kunden kommuniziert, wenn wir sicher sind, dass dem Kunden ein **Nachteil entsteht, der unsere Versprechen überschreitet** (z. B. zugesagte Lieferzeit, ein Zahlungsproblem auf unserer Seite). Interne/transiente Fehler ohne Kundennachteil werden **nicht** aktiv kommuniziert (still behandeln / retryen / loggen).
+
+**Wenn kommuniziert wird, immer offen und transparent:**
+
+1. **welche Instanz** den Fehler verursacht hat (Kunde, Plattform/Elysion, Seller, Zahlungsdienstleister), und
+2. die **konkreten Konsequenzen** für den Kunden (was passiert jetzt, was ist zu tun).
+
+Heutiger Stand: generische Meldungen (z. B. „Bestellung konnte nicht abgeschlossen werden", „Zahlung fehlgeschlagen") ohne Instanz-/Konsequenz-Angabe → an das Prinzip anzugleichen.
+
+**Umsetzung:** Elysion-UG/elysion-marketplace-backend#147 (Fehler-Attribution: Instanz + Konsequenz in Payment-/Checkout-Fehlerantworten) · Elysion-UG/elysion-frontend#60 (Checkout-/Payment-Fehlermeldungen an das Prinzip angleichen).
 
 ---
 
@@ -174,6 +313,23 @@ Die Typen `STANDARD | LEVEL_2 | LEVEL_3` sind technisch implementiert, aber sema
 - Wie lang ist die Grace-Period (7 Tage, 14 Tage)?
 - Kann Seller das Produkt manuell reaktivieren oder muss er auf Zert-Erneuerung warten?
 - Sehen Käufer abgelaufene Produkte noch in der Suche?
+
+---
+
+### 2.4 Zertifikats-Verifikationsprozess (Prüf-SOP)
+
+**Status:** OFFEN — BLOCKER (vor Seller-Onboarding) · _neu aufgenommen 2026-06-10 (Pre-Mortem-Analyse)_
+
+Die technische Verifikation (Admin klickt „verify") ist implementiert — aber es ist nicht definiert, **was der Admin dabei fachlich prüft**. Die Glaubwürdigkeit der Zertifikate ist der Kern-USP der Plattform; ein durchgerutschtes gefälschtes Zertifikat wäre ein PR-Totalschaden (siehe `docs/PRE_MORTEM.md` Szenario 6).
+
+**Offene Fragen:**
+
+- Gegen welche Quellen wird geprüft? (Öffentliche Zertifikatsregister: GOTS Public Database, Fairtrade FLOCERT, OEKO-TEX Label Check etc.)
+- Was gilt als gültiger Nachweis — PDF-Scan allein, oder Pflicht-Abgleich von Zertifikatsnummer + Aussteller + Gültigkeitsdatum gegen das Register?
+- Vier-Augen-Prinzip bei der Erstverifizierung eines neuen Sellers?
+- Stichproben / wiederkehrende Re-Checks bei bestehenden Sellern?
+- Eskalationsprozess bei Fälschungsverdacht (Seller-Suspendierung, Produkt-Sofort-Deaktivierung, rechtliche Schritte)?
+- Welche Zertifikate/Siegel werden überhaupt anerkannt (Whitelist)?
 
 ---
 
@@ -314,7 +470,7 @@ Aktuell keine Account-Sperre implementiert. Nur IP-basiertes Rate-Limiting (das 
 
 **Status:** OFFEN
 
-Backend ist implementiert; der Resend-Endpunkt fehlt im Backend. E-Mail-Verifizierung ist aktuell optional.
+Backend ist implementiert; ~~der Resend-Endpunkt fehlt im Backend~~ _(überholt — Resend-Endpunkt seit BE#90 vorhanden, verifiziert 2026-06-10)_. E-Mail-Verifizierung ist aktuell optional.
 
 **Offene Fragen:**
 
@@ -342,13 +498,41 @@ Noch nicht implementiert.
 
 Diese Punkte sind technische Bugs mit Sicherheitsrelevanz. Management muss Priorität und Zeitplan bestätigen:
 
-| #   | Problem                                                                                     | Aufwand | Kritikalität                 |
-| --- | ------------------------------------------------------------------------------------------- | ------- | ---------------------------- |
-| 1   | **E-Mail-Constraint lehnt gültige Corporate-Mails ab** (z. B. `vorname.nachname@domain.de`) | ~2h     | P0 — blockiert Registrierung |
-| 2   | **Rate-Limit-Bypass via X-Forwarded-For** (Brute-Force möglich)                             | ~4h     | P0 — Sicherheitsrisiko       |
-| 3   | **Race-Condition bei Refresh-Token** (parallele Requests erzeugen 2 gültige Tokens)         | ~3h     | P0 — Session-Hijacking       |
-| 4   | **Password-Reset-Links zeigen auf Backend** statt auf Frontend                              | ~2h     | P1 — UX-Blocker              |
-| 5   | **Refresh-Cookie-Pfad zu eng** (`/api/v1/auth` statt `/api/v1`)                             | ~1h     | P1                           |
+_Status-Update 2026-06-10 (Code-/Issue-Verifikation): Punkt 1 ist behoben (BE#61 geschlossen). Punkt 2 ist behoben (BE#149 + FE#32): Backend nutzt Tomcats RemoteIpValve statt client-vertrauendem XFF-Parsing; der Frontend-Auth-Proxy sendet die Vercel-verifizierte Client-IP als `X-Client-IP`, authentifiziert per Shared Secret (`AUTH_PROXY_SECRET` ↔ `APP_AUTH_RATE_LIMIT_TRUSTED_PROXY_SECRET`)._
+
+_Status-Update 2026-06-11 (Verifikation + Fix, BE#150): **Punkt 3 bestätigt und behoben** — `AuthService.refresh()` rotierte ohne Locking; im Parallel-Test erhielten 8 von 8 gleichzeitigen Refreshes mit demselben Token eine gültige Session. Fix: zeilengesperrter Token-Lookup (`SELECT … FOR UPDATE`), Regressionstest in `AuthFlowIT`. **Punkt 4 war bereits behoben** — Reset-/Verifikations-Links werden aus `app.frontend.url` generiert (Unit-Test `AuthServiceLinkGenerationTest` deckt dies ab), Frontend-Route `/reset-password` existiert. **Punkt 5 ist widerlegt** — der enge Cookie-Pfad ist beabsichtigt: Den Refresh-Cookie lesen ausschließlich `/auth/refresh` und `/auth/logout` (beide unter `/api/v1/auth`); eine Verbreiterung auf `/api/v1` würde das langlebige Token unnötig an jeden API-Request senden (Sicherheitsverschlechterung). Damit sind alle Punkte aus §5.4 geschlossen._
+
+| #   | Problem                                                                                | Aufwand | Kritikalität   |
+| --- | -------------------------------------------------------------------------------------- | ------- | -------------- |
+| 1   | ~~**E-Mail-Constraint lehnt gültige Corporate-Mails ab**~~ ✅ behoben (BE#61)          | —       | erledigt       |
+| 2   | ~~**Rate-Limit-Bypass via X-Forwarded-For**~~ ✅ behoben (BE#149 + FE#32)              | —       | erledigt       |
+| 3   | ~~**Race-Condition bei Refresh-Token**~~ ✅ bestätigt & behoben (BE#150)               | —       | erledigt       |
+| 4   | ~~**Password-Reset-Links zeigen auf Backend**~~ ✅ war bereits behoben (verifiziert)   | —       | erledigt       |
+| 5   | ~~**Refresh-Cookie-Pfad zu eng**~~ ❌ widerlegt — enger Pfad ist beabsichtigt (BE#150) | —       | kein Fix nötig |
+
+---
+
+### 5.5 Staging-Credentials im öffentlichen Repo (FE#65)
+
+**Status:** ENTSCHIEDEN & UMGESETZT (2026-06-13) — Option „Entkopplung"
+
+Das Frontend-Repo ist öffentlich; die dokumentierten Seed-Passwörter waren zugleich
+gültige Logins der öffentlich erreichbaren Staging-Umgebung (inkl. Admin-Portal).
+
+**Entscheidung:** Staging-Passwörter werden von den dokumentierten Seed-Passwörtern
+entkoppelt statt den Zustand zu akzeptieren.
+
+**Umsetzung:**
+
+- Alle 5 Staging-Seed-Accounts (Admin, 2× Seller, 2× Buyer) haben rotierte,
+  zufällige Passwörter — abgelegt ausschließlich als Secrets
+  (`~\.elysion\deploy.env` → `STAGE_E2E_*`; GitHub Actions `E2E_*_PASSWORD`).
+- `e2e/stage/smoke.spec.ts` hat keine Passwort-Fallbacks mehr; ohne Env-Vars
+  werden die Login-Tests übersprungen.
+- Die dokumentierten Seed-Passwörter (`Seller123!` etc.) gelten weiterhin
+  **nur lokal** — markiert in CLAUDE.md und den lokalen E2E-Specs.
+- **Verbindlich:** Produktion wird niemals mit `seed-data.sql` befüllt; die
+  Seed-Accounts dürfen in Produktion nicht existieren (relevant für BE#119).
 
 ---
 
@@ -406,14 +590,12 @@ Kein Rabattsystem implementiert. Nicht im Roadmap erwähnt.
 
 ### 7.1 `/dev`-Routen in Production
 
-**Status:** OFFEN — Sicherheitsrelevant
+**Status:** ERLEDIGT (2026-04-03)
 
-Entwicklerrouten (`/dev/*`) sind ohne Umgebungsschutz live. Können internen Zustand leaken.
-
-**Offene Fragen:**
-
-- Routen entfernen oder mit Env-Variable schützen?
-- Nur für internes Testing behalten oder löschen?
+Die Entwicklerrouten (`/dev/*`, API-Test-Playground) wurden mit Commit `7d7ae13`
+(„chore: remove dead files and dev tooling") vollständig gelöscht — die Frage
+„schützen oder löschen?" ist damit durch Löschung entschieden. Verifiziert
+2026-06-13 gegen Staging: alle `/dev/*`-Pfade liefern 404 (Issue #71).
 
 ---
 
@@ -448,9 +630,11 @@ Keine MwSt.-Berechnung oder -Abführungslogik vorhanden.
 
 ### 8.2 KYC / Identitätsprüfung für Seller
 
-**Status:** OFFEN
+**Status:** WEITGEHEND GEKLÄRT durch §1.2-Entscheidung (Stripe Connect Express)
 
-Keine Identitätsprüfung für Seller implementiert.
+> Mit der Entscheidung für **Stripe Connect Express** (§1.2) übernimmt **Stripe** KYC/Identitätsprüfung und Bankdaten-Verifizierung der Seller im Rahmen des Connect-Onboardings. Ein separater KYC-Anbieter ist damit für den Launch nicht erforderlich. Offen bleibt nur die organisatorische Abnahme (Datenschutz/AGB).
+
+Keine eigene Identitätsprüfung für Seller implementiert (an Stripe Connect delegiert).
 
 **Offene Fragen:**
 
@@ -474,6 +658,39 @@ Keine Identitätsprüfung für Seller implementiert.
 - Datenspeicherungsfrist für Gast-Bestellungen?
 - Recht auf Vergessenwerden für Seller-Bestellungshistorie (steuerrechtliche Aufbewahrungspflicht)?
 - Datenschutzbeauftragter benannt?
+
+---
+
+### 8.4 Marketplace-Betreiber-Pflichten (DAC7, VerpackG, GPSR, Textilkennzeichnung, Green Claims)
+
+**Status:** OFFEN — teils BLOCKER · _neu aufgenommen 2026-06-10 (Pre-Mortem-Analyse)_
+
+Diese Pflichten treffen **Elysion als Plattformbetreiber** (nicht nur die Seller) und kommen bislang in keinem Dokument vor (`docs/COMPLIANCE.md` deckt nur Shop-Recht ab: Impressum, AGB, Widerruf, DSGVO, BFSG). Empfehlung: anwaltliche Prüfung explizit auf Betreiber-Pflichten ausweiten.
+
+| Pflicht                            | Kern                                                                                            | Zu entscheiden                                                                                        |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **DAC7 / PStTG**                   | Plattformen müssen Seller-Umsätze jährlich ans BZSt melden                                      | Wer übernimmt die Meldung (Steuerberater?), welche Seller-Daten müssen dafür ab Tag 1 erhoben werden? |
+| **VerpackG § 9**                   | Marktplätze dürfen nur für LUCID-registrierte Seller anbieten (Prüfpflicht!)                    | LUCID-Registrierungsnummer als Pflichtfeld im Seller-Onboarding? Prüfprozess?                         |
+| **GPSR** (seit 12/2024)            | Verantwortliche Person in der EU + Sicherheitsangaben pro Produkt; Marketplace-Mitverantwortung | Pflichtfelder am Produkt? Prüfung beim Listing?                                                       |
+| **Textilkennzeichnungs-VO**        | Faserzusammensetzung ist Pflichtangabe bei Textilien                                            | Material-Angabe vom optionalen Filter zum Pflichtfeld machen?                                         |
+| **EmpCo / Green Claims** (ab 2026) | Generische Umweltaussagen („nachhaltig", „klimaneutral") ohne Nachweis werden verboten          | Wording-Richtlinie für Plattform-Texte **und** Seller-Produkttexte; wer prüft Seller-Claims?          |
+
+**Hinweis:** Für eine Plattform, die mit „nachhaltig zertifiziert" wirbt, ist insbesondere EmpCo/Green Claims existenziell — Abmahnrisiko trifft zuerst den sichtbarsten Akteur (die Plattform).
+
+---
+
+### 8.5 Rechnungsstellung (Käufer-Rechnung & Provisionsabrechnung)
+
+**Status:** OFFEN — BLOCKER (spätestens mit erster Abrechnung) · _neu aufgenommen 2026-06-10 (Pre-Mortem-Analyse)_
+
+Es existiert keinerlei Rechnungs-Funktionalität — weder im Datenmodell (`Invoice` fehlt) noch als UI. Stripe liefert nur eine `receiptUrl` (Zahlungsbeleg ≠ Rechnung).
+
+**Offene Fragen:**
+
+- **Käufer-Rechnung:** Wer stellt sie aus — der Seller (Marktplatz-Standard) oder die Plattform im Namen des Sellers? Muss die Plattform den Sellern dafür ein Werkzeug bereitstellen?
+- **Provisionsabrechnung:** Elysion muss den Sellern eine **umsatzsteuerkonforme Rechnung über die Provision** stellen (Pflicht der Plattform selbst). Format, Rhythmus (mit dem wöchentlichen Settlement-Bericht, §1.7?), USt-Ausweis?
+- Zusammenhang mit §8.1 (MwSt.): ohne VAT-Entscheidung ist keine korrekte Rechnung möglich.
+- Aufbewahrung (GoBD, 10 Jahre) — wo werden Rechnungen archiviert?
 
 ---
 
@@ -558,6 +775,16 @@ Keine Identitätsprüfung für Seller implementiert.
 | 19  | Seller Analytics Dashboard         | Seller-Experience     |
 | 20  | Mehrsprachigkeit (DE/EN)           | Internationalisierung |
 
+### Neu aufgenommen (2026-06-10 — aus Pre-Mortem-Analyse, `docs/PRE_MORTEM.md`)
+
+| #   | Thema                                                                                      | Bereich              | Einstufung                       |
+| --- | ------------------------------------------------------------------------------------------ | -------------------- | -------------------------------- |
+| 21  | Zertifikats-Verifikations-SOP (§2.4)                                                       | Vertrauen / Kern-USP | Kritisch — vor Seller-Onboarding |
+| 22  | Marketplace-Betreiber-Pflichten (§8.4: DAC7, VerpackG, GPSR, Textil-KennzVO, Green Claims) | Compliance           | Kritisch — teils vor Go-Live     |
+| 23  | Rechnungsstellung Käufer + Provisionsrechnung (§8.5)                                       | Finanzen / Steuern   | Kritisch — mit erster Abrechnung |
+| 24  | Go-to-Market & Pilot-Erfolgskriterien (§12.1)                                              | Strategie            | Kritisch — vor Launch            |
+| 25  | Unit Economics / Seller-Marge (§12.2)                                                      | Strategie            | Hoch                             |
+
 ---
 
 ## XI. Bereits getroffene Architekturentscheidungen (nur mit größerem Aufwand änderbar)
@@ -573,6 +800,37 @@ Diese Entscheidungen sind tief im Code verankert. Eine Änderung würde Datenban
 | **Spring-Page-Format für Produktliste**    | `{ content[], totalElements, totalPages, size, number }`  | Mittel                          |
 | **Soft-Delete für User**                   | `deleted_at` Timestamp statt Hard-Delete                  | Mittel — DSGVO-Logik            |
 | **Multi-OrderGroup-Modell**                | Eine Parent-Order, N OrderGroups (pro Seller)             | Sehr hoch — Kern-Bestellmodell  |
+
+---
+
+## XII. Geschäftsstrategie & Pilot
+
+_Neu aufgenommen 2026-06-10 (Pre-Mortem-Analyse, siehe `docs/PRE_MORTEM.md`)._
+
+### 12.1 Go-to-Market & Pilot-Erfolgskriterien
+
+**Status:** OFFEN — aus Pre-Mortem-Sicht das größte Einzelrisiko (Szenario 3)
+
+Die gesamte Projektdokumentation enthält kein Go-to-Market-Artefakt. Für einen Two-Sided-Marketplace ist das Henne-Ei-Problem (Seller brauchen Käufer, Käufer brauchen Angebot) das Hauptrisiko — unabhängig von der technischen Qualität.
+
+**Offene Fragen:**
+
+- **Pilot-Definition:** Wie viele Seller, welches GMV-Ziel, welches Zeitfenster? Ab wann gilt der Pilot als Erfolg, ab wann wird abgebrochen/pivotiert?
+- **Seller-Akquise:** Wer spricht wie viele Ziel-Seller an (nachhaltige Textil-Labels)? Pipeline, Zuständigkeit, Pitch?
+- **Käufer-Akquise:** Welche Kanäle (SEO, Social, Presse, Kooperationen mit den Zertifizierern selbst)? Budget?
+- **Launch-Form:** Stiller Soft-Launch mit Pilot-Sellern vs. öffentlicher Launch mit Presse?
+
+### 12.2 Unit Economics / Seller-Marge
+
+**Status:** OFFEN
+
+Das Fee-Modell (§1.1: 15 % Take Rate + Seller trägt Stripe-Fee + Refund-/Chargeback-Abzüge) ist entschieden, aber nie aus Seller-Sicht durchgerechnet. Nachhaltige Textil-Labels haben dünne Margen; Textil-E-Commerce hat 30–50 % Retourenquote.
+
+**Offene Fragen:**
+
+- Beispielrechnung: Was bleibt einem Seller bei einer typischen 60-€-Bestellung netto — und was bei einer retournierten?
+- Ab welchem Warenkorbwert ist ein Verkauf für den Seller profitabel? (Relevant für Mindestbestellwert-/Versandkosten-Politik)
+- Ist die 15 %-Take-Rate gegenüber Alternativen (eigener Shopify-Shop, Avocadostore, Etsy) konkurrenzfähig argumentierbar?
 
 ---
 

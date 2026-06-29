@@ -20,9 +20,13 @@
  *
  * Note: Certificate verify/reject are also in CertificateService.
  * Use either service — they hit the same endpoint.
+ *
+ * Dashboard:
+ *   GET   /api/v1/admin/dashboard                       — operational overview stats
  */
-import { apiRequest } from "@/src/lib/api-client"
+import { apiRequest, buildQuery } from "@/src/lib/api-client"
 import type {
+  AdminDashboardData,
   AdminUserListItem,
   AdminUserDetails,
   AdminUserListParams,
@@ -35,24 +39,29 @@ import type {
   AdminPaymentItem,
   AdminRefundItem,
   AdminPayoutItem,
+  PayoutDueItem,
   Settlement,
-  PagedResponse,
+  Page,
   OrderStatus,
   SellerProfile,
 } from "@/src/types"
 
 export const AdminService = {
-  async listUsers(
-    params: Partial<AdminUserListParams> = {}
-  ): Promise<PagedResponse<AdminUserListItem>> {
-    const query = new URLSearchParams()
-    if (params.page !== undefined) query.set("page", String(params.page - 1))
-    if (params.pageSize !== undefined) query.set("size", String(params.pageSize))
-    if (params.search) query.set("search", params.search)
-    if (params.role) query.set("role", params.role)
-    if (params.status) query.set("status", params.status)
-    const qs = query.toString()
-    return apiRequest(`/api/v1/admin/users${qs ? `?${qs}` : ""}`)
+  async getDashboard(): Promise<AdminDashboardData> {
+    return apiRequest("/api/v1/admin/dashboard")
+  },
+
+  async listUsers(params: Partial<AdminUserListParams> = {}): Promise<Page<AdminUserListItem>> {
+    return apiRequest(
+      `/api/v1/admin/users${buildQuery({
+        // 0-based page index, consistent with every other list endpoint (#36).
+        page: params.page,
+        size: params.pageSize,
+        search: params.search,
+        role: params.role,
+        status: params.status,
+      })}`
+    )
   },
 
   async getUser(id: string): Promise<AdminUserDetails> {
@@ -120,15 +129,26 @@ export const AdminService = {
     return apiRequest(`/api/v1/admin/sellers/${sellerId}`)
   },
 
+  /**
+   * Setzt die Plattformgebühr (Provision) eines Sellers in Prozent.
+   * @param commissionRate Prozentsatz 0–100 (z. B. 15 für 15 %)
+   */
+  async updateSellerCommission(
+    sellerId: string,
+    commissionRate: number
+  ): Promise<AdminSellerDetail> {
+    return apiRequest(`/api/v1/admin/sellers/${sellerId}/commission`, {
+      method: "PATCH",
+      body: JSON.stringify({ commissionRate }),
+    })
+  },
+
   async listSellers(
     params: { page?: number; size?: number; status?: string } = {}
-  ): Promise<PagedResponse<AdminSellerListItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    if (params.status) q.set("status", params.status)
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/sellers${qs ? `?${qs}` : ""}`)
+  ): Promise<Page<AdminSellerListItem>> {
+    return apiRequest(
+      `/api/v1/admin/sellers${buildQuery({ page: params.page, size: params.size, status: params.status })}`
+    )
   },
 
   async getOrder(orderId: string): Promise<AdminOrderDetail> {
@@ -137,24 +157,18 @@ export const AdminService = {
 
   async listOrders(
     params: { page?: number; size?: number; status?: OrderStatus } = {}
-  ): Promise<PagedResponse<AdminOrderListItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    if (params.status) q.set("status", params.status)
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/orders${qs ? `?${qs}` : ""}`)
+  ): Promise<Page<AdminOrderListItem>> {
+    return apiRequest(
+      `/api/v1/admin/orders${buildQuery({ page: params.page, size: params.size, status: params.status })}`
+    )
   },
 
   async listProducts(
     params: { page?: number; size?: number; search?: string; status?: string } = {}
-  ): Promise<PagedResponse<AdminProductListItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    if (params.search) q.set("search", params.search)
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/products${qs ? `?${qs}` : ""}`)
+  ): Promise<Page<AdminProductListItem>> {
+    return apiRequest(
+      `/api/v1/admin/products${buildQuery({ page: params.page, size: params.size, search: params.search, status: params.status })}`
+    )
   },
 
   async getProduct(productId: string): Promise<AdminProductDetail> {
@@ -171,42 +185,48 @@ export const AdminService = {
 
   async listPayments(
     params: { page?: number; size?: number } = {}
-  ): Promise<PagedResponse<AdminPaymentItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/payments${qs ? `?${qs}` : ""}`)
+  ): Promise<Page<AdminPaymentItem>> {
+    return apiRequest(
+      `/api/v1/admin/payments${buildQuery({ page: params.page, size: params.size })}`
+    )
   },
 
-  async listRefunds(
-    params: { page?: number; size?: number } = {}
-  ): Promise<PagedResponse<AdminRefundItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/refunds${qs ? `?${qs}` : ""}`)
+  async listRefunds(params: { page?: number; size?: number } = {}): Promise<Page<AdminRefundItem>> {
+    return apiRequest(
+      `/api/v1/admin/refunds${buildQuery({ page: params.page, size: params.size })}`
+    )
   },
 
-  async listSettlements(
-    params: { page?: number; size?: number } = {}
-  ): Promise<PagedResponse<Settlement>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/settlements${qs ? `?${qs}` : ""}`)
+  async listSettlements(params: { page?: number; size?: number } = {}): Promise<Page<Settlement>> {
+    return apiRequest(
+      `/api/v1/admin/settlements${buildQuery({ page: params.page, size: params.size })}`
+    )
   },
 
-  async listPayouts(
-    params: { page?: number; size?: number } = {}
-  ): Promise<PagedResponse<AdminPayoutItem>> {
-    const q = new URLSearchParams()
-    if (params.page !== undefined) q.set("page", String(params.page))
-    if (params.size !== undefined) q.set("size", String(params.size))
-    const qs = q.toString()
-    return apiRequest(`/api/v1/admin/payouts${qs ? `?${qs}` : ""}`)
+  async listPayouts(params: { page?: number; size?: number } = {}): Promise<Page<AdminPayoutItem>> {
+    return apiRequest(
+      `/api/v1/admin/payouts${buildQuery({ page: params.page, size: params.size })}`
+    )
+  },
+
+  /**
+   * Listet pro Seller die fälligen (auszahlungsfähigen) Settlements,
+   * aggregiert für die monatliche manuelle Freigabe.
+   */
+  async listDuePayouts(): Promise<PayoutDueItem[]> {
+    return apiRequest(`/api/v1/admin/payouts/due`)
+  },
+
+  /**
+   * Gibt die fälligen Settlements eines Sellers frei und löst die
+   * Stripe-Auszahlung (Transfer/Payout) aus. Setzt ein aktives
+   * Connect-Express-Konto des Sellers voraus.
+   */
+  async runPayout(sellerId: string): Promise<AdminPayoutItem> {
+    return apiRequest(`/api/v1/admin/payouts/run`, {
+      method: "POST",
+      body: JSON.stringify({ sellerId }),
+    })
   },
 
   async cleanupRefreshTokens(): Promise<{ deletedCount: number }> {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Mail, CheckCircle, XCircle, RefreshCw, ArrowLeft, Loader2 } from "lucide-react"
 import { AuthService } from "@/src/services/auth.service"
+import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { toast } from "sonner"
 
 type VerifyStatus = "loading" | "success" | "error" | "awaiting"
@@ -11,8 +12,15 @@ export default function EmailVerification() {
   const [status, setStatus] = useState<VerifyStatus>("awaiting")
   const [isResending, setIsResending] = useState(false)
   const [resendCount, setResendCount] = useState(0)
+  const [resendCoolingDown, setResendCoolingDown] = useState(false)
+  const [email, setEmail] = useState("")
 
-  useEffect(() => {
+  const MAX_RESENDS = 3
+  const RESEND_COOLDOWN_MS = 60_000 // 60 seconds between resends
+
+  const resendBlocked = resendCount >= MAX_RESENDS
+
+  const verifyTokenFromUrl = useEffectEvent(() => {
     const params = new URLSearchParams(window.location.search)
     const token = params.get("token")
     if (token) {
@@ -25,13 +33,37 @@ export default function EmailVerification() {
           setStatus("error")
         })
     }
+  })
+
+  useEffect(() => {
+    verifyTokenFromUrl()
   }, [])
 
+  // Lift the resend cooldown out of the timer-in-handler so it cancels on unmount
+  useEffect(() => {
+    if (!resendCoolingDown) return
+    const id = setTimeout(() => setResendCoolingDown(false), RESEND_COOLDOWN_MS)
+    return () => clearTimeout(id)
+  }, [resendCoolingDown])
+
   const handleResendEmail = async () => {
+    if (!email.trim()) {
+      toast.error("Bitte geben Sie Ihre E-Mail-Adresse ein.")
+      return
+    }
+    if (resendBlocked) {
+      toast.error("Maximale Anzahl an Versuchen erreicht. Bitte prüfen Sie Ihren Spam-Ordner.")
+      return
+    }
+    if (resendCoolingDown) {
+      toast.error("Bitte warten Sie 60 Sekunden, bevor Sie erneut senden.")
+      return
+    }
     setIsResending(true)
     try {
-      await new Promise((r) => setTimeout(r, 1500))
+      await AuthService.resendVerification(email.trim())
       setResendCount((c) => c + 1)
+      setResendCoolingDown(true)
       toast.success("Verifizierungs-E-Mail wurde erneut gesendet!")
     } catch {
       toast.error("Fehler beim erneuten Senden.")
@@ -83,9 +115,16 @@ export default function EmailVerification() {
               Der Verifizierungslink ist ungültig oder abgelaufen. Bitte fordern Sie einen neuen
               Link an.
             </p>
+            <input
+              type="email"
+              placeholder="Ihre E-Mail-Adresse"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mb-3 w-full rounded-xl border border-stone-300 px-4 py-2.5 text-stone-800 focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
+            />
             <button
               onClick={handleResendEmail}
-              disabled={isResending}
+              disabled={isResending || !email.trim() || resendBlocked || resendCoolingDown}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 py-2.5 font-semibold text-white transition-colors hover:bg-sage-700 disabled:opacity-50"
             >
               {isResending ? (
@@ -131,9 +170,16 @@ export default function EmailVerification() {
             </div>
 
             <div className="space-y-3">
+              <input
+                type="email"
+                placeholder="Ihre E-Mail-Adresse"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl border border-stone-300 px-4 py-2.5 text-stone-800 focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
+              />
               <button
                 onClick={handleResendEmail}
-                disabled={isResending}
+                disabled={isResending || !email.trim() || resendBlocked || resendCoolingDown}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 py-2.5 font-semibold text-white transition-colors hover:bg-sage-700 disabled:opacity-50"
               >
                 {isResending ? (

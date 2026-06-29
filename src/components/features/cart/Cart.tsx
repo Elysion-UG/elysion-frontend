@@ -1,17 +1,19 @@
 "use client"
 
+import Image from "next/image"
+import Link from "next/link"
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Loader2, PackageOpen } from "lucide-react"
+import { CartSkeleton } from "./CartSkeleton"
 import { useCart } from "@/src/context/CartContext"
 import { formatEuro, centsToEuro } from "@/src/lib/currency"
 import { toast } from "sonner"
-import { useState, useEffect } from "react"
+import { useState } from "react"
+import { useMounted } from "@/src/hooks/use-mounted"
 
 export default function Cart() {
   const { cart, isLoading, updateItem, removeItem } = useCart()
   const [loadingItemId, setLoadingItemId] = useState<string | null>(null)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => setMounted(true), [])
+  const mounted = useMounted()
 
   const handleUpdateQty = async (itemId: string, newQty: number) => {
     if (newQty < 1) return
@@ -38,11 +40,7 @@ export default function Cart() {
   }
 
   if (!mounted || isLoading) {
-    return (
-      <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-sage-600" />
-      </div>
-    )
+    return <CartSkeleton />
   }
 
   if (!cart || cart.items.length === 0) {
@@ -55,12 +53,12 @@ export default function Cart() {
           <h2 className="text-xl font-bold text-stone-800">Dein Warenkorb ist leer</h2>
           <p className="mt-1 text-sm text-stone-500">Entdecke unsere nachhaltigen Produkte.</p>
         </div>
-        <a
+        <Link
           href="/"
           className="rounded-xl bg-sage-600 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sage-700"
         >
           Zum Shop
-        </a>
+        </Link>
       </div>
     )
   }
@@ -106,12 +104,14 @@ export default function Cart() {
                 key={item.id}
                 className="flex gap-4 rounded-xl border border-stone-200 bg-white p-4 shadow-sm"
               >
-                <div className="h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-sage-50">
+                <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-sage-50">
                   {item.imageUrl ? (
-                    <img
+                    <Image
                       src={item.imageUrl}
-                      alt={item.productName}
-                      className="h-full w-full object-cover"
+                      alt={item.productName ?? "Produkt"}
+                      fill
+                      className="object-cover"
+                      sizes="80px"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-stone-300">
@@ -122,12 +122,12 @@ export default function Cart() {
 
                 <div className="min-w-0 flex-1">
                   {item.productSlug ? (
-                    <a
+                    <Link
                       href={`/product?slug=${item.productSlug}`}
                       className="block truncate text-sm font-semibold text-stone-800 hover:text-sage-700"
                     >
                       {item.productName ?? "Produkt"}
-                    </a>
+                    </Link>
                   ) : (
                     <span className="block truncate font-semibold text-stone-800">
                       {item.productName ?? "Produkt"}
@@ -197,13 +197,16 @@ export default function Cart() {
               <span>Gesamt</span>
               <span>{formatEuro(subtotal)}</span>
             </div>
-            <a
+            {/* Muss Client-Navigation sein (next/link): ein Full-Page-Reload verwirft
+                den In-Memory-Access-Token und erzwingt eine Refresh-Token-Rotation,
+                die den User intermittierend ausloggt (#89). */}
+            <Link
               href="/checkout"
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sage-700"
             >
               Zur Kasse
               <ArrowRight className="h-4 w-4" />
-            </a>
+            </Link>
           </div>
         </div>
       </div>

@@ -3,7 +3,9 @@
 import type React from "react"
 
 import { useState } from "react"
-import { ChevronRight, ChevronLeft, Check, Leaf, Heart, Recycle } from "lucide-react"
+import Link from "next/link"
+import { toast } from "sonner"
+import { ChevronRight, ChevronLeft, Check, Leaf, Heart, Recycle, ShieldCheck } from "lucide-react"
 
 type SustainabilityPreference = {
   id: string
@@ -71,12 +73,11 @@ export default function Onboarding() {
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1)
     } else {
-      console.log("Onboarding completed:", {
-        preferences: selectedPreferences,
-        budget: budgetRange,
-        frequency: shoppingFrequency,
-      })
-      alert("Onboarding completed! Redirecting to shop...")
+      // Onboarding is currently advisory: the definitive preference store is
+      // the BuyerValueProfile reachable via /praeferenzen. Persisting the
+      // selection here would require a dedicated backend endpoint that does
+      // not yet exist.
+      toast.success("Onboarding abgeschlossen!")
     }
   }
 
@@ -279,6 +280,28 @@ export default function Onboarding() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* DSGVO-Hinweis: Präferenzen dienen nur der Empfehlung (COMPLIANCE M8) */}
+        <div className="mb-6 flex items-start gap-2.5 rounded-lg border border-green-200 bg-green-50 p-3">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+          <p className="text-xs text-green-700">
+            Deine Angaben werden ausschließlich zur Verbesserung deiner Produktempfehlungen genutzt.
+            Du kannst sie jederzeit unter{" "}
+            <Link href="/praeferenzen" className="underline hover:text-green-900">
+              Präferenzen
+            </Link>{" "}
+            anpassen. Details zur Verarbeitung findest du in unserer{" "}
+            <Link
+              href="/datenschutz"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-green-900"
+            >
+              Datenschutzerklärung
+            </Link>
+            .
+          </p>
         </div>
 
         {/* Navigation Buttons */}

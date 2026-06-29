@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Leaf, Store, ShieldCheck } from "lucide-react"
 import { sellerUrl, adminUrl } from "@/src/lib/seller-url"
-import { useAuth } from "@/src/hooks/useAuth"
+import { useAuth } from "@/src/context/AuthContext"
 
 export default function Footer() {
   const year = new Date().getFullYear()
