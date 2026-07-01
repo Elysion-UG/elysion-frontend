@@ -90,11 +90,11 @@ export default function AdminUsers() {
         </>
       }
       columns={[
-        { header: "Name" },
-        { header: "E-Mail" },
-        { header: "Rolle" },
-        { header: "Status" },
-        { header: "Seller Status" },
+        { header: "Name", key: "name" },
+        { header: "E-Mail", key: "email" },
+        { header: "Rolle", key: "role" },
+        { header: "Status", key: "status" },
+        { header: "Seller Status", key: "sellerStatus" },
       ]}
       rows={items}
       isLoading={isLoading}

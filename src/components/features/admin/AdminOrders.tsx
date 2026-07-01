@@ -81,12 +81,12 @@ export default function AdminOrders() {
         </>
       }
       columns={[
-        { header: "Bestellnr." },
-        { header: "Käufer" },
-        { header: "Status" },
-        { header: "Zahlung" },
-        { header: "Gesamt" },
-        { header: "Datum" },
+        { header: "Bestellnr.", key: "orderNumber" },
+        { header: "Käufer", key: "buyer" },
+        { header: "Status", key: "status" },
+        { header: "Zahlung", key: "payment" },
+        { header: "Gesamt", key: "total" },
+        { header: "Datum", key: "date" },
       ]}
       rows={items}
       isLoading={isLoading}

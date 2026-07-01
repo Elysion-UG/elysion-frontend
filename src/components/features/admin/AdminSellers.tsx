@@ -167,12 +167,12 @@ export default function AdminSellers() {
         </>
       }
       columns={[
-        { header: "Firma" },
-        { header: "E-Mail" },
-        { header: "USt-ID" },
-        { header: "Status" },
-        { header: "Registriert" },
-        { header: "Aktionen", className: "text-right" },
+        { header: "Firma", key: "company" },
+        { header: "E-Mail", key: "email" },
+        { header: "USt-ID", key: "vatId" },
+        { header: "Status", key: "status" },
+        { header: "Registriert", key: "registered" },
+        { header: "Aktionen", key: "actions", className: "text-right" },
       ]}
       rows={items}
       isLoading={isLoading}

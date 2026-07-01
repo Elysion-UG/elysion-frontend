@@ -120,11 +120,11 @@ export default function AdminProducts() {
         </>
       }
       columns={[
-        { header: "Produkt" },
-        { header: "Verkäufer" },
-        { header: "Status" },
-        { header: "Erstellt" },
-        { header: "Aktionen", className: "text-right" },
+        { header: "Produkt", key: "product" },
+        { header: "Verkäufer", key: "seller" },
+        { header: "Status", key: "status" },
+        { header: "Erstellt", key: "created" },
+        { header: "Aktionen", key: "actions", className: "text-right" },
       ]}
       rows={items}
       isLoading={isLoading}

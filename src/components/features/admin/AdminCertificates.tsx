@@ -36,7 +36,7 @@ export default function AdminCertificates() {
     }
   }, [filter])
 
-  const { items, isLoading, reload } = useAdminList({
+  const { items, isLoading, page, totalPages, reload } = useAdminList({
     fetchPage,
     errorMessage: "Fehler beim Laden der Zertifikate.",
   })
@@ -73,13 +73,13 @@ export default function AdminCertificates() {
         </>
       }
       columns={[
-        { header: "Titel" },
-        { header: "Typ" },
-        { header: "Aussteller" },
-        { header: "Status" },
-        { header: "Gültig bis" },
-        { header: "Dokument" },
-        { header: "Aktionen", className: "text-right" },
+        { header: "Titel", key: "title" },
+        { header: "Typ", key: "type" },
+        { header: "Aussteller", key: "issuer" },
+        { header: "Status", key: "status" },
+        { header: "Gültig bis", key: "expiry" },
+        { header: "Dokument", key: "document" },
+        { header: "Aktionen", key: "actions", className: "text-right" },
       ]}
       rows={items}
       isLoading={isLoading}
@@ -157,8 +157,8 @@ export default function AdminCertificates() {
           </>
         )
       }}
-      page={0}
-      totalPages={1}
+      page={page}
+      totalPages={totalPages}
       onPageChange={() => {}}
     >
       {rejectTarget && (

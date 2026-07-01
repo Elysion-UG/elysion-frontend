@@ -57,9 +57,10 @@ describe("LoginForm", () => {
     await waitFor(() => expect(onSuccess).toHaveBeenCalled())
   })
 
-  it("shows the generic message on invalid credentials", async () => {
+  it("shows the generic message on invalid credentials and does not call onSuccess", async () => {
     mockLogin.mockRejectedValueOnce(new ApiError(401, "nope"))
-    renderForm()
+    const onSuccess = vi.fn()
+    renderForm({ onSuccess })
 
     fireEvent.change(screen.getByPlaceholderText("ihre@firma.de"), {
       target: { value: "x@y.de" },
@@ -68,6 +69,22 @@ describe("LoginForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Anmelden" }))
 
     expect(await screen.findByText("Ungültige Anmeldedaten.")).toBeInTheDocument()
+    expect(onSuccess).not.toHaveBeenCalled()
+  })
+
+  it("clears the email and password fields when returning from the forgot view", () => {
+    renderForm()
+
+    const email = screen.getByPlaceholderText("ihre@firma.de") as HTMLInputElement
+    const password = screen.getByPlaceholderText("Passwort") as HTMLInputElement
+    fireEvent.change(email, { target: { value: "typed@example.dev" } })
+    fireEvent.change(password, { target: { value: "typedPw" } })
+
+    fireEvent.click(screen.getByRole("button", { name: "Passwort vergessen?" }))
+    fireEvent.click(screen.getByRole("button", { name: /Zurück zur Anmeldung/i }))
+
+    expect((screen.getByPlaceholderText("ihre@firma.de") as HTMLInputElement).value).toBe("")
+    expect((screen.getByPlaceholderText("Passwort") as HTMLInputElement).value).toBe("")
   })
 
   it("surfaces the rate-limit message verbatim on 429", async () => {

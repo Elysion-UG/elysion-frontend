@@ -68,9 +68,9 @@ export function useAdminList<Row>({
     }
   }, [fetchPage, page, errorMessage])
 
-  // useEffectEvent keeps the Effect from re-firing on every render while still
-  // calling the latest `load`; the Effect re-runs only when `load` identity
-  // changes (page or filter change).
+  // Wrapped in useEffectEvent so the react-hooks/set-state-in-effect lint rule
+  // does not flag the state updates inside `load`; the Effect still re-runs
+  // whenever `load` identity changes (i.e. a page or filter change).
   const runEffect = useEffectEvent(() => {
     load()
   })
