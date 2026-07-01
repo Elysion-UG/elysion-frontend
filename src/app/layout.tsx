@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/src/app/providers"
 import NavbarShell from "@/src/components/layout/NavbarShell"
+import { siteUrl } from "@/src/lib/seo"
 
 const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
@@ -14,12 +15,31 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] })
 // Hydration startet nie (FE#23). Datenbeschaffung ist ohnehin client-seitig.
 export const dynamic = "force-dynamic"
 
+const SITE_NAME = "Elysion"
+const SITE_DESCRIPTION = "Marktplatz für nachhaltig zertifizierte Produkte"
+
 export const metadata: Metadata = {
-  title: "Elysion",
-  description: "Nachhaltige Mode",
-  generator: "v0.app",
+  metadataBase: siteUrl(),
+  title: {
+    default: SITE_NAME,
+    template: `%s · ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+  },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    locale: "de_DE",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
   },
 }
 
