@@ -19,13 +19,9 @@ vi.mock("next/navigation", () => ({
 
 // Stub ProductCard to isolate the page from image/currency rendering.
 vi.mock("./ProductCard", () => ({
-  default: ({
-    product,
-    onProductClick,
-  }: {
-    product: ProductDetail
-    onProductClick: (slug: string | undefined, id: string) => void
-  }) => <button onClick={() => onProductClick(product.slug, product.id)}>{product.name}</button>,
+  default: ({ product, productHref }: { product: ProductDetail; productHref: string }) => (
+    <a href={productHref}>{product.name}</a>
+  ),
 }))
 
 import ProducerPage from "./ProducerPage"
@@ -67,7 +63,7 @@ describe("ProducerPage — real seller data", () => {
     expect(screen.getByText("Leinen Sommerkleid")).toBeInTheDocument()
   })
 
-  it("navigates to the product detail by slug on click", () => {
+  it("links to the product detail by slug", () => {
     mockUseSellerProducts.mockReturnValue({
       data: { products: PRODUCTS, companyName: "GreenThread", totalElements: 2 },
       isLoading: false,
@@ -75,9 +71,11 @@ describe("ProducerPage — real seller data", () => {
     })
 
     render(<ProducerPage />)
-    screen.getByText("Bio-Baumwoll T-Shirt").click()
 
-    expect(mockPush).toHaveBeenCalledWith("/product?slug=bio-baumwoll-t-shirt")
+    expect(screen.getByRole("link", { name: "Bio-Baumwoll T-Shirt" })).toHaveAttribute(
+      "href",
+      "/product?slug=bio-baumwoll-t-shirt"
+    )
   })
 
   it("shows an empty state when the seller has no products", () => {

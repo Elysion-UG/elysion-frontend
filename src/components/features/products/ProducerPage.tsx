@@ -1,6 +1,5 @@
 "use client"
 
-import type React from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, PackageOpen, Store } from "lucide-react"
 import { useSellerProducts } from "@/src/hooks/useSellerProducts"
@@ -17,15 +16,6 @@ export default function ProducerPage() {
   const companyName = data?.companyName ?? "Verkäufer"
   const logoInitial = companyName.charAt(0).toUpperCase() || "?"
   const productCount = data?.totalElements ?? 0
-
-  const handleProductClick = (slug: string | undefined, id: string) => {
-    router.push(slug ? `/product?slug=${slug}` : `/product?id=${id}`)
-  }
-
-  // The cards already belong to this seller — the seller link is a no-op here.
-  const handleSellerClick = (e: React.MouseEvent, _sellerId?: string) => {
-    e.stopPropagation()
-  }
 
   // Not-found / error: render only the error state — no placeholder header card
   // with fabricated "Verkäufer / 0 Produkte" data (mirrors the product detail page).
@@ -94,8 +84,10 @@ export default function ProducerPage() {
               <ProductCard
                 key={product.id}
                 product={product}
-                onProductClick={handleProductClick}
-                onSellerClick={handleSellerClick}
+                productHref={
+                  product.slug ? `/product?slug=${product.slug}` : `/product?id=${product.id}`
+                }
+                sellerHref={null}
               />
             ))}
           </div>
