@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { DEFAULT_BACKEND_HOST } from "@/src/lib/constants/backend-host.mjs"
+import { SESSION_MARKER_COOKIE } from "@/src/lib/auth/session-marker"
 
 // ── Startup guard ──────────────────────────────────────────────────────────
 // Fail fast if portal domains are not configured. Without these, the middleware
@@ -27,7 +28,11 @@ const SELLER_PUBLIC = ["/login/seller", "/reset-password", "/verify-email"]
 const ADMIN_PROTECTED = ["/admin"]
 const ADMIN_PUBLIC = ["/login/admin", "/reset-password", "/verify-email"]
 
-// Buyer auth is handled client-side by AuthGuard (see src/app/(buyer)/layout.tsx)
+// Buyer portal: paths that require an authenticated session. Login lives on the
+// buyer domain root ("/"), so a missing session redirects there. Public shop
+// pages (product listing/detail, producers, about, contact) and the cart
+// (intentionally guest-accessible) are NOT listed.
+const BUYER_PROTECTED = ["/checkout", "/orders", "/profil", "/praeferenzen", "/onboarding"]
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 // Strict exact-match against the configured portal domain. Any other host
@@ -65,10 +70,23 @@ function buyerOrigin(request: NextRequest): string {
   return `${protocol}://${bare}`
 }
 
-// NOTE: No cookie-based session check here. The refresh cookie is scoped to
-// /api/v1/auth and is not visible to the middleware on navigation requests.
-// All auth gating is performed by the client-side AuthGuard / AdminGuard /
-// SellerGuard components, which read the actual AuthContext state.
+// ── Session presence (first line of defence) ───────────────────────────────
+// The HttpOnly `refreshToken` cookie is scoped to /api/v1/auth and is therefore
+// invisible to the middleware on navigation requests — so we cannot check it
+// directly. Instead the auth proxy emits a non-sensitive `session_present`
+// marker cookie (Path=/) in lock-step with the refresh cookie (#68). Its mere
+// presence lets us redirect obviously-unauthenticated visitors away from
+// protected routes before any Server Component runs.
+//
+// This is defence-in-depth, NOT authorisation: the marker carries no token and
+// is forgeable. The client-side guards (AuthGuard / SellerGuard / AdminGuard)
+// and the backend remain the real enforcement. Its purpose is to ensure a
+// protected route never renders server-side for a visitor with no session at
+// all — closing the gap before any protected Server Component with backend
+// fetching is introduced (see #37).
+function hasSessionMarker(request: NextRequest): boolean {
+  return !!request.cookies.get(SESSION_MARKER_COOKIE)?.value
+}
 
 // ── Content Security Policy ────────────────────────────────────────────────
 // A fresh nonce is generated per request so inline bootstrap scripts emitted
@@ -159,6 +177,13 @@ export function middleware(request: NextRequest) {
       return res
     }
 
+    // First line of defence (#68): no session marker → send to the seller login.
+    if (SELLER_PROTECTED.some((r) => pathname.startsWith(r)) && !hasSessionMarker(request)) {
+      const res = NextResponse.redirect(new URL("/login/seller", request.url))
+      applySecurityHeaders(request, res, nonce)
+      return res
+    }
+
     const res = nextWithNonce()
     applySecurityHeaders(request, res, nonce)
     return res
@@ -181,6 +206,13 @@ export function middleware(request: NextRequest) {
     // Root → redirect to dashboard (client-side AdminGuard handles login redirect)
     if (pathname === "/") {
       const res = NextResponse.redirect(new URL("/admin", request.url))
+      applySecurityHeaders(request, res, nonce)
+      return res
+    }
+
+    // First line of defence (#68): no session marker → send to the admin login.
+    if (ADMIN_PROTECTED.some((r) => pathname.startsWith(r)) && !hasSessionMarker(request)) {
+      const res = NextResponse.redirect(new URL("/login/admin", request.url))
       applySecurityHeaders(request, res, nonce)
       return res
     }
@@ -228,7 +260,17 @@ export function middleware(request: NextRequest) {
     return res
   }
 
-  // Buyer auth is handled client-side by AuthGuard in the (buyer) layout.
+  // First line of defence (#68): protected buyer routes require a session
+  // marker. Login lives on the buyer domain root, so redirect there. The
+  // client-side AuthGuard still performs the full auth/role check afterwards.
+  if (BUYER_PROTECTED.some((r) => pathname.startsWith(r)) && !hasSessionMarker(request)) {
+    const res = NextResponse.redirect(new URL("/", request.url))
+    applySecurityHeaders(request, res, nonce)
+    return res
+  }
+
+  // Remaining buyer auth (role checks, post-marker) is handled client-side by
+  // AuthGuard in the (buyer) layout.
   const res = nextWithNonce()
   applySecurityHeaders(request, res, nonce)
   return res
