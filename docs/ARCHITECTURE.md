@@ -139,8 +139,11 @@ Middleware bei Navigation **nicht sichtbar**. Damit die Middleware trotzdem eine
 erste Verteidigungslinie ziehen kann, spiegelt der Auth-Proxy
 (`app/api/v1/auth/[...path]/route.ts`) ihn synchron als **tokenloses
 Presence-Marker-Cookie** `session_present` (`Path=/`, HttpOnly; Konstante in
-`lib/auth/session-marker.ts`). Set/Refresh setzen ihn, Logout/Refresh-Fehler
-löschen ihn — lock-step zum echten Refresh-Cookie.
+`lib/auth/session-marker.ts`). Login und **erfolgreicher** Refresh setzen ihn,
+Logout löscht ihn. Bei einem **Refresh-Fehler** (401, z.B. widerrufener Token)
+wird er — wie der echte Refresh-Cookie — **nicht** aktiv gelöscht, sondern läuft
+erst mit seiner gemeinsamen `Max-Age` ab. „Marker vorhanden" bedeutet also
+_„vielleicht eine Session"_, nicht _„gültige Session"_.
 
 Die Middleware leitet bei **fehlendem** Marker auf geschützten Pfaden zur
 jeweiligen Login-Seite um (Buyer `/checkout`, `/orders`, `/profil`,

@@ -74,9 +74,10 @@ function buyerOrigin(request: NextRequest): string {
 // The HttpOnly `refreshToken` cookie is scoped to /api/v1/auth and is therefore
 // invisible to the middleware on navigation requests — so we cannot check it
 // directly. Instead the auth proxy emits a non-sensitive `session_present`
-// marker cookie (Path=/) in lock-step with the refresh cookie (#68). Its mere
-// presence lets us redirect obviously-unauthenticated visitors away from
-// protected routes before any Server Component runs.
+// marker cookie (Path=/) alongside it (#68): login and successful refresh set
+// it, logout clears it. Its mere presence lets us redirect obviously-
+// unauthenticated visitors away from protected routes before any Server
+// Component runs.
 //
 // This is defence-in-depth, NOT authorisation: the marker carries no token and
 // is forgeable. The client-side guards (AuthGuard / SellerGuard / AdminGuard)
@@ -84,6 +85,13 @@ function buyerOrigin(request: NextRequest): string {
 // protected route never renders server-side for a visitor with no session at
 // all — closing the gap before any protected Server Component with backend
 // fetching is introduced (see #37).
+//
+// NOT cleared on refresh FAILURE: when a refresh 401s (revoked/expired token),
+// neither the backend nor the client clears any cookie, so the marker — like
+// the real refresh cookie — lingers until its shared Max-Age expires. A stale
+// marker only lets a request PASS the first-line gate; the client guards still
+// deny. Do not treat "marker present" as "session valid" (see #37 before
+// adding any server-side data fetching to gated routes).
 function hasSessionMarker(request: NextRequest): boolean {
   return !!request.cookies.get(SESSION_MARKER_COOKIE)?.value
 }

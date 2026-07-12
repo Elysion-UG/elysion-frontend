@@ -61,8 +61,11 @@ function isPlausibleIp(value: string): boolean {
  * middleware on navigation requests. This marker mirrors its lifecycle at
  * `Path=/` so the middleware can gate protected routes — but carries no token,
  * only a boolean hint. Its `Max-Age` / `Secure` attributes are copied from the
- * refresh cookie so it expires and is cleared in lock-step with the real
- * session (login/refresh set it, logout and refresh-failure clear it).
+ * refresh cookie so it shares the same lifetime: login and successful refresh
+ * set it, logout clears it. On a refresh FAILURE nothing is cleared (the
+ * backend emits no Set-Cookie on a 401), so — exactly like the real refresh
+ * cookie — the marker lingers until its Max-Age expires. The middleware treats
+ * a lingering marker as "maybe a session"; the client guards do the real check.
  *
  * Returns `null` for any Set-Cookie that is not the refresh cookie.
  */
