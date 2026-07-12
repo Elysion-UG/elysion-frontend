@@ -12,6 +12,8 @@
  */
 import { type NextRequest, NextResponse } from "next/server"
 
+import { SESSION_MARKER_COOKIE } from "@/src/lib/auth/session-marker"
+
 // Resolve backend URL at request time (not module load time) so that:
 //   1. tests / build-time imports don't crash if API_URL is unset
 //   2. a missing API_URL in production is reported via a request-time error
@@ -49,6 +51,43 @@ function platformClientIp(request: NextRequest): string {
 // upstream — never relay arbitrary header content as an IP.
 function isPlausibleIp(value: string): boolean {
   return value.length <= 45 && /^[0-9a-fA-F.:]+$/.test(value) && /[.:]/.test(value)
+}
+
+/**
+ * Derive the session-presence marker cookie (#68) from the backend's
+ * `refreshToken` Set-Cookie header.
+ *
+ * The refresh cookie is scoped to `Path=/api/v1/auth` and is invisible to the
+ * middleware on navigation requests. This marker mirrors its lifecycle at
+ * `Path=/` so the middleware can gate protected routes — but carries no token,
+ * only a boolean hint. Its `Max-Age` / `Secure` attributes are copied from the
+ * refresh cookie so it shares the same lifetime: login and successful refresh
+ * set it, logout clears it. On a refresh FAILURE nothing is cleared (the
+ * backend emits no Set-Cookie on a 401), so — exactly like the real refresh
+ * cookie — the marker lingers until its Max-Age expires. The middleware treats
+ * a lingering marker as "maybe a session"; the client guards do the real check.
+ *
+ * Returns `null` for any Set-Cookie that is not the refresh cookie.
+ */
+function sessionMarkerFor(refreshSetCookie: string): string | null {
+  const valueMatch = /^\s*refreshToken=([^;]*)/i.exec(refreshSetCookie)
+  if (!valueMatch) return null
+
+  const secure = /;\s*Secure/i.test(refreshSetCookie)
+  const maxAge = /;\s*Max-Age=(-?\d+)/i.exec(refreshSetCookie)?.[1]
+  // The backend clears the refresh cookie with an empty value and Max-Age=0.
+  const cleared = valueMatch[1] === "" || maxAge === "0"
+
+  const parts = [
+    `${SESSION_MARKER_COOKIE}=${cleared ? "" : "1"}`,
+    "Path=/",
+    "SameSite=Lax",
+    "HttpOnly",
+  ]
+  if (cleared) parts.push("Max-Age=0")
+  else if (maxAge) parts.push(`Max-Age=${maxAge}`)
+  if (secure) parts.push("Secure")
+  return parts.join("; ")
 }
 
 async function proxy(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
@@ -106,6 +145,11 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
   for (const sc of setCookies) {
     const rewritten = sc.replace(/;\s*Domain=[^;]*/i, "")
     res.headers.append("Set-Cookie", rewritten)
+
+    // Mirror the refresh cookie as a Path=/ presence marker so the middleware
+    // can gate protected routes (#68). No-op for non-refresh cookies.
+    const marker = sessionMarkerFor(rewritten)
+    if (marker) res.headers.append("Set-Cookie", marker)
   }
 
   return res

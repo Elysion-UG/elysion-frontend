@@ -132,6 +132,33 @@ Page-Reload aus dem `sessionStorage` wiederhergestellt. Für die Persistenz
 eines angemeldeten Zustands über den Tab-Wechsel hinweg dient der
 HttpOnly-Refresh-Cookie, den `AuthService.refresh()` automatisch nutzt.
 
+#### 4.1.1 Serverseitige First Line of Defence (#68)
+
+Der `refreshToken`-Cookie ist auf `Path=/api/v1/auth` gescoped und für die
+Middleware bei Navigation **nicht sichtbar**. Damit die Middleware trotzdem eine
+erste Verteidigungslinie ziehen kann, spiegelt der Auth-Proxy
+(`app/api/v1/auth/[...path]/route.ts`) ihn synchron als **tokenloses
+Presence-Marker-Cookie** `session_present` (`Path=/`, HttpOnly; Konstante in
+`lib/auth/session-marker.ts`). Login und **erfolgreicher** Refresh setzen ihn,
+Logout löscht ihn. Bei einem **Refresh-Fehler** (401, z.B. widerrufener Token)
+wird er — wie der echte Refresh-Cookie — **nicht** aktiv gelöscht, sondern läuft
+erst mit seiner gemeinsamen `Max-Age` ab. „Marker vorhanden" bedeutet also
+_„vielleicht eine Session"_, nicht _„gültige Session"_.
+
+Die Middleware leitet bei **fehlendem** Marker auf geschützten Pfaden zur
+jeweiligen Login-Seite um (Buyer `/checkout`, `/orders`, `/profil`,
+`/praeferenzen`, `/onboarding` → `/`; Seller `/seller-dashboard` →
+`/login/seller`; Admin `/admin` → `/login/admin`). Das ist **defence-in-depth,
+keine Autorisierung**: Der Marker ist fälschbar und tokenlos — die Client-Guards
+(`AuthGuard`/`SellerGuard`/`AdminGuard`) und das Backend bleiben die echte
+Durchsetzung.
+
+> **Constraint:** Solange Auth nur clientseitig geprüft wird, dürfen Server
+> Components in geschützten Routen **kein Backend-Datenfetching** machen (vgl.
+> §7). Der Marker schützt nur vor „gar keiner Session", nicht vor falscher
+> Rolle/abgelaufenem Token. Vor einem SSG/ISR-Umbau geschützter Routen (#37)
+> muss eine echte serverseitige Token-Validierung ergänzt werden.
+
 ### 4.2 Fehlerbehandlung
 
 - **Ein Kanal** — alle Client-Fehler fließen in `errorStore.report(…)`.
