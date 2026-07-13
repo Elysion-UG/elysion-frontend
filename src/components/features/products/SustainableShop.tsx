@@ -2,7 +2,6 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Leaf, Loader2, AlertCircle, Search } from "lucide-react"
 import type { ProductDetail } from "@/src/types"
 import { useProducts, PRODUCTS_PAGE_SIZE } from "@/src/hooks/useProducts"
@@ -25,7 +24,6 @@ import ProductCard from "./ProductCard"
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function SustainableShop() {
-  const router = useRouter()
   const { isAuthenticated } = useAuth()
   const { data: valueProfile } = useBuyerValueProfile(isAuthenticated)
   const shopRef = useRef<HTMLDivElement>(null)
@@ -113,15 +111,6 @@ export default function SustainableShop() {
   const handleSortChange = (value: string) => {
     setSortBy(value)
     setCurrentPage(0)
-  }
-
-  const handleProductClick = (slug: string | undefined, id: string) => {
-    router.push(slug ? `/product?slug=${slug}` : `/product?id=${id}`)
-  }
-
-  const handleSellerClick = (e: React.MouseEvent, sellerId: string | undefined) => {
-    e.stopPropagation()
-    if (sellerId) router.push(`/producer?id=${sellerId}`)
   }
 
   const scrollToShop = () => {
@@ -257,8 +246,12 @@ export default function SustainableShop() {
                 <ProductCard
                   key={product.id}
                   product={product}
-                  onProductClick={handleProductClick}
-                  onSellerClick={handleSellerClick}
+                  productHref={
+                    product.slug ? `/product?slug=${product.slug}` : `/product?id=${product.id}`
+                  }
+                  sellerHref={
+                    product.seller?.userId ? `/producer?id=${product.seller.userId}` : null
+                  }
                 />
               ))}
             </div>

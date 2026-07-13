@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import type { NextRequest } from "next/server"
 
 import { POST } from "./route"
+import { SESSION_MARKER_COOKIE } from "@/src/lib/auth/session-marker"
 
 /**
  * Tests for the auth proxy's client IP forwarding (#32).
@@ -124,5 +125,92 @@ describe("auth proxy client IP forwarding", () => {
     })
 
     expect(headers["X-Auth-Proxy-Secret"]).toBeUndefined()
+  })
+})
+
+/**
+ * Tests for the session-presence marker cookie the proxy mirrors from the
+ * backend's refresh cookie (#68). The marker must be Path=/, carry no token,
+ * and track the refresh cookie's set/clear lifecycle.
+ */
+function mockUpstreamWithCookies(setCookies: string[]): void {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      status: 200,
+      text: async () => '{"status":"success"}',
+      headers: {
+        get: (name: string) => (name.toLowerCase() === "content-type" ? "application/json" : null),
+        getSetCookie: () => setCookies,
+      },
+    })
+  )
+}
+
+async function proxyReturnedCookies(setCookies: string[]): Promise<string[]> {
+  mockUpstreamWithCookies(setCookies)
+  const res = await POST(makeRequest({ "x-real-ip": "203.0.113.10" }), {
+    params: Promise.resolve({ path: ["customer", "login"] }),
+  })
+  return res.headers.getSetCookie()
+}
+
+describe("auth proxy session-presence marker (#68)", () => {
+  beforeEach(() => {
+    vi.unstubAllEnvs()
+    vi.stubEnv("API_URL", "http://backend.test")
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+  })
+
+  it("emits a Path=/ marker alongside the refresh cookie on login", async () => {
+    const cookies = await proxyReturnedCookies([
+      "refreshToken=abc123; Path=/api/v1/auth; HttpOnly; SameSite=Lax; Max-Age=1209600; Secure",
+    ])
+
+    const marker = cookies.find((c) => c.startsWith(`${SESSION_MARKER_COOKIE}=`))
+    expect(marker).toBeDefined()
+    expect(marker).toContain(`${SESSION_MARKER_COOKIE}=1`)
+    expect(marker).toMatch(/;\s*Path=\/(;|$)/)
+    expect(marker).toContain("HttpOnly")
+    expect(marker).toContain("Max-Age=1209600")
+    // Secure is mirrored from the refresh cookie.
+    expect(marker).toContain("Secure")
+    // The marker never carries the actual token.
+    expect(marker).not.toContain("abc123")
+  })
+
+  it("does not mirror Secure when the refresh cookie is not Secure (local dev)", async () => {
+    const cookies = await proxyReturnedCookies([
+      "refreshToken=abc123; Path=/api/v1/auth; HttpOnly; SameSite=Lax; Max-Age=1209600",
+    ])
+
+    const marker = cookies.find((c) => c.startsWith(`${SESSION_MARKER_COOKIE}=`))
+    expect(marker).toBeDefined()
+    expect(marker).not.toContain("Secure")
+  })
+
+  it("clears the marker when the refresh cookie is cleared on logout", async () => {
+    const cookies = await proxyReturnedCookies([
+      "refreshToken=; Path=/api/v1/auth; HttpOnly; SameSite=Lax; Max-Age=0",
+    ])
+
+    const marker = cookies.find((c) => c.startsWith(`${SESSION_MARKER_COOKIE}=`))
+    expect(marker).toBeDefined()
+    expect(marker).toContain(`${SESSION_MARKER_COOKIE}=;`)
+    expect(marker).toContain("Max-Age=0")
+  })
+
+  it("does not emit a marker when no refresh cookie is present", async () => {
+    const cookies = await proxyReturnedCookies([
+      "cartSessionId=xyz; Path=/api/v1; HttpOnly; SameSite=Lax",
+    ])
+
+    expect(cookies.some((c) => c.startsWith(`${SESSION_MARKER_COOKIE}=`))).toBe(false)
+    // The unrelated cookie is still passed through.
+    expect(cookies.some((c) => c.startsWith("cartSessionId="))).toBe(true)
   })
 })

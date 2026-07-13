@@ -1,38 +1,10 @@
 "use client"
 
-import React, { useState } from "react"
 import { ShieldCheck } from "lucide-react"
-import { useAuth } from "@/src/context/AuthContext"
 import { buyerUrl } from "@/src/lib/seller-url"
-import { ErrorAlert } from "@/src/components/shared"
-import { PasswordField } from "@/src/components/features/auth/_shared/PasswordField"
-import { EmailField } from "@/src/components/features/auth/_shared/EmailField"
-import { AuthSubmitButton } from "@/src/components/features/auth/_shared/AuthSubmitButton"
-import { ForgotPasswordPanel } from "@/src/components/features/auth/_shared/ForgotPasswordPanel"
-import { useAuthLoginHandler } from "@/src/components/features/auth/_shared/useAuthLoginHandler"
-
-type View = "login" | "forgot"
+import { LoginForm } from "@/src/components/features/auth/_shared/LoginForm"
 
 export default function AdminLogin() {
-  const { isLoading } = useAuth()
-  const [view, setView] = useState<View>("login")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-
-  const { error, submit } = useAuthLoginHandler({
-    portal: "admin",
-    invalidCredentialsMessage: "Ungültige Anmeldedaten oder fehlende Berechtigung.",
-    successToast: "Admin-Anmeldung erfolgreich.",
-    onSuccess: () => {
-      window.location.href = "/admin/users"
-    },
-  })
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault()
-    void submit(email, password)
-  }
-
   return (
     <div
       className="relative flex min-h-screen items-center justify-center bg-slate-950 p-4"
@@ -60,63 +32,36 @@ export default function AdminLogin() {
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-slate-800/60 bg-slate-900/80 shadow-[0_0_40px_rgba(0,0,0,0.6)] backdrop-blur-sm">
-          {view === "login" && (
-            <div className="p-8">
-              <h1 className="mb-1 font-mono text-lg font-bold tracking-wider text-slate-100">
-                Administrator-Anmeldung
-              </h1>
-              <p className="mb-6 text-sm text-slate-500">Nur für autorisierte Administratoren.</p>
-
-              {error && <ErrorAlert message={error} variant="dark" className="mb-4" />}
-
-              <form onSubmit={handleLogin} className="space-y-4">
-                <EmailField
-                  label="E-Mail"
-                  value={email}
-                  onChange={setEmail}
-                  placeholder="admin@elysion.de"
-                  required
-                  variant="dark"
-                />
-                <PasswordField
-                  label="Passwort"
-                  value={password}
-                  onChange={setPassword}
-                  placeholder="Passwort"
-                  required
-                  variant="dark"
-                />
-                <div className="text-right">
-                  <button
-                    type="button"
-                    onClick={() => setView("forgot")}
-                    className="text-xs text-slate-600 transition-colors hover:text-cyber-400"
-                  >
-                    Passwort vergessen?
-                  </button>
-                </div>
-                <AuthSubmitButton
-                  label="ANMELDEN"
-                  pendingLabel="ANMELDUNG…"
-                  isLoading={isLoading}
-                  variant="dark"
-                />
-              </form>
-            </div>
-          )}
-
-          {view === "forgot" && (
-            <div className="p-8">
-              <ForgotPasswordPanel
-                variant="dark"
-                intro="Wir senden einen Reset-Link an Ihre Admin-E-Mail."
-                successMessage="Falls ein Admin-Konto existiert, wurde ein Reset-Link gesendet."
-                submitLabel="LINK SENDEN"
-                placeholder="admin@elysion.de"
-                onBack={() => setView("login")}
-              />
-            </div>
-          )}
+          <div className="p-8">
+            <LoginForm
+              portal="admin"
+              variant="dark"
+              invalidCredentialsMessage="Ungültige Anmeldedaten oder fehlende Berechtigung."
+              successToast="Admin-Anmeldung erfolgreich."
+              onSuccess={() => {
+                window.location.href = "/admin/users"
+              }}
+              emailPlaceholder="admin@elysion.de"
+              submitLabel="ANMELDEN"
+              submitPendingLabel="ANMELDUNG…"
+              loginHeader={
+                <>
+                  <h1 className="mb-1 font-mono text-lg font-bold tracking-wider text-slate-100">
+                    Administrator-Anmeldung
+                  </h1>
+                  <p className="mb-6 text-sm text-slate-500">
+                    Nur für autorisierte Administratoren.
+                  </p>
+                </>
+              }
+              forgot={{
+                intro: "Wir senden einen Reset-Link an Ihre Admin-E-Mail.",
+                successMessage: "Falls ein Admin-Konto existiert, wurde ein Reset-Link gesendet.",
+                submitLabel: "LINK SENDEN",
+                placeholder: "admin@elysion.de",
+              }}
+            />
+          </div>
         </div>
 
         <p className="mt-6 text-center text-xs text-slate-700">

@@ -512,6 +512,30 @@ _Status-Update 2026-06-11 (Verifikation + Fix, BE#150): **Punkt 3 bestätigt und
 
 ---
 
+### 5.5 Staging-Credentials im öffentlichen Repo (FE#65)
+
+**Status:** ENTSCHIEDEN & UMGESETZT (2026-06-13) — Option „Entkopplung"
+
+Das Frontend-Repo ist öffentlich; die dokumentierten Seed-Passwörter waren zugleich
+gültige Logins der öffentlich erreichbaren Staging-Umgebung (inkl. Admin-Portal).
+
+**Entscheidung:** Staging-Passwörter werden von den dokumentierten Seed-Passwörtern
+entkoppelt statt den Zustand zu akzeptieren.
+
+**Umsetzung:**
+
+- Alle 5 Staging-Seed-Accounts (Admin, 2× Seller, 2× Buyer) haben rotierte,
+  zufällige Passwörter — abgelegt ausschließlich als Secrets
+  (`~\.elysion\deploy.env` → `STAGE_E2E_*`; GitHub Actions `E2E_*_PASSWORD`).
+- `e2e/stage/smoke.spec.ts` hat keine Passwort-Fallbacks mehr; ohne Env-Vars
+  werden die Login-Tests übersprungen.
+- Die dokumentierten Seed-Passwörter (`Seller123!` etc.) gelten weiterhin
+  **nur lokal** — markiert in CLAUDE.md und den lokalen E2E-Specs.
+- **Verbindlich:** Produktion wird niemals mit `seed-data.sql` befüllt; die
+  Seed-Accounts dürfen in Produktion nicht existieren (relevant für BE#119).
+
+---
+
 ## VI. Checkout & Warenkorb
 
 ### 6.1 Guest-Checkout
@@ -566,14 +590,12 @@ Kein Rabattsystem implementiert. Nicht im Roadmap erwähnt.
 
 ### 7.1 `/dev`-Routen in Production
 
-**Status:** OFFEN — Sicherheitsrelevant
+**Status:** ERLEDIGT (2026-04-03)
 
-Entwicklerrouten (`/dev/*`) sind ohne Umgebungsschutz live. Können internen Zustand leaken.
-
-**Offene Fragen:**
-
-- Routen entfernen oder mit Env-Variable schützen?
-- Nur für internes Testing behalten oder löschen?
+Die Entwicklerrouten (`/dev/*`, API-Test-Playground) wurden mit Commit `7d7ae13`
+(„chore: remove dead files and dev tooling") vollständig gelöscht — die Frage
+„schützen oder löschen?" ist damit durch Löschung entschieden. Verifiziert
+2026-06-13 gegen Staging: alle `/dev/*`-Pfade liefern 404 (Issue #71).
 
 ---
 

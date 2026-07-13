@@ -284,6 +284,22 @@ describe("login", () => {
     expect(saveAuthSession).toHaveBeenCalledWith(mockUser, "customer")
   })
 
+  it("throws a clear error when the login response has no user (#40)", async () => {
+    vi.mocked(AuthService.loginAsCustomer).mockResolvedValue({
+      ...mockTokensResponse,
+      user: null,
+    })
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    await expect(
+      act(async () => {
+        await result.current.login({ email: "jane@example.com", password: "secret" }, "customer")
+      })
+    ).rejects.toThrow("Login-Response ohne User")
+
+    expect(saveAuthSession).not.toHaveBeenCalled()
+  })
+
   it("calls AuthService.loginAsSeller when portal is 'seller'", async () => {
     const sellerUser: User = { ...mockUser, role: "SELLER" }
     vi.mocked(AuthService.loginAsSeller).mockResolvedValue({

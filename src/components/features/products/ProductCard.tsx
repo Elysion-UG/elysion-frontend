@@ -1,6 +1,6 @@
 "use client"
 
-import type React from "react"
+import Link from "next/link"
 import Image from "next/image"
 import { ShieldCheck } from "lucide-react"
 import { formatEuro } from "@/src/lib/currency"
@@ -9,8 +9,11 @@ import { certLabel, certStyle } from "./shop-constants"
 
 interface ProductCardProps {
   product: ProductDetail
-  onProductClick: (slug: string | undefined, id: string) => void
-  onSellerClick: (e: React.MouseEvent, sellerId: string | undefined) => void
+  /** Target of the whole-card link, e.g. `/product?slug=…` (fallback `?id=…`). */
+  productHref: string
+  /** Target of the seller link; pass null/undefined to render the seller name
+   *  as plain text (e.g. on the seller's own page). */
+  sellerHref?: string | null
 }
 
 function getProductImage(product: ProductDetail): string {
@@ -31,27 +34,45 @@ function getSellerName(product: ProductDetail): string | null {
   )
 }
 
-export default function ProductCard({ product, onProductClick, onSellerClick }: ProductCardProps) {
+export default function ProductCard({ product, productHref, sellerHref }: ProductCardProps) {
   const sellerName = getSellerName(product)
   const image = getProductImage(product)
   const price = getProductPrice(product)
   const certs = product.certificates ?? []
+  // Only mark as sold out when the API explicitly reports it; unknown stays available.
+  const soldOut = product.inStock === false
+  const title = product.name ?? product.title ?? "Produkt"
 
   return (
-    <div
+    <article
       data-testid="product-card"
-      onClick={() => onProductClick(product.slug, product.id)}
-      className="group cursor-pointer overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-sage-200 hover:shadow-lg"
+      className="group relative overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm transition-all duration-200 focus-within:ring-2 focus-within:ring-sage-500 focus-within:ring-offset-2 hover:-translate-y-0.5 hover:border-sage-200 hover:shadow-lg"
     >
+      {/* Whole-card link (stretched over the card); interactive children below
+          sit above it via z-index so they stay independently clickable. */}
+      <Link
+        href={productHref}
+        aria-label={title}
+        className="absolute inset-0 z-0 rounded-xl focus:outline-none"
+      />
+
       {/* Product image */}
       <div className="relative aspect-square overflow-hidden bg-sage-50">
         <Image
           src={image}
-          alt={product.name ?? product.title ?? "Produkt"}
+          alt={title}
           fill
-          className="object-cover transition-transform duration-300 group-hover:scale-105"
+          className={`object-cover transition-transform duration-300 group-hover:scale-105 ${
+            soldOut ? "opacity-60 grayscale" : ""
+          }`}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
         />
+
+        {soldOut && (
+          <div className="absolute inset-x-0 bottom-0 bg-stone-900/70 py-1 text-center text-[11px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
+            Ausverkauft
+          </div>
+        )}
 
         {/* Certificate count badge */}
         {certs.length > 0 && (
@@ -71,14 +92,19 @@ export default function ProductCard({ product, onProductClick, onSellerClick }: 
 
       {/* Card body */}
       <div className="space-y-1.5 p-3 sm:p-4">
-        {sellerName && (
-          <button
-            onClick={(e) => onSellerClick(e, product.seller?.userId)}
-            className="text-xs font-semibold uppercase tracking-wider text-sage-600 hover:text-sage-700 hover:underline"
-          >
-            {sellerName}
-          </button>
-        )}
+        {sellerName &&
+          (sellerHref ? (
+            <Link
+              href={sellerHref}
+              className="relative z-10 inline-block text-xs font-semibold uppercase tracking-wider text-sage-600 hover:text-sage-700 hover:underline"
+            >
+              {sellerName}
+            </Link>
+          ) : (
+            <span className="block text-xs font-semibold uppercase tracking-wider text-sage-600">
+              {sellerName}
+            </span>
+          ))}
         <h3 className="line-clamp-1 text-sm font-semibold text-stone-800">
           {product.name ?? product.title}
         </h3>
@@ -107,9 +133,13 @@ export default function ProductCard({ product, onProductClick, onSellerClick }: 
 
         <div className="flex items-center justify-between pt-2">
           <span className="text-base font-bold text-stone-900">{formatEuro(price)}</span>
-          <span className="text-[10px] font-medium text-sage-600">Auf Lager</span>
+          <span
+            className={`text-[10px] font-medium ${soldOut ? "text-stone-400" : "text-sage-600"}`}
+          >
+            {soldOut ? "Ausverkauft" : "Auf Lager"}
+          </span>
         </div>
       </div>
-    </div>
+    </article>
   )
 }

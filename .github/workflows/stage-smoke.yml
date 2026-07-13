@@ -79,4 +79,5 @@ jobs:
         with:
           name: stage-smoke-report-${{ github.run_number }}
           path: playwright-report/
-          retention-days: 14
+          # Kurze Retention: Fehler-Snapshots können sensible Felder enthalten (FE#106).
+          retention-days: 3

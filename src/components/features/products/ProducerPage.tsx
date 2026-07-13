@@ -1,6 +1,5 @@
 "use client"
 
-import type React from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, PackageOpen, Store } from "lucide-react"
 import { useSellerProducts } from "@/src/hooks/useSellerProducts"
@@ -18,27 +17,32 @@ export default function ProducerPage() {
   const logoInitial = companyName.charAt(0).toUpperCase() || "?"
   const productCount = data?.totalElements ?? 0
 
-  const handleProductClick = (slug: string | undefined, id: string) => {
-    router.push(slug ? `/product?slug=${slug}` : `/product?id=${id}`)
-  }
-
-  // The cards already belong to this seller — the seller link is a no-op here.
-  const handleSellerClick = (e: React.MouseEvent, _sellerId?: string) => {
-    e.stopPropagation()
+  // Not-found / error: render only the error state — no placeholder header card
+  // with fabricated "Verkäufer / 0 Produkte" data (mirrors the product detail page).
+  if (!sellerId || error) {
+    return (
+      <div className="min-h-screen bg-stone-50">
+        <BackBanner onBack={() => router.back()} />
+        <div className="container mx-auto px-4">
+          {!sellerId ? (
+            <EmptyState
+              title="Verkäufer nicht gefunden"
+              message="Es wurde kein Verkäufer angegeben."
+            />
+          ) : (
+            <EmptyState
+              title="Produkte konnten nicht geladen werden"
+              message="Bitte versuche es später erneut."
+            />
+          )}
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen bg-stone-50">
-      {/* Neutral banner — no fabricated hero imagery */}
-      <div className="relative h-40 bg-gradient-to-br from-sage-600 to-teal-700 md:h-52">
-        <button
-          onClick={() => router.back()}
-          className="absolute left-4 top-4 flex items-center gap-2 rounded-lg bg-black/20 px-3 py-2 text-sm text-white transition-colors hover:bg-black/40"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Zurück
-        </button>
-      </div>
+      <BackBanner onBack={() => router.back()} />
 
       <div className="container mx-auto px-4">
         {/* Header card */}
@@ -49,7 +53,7 @@ export default function ProducerPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-stone-800 md:text-3xl">{companyName}</h1>
-              {!isLoading && !error && (
+              {!isLoading && (
                 <p className="mt-1 flex items-center gap-1.5 text-sm text-stone-500">
                   <Store className="h-4 w-4" />
                   {productCount} {productCount === 1 ? "Produkt" : "Produkte"}
@@ -60,12 +64,7 @@ export default function ProducerPage() {
         </div>
 
         {/* Content states */}
-        {!sellerId ? (
-          <EmptyState
-            title="Verkäufer nicht gefunden"
-            message="Es wurde kein Verkäufer angegeben."
-          />
-        ) : isLoading ? (
+        {isLoading ? (
           <div className="grid grid-cols-2 gap-3 pb-12 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <div
@@ -74,11 +73,6 @@ export default function ProducerPage() {
               />
             ))}
           </div>
-        ) : error ? (
-          <EmptyState
-            title="Produkte konnten nicht geladen werden"
-            message="Bitte versuche es später erneut."
-          />
         ) : products.length === 0 ? (
           <EmptyState
             title="Keine Produkte"
@@ -90,13 +84,34 @@ export default function ProducerPage() {
               <ProductCard
                 key={product.id}
                 product={product}
-                onProductClick={handleProductClick}
-                onSellerClick={handleSellerClick}
+                productHref={
+                  product.slug ? `/product?slug=${product.slug}` : `/product?id=${product.id}`
+                }
+                sellerHref={null}
               />
             ))}
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+interface BackBannerProps {
+  onBack: () => void
+}
+
+/** Neutral banner with a back button — no fabricated hero imagery. */
+function BackBanner({ onBack }: BackBannerProps) {
+  return (
+    <div className="relative h-40 bg-gradient-to-br from-sage-600 to-teal-700 md:h-52">
+      <button
+        onClick={onBack}
+        className="absolute left-4 top-4 flex items-center gap-2 rounded-lg bg-black/20 px-3 py-2 text-sm text-white transition-colors hover:bg-black/40"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Zurück
+      </button>
     </div>
   )
 }

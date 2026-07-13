@@ -15,13 +15,13 @@ export interface SellerProductsResult {
 
 async function fetchSellerProducts(sellerId: string): Promise<SellerProductsResult> {
   const page = await ProductService.list({ sellerId, size: SELLER_PRODUCTS_PAGE_SIZE })
-  const products = page.content
+  const products = page.items
   const companyName = products.find((p) => p.seller?.companyName)?.seller?.companyName ?? null
 
   return {
     products,
     companyName,
-    totalElements: page.totalElements,
+    totalElements: page.totalItems,
   }
 }
 

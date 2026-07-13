@@ -9,7 +9,7 @@
  * Response envelope: { status: "success"|"error", message: string|null, data: T }
  */
 
-import type { User } from "@/src/types"
+import type { User, TokensResponse } from "@/src/types"
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ""
 
@@ -247,8 +247,6 @@ function buildRateLimitError(path: string, response: Response): ApiError {
 // both call POST /auth/refresh with the same cookie. Refresh-token rotation
 // invalidates the cookie on the first use, so the second call would fail and
 // either kick the user to home or leave the auth state empty.
-type TokensResponse = { accessToken: string; user: unknown; expiresIn: number }
-
 let _refreshInFlight: Promise<TokensResponse> | null = null
 
 export async function refreshSession(): Promise<TokensResponse> {
@@ -267,14 +265,17 @@ export async function refreshSession(): Promise<TokensResponse> {
   return _refreshInFlight
 }
 
+// Refresh the JWT proactively once it is within this many seconds of expiry.
+const PROACTIVE_REFRESH_THRESHOLD_S = 120
+
 // Proactive refresh helper — fires before a request if the JWT is near expiry.
-// Only triggers for valid, near-expiry tokens (remaining > 0 && < 2 min).
+// Only triggers for valid, near-expiry tokens (remaining > 0 && within threshold).
 // Malformed/tampered tokens return -1 and must not trigger a refresh —
 // they will 401 normally and be retried via tryRefreshAndRetry.
 async function proactiveRefreshIfNeeded(skipRetry: boolean): Promise<void> {
   if (!skipRetry && _accessToken) {
     const remaining = jwtSecondsRemaining(_accessToken)
-    if (remaining > 0 && remaining < 120) {
+    if (remaining > 0 && remaining < PROACTIVE_REFRESH_THRESHOLD_S) {
       const gen = _authGen
       try {
         const tokens = await refreshSession()

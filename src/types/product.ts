@@ -56,6 +56,8 @@ export interface ProductDetail {
   seller?: ProductSeller
   sellerId?: string
   status?: ProductStatus | string
+  /** List API only: whether the product is currently sellable. Detail view derives stock from variants instead. */
+  inStock?: boolean
   variants?: ProductVariant[]
   certificates?: PublicCertificate[]
   materials?: Material[]
@@ -93,14 +95,6 @@ export interface ProductListParams {
   sort?: string
   page?: number
   size?: number
-}
-
-export interface ProductPage {
-  content: ProductDetail[]
-  totalElements: number
-  totalPages: number
-  size: number
-  number: number
 }
 
 export interface ProductCreateDTO {

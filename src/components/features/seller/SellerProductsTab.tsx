@@ -24,6 +24,16 @@ import {
   SELLER_TABLE_CELL_CLASS,
 } from "./sellerDashboard.constants"
 import SellerKpiCard from "./SellerKpiCard"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/src/components/ui/alert-dialog"
 
 interface SellerProductsTabProps {
   isApproved: boolean
@@ -35,13 +45,14 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
   const [productsLoading, setProductsLoading] = useState(false)
   const [showProductForm, setShowProductForm] = useState(false)
   const [editProduct, setEditProduct] = useState<ProductListItem | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ProductListItem | null>(null)
 
   const fetchProducts = useCallback(async () => {
     if (!userId || !isApproved) return
     setProductsLoading(true)
     try {
       const page = await ProductService.list({ sellerId: userId, size: 100 })
-      setProducts(page.content)
+      setProducts(page.items)
     } catch {
       toast.error("Produkte konnten nicht geladen werden.")
     } finally {
@@ -60,22 +71,20 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
     try {
       await ProductService.updateStatus(productId, { status })
       toast.success(`Status auf "${productStatusLabel[status]}" gesetzt.`)
-      fetchProducts()
+      void fetchProducts()
     } catch {
       toast.error("Status konnte nicht geändert werden.")
     }
   }
 
-  const handleDelete = async (productId: string, productName: string | undefined) => {
-    const confirmed = window.confirm(
-      `Möchten Sie "${productName ?? "dieses Produkt"}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`
-    )
-    if (!confirmed) return
-
+  const confirmDelete = async () => {
+    const target = deleteTarget
+    if (!target) return
+    setDeleteTarget(null)
     try {
-      await ProductService.delete(productId)
+      await ProductService.delete(target.id)
       toast.success("Produkt gelöscht.")
-      fetchProducts()
+      void fetchProducts()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Produkt konnte nicht gelöscht werden."
       toast.error(msg)
@@ -109,7 +118,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
           <h2 className="text-xl font-semibold text-slate-800">Ihre Produkte</h2>
           <div className="flex items-center gap-2">
             <button
-              onClick={fetchProducts}
+              onClick={() => void fetchProducts()}
               className="text-slate-400 transition-colors hover:text-slate-600"
               title="Aktualisieren"
             >
@@ -193,7 +202,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                         </button>
                         {status === "DRAFT" && (
                           <button
-                            onClick={() => handleStatusChange(product.id, "REVIEW")}
+                            onClick={() => void handleStatusChange(product.id, "REVIEW")}
                             className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800 hover:bg-amber-200"
                           >
                             Zur Prüfung
@@ -201,7 +210,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                         )}
                         {status === "ACTIVE" && (
                           <button
-                            onClick={() => handleStatusChange(product.id, "INACTIVE")}
+                            onClick={() => void handleStatusChange(product.id, "INACTIVE")}
                             className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-200"
                           >
                             Deaktivieren
@@ -209,7 +218,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                         )}
                         {status === "INACTIVE" && (
                           <button
-                            onClick={() => handleStatusChange(product.id, "ACTIVE")}
+                            onClick={() => void handleStatusChange(product.id, "ACTIVE")}
                             className="rounded bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800 hover:bg-emerald-200"
                           >
                             Aktivieren
@@ -217,7 +226,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                         )}
                         {status === "DRAFT" && (
                           <button
-                            onClick={() => handleDelete(product.id, product.title)}
+                            onClick={() => setDeleteTarget(product)}
                             className="text-red-500 transition-colors hover:text-red-700"
                             title="Produkt löschen"
                           >
@@ -252,6 +261,27 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
           }}
         />
       )}
+
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Produkt löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Möchten Sie „{deleteTarget?.title ?? "dieses Produkt"}“ wirklich löschen? Diese Aktion
+              kann nicht rückgängig gemacht werden.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void confirmDelete()}>Löschen</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

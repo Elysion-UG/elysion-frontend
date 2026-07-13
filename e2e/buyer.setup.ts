@@ -3,6 +3,11 @@
  * Öffnet die Shop-Startseite, startet den Login-Modal und meldet den Seed-Buyer an.
  * Speichert den Refresh-Cookie + sessionStorage, damit Folge-Tests ohne erneuten
  * Login auskommen (Backend-Rate-Limit: 5 Versuche / 15 min).
+ *
+ * SECURITY (FE#65): Die hier codierten Credentials sind die LOKALEN
+ * Seed-Accounts (docs/seed-data.sql) und gelten nur gegen ein lokales Backend.
+ * Auf Staging sind die Passwörter rotiert (nur als Secrets verfügbar); in
+ * Produktion dürfen diese Accounts niemals angelegt werden.
  */
 import { test as setup } from "@playwright/test"
 import { fileURLToPath } from "url"

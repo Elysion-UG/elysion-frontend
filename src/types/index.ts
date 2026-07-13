@@ -62,10 +62,11 @@ export type {
   ShippingAddress,
   OrderDetail,
   OrderGroupDetail,
-  OrderGroupsPage,
   ShipOrderDTO,
   Settlement,
 } from "./order"
+
+export type { Page } from "./pagination"
 
 export type {
   PaymentProviderCode,
@@ -88,7 +89,6 @@ export type {
   ProductInternalDetail,
   ProductListItem,
   ProductListParams,
-  ProductPage,
   ProductCreateDTO,
   ProductUpdateDTO,
   ProductStatusUpdateDTO,
@@ -104,8 +104,6 @@ export type {
   AdminDashboardOrderMetrics,
   AdminDashboardCertificateMetrics,
   AdminDashboardData,
-  PaginatedResponse,
-  PagedResponse,
   AdminUserListParams,
   AdminUserListItem,
   AdminUserDetails,
