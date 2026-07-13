@@ -37,7 +37,7 @@ export default function SellerOrderDetailDrawer({
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/30" onClick={onClose} />
+      <div className="fixed inset-0 z-40 bg-black/30" onClick={onClose} aria-hidden="true" />
       <div
         ref={drawerRef}
         role="dialog"
