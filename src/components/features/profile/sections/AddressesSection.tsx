@@ -63,7 +63,7 @@ export function AddressesSection({
                   {addr.postalCode} {addr.city}
                 </p>
                 <p className="text-sm text-stone-600">{toCountryName(addr.country)}</p>
-                <p className="mt-1 text-xs text-stone-400">
+                <p className="mt-1 text-xs text-stone-500">
                   {addr.type === "SHIPPING" ? "Lieferadresse" : "Rechnungsadresse"}
                 </p>
                 <div className="mt-3 flex items-center gap-3">

@@ -63,7 +63,7 @@ export function PersonalDataSection({
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-stone-600">
-              E-Mail <span className="text-stone-400">(nicht änderbar)</span>
+              E-Mail <span className="text-stone-500">(nicht änderbar)</span>
             </label>
             <input
               type="email"

@@ -109,7 +109,7 @@ export default function WiderrufPage() {
 
           <p>Datum: ___________________________</p>
 
-          <p className="text-sm text-stone-400">(*) Unzutreffendes streichen.</p>
+          <p className="text-sm text-stone-500">(*) Unzutreffendes streichen.</p>
         </div>
       </section>
 
@@ -119,7 +119,7 @@ export default function WiderrufPage() {
         Bestellbestätigungs-E-Mail sowie unter „Meine Bestellungen" in Ihrem Konto.
       </p>
 
-      <p className="mt-10 border-t border-stone-200 pt-6 text-xs text-stone-400">
+      <p className="mt-10 border-t border-stone-200 pt-6 text-xs text-stone-500">
         ⚠️ Diese Widerrufsbelehrung enthält Platzhalter (<code>[PLATZHALTER: ...]</code>). Vor dem
         Launch durch echte Angaben ersetzen und rechtlich prüfen lassen.
       </p>

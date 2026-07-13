@@ -43,9 +43,9 @@ export function ExtendedWeightsSection({ weights, onChange }: ExtendedWeightsSec
               <div className="flex items-center gap-4">
                 <span className="text-sm font-bold text-sage-600">Gesamt: {avg}%</span>
                 {isExpanded ? (
-                  <ChevronDown className="h-5 w-5 text-stone-400" />
+                  <ChevronDown className="h-5 w-5 text-stone-500" />
                 ) : (
-                  <ChevronRight className="h-5 w-5 text-stone-400" />
+                  <ChevronRight className="h-5 w-5 text-stone-500" />
                 )}
               </div>
             </button>

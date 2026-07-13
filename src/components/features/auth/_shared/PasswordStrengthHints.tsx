@@ -15,7 +15,7 @@ export function PasswordStrengthHints({
   if (password.length === 0) return null
 
   const passedColor = variant === "dark" ? "text-emerald-400" : "text-emerald-600"
-  const pendingColor = variant === "dark" ? "text-slate-500" : "text-stone-400"
+  const pendingColor = variant === "dark" ? "text-slate-500" : "text-stone-500"
 
   return (
     <ul className="mt-2 space-y-1">

@@ -78,14 +78,14 @@ export default function FilterSidebar({
           <div className="flex items-center gap-2">
             <Leaf className="h-3.5 w-3.5 text-sage-600" />
             <span className="text-sm font-medium text-stone-700">Nachhaltigkeitspräferenzen</span>
-            <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-[10px] font-medium text-stone-400">
+            <span className="rounded-full bg-stone-100 px-1.5 py-0.5 text-xs font-medium text-stone-600">
               Bald verfügbar
             </span>
           </div>
           {expandedSections.sustainability ? (
-            <ChevronDown className="h-4 w-4 text-stone-400" />
+            <ChevronDown className="h-4 w-4 text-stone-500" />
           ) : (
-            <ChevronRight className="h-4 w-4 text-stone-400" />
+            <ChevronRight className="h-4 w-4 text-stone-500" />
           )}
         </button>
         {expandedSections.sustainability && (
@@ -96,7 +96,7 @@ export default function FilterSidebar({
                 <span>Aus deinem Werteprofil</span>
               </div>
             ) : (
-              <p className="text-xs text-stone-400">
+              <p className="text-xs text-stone-500">
                 Wie wichtig ist dir jeder Nachhaltigkeitsaspekt?
               </p>
             )}
@@ -138,7 +138,7 @@ export default function FilterSidebar({
                       onChange={(e) => onImportanceChange(key, e.target.value)}
                       className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-stone-200 accent-sage-600"
                     />
-                    <span className="w-20 shrink-0 text-right text-xs text-stone-400">
+                    <span className="w-20 shrink-0 text-right text-xs text-stone-500">
                       {getImportanceLabel(sustainabilityImportance[key])}
                     </span>
                   </div>
@@ -160,16 +160,16 @@ export default function FilterSidebar({
             <span className="text-sm font-medium text-stone-700">Preisspanne</span>
           </div>
           {expandedFilterSections.price ? (
-            <ChevronDown className="h-4 w-4 text-stone-400" />
+            <ChevronDown className="h-4 w-4 text-stone-500" />
           ) : (
-            <ChevronRight className="h-4 w-4 text-stone-400" />
+            <ChevronRight className="h-4 w-4 text-stone-500" />
           )}
         </button>
         {expandedFilterSections.price && (
           <div className="space-y-4 px-4 pb-4">
             <div className="flex items-center gap-3">
               <div className="flex-1">
-                <label className="mb-1 block text-xs text-stone-400">Min (€)</label>
+                <label className="mb-1 block text-xs text-stone-500">Min (€)</label>
                 <input
                   type="number"
                   value={priceRange.min}
@@ -180,7 +180,7 @@ export default function FilterSidebar({
               </div>
               <span className="mt-5 text-stone-300">–</span>
               <div className="flex-1">
-                <label className="mb-1 block text-xs text-stone-400">Max (€)</label>
+                <label className="mb-1 block text-xs text-stone-500">Max (€)</label>
                 <input
                   type="number"
                   value={priceRange.max}
@@ -198,7 +198,7 @@ export default function FilterSidebar({
               onChange={(e) => handlePriceMaxChange(Number(e.target.value))}
               className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-stone-200 accent-sage-600"
             />
-            <p className="text-right text-xs text-stone-400">bis {formatEuro(priceRange.max)}</p>
+            <p className="text-right text-xs text-stone-500">bis {formatEuro(priceRange.max)}</p>
           </div>
         )}
       </div>
@@ -216,15 +216,15 @@ export default function FilterSidebar({
               <Shirt className="h-3.5 w-3.5 text-sage-600" />
               <span className="text-sm font-medium text-stone-700">Material</span>
               {selectedMaterials.length > 0 && (
-                <span className="rounded-full bg-sage-100 px-1.5 py-0.5 text-[10px] font-medium text-sage-700">
+                <span className="rounded-full bg-sage-100 px-1.5 py-0.5 text-xs font-medium text-sage-700">
                   {selectedMaterials.length}
                 </span>
               )}
             </div>
             {expandedFilterSections.materials ? (
-              <ChevronDown className="h-4 w-4 text-stone-400" />
+              <ChevronDown className="h-4 w-4 text-stone-500" />
             ) : (
-              <ChevronRight className="h-4 w-4 text-stone-400" />
+              <ChevronRight className="h-4 w-4 text-stone-500" />
             )}
           </button>
           {expandedFilterSections.materials && (

@@ -141,7 +141,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
                 <button
                   onClick={handleLogout}
                   disabled={loggingOut}
-                  className="flex items-center gap-1.5 text-sm font-medium text-stone-400 transition-colors hover:text-red-600"
+                  className="flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors hover:text-red-600"
                 >
                   {loggingOut ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

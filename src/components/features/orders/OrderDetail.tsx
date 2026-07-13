@@ -104,7 +104,7 @@ export default function OrderDetail() {
     <div className="mx-auto max-w-3xl">
       <Link
         href="/orders"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-stone-400 transition-colors hover:text-sage-600"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors hover:text-sage-600"
       >
         <ChevronLeft className="h-4 w-4" />
         Alle Bestellungen
@@ -118,7 +118,7 @@ export default function OrderDetail() {
             </div>
             <div>
               <h1 className="text-xl font-bold text-stone-900">#{order.orderNumber}</h1>
-              <p className="text-sm text-stone-400">
+              <p className="text-sm text-stone-500">
                 Aufgegeben am {formatDate(order.createdAt ?? "")}
               </p>
             </div>

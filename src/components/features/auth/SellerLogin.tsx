@@ -47,7 +47,7 @@ export default function SellerLogin() {
           <h2 className="text-3xl font-bold leading-snug text-white">
             Ihr nachhaltiges Geschäft — <span className="text-sage-400">zentral verwaltet.</span>
           </h2>
-          <p className="mt-4 text-sm leading-relaxed text-stone-400">
+          <p className="mt-4 text-sm leading-relaxed text-stone-500">
             Produkte, Bestellungen, Zertifikate und Auszahlungen — alles an einem Ort.
           </p>
         </div>
@@ -125,7 +125,7 @@ export default function SellerLogin() {
           )}
         </div>
 
-        <p className="mt-10 text-xs text-stone-400">
+        <p className="mt-10 text-xs text-stone-500">
           <a href={buyerUrl("/")} className="hover:text-stone-600">
             ← Zurück zum Shop
           </a>

@@ -107,7 +107,7 @@ export default function Orders() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-base font-semibold text-stone-800">#{order.orderNumber}</p>
-                <p className="mt-0.5 text-sm text-stone-400">{formatDate(order.createdAt)}</p>
+                <p className="mt-0.5 text-sm text-stone-500">{formatDate(order.createdAt)}</p>
               </div>
               <div className="flex items-center gap-3">
                 <StatusBadge
@@ -119,7 +119,7 @@ export default function Orders() {
               </div>
             </div>
             <div className="mt-3 flex items-center justify-between border-t border-stone-50 pt-3 text-sm">
-              <span className="text-xs text-stone-400">Gesamtbetrag</span>
+              <span className="text-xs text-stone-500">Gesamtbetrag</span>
               <span className="font-bold text-stone-800">{formatEuro(order.total ?? 0)}</span>
             </div>
           </Link>

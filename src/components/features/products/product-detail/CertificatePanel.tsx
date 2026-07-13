@@ -25,7 +25,7 @@ export function CertificatePanel({ certificates }: CertificatePanelProps) {
                     <p className="mt-0.5 text-xs text-stone-500">Aussteller: {cert.issuerName}</p>
                   )}
                   {cert.validUntil && (
-                    <p className="mt-0.5 text-xs text-stone-400">
+                    <p className="mt-0.5 text-xs text-stone-500">
                       Gültig bis: {new Date(cert.validUntil).toLocaleDateString("de-DE")}
                     </p>
                   )}
@@ -35,7 +35,7 @@ export function CertificatePanel({ certificates }: CertificatePanelProps) {
           ))}
         </div>
       ) : (
-        <p className="text-sm text-stone-400">Keine Zertifizierungen hinterlegt.</p>
+        <p className="text-sm text-stone-500">Keine Zertifizierungen hinterlegt.</p>
       )}
     </div>
   )

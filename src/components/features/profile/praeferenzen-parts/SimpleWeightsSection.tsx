@@ -35,7 +35,7 @@ export function SimpleWeightsSection({ weights, onChange }: SimpleWeightsSection
               onChange={(e) => onChange(category.id, Number(e.target.value))}
               className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-stone-200 accent-sage-600"
             />
-            <div className="mt-1 flex justify-between text-xs text-stone-400">
+            <div className="mt-1 flex justify-between text-xs text-stone-500">
               <span>0</span>
               <span>100</span>
             </div>

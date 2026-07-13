@@ -6,7 +6,7 @@ export default function DatenschutzPage() {
   return (
     <div className="mx-auto max-w-3xl py-12">
       <h1 className="mb-2 text-3xl font-bold text-stone-900">Datenschutzerklärung</h1>
-      <p className="mb-8 text-sm text-stone-400">Stand: [PLATZHALTER: Datum]</p>
+      <p className="mb-8 text-sm text-stone-500">Stand: [PLATZHALTER: Datum]</p>
 
       <section className="mb-8">
         <h2 className="mb-3 text-xl font-semibold text-stone-800">1. Verantwortlicher</h2>
@@ -176,7 +176,7 @@ export default function DatenschutzPage() {
         </p>
       </section>
 
-      <p className="mt-10 border-t border-stone-200 pt-6 text-xs text-stone-400">
+      <p className="mt-10 border-t border-stone-200 pt-6 text-xs text-stone-500">
         ⚠️ Diese Datenschutzerklärung enthält Platzhalter (<code>[PLATZHALTER: ...]</code>), die vor
         dem Launch durch echte Angaben ersetzt werden müssen. Bitte durch einen Datenschutzexperten
         oder Rechtsanwalt prüfen lassen.

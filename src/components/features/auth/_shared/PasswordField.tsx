@@ -21,8 +21,8 @@ const styles = {
     label: "mb-1.5 block text-sm font-medium text-stone-700",
     input:
       "w-full rounded-xl border border-stone-300 py-2.5 pl-10 pr-10 text-stone-800 focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20",
-    icon: "absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400",
-    toggle: "absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600",
+    icon: "absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500",
+    toggle: "absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-600",
   },
   dark: {
     label: "mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500",
