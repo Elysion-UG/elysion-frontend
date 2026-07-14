@@ -121,14 +121,14 @@ export default function ProductImageManager({
 
   return (
     <div className="space-y-4">
-      <h4 className="text-sm font-semibold text-slate-700">Produktbilder</h4>
+      <h4 className="text-sm font-semibold text-foreground">Produktbilder</h4>
 
       {isLoading ? (
         <div className="flex justify-center py-6">
-          <Loader2 className="h-5 w-5 animate-spin text-teal-600" />
+          <Loader2 className="h-5 w-5 animate-spin text-green-600" />
         </div>
       ) : images.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 py-8 text-slate-400">
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-8 text-muted-foreground">
           <ImageIcon className="mb-2 h-8 w-8" />
           <p className="text-sm">Noch keine Bilder vorhanden.</p>
         </div>
@@ -139,7 +139,7 @@ export default function ProductImageManager({
             return (
               <div
                 key={imageId ?? index}
-                className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
+                className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-secondary"
               >
                 <Image
                   src={image.url}
@@ -152,7 +152,7 @@ export default function ProductImageManager({
                   <div className="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100">
                     <button
                       onClick={() => handleDelete(imageId)}
-                      className="rounded-full bg-red-600 p-1 text-white shadow hover:bg-red-700"
+                      className="rounded-full bg-destructive p-1 text-white shadow hover:bg-destructive"
                       title="Bild entfernen"
                     >
                       <X className="h-3.5 w-3.5" />
@@ -163,7 +163,7 @@ export default function ProductImageManager({
                   {index > 0 && (
                     <button
                       onClick={() => handleMove(index, "up")}
-                      className="rounded-full bg-white/90 p-1 text-slate-600 shadow hover:bg-white"
+                      className="rounded-full bg-white/90 p-1 text-foreground shadow hover:bg-white"
                       title="Nach vorne"
                     >
                       <ArrowUp className="h-3.5 w-3.5" />
@@ -172,14 +172,14 @@ export default function ProductImageManager({
                   {index < images.length - 1 && (
                     <button
                       onClick={() => handleMove(index, "down")}
-                      className="rounded-full bg-white/90 p-1 text-slate-600 shadow hover:bg-white"
+                      className="rounded-full bg-white/90 p-1 text-foreground shadow hover:bg-white"
                       title="Nach hinten"
                     >
                       <ArrowDown className="h-3.5 w-3.5" />
                     </button>
                   )}
                 </div>
-                <div className="absolute left-1 top-1 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-medium text-white">
+                <div className="absolute left-1 top-1 rounded-full bg-ink-900/60 px-2 py-0.5 text-[10px] font-medium text-sand-page">
                   {index + 1}
                 </div>
               </div>
@@ -200,7 +200,7 @@ export default function ProductImageManager({
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={isUploading}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-60"
         >
           {isUploading ? (
             <Loader2 className="h-4 w-4 animate-spin" />

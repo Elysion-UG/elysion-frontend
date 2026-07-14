@@ -15,20 +15,20 @@ export function QuantityStepper({ quantity, onChange, min = 1, max }: QuantitySt
 
   return (
     <div>
-      <h3 className="mb-3 text-sm font-semibold text-stone-700">Menge</h3>
+      <h3 className="mb-3 text-sm font-semibold text-foreground">Menge</h3>
       <div className="flex items-center gap-3">
         <button
           onClick={decrement}
           aria-label="Menge verringern"
           disabled={quantity <= min}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-200 text-stone-500 transition-colors hover:border-sage-300 hover:bg-sage-50 hover:text-sage-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-green-600 hover:bg-green-50 hover:text-green-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Minus className="h-3.5 w-3.5" />
         </button>
         <span
           aria-live="polite"
           aria-label={`Menge: ${quantity}`}
-          className="min-w-[2rem] text-center text-base font-bold text-stone-800"
+          className="min-w-[2rem] text-center text-base font-bold text-foreground"
         >
           {quantity}
         </span>
@@ -36,7 +36,7 @@ export function QuantityStepper({ quantity, onChange, min = 1, max }: QuantitySt
           onClick={increment}
           aria-label="Menge erhöhen"
           disabled={max != null && quantity >= max}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-stone-200 text-stone-500 transition-colors hover:border-sage-300 hover:bg-sage-50 hover:text-sage-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-green-600 hover:bg-green-50 hover:text-green-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Plus className="h-3.5 w-3.5" />
         </button>

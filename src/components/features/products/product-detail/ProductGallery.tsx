@@ -15,7 +15,7 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
 
   return (
     <div className="space-y-4">
-      <div className="relative aspect-square overflow-hidden rounded-2xl border border-stone-200 bg-sage-50 shadow-sm">
+      <div className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-green-50 shadow-sm">
         <Image
           src={activeSrc}
           alt={alt}
@@ -32,8 +32,8 @@ export function ProductGallery({ images, alt }: ProductGalleryProps) {
               onClick={() => setSelectedIndex(index)}
               className={`relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2 transition-colors ${
                 selectedIndex === index
-                  ? "border-sage-500 shadow-sm"
-                  : "border-stone-200 hover:border-stone-300"
+                  ? "border-green-600 shadow-sm"
+                  : "border-border hover:border-border"
               }`}
               aria-label={`Bild ${index + 1} anzeigen`}
             >
