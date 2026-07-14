@@ -31,7 +31,7 @@ export function PersonalDataSection({
   isSaving,
 }: PersonalDataSectionProps) {
   return (
-    <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
       <SectionHeader
         id="personal"
         icon={User}
@@ -43,48 +43,48 @@ export function PersonalDataSection({
         <div className="space-y-4 px-5 pb-5">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-stone-600">Vorname</label>
+              <label className="mb-1 block text-sm font-medium text-foreground">Vorname</label>
               <input
                 type="text"
                 value={firstName}
                 onChange={(e) => onFirstNameChange(e.target.value)}
-                className="w-full rounded-lg border border-stone-200 px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-sage-500"
+                className="w-full rounded-lg border border-border px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-stone-600">Nachname</label>
+              <label className="mb-1 block text-sm font-medium text-foreground">Nachname</label>
               <input
                 type="text"
                 value={lastName}
                 onChange={(e) => onLastNameChange(e.target.value)}
-                className="w-full rounded-lg border border-stone-200 px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-sage-500"
+                className="w-full rounded-lg border border-border px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-stone-600">
-              E-Mail <span className="text-stone-500">(nicht änderbar)</span>
+            <label className="mb-1 block text-sm font-medium text-foreground">
+              E-Mail <span className="text-muted-foreground">(nicht änderbar)</span>
             </label>
             <input
               type="email"
               value={email}
               disabled
-              className="w-full cursor-not-allowed rounded-lg border border-stone-200 bg-stone-100 px-3 py-2 text-stone-500"
+              className="w-full cursor-not-allowed rounded-lg border border-border bg-secondary px-3 py-2 text-muted-foreground"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-stone-600">Telefon</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">Telefon</label>
             <input
               type="tel"
               value={phone}
               onChange={(e) => onPhoneChange(e.target.value)}
-              className="w-full rounded-lg border border-stone-200 px-3 py-2 text-stone-800 focus:outline-none focus:ring-2 focus:ring-sage-500"
+              className="w-full rounded-lg border border-border px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
           <button
             onClick={onSave}
             disabled={isSaving}
-            className="mt-2 flex items-center gap-2 rounded-lg bg-sage-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-sage-700 disabled:opacity-50"
+            className="mt-2 flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-50"
           >
             {isSaving ? (
               <>

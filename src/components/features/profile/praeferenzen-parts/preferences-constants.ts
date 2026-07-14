@@ -1,4 +1,4 @@
-import { Cpu, Globe, Heart, Leaf, Recycle, Shield, Star, type LucideIcon } from "lucide-react"
+import { Cpu, Globe, Heart, Recycle, Shield, Star, type LucideIcon } from "lucide-react"
 
 export interface PreferenceSubcategory {
   id: string
@@ -27,7 +27,7 @@ export const PREFERENCE_CATEGORIES: PreferenceCategory[] = [
   {
     id: "oekologisch",
     title: "Ökologische Nachhaltigkeit",
-    icon: Leaf,
+    icon: Globe,
     subs: [
       { id: "umwelt_schutz", label: "Schutz von Umwelt, Natur und Ressourcen" },
       { id: "klimaschutz", label: "Klimaschutz, Artenvielfalt, Ressourcenschonung" },

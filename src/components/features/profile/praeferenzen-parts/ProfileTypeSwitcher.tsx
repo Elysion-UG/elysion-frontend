@@ -21,8 +21,8 @@ interface ProfileTypeSwitcherProps {
 
 export function ProfileTypeSwitcher({ value, onChange }: ProfileTypeSwitcherProps) {
   return (
-    <div className="mb-6 rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
-      <label className="mb-3 block text-sm font-medium text-stone-700">Profiltyp</label>
+    <div className="mb-6 rounded-xl border border-border bg-white p-5 shadow-sm">
+      <label className="mb-3 block text-sm font-medium text-foreground">Profiltyp</label>
       <div className="grid grid-cols-3 gap-3">
         {OPTIONS.map((opt) => (
           <button
@@ -30,19 +30,19 @@ export function ProfileTypeSwitcher({ value, onChange }: ProfileTypeSwitcherProp
             onClick={() => onChange(opt.value)}
             className={`rounded-lg border-2 p-3 text-left transition-colors ${
               value === opt.value
-                ? "border-sage-600 bg-sage-50"
-                : "border-stone-200 hover:border-slate-300"
+                ? "border-green-600 bg-green-50"
+                : "border-border hover:border-border"
             }`}
             aria-pressed={value === opt.value}
           >
             <span
               className={`block text-sm font-semibold ${
-                value === opt.value ? "text-sage-700" : "text-stone-700"
+                value === opt.value ? "text-green-600" : "text-foreground"
               }`}
             >
               {opt.label}
             </span>
-            <span className="mt-0.5 block text-xs text-stone-500">{opt.desc}</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">{opt.desc}</span>
           </button>
         ))}
       </div>
