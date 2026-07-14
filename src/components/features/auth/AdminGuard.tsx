@@ -2,25 +2,28 @@
 
 import type React from "react"
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/src/context/AuthContext"
+import { loginPathWithRedirect } from "@/src/lib/auth/redirect-param"
 import { Loader2, ShieldAlert } from "lucide-react"
 
 /**
  * AdminGuard — wraps all admin portal pages.
- * Redirects unauthenticated users and non-admins to the home page.
+ * Redirects unauthenticated users and non-admins to the admin login,
+ * preserving the requested page as a return URL (#121).
  * Shows a futuristic loading spinner on the dark admin background.
  */
 export default function AdminGuard({ children }: { children: React.ReactNode }) {
   const { role, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     if (isLoading) return
     if (!isAuthenticated || role !== "ADMIN") {
-      router.replace("/")
+      router.replace(loginPathWithRedirect("/login/admin", pathname))
     }
-  }, [isAuthenticated, role, isLoading, router])
+  }, [isAuthenticated, role, isLoading, router, pathname])
 
   if (isLoading) {
     return (

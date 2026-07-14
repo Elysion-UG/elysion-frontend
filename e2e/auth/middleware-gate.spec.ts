@@ -16,24 +16,42 @@ const ADMIN = "http://admin.localhost:3000"
 
 test.describe("Middleware – Session-Gate (#68)", () => {
   for (const path of ["/checkout", "/orders", "/profil", "/praeferenzen", "/onboarding"]) {
-    test(`Buyer: ${path} leitet unauthentifiziert auf die Startseite/Login um`, async ({
+    test(`Buyer: ${path} leitet unauthentifiziert auf die Startseite um und merkt sich das Ziel (#121)`, async ({
       page,
     }) => {
       await page.goto(`${BUYER}${path}`)
-      await expect(page).toHaveURL(`${BUYER}/`, { timeout: 10_000 })
+      await expect(page).toHaveURL(
+        (url) =>
+          url.origin === BUYER && url.pathname === "/" && url.searchParams.get("redirect") === path,
+        { timeout: 10_000 }
+      )
     })
   }
 
-  test("Seller: /seller-dashboard leitet unauthentifiziert auf /login/seller um", async ({
+  test("Seller: /seller-dashboard leitet unauthentifiziert auf /login/seller um und merkt sich das Ziel (#121)", async ({
     page,
   }) => {
     await page.goto(`${SELLER}/seller-dashboard`)
-    await expect(page).toHaveURL(`${SELLER}/login/seller`, { timeout: 10_000 })
+    await expect(page).toHaveURL(
+      (url) =>
+        url.origin === SELLER &&
+        url.pathname === "/login/seller" &&
+        url.searchParams.get("redirect") === "/seller-dashboard",
+      { timeout: 10_000 }
+    )
   })
 
-  test("Admin: /admin leitet unauthentifiziert auf /login/admin um", async ({ page }) => {
+  test("Admin: /admin leitet unauthentifiziert auf /login/admin um und merkt sich das Ziel (#121)", async ({
+    page,
+  }) => {
     await page.goto(`${ADMIN}/admin`)
-    await expect(page).toHaveURL(`${ADMIN}/login/admin`, { timeout: 10_000 })
+    await expect(page).toHaveURL(
+      (url) =>
+        url.origin === ADMIN &&
+        url.pathname === "/login/admin" &&
+        url.searchParams.get("redirect") === "/admin",
+      { timeout: 10_000 }
+    )
   })
 
   test("Öffentliche Shop-Seite bleibt ohne Login erreichbar", async ({ page }) => {

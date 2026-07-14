@@ -2,8 +2,9 @@
 
 import type React from "react"
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/src/context/AuthContext"
+import { loginPathWithRedirect } from "@/src/lib/auth/redirect-param"
 import { Loader2, ShieldAlert } from "lucide-react"
 
 /**
@@ -14,15 +15,17 @@ import { Loader2, ShieldAlert } from "lucide-react"
 export default function SellerGuard({ children }: { children: React.ReactNode }) {
   const { role, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   const isSeller = isAuthenticated && role === "SELLER"
 
   useEffect(() => {
     if (isLoading) return
     if (!isSeller) {
-      router.replace("/login/seller")
+      // Preserve the requested page so login can return the user there (#121).
+      router.replace(loginPathWithRedirect("/login/seller", pathname))
     }
-  }, [isSeller, isLoading, router])
+  }, [isSeller, isLoading, router, pathname])
 
   if (isLoading) {
     return (

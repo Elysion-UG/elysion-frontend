@@ -2,7 +2,9 @@
 
 import type React from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { useAuth } from "@/src/context/AuthContext"
+import { loginPathWithRedirect } from "@/src/lib/auth/redirect-param"
 import type { UserRole } from "@/src/types"
 import { ShieldAlert, Loader2 } from "lucide-react"
 
@@ -18,6 +20,7 @@ export default function AuthGuard({
   fallbackMessage = "Sie haben keinen Zugriff auf diese Seite.",
 }: AuthGuardProps) {
   const { isAuthenticated, role, isLoading } = useAuth()
+  const pathname = usePathname()
 
   if (isLoading) {
     return (
@@ -36,7 +39,7 @@ export default function AuthGuard({
           Bitte melden Sie sich an, um auf diese Seite zuzugreifen.
         </p>
         <Link
-          href="/"
+          href={loginPathWithRedirect("/", pathname)}
           className="rounded-xl bg-sage-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sage-700"
         >
           Jetzt anmelden

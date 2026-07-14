@@ -9,11 +9,17 @@ import { BuyerRegisterForm } from "@/src/components/features/auth/BuyerRegisterF
 interface LoginModalProps {
   isOpen: boolean
   onClose: () => void
+  /**
+   * Invoked after a successful login (before the modal is torn down). Lets the
+   * host return the user to a deep link they were bounced off (#121). When
+   * omitted, a successful login simply closes the modal.
+   */
+  onLoginSuccess?: () => void
 }
 
 type Mode = "login" | "register"
 
-export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
+export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
   const [mode, setMode] = useState<Mode>("login")
   // Tracks the LoginForm's internal login/forgot view to keep the dialog
   // aria-label in sync (the forgot view is owned by LoginForm).
@@ -23,6 +29,11 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setMode("login")
     setLoginSubView("login")
     onClose()
+  }
+
+  const handleLoginSuccess = () => {
+    handleClose()
+    onLoginSuccess?.()
   }
 
   const modalRef = useFocusTrap(handleClose)
@@ -59,7 +70,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               portal="customer"
               invalidCredentialsMessage="Ungültige Anmeldedaten. Bitte versuchen Sie es erneut."
               successToast="Erfolgreich angemeldet!"
-              onSuccess={handleClose}
+              onSuccess={handleLoginSuccess}
               emailId="login-email"
               passwordId="login-pw"
               onViewChange={setLoginSubView}

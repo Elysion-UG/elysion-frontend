@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Leaf, ShieldCheck, BarChart3, Award, Banknote } from "lucide-react"
 import { buyerUrl } from "@/src/lib/seller-url"
+import { readRedirectTarget } from "@/src/lib/auth/redirect-param"
 import { LoginForm } from "@/src/components/features/auth/_shared/LoginForm"
 import { SellerRegisterForm } from "@/src/components/features/auth/SellerRegisterForm"
 
@@ -87,7 +88,12 @@ export default function SellerLogin() {
               invalidCredentialsMessage="Ungültige Anmeldedaten."
               successToast="Erfolgreich angemeldet!"
               onSuccess={() => {
-                window.location.href = "/seller-dashboard"
+                // Return to the originally requested page when the middleware
+                // (#68) forwarded one via ?redirect=, else the dashboard (#121).
+                window.location.href = readRedirectTarget(
+                  window.location.search,
+                  "/seller-dashboard"
+                )
               }}
               emailPlaceholder="ihre@firma.de"
               errorClassName="mb-5"
