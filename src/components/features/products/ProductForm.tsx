@@ -281,7 +281,7 @@ export default function ProductForm({
           {isEdit && productId ? (
             <ProductImageManager productId={productId} initialImages={initialImages ?? []} />
           ) : (
-            <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-700">
+            <div className="rounded-lg border border-info bg-info-tint p-3 text-xs text-info">
               Das Produkt wird als <strong>Entwurf</strong> erstellt. Nach dem Erstellen können Sie
               Bilder hinzufügen und das Produkt zur Prüfung einreichen.
             </div>

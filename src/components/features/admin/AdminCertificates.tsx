@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle2, XCircle, ExternalLink } from "lucide-react"
+import { CheckCircle2, XCircle, ExternalLink, AlertTriangle } from "lucide-react"
 import { CertificateService } from "@/src/services/certificate.service"
 import { safeHttpUrl } from "@/src/lib/safe-url"
 import type { Certificate, CertificateStatus } from "@/src/types"
@@ -123,8 +123,12 @@ export default function AdminCertificates() {
                   <ExternalLink className="h-3 w-3" /> Dokument
                 </a>
               ) : cert.documentUrl ? (
-                <span className="text-xs text-warning" title="Unsichere URL — kein Link">
-                  ⚠ unsichere URL
+                <span
+                  className="inline-flex items-center gap-1 text-xs text-warning"
+                  title="Unsichere URL — kein Link"
+                >
+                  <AlertTriangle className="h-3.5 w-3.5" aria-hidden="true" />
+                  unsichere URL
                 </span>
               ) : (
                 <span className="text-xs text-foreground">–</span>

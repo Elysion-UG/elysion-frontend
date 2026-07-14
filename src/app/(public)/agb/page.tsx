@@ -178,10 +178,10 @@ export default function AgbPage() {
       </section>
 
       <p className="mt-10 border-t border-border pt-6 text-xs text-muted-foreground">
-        ⚠️ Diese AGB enthalten Platzhalter (<code>[PLATZHALTER: ...]</code>), die vor dem Launch
-        durch echte Angaben ersetzt werden müssen. Empfehlung: Rechtliche Prüfung durch einen
-        deutschen Rechtsanwalt oder einen spezialisierten Dienst (z. B. IT-Recht Kanzlei,
-        Händlerbund, Trusted Shops).
+        Diese AGB enthalten Platzhalter (<code>[PLATZHALTER: ...]</code>), die vor dem Launch durch
+        echte Angaben ersetzt werden müssen. Empfehlung: Rechtliche Prüfung durch einen deutschen
+        Rechtsanwalt oder einen spezialisierten Dienst (z. B. IT-Recht Kanzlei, Händlerbund, Trusted
+        Shops).
       </p>
     </div>
   )

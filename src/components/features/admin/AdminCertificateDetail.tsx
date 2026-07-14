@@ -289,7 +289,7 @@ export default function AdminCertificateDetail() {
           ) : (
             <div className="space-y-1">
               <p className="text-sm font-medium text-warning">
-                ⚠ Unsichere Dokument-URL — kein Link (nur http/https erlaubt)
+                Unsichere Dokument-URL — kein Link (nur http/https erlaubt)
               </p>
               <p className="break-all font-mono text-xs text-muted-foreground">
                 {cert.documentUrl}
