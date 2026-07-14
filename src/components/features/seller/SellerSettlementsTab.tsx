@@ -51,17 +51,17 @@ export default function SellerSettlementsTab() {
     <div className="space-y-6">
       <SellerPayoutAccountCard />
 
-      <div className="rounded-xl border border-slate-200 bg-white">
-        <div className="flex items-center justify-between border-b border-slate-200 p-6">
+      <div className="rounded-xl border border-border bg-white">
+        <div className="flex items-center justify-between border-b border-border p-6">
           <div>
-            <h2 className="text-xl font-semibold text-slate-800">Abrechnungen</h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <h2 className="text-xl font-semibold text-foreground">Abrechnungen</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
               Auszahlungen erfolgen monatlich, sobald die Bestellung als geliefert gilt.
             </p>
           </div>
           <button
             onClick={fetchSettlements}
-            className="text-slate-400 transition-colors hover:text-slate-600"
+            className="text-muted-foreground transition-colors hover:text-foreground"
           >
             <RefreshCw className={`h-4 w-4 ${settlementsLoading ? "animate-spin" : ""}`} />
           </button>
@@ -69,17 +69,17 @@ export default function SellerSettlementsTab() {
 
         {settlementsLoading ? (
           <div className="flex justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-teal-600" />
+            <Loader2 className="h-6 w-6 animate-spin text-green-600" />
           </div>
         ) : settlements.length === 0 ? (
           <div className="py-12 text-center">
-            <DollarSign className="mx-auto mb-4 h-12 w-12 text-slate-300" />
-            <p className="text-slate-500">Noch keine Auszahlungen.</p>
+            <DollarSign className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <p className="text-muted-foreground">Noch keine Auszahlungen.</p>
           </div>
         ) : (
           <Table>
-            <TableHeader className="bg-slate-50">
-              <TableRow className="hover:bg-slate-50">
+            <TableHeader className="bg-secondary">
+              <TableRow className="hover:bg-secondary">
                 <TableHead className={SELLER_TABLE_HEAD_CLASS}>Datum</TableHead>
                 <TableHead className={SELLER_TABLE_HEAD_CLASS}>Brutto</TableHead>
                 <TableHead className={SELLER_TABLE_HEAD_CLASS}>Plattformgebühr</TableHead>
@@ -89,25 +89,25 @@ export default function SellerSettlementsTab() {
             </TableHeader>
             <TableBody>
               {settlements.map((s) => (
-                <TableRow key={s.settlementId} className="hover:bg-slate-50">
-                  <TableCell className={`${SELLER_TABLE_CELL_CLASS} text-sm text-slate-600`}>
+                <TableRow key={s.settlementId} className="hover:bg-secondary">
+                  <TableCell className={`${SELLER_TABLE_CELL_CLASS} text-sm text-foreground`}>
                     {new Date(s.createdAt).toLocaleDateString("de-DE")}
                   </TableCell>
-                  <TableCell className={`${SELLER_TABLE_CELL_CLASS} text-sm text-slate-800`}>
+                  <TableCell className={`${SELLER_TABLE_CELL_CLASS} text-sm text-foreground`}>
                     {formatEuro(s.grossAmount)}
                   </TableCell>
-                  <TableCell className={`${SELLER_TABLE_CELL_CLASS} text-sm text-slate-500`}>
+                  <TableCell className={`${SELLER_TABLE_CELL_CLASS} text-sm text-muted-foreground`}>
                     {formatEuro(s.platformFeeAmount)}
                   </TableCell>
                   <TableCell
-                    className={`${SELLER_TABLE_CELL_CLASS} text-sm font-semibold text-teal-700`}
+                    className={`${SELLER_TABLE_CELL_CLASS} text-sm font-semibold text-green-600`}
                   >
                     {formatEuro(s.netAmount)}
                   </TableCell>
                   <TableCell className={SELLER_TABLE_CELL_CLASS}>
                     <StatusBadge
                       label={settlementStatusLabel[s.status] ?? s.status}
-                      colorClasses={settlementStatusColor[s.status] ?? "bg-blue-100 text-blue-700"}
+                      colorClasses={settlementStatusColor[s.status] ?? "bg-info-tint text-info"}
                     />
                   </TableCell>
                 </TableRow>

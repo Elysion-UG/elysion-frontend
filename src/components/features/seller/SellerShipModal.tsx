@@ -45,31 +45,33 @@ export default function SellerShipModal({ groupId, onClose, onDone }: SellerShip
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md rounded-xl bg-white p-6 shadow-xl">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-slate-800">Versanddetails</DialogTitle>
+          <DialogTitle className="text-lg font-semibold text-foreground">
+            Versanddetails
+          </DialogTitle>
           <DialogDescription className="sr-only">Versandinformationen eingeben</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-foreground">
               Trackingnummer *
             </label>
             <input
               type="text"
               value={trackingNumber}
               onChange={(e) => setTrackingNumber(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               placeholder="z.B. 1Z999AA10123456784"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-foreground">
               Versanddienstleister
             </label>
             <input
               type="text"
               value={carrier}
               onChange={(e) => setCarrier(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               placeholder="z.B. DHL, UPS, DPD"
             />
           </div>
@@ -77,14 +79,14 @@ export default function SellerShipModal({ groupId, onClose, onDone }: SellerShip
         <DialogFooter className="mt-6 flex gap-3 sm:flex-row">
           <button
             onClick={onClose}
-            className="flex-1 rounded-lg border border-slate-300 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="flex-1 rounded-lg border border-border py-2 text-sm font-medium text-foreground hover:bg-secondary"
           >
             Abbrechen
           </button>
           <button
             onClick={handleSubmit}
             disabled={isSaving}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-teal-600 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-60"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-500 py-2 text-sm font-medium text-ink-900 hover:bg-green-700 disabled:opacity-60"
           >
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Versandt"}
           </button>

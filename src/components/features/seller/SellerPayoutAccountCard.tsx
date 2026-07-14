@@ -61,10 +61,10 @@ export default function SellerPayoutAccountCard() {
         : "Einrichtung abschließen"
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className="flex items-center gap-3 border-b border-slate-200 p-6">
-        <Banknote className="h-5 w-5 text-teal-600" />
-        <h2 className="text-xl font-semibold text-slate-800">Auszahlungskonto</h2>
+    <div className="rounded-xl border border-border bg-white">
+      <div className="flex items-center gap-3 border-b border-border p-6">
+        <Banknote className="h-5 w-5 text-green-600" />
+        <h2 className="text-xl font-semibold text-foreground">Auszahlungskonto</h2>
         {!loading && account && (
           <span
             className={`ml-auto inline-block rounded-full px-3 py-1 text-xs font-medium ${payoutAccountStatusColor[status]}`}
@@ -76,35 +76,35 @@ export default function SellerPayoutAccountCard() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-teal-600" />
+          <Loader2 className="h-6 w-6 animate-spin text-green-600" />
         </div>
       ) : (
         <div className="space-y-4 p-6">
           {isActive ? (
-            <div className="flex items-start gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
-              <p className="text-sm text-emerald-800">
+            <div className="flex items-start gap-3 rounded-lg border border-green-600 bg-green-50 p-4">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
+              <p className="text-sm text-green-600">
                 Ihr Auszahlungskonto ist aktiv. Auszahlungen werden monatlich über Stripe
                 abgewickelt.
               </p>
             </div>
           ) : status === "RESTRICTED" ? (
-            <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4">
-              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
-              <p className="text-sm text-red-800">
+            <div className="flex items-start gap-3 rounded-lg border border-danger bg-danger-tint p-4">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-danger" />
+              <p className="text-sm text-danger">
                 Stripe benötigt weitere Angaben, bevor Auszahlungen erfolgen können. Bitte
                 vervollständigen Sie die Einrichtung.
               </p>
             </div>
           ) : (
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-foreground">
               Verbinden Sie Ihr Bankkonto über Stripe, um Auszahlungen zu erhalten. Die Überprüfung
               Ihrer Daten (KYC) übernimmt Stripe.
             </p>
           )}
 
           {account?.requirementsDue && account.requirementsDue.length > 0 && (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               Offene Anforderungen: {account.requirementsDue.join(", ")}
             </p>
           )}
@@ -113,7 +113,7 @@ export default function SellerPayoutAccountCard() {
             <button
               onClick={handleConnect}
               disabled={redirecting}
-              className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-50"
             >
               {redirecting && <Loader2 className="h-4 w-4 animate-spin" />}
               {ctaLabel}
