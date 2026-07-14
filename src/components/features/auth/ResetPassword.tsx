@@ -70,27 +70,27 @@ export default function ResetPassword() {
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-2xl border border-stone-200 bg-white p-8 shadow-lg">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-white p-8 shadow-lg">
         {status === "validating" && (
           <div className="text-center">
-            <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-sage-600" />
-            <h1 className="mb-2 text-xl font-bold text-stone-800">Link wird geprüft...</h1>
-            <p className="text-stone-500">Bitte warten Sie einen Moment.</p>
+            <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-green-600" />
+            <h1 className="mb-2 text-xl font-bold text-foreground">Link wird geprüft...</h1>
+            <p className="text-muted-foreground">Bitte warten Sie einen Moment.</p>
           </div>
         )}
 
         {status === "invalid-token" && (
           <div className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
-              <AlertTriangle className="h-8 w-8 text-red-600" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-danger-tint">
+              <AlertTriangle className="h-8 w-8 text-danger" />
             </div>
-            <h1 className="mb-2 text-xl font-bold text-stone-800">Ungültiger Link</h1>
-            <p className="mb-6 text-stone-600">
+            <h1 className="mb-2 text-xl font-bold text-foreground">Ungültiger Link</h1>
+            <p className="mb-6 text-foreground">
               Dieser Link zum Zurücksetzen des Passworts ist ungültig oder abgelaufen.
             </p>
             <Link
               href="/"
-              className="inline-block rounded-xl bg-sage-600 px-6 py-2.5 font-semibold text-white transition-colors hover:bg-sage-700"
+              className="inline-block rounded-xl bg-green-500 px-6 py-2.5 font-semibold text-ink-900 transition-colors hover:bg-green-700"
             >
               Zur Startseite
             </Link>
@@ -99,16 +99,16 @@ export default function ResetPassword() {
 
         {status === "success" && (
           <div className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-              <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
+              <CheckCircle2 className="h-8 w-8 text-green-600" />
             </div>
-            <h1 className="mb-2 text-xl font-bold text-stone-800">Passwort zurückgesetzt!</h1>
-            <p className="mb-6 text-stone-600">
+            <h1 className="mb-2 text-xl font-bold text-foreground">Passwort zurückgesetzt!</h1>
+            <p className="mb-6 text-foreground">
               Sie können sich jetzt mit Ihrem neuen Passwort anmelden.
             </p>
             <Link
               href="/"
-              className="inline-block rounded-xl bg-sage-600 px-6 py-2.5 font-semibold text-white transition-colors hover:bg-sage-700"
+              className="inline-block rounded-xl bg-green-500 px-6 py-2.5 font-semibold text-ink-900 transition-colors hover:bg-green-700"
             >
               Zur Anmeldung
             </Link>
@@ -118,15 +118,15 @@ export default function ResetPassword() {
         {status === "form" && (
           <>
             <div className="mb-6 text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-sage-100">
-                <Lock className="h-8 w-8 text-sage-600" />
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
+                <Lock className="h-8 w-8 text-green-600" />
               </div>
-              <h1 className="mb-2 text-xl font-bold text-stone-800">Neues Passwort festlegen</h1>
-              <p className="text-stone-500">Geben Sie Ihr neues Passwort ein.</p>
+              <h1 className="mb-2 text-xl font-bold text-foreground">Neues Passwort festlegen</h1>
+              <p className="text-muted-foreground">Geben Sie Ihr neues Passwort ein.</p>
             </div>
 
             {error && (
-              <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+              <div className="mb-4 flex items-start gap-2 rounded-xl border border-danger bg-danger-tint p-3 text-sm text-danger">
                 <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
                 <span>{error}</span>
               </div>
@@ -134,23 +134,23 @@ export default function ResetPassword() {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label htmlFor="new-pw" className="mb-1 block text-sm font-medium text-stone-700">
+                <label htmlFor="new-pw" className="mb-1 block text-sm font-medium text-foreground">
                   Neues Passwort
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500" />
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     id="new-pw"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-stone-300 py-2.5 pl-10 pr-10 text-stone-800 focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
+                    className="w-full rounded-xl border border-border py-2.5 pl-10 pr-10 text-foreground focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500/20"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -160,7 +160,7 @@ export default function ResetPassword() {
                     {pwValidation.results.map((r) => (
                       <li
                         key={r.label}
-                        className={`flex items-center gap-1.5 text-xs ${r.passed ? "text-emerald-600" : "text-stone-500"}`}
+                        className={`flex items-center gap-1.5 text-xs ${r.passed ? "text-green-600" : "text-muted-foreground"}`}
                       >
                         {r.passed ? (
                           <CheckCircle2 className="h-3.5 w-3.5" />
@@ -177,23 +177,23 @@ export default function ResetPassword() {
               <div>
                 <label
                   htmlFor="confirm-pw"
-                  className="mb-1 block text-sm font-medium text-stone-700"
+                  className="mb-1 block text-sm font-medium text-foreground"
                 >
                   Passwort bestätigen
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500" />
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     id="confirm-pw"
                     type={showPassword ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-stone-300 py-2.5 pl-10 pr-4 text-stone-800 focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20"
+                    className="w-full rounded-xl border border-border py-2.5 pl-10 pr-4 text-foreground focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500/20"
                   />
                 </div>
                 {confirmPassword.length > 0 && password !== confirmPassword && (
-                  <p className="mt-1 flex items-center gap-1 text-xs text-red-600">
+                  <p className="mt-1 flex items-center gap-1 text-xs text-danger">
                     <XCircle className="h-3.5 w-3.5" /> Passwörter stimmen nicht überein
                   </p>
                 )}
@@ -202,7 +202,7 @@ export default function ResetPassword() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 py-2.5 font-semibold text-white transition-colors hover:bg-sage-700 disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-500 py-2.5 font-semibold text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <>

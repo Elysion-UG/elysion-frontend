@@ -73,8 +73,8 @@ export function SellerRegisterForm({ onLoginClick, onRegistered }: SellerRegiste
 
   return (
     <>
-      <h1 className="mb-1 text-2xl font-bold text-stone-800">Als Verkäufer registrieren</h1>
-      <p className="mb-8 text-sm text-stone-500">
+      <h1 className="mb-1 text-2xl font-bold text-foreground">Als Verkäufer registrieren</h1>
+      <p className="mb-8 text-sm text-muted-foreground">
         Verkaufen Sie Ihre nachhaltigen Produkte auf Elysion.
       </p>
 
@@ -83,7 +83,7 @@ export function SellerRegisterForm({ onLoginClick, onRegistered }: SellerRegiste
       <form onSubmit={handleRegister} className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-stone-700">Vorname</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Vorname</label>
             <input
               type="text"
               value={regFirstName}
@@ -93,7 +93,7 @@ export function SellerRegisterForm({ onLoginClick, onRegistered }: SellerRegiste
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-stone-700">Nachname</label>
+            <label className="mb-1.5 block text-sm font-medium text-foreground">Nachname</label>
             <input
               type="text"
               value={regLastName}
@@ -132,18 +132,18 @@ export function SellerRegisterForm({ onLoginClick, onRegistered }: SellerRegiste
             autoComplete="new-password"
           />
           {regConfirm.length > 0 && regPassword !== regConfirm && (
-            <p className="mt-1 flex items-center gap-1 text-xs text-red-600">
+            <p className="mt-1 flex items-center gap-1 text-xs text-danger">
               <XCircle className="h-3.5 w-3.5" /> Stimmt nicht überein
             </p>
           )}
         </div>
 
-        <div className="space-y-3 rounded-xl border border-stone-200 bg-stone-50 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+        <div className="space-y-3 rounded-xl border border-border bg-secondary p-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Unternehmensdaten
           </p>
           <div>
-            <label className="mb-1 block text-sm text-stone-600">Firmenname *</label>
+            <label className="mb-1 block text-sm text-foreground">Firmenname *</label>
             <input
               type="text"
               value={regCompany}
@@ -153,7 +153,7 @@ export function SellerRegisterForm({ onLoginClick, onRegistered }: SellerRegiste
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm text-stone-600">USt-IdNr. *</label>
+            <label className="mb-1 block text-sm text-foreground">USt-IdNr. *</label>
             <input
               type="text"
               value={regVatId}
@@ -164,7 +164,7 @@ export function SellerRegisterForm({ onLoginClick, onRegistered }: SellerRegiste
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm text-stone-600">IBAN *</label>
+            <label className="mb-1 block text-sm text-foreground">IBAN *</label>
             <input
               type="text"
               value={regIban}
@@ -183,9 +183,12 @@ export function SellerRegisterForm({ onLoginClick, onRegistered }: SellerRegiste
         />
       </form>
 
-      <p className="mt-8 text-center text-sm text-stone-500">
+      <p className="mt-8 text-center text-sm text-muted-foreground">
         Bereits registriert?{" "}
-        <button onClick={onLoginClick} className="font-semibold text-sage-600 hover:text-sage-800">
+        <button
+          onClick={onLoginClick}
+          className="font-semibold text-green-600 hover:text-green-600"
+        >
           Anmelden
         </button>
       </p>

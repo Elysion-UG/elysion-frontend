@@ -61,8 +61,8 @@ export interface LoginFormProps {
 }
 
 const forgotLinkClass: Record<Variant, string> = {
-  light: "text-sm text-sage-600 hover:text-sage-800",
-  dark: "text-xs text-slate-600 transition-colors hover:text-cyber-400",
+  light: "text-sm text-green-600 hover:text-green-600",
+  dark: "text-xs text-sand-page/70 transition-colors hover:text-green-500",
 }
 
 /**

@@ -17,8 +17,8 @@ interface AuthSubmitButtonProps {
 
 const styles = {
   light:
-    "flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 py-2.5 font-semibold text-white transition-colors hover:bg-sage-700 disabled:cursor-not-allowed disabled:opacity-50",
-  dark: "flex w-full items-center justify-center gap-2 rounded-xl bg-cyber-600 py-2.5 font-mono text-sm font-semibold tracking-wider text-white transition-all hover:bg-cyber-500 hover:shadow-[0_0_16px_rgba(6,182,212,0.3)] disabled:opacity-50",
+    "flex w-full items-center justify-center gap-2 rounded-xl bg-green-500 py-2.5 font-semibold text-ink-900 transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50",
+  dark: "flex w-full items-center justify-center gap-2 rounded-xl bg-green-500 py-2.5 text-sm font-bold tracking-wide text-ink-900 transition-all hover:bg-green-600 disabled:opacity-50",
 } satisfies Record<Variant, string>
 
 export function AuthSubmitButton({
