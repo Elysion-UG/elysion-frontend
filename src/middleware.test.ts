@@ -81,6 +81,18 @@ describe("middleware session gate (#68)", () => {
       const res = middleware(request(`http://${SELLER_HOST}/login/seller`, SELLER_HOST))
       expect(locationOf(res)).toBeNull()
     })
+
+    it("sends an unauthenticated root visitor straight to the login in one redirect (#120)", () => {
+      const res = middleware(request(`http://${SELLER_HOST}/`, SELLER_HOST))
+      expect(res.status).toBe(307)
+      expect(locationOf(res)).toBe(`http://${SELLER_HOST}/login/seller`)
+    })
+
+    it("sends a marked root visitor to the dashboard", () => {
+      const res = middleware(request(`http://${SELLER_HOST}/`, SELLER_HOST, { withMarker: true }))
+      expect(res.status).toBe(307)
+      expect(locationOf(res)).toBe(`http://${SELLER_HOST}/seller-dashboard`)
+    })
   })
 
   describe("admin domain", () => {
@@ -100,6 +112,18 @@ describe("middleware session gate (#68)", () => {
     it("never gates the admin login page itself", () => {
       const res = middleware(request(`http://${ADMIN_HOST}/login/admin`, ADMIN_HOST))
       expect(locationOf(res)).toBeNull()
+    })
+
+    it("sends an unauthenticated root visitor straight to the login in one redirect (#120)", () => {
+      const res = middleware(request(`http://${ADMIN_HOST}/`, ADMIN_HOST))
+      expect(res.status).toBe(307)
+      expect(locationOf(res)).toBe(`http://${ADMIN_HOST}/login/admin`)
+    })
+
+    it("sends a marked root visitor to the admin area", () => {
+      const res = middleware(request(`http://${ADMIN_HOST}/`, ADMIN_HOST, { withMarker: true }))
+      expect(res.status).toBe(307)
+      expect(locationOf(res)).toBe(`http://${ADMIN_HOST}/admin`)
     })
   })
 })

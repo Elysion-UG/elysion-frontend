@@ -178,9 +178,12 @@ export function middleware(request: NextRequest) {
       return res
     }
 
-    // Root → redirect to dashboard (client-side AuthGuard handles login redirect)
+    // Root → dashboard when a session marker is present, otherwise straight to
+    // the login. Checking the marker here avoids a needless second redirect
+    // (/ → /seller-dashboard → /login/seller) for unauthenticated visitors (#120).
     if (pathname === "/") {
-      const res = NextResponse.redirect(new URL("/seller-dashboard", request.url))
+      const target = hasSessionMarker(request) ? "/seller-dashboard" : "/login/seller"
+      const res = NextResponse.redirect(new URL(target, request.url))
       applySecurityHeaders(request, res, nonce)
       return res
     }
@@ -211,9 +214,12 @@ export function middleware(request: NextRequest) {
       return res
     }
 
-    // Root → redirect to dashboard (client-side AdminGuard handles login redirect)
+    // Root → admin area when a session marker is present, otherwise straight to
+    // the login. Checking the marker here avoids a needless second redirect
+    // (/ → /admin → /login/admin) for unauthenticated visitors (#120).
     if (pathname === "/") {
-      const res = NextResponse.redirect(new URL("/admin", request.url))
+      const target = hasSessionMarker(request) ? "/admin" : "/login/admin"
+      const res = NextResponse.redirect(new URL(target, request.url))
       applySecurityHeaders(request, res, nonce)
       return res
     }
