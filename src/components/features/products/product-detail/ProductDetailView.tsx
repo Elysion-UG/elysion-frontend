@@ -49,7 +49,7 @@ export function ProductDetailView({
     <div>
       <button
         onClick={() => router.back()}
-        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors hover:text-sage-600"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-green-600"
       >
         <ArrowLeft className="h-4 w-4" />
         Zurück zu Produkten
@@ -62,7 +62,7 @@ export function ProductDetailView({
           <div>
             <div className="mb-3 flex flex-wrap gap-2">
               {product.category && (
-                <span className="inline-flex items-center rounded-full border border-stone-200 bg-stone-100 px-2.5 py-0.5 text-xs font-medium text-stone-600">
+                <span className="inline-flex items-center rounded-full border border-border bg-secondary px-2.5 py-0.5 text-xs font-medium text-foreground">
                   {product.category.name}
                 </span>
               )}
@@ -73,15 +73,17 @@ export function ProductDetailView({
                 onClick={() =>
                   product.seller?.userId && router.push(`/producer?id=${product.seller.userId}`)
                 }
-                className="mb-2 text-xs font-semibold uppercase tracking-wider text-sage-600 transition-colors hover:text-sage-700 hover:underline"
+                className="mb-2 text-xs font-semibold uppercase tracking-wider text-green-600 transition-colors hover:text-green-600 hover:underline"
               >
                 {sellerName}
               </button>
             )}
 
-            <h1 className="mb-2 text-2xl font-bold text-stone-900 sm:text-3xl">{product.name}</h1>
+            <h1 className="mb-2 text-2xl font-normal text-foreground sm:text-3xl">
+              {product.name}
+            </h1>
             {product.shortDesc && (
-              <p className="text-base leading-relaxed text-stone-500">{product.shortDesc}</p>
+              <p className="text-base leading-relaxed text-muted-foreground">{product.shortDesc}</p>
             )}
           </div>
 

@@ -1,11 +1,11 @@
 import type { CertificateType } from "@/src/types/certificate"
-import { Leaf, Heart, Recycle, Star, Layers, Home, Sparkles } from "lucide-react"
+import { Globe, Landmark, Sprout, Heart, Recycle, Star, Layers, Home, Sparkles } from "lucide-react"
 
 // ── Sustainability filter config ───────────────────────────────────────────────
 
 export type SustainabilityFilter = {
   label: string
-  icon: typeof Leaf
+  icon: typeof Star
   subpoints: string[]
 }
 
@@ -17,7 +17,7 @@ export const sustainabilityFilters: Record<string, SustainabilityFilter> = {
   },
   oekologisch: {
     label: "Ökologische Nachhaltigkeit",
-    icon: Leaf,
+    icon: Globe,
     subpoints: [
       "Schutz von Umwelt, Natur und Ressourcen",
       "Fokus auf Klimaschutz, Artenvielfalt, Ressourcenschonung, Kreislaufwirtschaft",
@@ -50,7 +50,7 @@ export const sustainabilityFilters: Record<string, SustainabilityFilter> = {
   },
   politisch: {
     label: "Politische Nachhaltigkeit",
-    icon: Leaf,
+    icon: Landmark,
     subpoints: [
       "Demokratische Strukturen, Rechtsstaatlichkeit, Mitbestimmung",
       "Firmensitz und Produktionsstandorte",
@@ -101,10 +101,10 @@ export const sortOptions = [
 
 // ── Category chips ─────────────────────────────────────────────────────────────
 
-export const categoryChips: { label: string; icon: typeof Leaf; query: string }[] = [
+export const categoryChips: { label: string; icon: typeof Star; query: string }[] = [
   { label: "Textilien", icon: Layers, query: "Textil" },
   { label: "Accessoires", icon: Star, query: "Accessoire" },
-  { label: "Bio & Natur", icon: Leaf, query: "Bio" },
+  { label: "Bio & Natur", icon: Sprout, query: "Bio" },
   { label: "Haushalt", icon: Home, query: "Haushalt" },
   { label: "Beauty", icon: Sparkles, query: "Beauty" },
   { label: "Fair Trade", icon: Heart, query: "Fair" },
@@ -119,11 +119,14 @@ const certTypeLabels: Record<CertificateType, string> = {
   VEGAN: "Vegan",
 }
 
+// Guide 05 — Zertifikats-Badges folgen einer Logik: einheitliche Pill mit
+// Grün-Tint und Ink-Text, keine erfundenen Typ-Farben.
+const CERT_BADGE_STYLE = "bg-green-50 text-ink-900"
 const certTypeStyles: Record<CertificateType, string> = {
-  ORGANIC: "bg-sage-100 text-sage-700",
-  FAIR_TRADE: "bg-amber-100 text-amber-700",
-  RECYCLED: "bg-sky-100 text-sky-700",
-  VEGAN: "bg-emerald-100 text-emerald-700",
+  ORGANIC: CERT_BADGE_STYLE,
+  FAIR_TRADE: CERT_BADGE_STYLE,
+  RECYCLED: CERT_BADGE_STYLE,
+  VEGAN: CERT_BADGE_STYLE,
 }
 
 export function certLabel(type: CertificateType | undefined): string {
@@ -131,7 +134,5 @@ export function certLabel(type: CertificateType | undefined): string {
 }
 
 export function certStyle(type: CertificateType | undefined): string {
-  return type
-    ? (certTypeStyles[type] ?? "bg-stone-100 text-stone-600")
-    : "bg-stone-100 text-stone-600"
+  return type ? (certTypeStyles[type] ?? CERT_BADGE_STYLE) : CERT_BADGE_STYLE
 }

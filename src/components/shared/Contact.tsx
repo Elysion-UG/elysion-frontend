@@ -38,8 +38,8 @@ export default function Contact() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-12">
         <div className="mb-12 text-center">
-          <h1 className="mb-4 text-4xl font-bold text-stone-800">Kontakt</h1>
-          <p className="mx-auto max-w-2xl text-xl text-sage-600">
+          <h1 className="mb-4 text-4xl font-normal text-foreground">Kontakt</h1>
+          <p className="mx-auto max-w-2xl text-xl text-foreground">
             Haben Sie Fragen zu nachhaltigen Produkten oder brauchen Sie Hilfe bei Ihrer Bestellung?
             Wir helfen Ihnen gerne weiter.
           </p>
@@ -48,17 +48,17 @@ export default function Contact() {
         <div className="grid gap-12 lg:grid-cols-2">
           <div className="space-y-8">
             <div>
-              <h2 className="mb-6 text-2xl font-bold text-stone-800">Kontaktinformationen</h2>
+              <h2 className="mb-6 text-2xl font-bold text-foreground">Kontaktinformationen</h2>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-sage-50">
-                    <Mail className="h-6 w-6 text-sage-600" />
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-green-50">
+                    <Mail className="h-6 w-6 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="mb-1 font-semibold text-stone-800">E-Mail</h3>
+                    <h3 className="mb-1 font-semibold text-foreground">E-Mail</h3>
                     <a
                       href={`mailto:${SUPPORT_EMAIL}`}
-                      className="text-sage-600 underline-offset-2 hover:underline"
+                      className="text-foreground decoration-green-500 underline-offset-2 hover:underline"
                     >
                       {SUPPORT_EMAIL}
                     </a>
@@ -66,36 +66,36 @@ export default function Contact() {
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-sage-50">
-                    <Phone className="h-6 w-6 text-sage-600" />
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-green-50">
+                    <Phone className="h-6 w-6 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="mb-1 font-semibold text-stone-800">Telefon</h3>
-                    <p className="text-sage-600">[PLATZHALTER: +49 ...]</p>
-                    <p className="text-sm text-sage-600">Mo–Fr, 9:00–18:00 Uhr</p>
+                    <h3 className="mb-1 font-semibold text-foreground">Telefon</h3>
+                    <p className="text-foreground">[PLATZHALTER: +49 ...]</p>
+                    <p className="text-sm text-muted-foreground">Mo–Fr, 9:00–18:00 Uhr</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-sage-50">
-                    <MapPin className="h-6 w-6 text-sage-600" />
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-green-50">
+                    <MapPin className="h-6 w-6 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="mb-1 font-semibold text-stone-800">Adresse</h3>
-                    <p className="text-sage-600">[PLATZHALTER: Straße und Hausnummer]</p>
-                    <p className="text-sage-600">[PLATZHALTER: PLZ Stadt]</p>
-                    <p className="text-sage-600">Deutschland</p>
+                    <h3 className="mb-1 font-semibold text-foreground">Adresse</h3>
+                    <p className="text-foreground">[PLATZHALTER: Straße und Hausnummer]</p>
+                    <p className="text-foreground">[PLATZHALTER: PLZ Stadt]</p>
+                    <p className="text-foreground">Deutschland</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
+            <div className="rounded-lg border border-border bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-3">
-                <Clock className="h-6 w-6 text-sage-600" />
-                <h3 className="text-lg font-semibold text-stone-800">Öffnungszeiten</h3>
+                <Clock className="h-6 w-6 text-green-600" />
+                <h3 className="text-lg font-semibold text-foreground">Öffnungszeiten</h3>
               </div>
-              <div className="space-y-2 text-stone-700">
+              <div className="space-y-2 text-foreground">
                 <div className="flex justify-between">
                   <span>Montag – Freitag</span>
                   <span>9:00 – 18:00 Uhr</span>
@@ -111,25 +111,25 @@ export default function Contact() {
               </div>
             </div>
 
-            <div className="rounded-lg bg-sage-50 p-6">
+            <div className="rounded-lg bg-green-50 p-6">
               <div className="mb-3 flex items-center gap-3">
-                <MessageCircle className="h-6 w-6 text-sage-600" />
-                <h3 className="text-lg font-semibold text-stone-800">Schnelle Antworten</h3>
+                <MessageCircle className="h-6 w-6 text-green-600" />
+                <h3 className="text-lg font-semibold text-foreground">Schnelle Antworten</h3>
               </div>
-              <p className="mb-4 text-stone-700">
+              <p className="mb-4 text-foreground">
                 Häufige Fragen zu Bestellungen, Rücksendungen und Nachhaltigkeit beantworten wir
                 gerne direkt über das Kontaktformular.
               </p>
             </div>
           </div>
 
-          <div className="rounded-lg border border-stone-200 bg-white p-8 shadow-sm">
-            <h2 className="mb-6 text-2xl font-bold text-stone-800">Nachricht senden</h2>
+          <div className="rounded-lg border border-border bg-white p-8 shadow-sm">
+            <h2 className="mb-6 text-2xl font-bold text-foreground">Nachricht senden</h2>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid gap-6 md:grid-cols-2">
                 <div>
-                  <label htmlFor="name" className="mb-2 block text-sm font-medium text-stone-700">
+                  <label htmlFor="name" className="mb-2 block text-sm font-medium text-foreground">
                     Vollständiger Name *
                   </label>
                   <input
@@ -139,12 +139,12 @@ export default function Contact() {
                     value={formData.name}
                     onChange={handleInputChange}
                     required
-                    className="w-full rounded-lg border border-stone-200 px-4 py-3 transition-colors focus:border-sage-500 focus:ring-2 focus:ring-sage-100"
+                    className="w-full rounded-lg border border-border px-4 py-3 transition-colors focus:border-green-600 focus:ring-2 focus:ring-green-500"
                     placeholder="Ihr vollständiger Name"
                   />
                 </div>
                 <div>
-                  <label htmlFor="email" className="mb-2 block text-sm font-medium text-stone-700">
+                  <label htmlFor="email" className="mb-2 block text-sm font-medium text-foreground">
                     E-Mail-Adresse *
                   </label>
                   <input
@@ -154,14 +154,14 @@ export default function Contact() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full rounded-lg border border-stone-200 px-4 py-3 transition-colors focus:border-sage-500 focus:ring-2 focus:ring-sage-100"
+                    className="w-full rounded-lg border border-border px-4 py-3 transition-colors focus:border-green-600 focus:ring-2 focus:ring-green-500"
                     placeholder="ihre@email.de"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="subject" className="mb-2 block text-sm font-medium text-stone-700">
+                <label htmlFor="subject" className="mb-2 block text-sm font-medium text-foreground">
                   Betreff *
                 </label>
                 <select
@@ -170,7 +170,7 @@ export default function Contact() {
                   value={formData.subject}
                   onChange={handleInputChange}
                   required
-                  className="w-full rounded-lg border border-stone-200 px-4 py-3 transition-colors focus:border-sage-500 focus:ring-2 focus:ring-sage-100"
+                  className="w-full rounded-lg border border-border px-4 py-3 transition-colors focus:border-green-600 focus:ring-2 focus:ring-green-500"
                 >
                   <option value="">Bitte wählen</option>
                   {CONTACT_SUBJECTS.map((s) => (
@@ -182,7 +182,7 @@ export default function Contact() {
               </div>
 
               <div>
-                <label htmlFor="message" className="mb-2 block text-sm font-medium text-stone-700">
+                <label htmlFor="message" className="mb-2 block text-sm font-medium text-foreground">
                   Nachricht *
                 </label>
                 <textarea
@@ -192,20 +192,20 @@ export default function Contact() {
                   onChange={handleInputChange}
                   required
                   rows={6}
-                  className="resize-vertical w-full rounded-lg border border-stone-200 px-4 py-3 transition-colors focus:border-sage-500 focus:ring-2 focus:ring-sage-100"
+                  className="resize-vertical w-full rounded-lg border border-border px-4 py-3 transition-colors focus:border-green-600 focus:ring-2 focus:ring-green-500"
                   placeholder="Wie können wir Ihnen helfen?"
                 />
               </div>
 
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-bark-700 px-6 py-3 font-medium text-white transition-colors hover:bg-bark-800"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground transition-colors hover:bg-green-600"
               >
                 <Send className="h-4 w-4" />
                 Nachricht per E-Mail senden
               </button>
 
-              <p className="text-center text-xs text-stone-500">
+              <p className="text-center text-xs text-muted-foreground">
                 Der Button öffnet Ihr E-Mail-Programm mit der vorausgefüllten Nachricht.
               </p>
             </form>

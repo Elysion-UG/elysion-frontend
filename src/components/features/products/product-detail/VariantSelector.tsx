@@ -60,7 +60,7 @@ export function VariantSelector({ variants, selectedVariant, onSelect }: Variant
     <>
       {Object.entries(optionTypes).map(([type, values]) => (
         <div key={type}>
-          <h3 className="mb-3 text-lg font-semibold text-stone-800">{type}</h3>
+          <h3 className="mb-3 text-lg font-semibold text-foreground">{type}</h3>
           <div className="flex flex-wrap gap-2">
             {values.map((value) => (
               <button
@@ -68,8 +68,8 @@ export function VariantSelector({ variants, selectedVariant, onSelect }: Variant
                 onClick={() => handleSelect(type, value)}
                 className={`rounded-xl border px-4 py-2 text-sm font-medium transition-colors ${
                   selectedValues[type] === value
-                    ? "border-sage-600 bg-sage-600 text-white shadow-sm"
-                    : "border-stone-200 text-stone-700 hover:border-sage-400 hover:bg-sage-50"
+                    ? "border-green-600 bg-green-500 text-ink-900 shadow-sm"
+                    : "border-border text-foreground hover:border-green-600 hover:bg-green-50"
                 }`}
                 aria-pressed={selectedValues[type] === value}
               >

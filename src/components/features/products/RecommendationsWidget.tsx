@@ -23,11 +23,11 @@ export default function RecommendationsWidget() {
     return (
       <div className="mb-10">
         <div className="mb-4 flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-teal-600" />
-          <h2 className="text-xl font-bold text-slate-800">Für dich empfohlen</h2>
+          <Sparkles className="h-5 w-5 text-green-600" />
+          <h2 className="text-xl font-bold text-foreground">Für dich empfohlen</h2>
         </div>
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-teal-500" />
+          <Loader2 className="h-6 w-6 animate-spin text-green-500" />
         </div>
       </div>
     )
@@ -38,18 +38,18 @@ export default function RecommendationsWidget() {
   return (
     <div className="mb-10">
       <div className="mb-4 flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-teal-600" />
-        <h2 className="text-xl font-bold text-slate-800">Für dich empfohlen</h2>
-        <span className="text-sm text-slate-500">basierend auf deinen Werten</span>
+        <Sparkles className="h-5 w-5 text-green-600" />
+        <h2 className="text-xl font-bold text-foreground">Für dich empfohlen</h2>
+        <span className="text-sm text-muted-foreground">basierend auf deinen Werten</span>
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         {recommendations.map((rec) => (
           <a
             key={rec.productId}
             href={`/product?slug=${rec.slug}`}
-            className="group overflow-hidden rounded-xl border border-slate-200 bg-white transition-all hover:border-teal-300 hover:shadow-md"
+            className="group overflow-hidden rounded-xl border border-border bg-white transition-all hover:border-green-600 hover:shadow-md"
           >
-            <div className="relative aspect-square overflow-hidden bg-slate-100">
+            <div className="relative aspect-square overflow-hidden bg-secondary">
               {rec.imageUrl ? (
                 <Image
                   src={rec.imageUrl}
@@ -59,17 +59,17 @@ export default function RecommendationsWidget() {
                   sizes="(max-width: 768px) 50vw, 25vw"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-slate-300">
+                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                   <Sparkles className="h-8 w-8" />
                 </div>
               )}
-              <span className="absolute right-2 top-2 rounded-full bg-teal-600 px-1.5 py-0.5 text-xs font-bold text-white">
+              <span className="absolute right-2 top-2 rounded-full bg-green-500 px-1.5 py-0.5 text-xs font-bold text-ink-900">
                 {Math.round(rec.matchScore ?? rec.score)}%
               </span>
             </div>
             <div className="p-2">
-              <p className="truncate text-xs font-medium text-slate-800">{rec.name}</p>
-              <p className="mt-0.5 text-xs font-semibold text-teal-700">
+              <p className="truncate text-xs font-medium text-foreground">{rec.name}</p>
+              <p className="mt-0.5 text-xs font-semibold text-green-600">
                 {formatEuro(rec.basePrice ?? rec.price ?? 0)}
               </p>
             </div>

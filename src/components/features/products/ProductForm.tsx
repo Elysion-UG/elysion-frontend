@@ -148,7 +148,7 @@ export default function ProductForm({
   const modalRef = useFocusTrap(onClose)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-ink-900/50 p-4">
       <div
         ref={modalRef}
         role="dialog"
@@ -157,14 +157,14 @@ export default function ProductForm({
         className="my-4 w-full max-w-lg rounded-xl bg-white shadow-xl"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 p-6">
-          <h3 id="product-form-title" className="text-lg font-semibold text-slate-800">
+        <div className="flex items-center justify-between border-b border-border p-6">
+          <h3 id="product-form-title" className="text-lg font-semibold text-foreground">
             {isEdit ? "Produkt bearbeiten" : "Neues Produkt erstellen"}
           </h3>
           <button
             onClick={onClose}
             aria-label="Schliessen"
-            className="text-slate-400 transition-colors hover:text-slate-600"
+            className="text-muted-foreground transition-colors hover:text-foreground"
           >
             <X className="h-5 w-5" />
           </button>
@@ -173,18 +173,18 @@ export default function ProductForm({
         {/* Form */}
         <div className="space-y-4 p-6">
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Produktname *</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">Produktname *</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="z.B. Bio-Baumwoll-T-Shirt"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">
+            <label className="mb-1 block text-sm font-medium text-foreground">
               Kurzbeschreibung
             </label>
             <input
@@ -192,24 +192,26 @@ export default function ProductForm({
               value={shortDesc}
               onChange={(e) => setShortDesc(e.target.value)}
               placeholder="1–2 Sätze für die Produktliste"
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Beschreibung *</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">Beschreibung *</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
               placeholder="Detaillierte Produktbeschreibung..."
-              className="w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full resize-none rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Preis (EUR) *</label>
+              <label className="mb-1 block text-sm font-medium text-foreground">
+                Preis (EUR) *
+              </label>
               <input
                 type="number"
                 min="0.01"
@@ -217,15 +219,15 @@ export default function ProductForm({
                 value={basePrice}
                 onChange={(e) => setBasePrice(e.target.value)}
                 placeholder="29.99"
-                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">MwSt. (%)</label>
+              <label className="mb-1 block text-sm font-medium text-foreground">MwSt. (%)</label>
               <select
                 value={taxRate}
                 onChange={(e) => setTaxRate(e.target.value)}
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
               >
                 <option value="7">7%</option>
                 <option value="19">19%</option>
@@ -235,11 +237,11 @@ export default function ProductForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-slate-700">Kategorie *</label>
+            <label className="mb-1 block text-sm font-medium text-foreground">Kategorie *</label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             >
               <option value="">Kategorie auswählen...</option>
               {categories.map((cat) => (
@@ -252,7 +254,7 @@ export default function ProductForm({
 
           {materials && materials.length > 0 && (
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Material</label>
+              <label className="mb-1 block text-sm font-medium text-foreground">Material</label>
               <div className="flex flex-wrap gap-2">
                 {materials.map((material) => {
                   const checked = selectedMaterials.includes(material.id)
@@ -264,8 +266,8 @@ export default function ProductForm({
                       aria-pressed={checked}
                       className={`rounded-full border px-3 py-1 text-sm transition-colors ${
                         checked
-                          ? "border-teal-600 bg-teal-50 text-teal-700"
-                          : "border-slate-300 text-slate-600 hover:bg-slate-50"
+                          ? "border-green-600 bg-green-50 text-green-600"
+                          : "border-border text-foreground hover:bg-secondary"
                       }`}
                     >
                       {material.name}
@@ -287,17 +289,17 @@ export default function ProductForm({
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 border-t border-slate-200 p-6">
+        <div className="flex gap-3 border-t border-border p-6">
           <button
             onClick={onClose}
-            className="flex-1 rounded-lg border border-slate-300 py-2.5 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+            className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
           >
             Abbrechen
           </button>
           <button
             onClick={handleSubmit}
             disabled={isSaving}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-teal-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:opacity-60"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-500 py-2.5 text-sm font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-60"
           >
             {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
             {isEdit ? "Speichern" : "Produkt erstellen"}
