@@ -90,12 +90,12 @@ export default function SellerOrdersTab() {
           />
         </div>
       )}
-      <div className="rounded-xl border border-slate-200 bg-white">
-        <div className="flex items-center justify-between border-b border-slate-200 p-6">
-          <h2 className="text-xl font-semibold text-slate-800">Eingehende Bestellungen</h2>
+      <div className="rounded-xl border border-border bg-white">
+        <div className="flex items-center justify-between border-b border-border p-6">
+          <h2 className="text-xl font-semibold text-foreground">Eingehende Bestellungen</h2>
           <button
             onClick={fetchOrders}
-            className="text-slate-400 transition-colors hover:text-slate-600"
+            className="text-muted-foreground transition-colors hover:text-foreground"
           >
             <RefreshCw className={`h-4 w-4 ${ordersLoading ? "animate-spin" : ""}`} />
           </button>
@@ -103,30 +103,30 @@ export default function SellerOrdersTab() {
 
         {ordersLoading ? (
           <div className="flex justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-teal-600" />
+            <Loader2 className="h-6 w-6 animate-spin text-green-600" />
           </div>
         ) : orders.length === 0 ? (
           <div className="py-12 text-center">
-            <BarChart3 className="mx-auto mb-4 h-12 w-12 text-slate-300" />
-            <p className="text-slate-500">Noch keine Bestellungen.</p>
+            <BarChart3 className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <p className="text-muted-foreground">Noch keine Bestellungen.</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-200">
+          <div className="divide-y divide-border">
             {orders.map((group) => (
               <button
                 key={group.orderGroupId}
                 onClick={() => setSelectedOrder(group)}
-                className="w-full p-5 text-left transition-colors hover:bg-slate-50"
+                className="w-full p-5 text-left transition-colors hover:bg-secondary"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-mono text-xs text-slate-500">
+                    <p className="font-mono text-xs text-muted-foreground">
                       #{group.orderId?.slice(0, 8)}
                     </p>
-                    <p className="mt-0.5 text-sm font-semibold text-slate-800">
+                    <p className="mt-0.5 text-sm font-semibold text-foreground">
                       {group.items?.length ?? 0} Artikel · {formatEuro(group.totalAmount ?? 0)}
                     </p>
-                    <p className="mt-0.5 text-xs text-slate-400">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       {new Date(group.createdAt).toLocaleDateString("de-DE", {
                         day: "2-digit",
                         month: "2-digit",
@@ -140,7 +140,7 @@ export default function SellerOrdersTab() {
                       colorClasses={orderStatusColor[group.status]}
                       className="px-2.5 py-1"
                     />
-                    <ChevronRight className="h-4 w-4 text-slate-300" />
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>
                 </div>
               </button>
