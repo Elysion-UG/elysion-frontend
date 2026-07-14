@@ -176,23 +176,23 @@ export default function AdminCategories() {
     <div>
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h1 className="font-mono text-2xl font-bold tracking-wide text-slate-100">
+          <h1 className="font-mono text-2xl font-normal tracking-wide text-muted-foreground">
             Kategorie-Verwaltung
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-muted-foreground">
             Hierarchische Kategorien verwalten (max. 3 Ebenen)
           </p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={load}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-400 hover:text-slate-200"
+            className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground hover:text-muted-foreground"
           >
             <RefreshCw className="h-4 w-4" /> Aktualisieren
           </button>
           <button
             onClick={handleOpenCreate}
-            className="flex items-center gap-1.5 rounded-lg bg-cyber-600 px-3 py-2 text-sm font-medium text-white shadow-[0_0_12px_rgba(6,182,212,0.3)] hover:bg-cyber-500"
+            className="flex items-center gap-1.5 rounded-lg bg-green-500 px-3 py-2 text-sm font-medium text-ink-900 hover:bg-green-500"
           >
             <Plus className="h-4 w-4" /> Neue Kategorie
           </button>
@@ -200,40 +200,40 @@ export default function AdminCategories() {
       </div>
 
       {/* Tree table */}
-      <div className="overflow-hidden rounded-xl border border-slate-800/60 bg-slate-900/60">
+      <div className="overflow-hidden rounded-xl border border-border/60 bg-ink-900/60">
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-cyber-500" />
+            <Loader2 className="h-8 w-8 animate-spin text-green-500" />
           </div>
         ) : tree.length === 0 ? (
-          <div className="py-16 text-center text-slate-500">
+          <div className="py-16 text-center text-muted-foreground">
             Keine Kategorien vorhanden. Erstellen Sie die erste Kategorie.
           </div>
         ) : (
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-800/60 bg-slate-800/30">
+            <thead className="border-b border-border/60 bg-ink-900/30">
               <tr>
-                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Name
                 </th>
-                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Slug
                 </th>
-                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Ebene
                 </th>
-                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Sortierung
                 </th>
-                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-4 py-3 text-left font-mono text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Status
                 </th>
-                <th className="px-4 py-3 text-right font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-4 py-3 text-right font-mono text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Aktionen
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-border/60">
               {tree.map((node) => (
                 <AdminCategoryTreeNode
                   key={node.id}

@@ -71,19 +71,22 @@ export default function AdminCategoryFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} aria-hidden="true" />
+      <div className="absolute inset-0 bg-ink-900/70" onClick={onClose} aria-hidden="true" />
       <div
         ref={modalRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 w-full max-w-md rounded-xl border border-slate-800/60 bg-slate-900 p-6 shadow-2xl"
+        className="relative z-10 w-full max-w-md rounded-xl border border-border/60 bg-ink-900 p-6 shadow-2xl"
       >
         <div className="mb-5 flex items-center justify-between">
-          <h2 id={titleId} className="font-mono text-lg font-semibold text-slate-100">
+          <h2 id={titleId} className="font-mono text-lg font-semibold text-muted-foreground">
             {title}
           </h2>
-          <button onClick={onClose} className="rounded-md p-1 text-slate-500 hover:text-slate-300">
+          <button
+            onClick={onClose}
+            className="rounded-md p-1 text-muted-foreground hover:text-muted-foreground"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -91,7 +94,10 @@ export default function AdminCategoryFormModal({
         <div className="space-y-4">
           {/* Name */}
           <div>
-            <label htmlFor={nameId} className="mb-1 block text-xs font-medium text-slate-400">
+            <label
+              htmlFor={nameId}
+              className="mb-1 block text-xs font-medium text-muted-foreground"
+            >
               Name *
             </label>
             <input
@@ -99,14 +105,17 @@ export default function AdminCategoryFormModal({
               type="text"
               value={form.name}
               onChange={(e) => handleNameChange(e.target.value)}
-              className="w-full rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
+              className="w-full rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
               placeholder="z.B. Bio-Textilien"
             />
           </div>
 
           {/* Slug */}
           <div>
-            <label htmlFor={slugId} className="mb-1 block text-xs font-medium text-slate-400">
+            <label
+              htmlFor={slugId}
+              className="mb-1 block text-xs font-medium text-muted-foreground"
+            >
               Slug
             </label>
             <input
@@ -114,7 +123,7 @@ export default function AdminCategoryFormModal({
               type="text"
               value={form.slug}
               onChange={(e) => onChange({ ...form, slug: e.target.value })}
-              className="w-full rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 font-mono text-sm text-slate-400 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
+              className="w-full rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 font-mono text-sm text-muted-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
               placeholder="auto-generiert"
             />
           </div>
@@ -122,14 +131,17 @@ export default function AdminCategoryFormModal({
           {/* Parent */}
           {!hideParent && (
             <div>
-              <label htmlFor={parentId} className="mb-1 block text-xs font-medium text-slate-400">
+              <label
+                htmlFor={parentId}
+                className="mb-1 block text-xs font-medium text-muted-foreground"
+              >
                 Eltern-Kategorie
               </label>
               <select
                 id={parentId}
                 value={form.parentId}
                 onChange={(e) => onChange({ ...form, parentId: e.target.value })}
-                className="w-full rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
+                className="w-full rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
               >
                 <option value="">Keine (Root)</option>
                 {parentOptions
@@ -147,7 +159,7 @@ export default function AdminCategoryFormModal({
           <div>
             <label
               htmlFor={descriptionId}
-              className="mb-1 block text-xs font-medium text-slate-400"
+              className="mb-1 block text-xs font-medium text-muted-foreground"
             >
               Beschreibung
             </label>
@@ -156,14 +168,17 @@ export default function AdminCategoryFormModal({
               value={form.description}
               onChange={(e) => onChange({ ...form, description: e.target.value })}
               rows={2}
-              className="w-full rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
+              className="w-full rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
               placeholder="Optionale Beschreibung..."
             />
           </div>
 
           {/* Order */}
           <div>
-            <label htmlFor={orderId} className="mb-1 block text-xs font-medium text-slate-400">
+            <label
+              htmlFor={orderId}
+              className="mb-1 block text-xs font-medium text-muted-foreground"
+            >
               Sortierung
             </label>
             <input
@@ -171,7 +186,7 @@ export default function AdminCategoryFormModal({
               type="number"
               value={form.order}
               onChange={(e) => onChange({ ...form, order: e.target.value })}
-              className="w-full rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
+              className="w-full rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
               min={0}
             />
           </div>
@@ -180,14 +195,14 @@ export default function AdminCategoryFormModal({
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="rounded-lg border border-slate-700/60 bg-slate-800/60 px-4 py-2 text-sm text-slate-400 hover:text-slate-200"
+            className="rounded-lg border border-border/60 bg-ink-900/60 px-4 py-2 text-sm text-muted-foreground hover:text-muted-foreground"
           >
             Abbrechen
           </button>
           <button
             onClick={onSubmit}
             disabled={isSaving || !form.name.trim()}
-            className="flex items-center gap-2 rounded-lg bg-cyber-600 px-4 py-2 text-sm font-medium text-white shadow-[0_0_12px_rgba(6,182,212,0.3)] hover:bg-cyber-500 disabled:opacity-40"
+            className="flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-ink-900 hover:bg-green-500 disabled:opacity-40"
           >
             {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
             Speichern

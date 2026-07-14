@@ -48,23 +48,23 @@ export default function ErrorList({ events, filterSeverity, filterCategory }: Er
   }
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60">
-      <div className="border-b border-slate-800 px-6 py-4">
-        <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-slate-400">
+    <div className="rounded-xl border border-border bg-ink-900/60">
+      <div className="border-b border-border px-6 py-4">
+        <h3 className="font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Fehlerliste ({filtered.length} Einträge)
         </h3>
       </div>
 
       {filtered.length === 0 ? (
         <div className="flex h-40 items-center justify-center">
-          <p className="text-sm text-slate-500">Keine Fehler gefunden.</p>
+          <p className="text-sm text-muted-foreground">Keine Fehler gefunden.</p>
         </div>
       ) : (
         <>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow className="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-500">
+                <TableRow className="border-b border-border text-[11px] uppercase tracking-wider text-muted-foreground">
                   <TableHead className="px-6 py-3 font-mono font-semibold">Zeitpunkt</TableHead>
                   <TableHead className="px-6 py-3 font-mono font-semibold">Schweregrad</TableHead>
                   <TableHead className="px-6 py-3 font-mono font-semibold">Kategorie</TableHead>
@@ -80,7 +80,7 @@ export default function ErrorList({ events, filterSeverity, filterCategory }: Er
                     className={ADMIN_TR_CLICKABLE_CLASS}
                     onClick={() => handleOpenDetail(event)}
                   >
-                    <TableCell className="whitespace-nowrap px-6 py-3 font-mono text-xs text-slate-400">
+                    <TableCell className="whitespace-nowrap px-6 py-3 font-mono text-xs text-muted-foreground">
                       {new Date(event.timestamp).toLocaleTimeString("de-DE", {
                         hour: "2-digit",
                         minute: "2-digit",
@@ -89,14 +89,14 @@ export default function ErrorList({ events, filterSeverity, filterCategory }: Er
                     </TableCell>
                     <TableCell className="px-6 py-3">{getSeverityBadge(event.severity)}</TableCell>
                     <TableCell className="px-6 py-3">{getCategoryBadge(event.category)}</TableCell>
-                    <TableCell className="max-w-xs truncate px-6 py-3 text-slate-300">
+                    <TableCell className="max-w-xs truncate px-6 py-3 text-muted-foreground">
                       {event.message}
                     </TableCell>
-                    <TableCell className="max-w-[180px] truncate px-6 py-3 font-mono text-xs text-slate-500">
+                    <TableCell className="max-w-[180px] truncate px-6 py-3 font-mono text-xs text-muted-foreground">
                       {event.metadata.apiPath ?? event.metadata.url ?? "—"}
                     </TableCell>
                     <TableCell className="px-3 py-3">
-                      <ExternalLink className="h-3.5 w-3.5 text-slate-600" />
+                      <ExternalLink className="h-3.5 w-3.5 text-foreground" />
                     </TableCell>
                   </TableRow>
                 ))}
