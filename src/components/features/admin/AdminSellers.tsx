@@ -57,12 +57,12 @@ function SuspendModal({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md rounded-xl border border-slate-800/60 bg-slate-900 p-6 shadow-2xl">
+      <DialogContent className="max-w-md rounded-xl border border-border/60 bg-ink-900 p-6 shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="font-mono text-lg font-semibold text-slate-100">
+          <DialogTitle className="font-mono text-lg font-semibold text-muted-foreground">
             Verkäufer sperren
           </DialogTitle>
-          <DialogDescription className="text-sm text-slate-500">
+          <DialogDescription className="text-sm text-muted-foreground">
             {seller.companyName}
           </DialogDescription>
         </DialogHeader>
@@ -71,19 +71,19 @@ function SuspendModal({
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           placeholder="Grund (optional)..."
-          className="w-full rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
+          className="w-full rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
         />
         <DialogFooter className="mt-4 flex gap-3 sm:flex-row">
           <button
             onClick={onClose}
-            className="flex-1 rounded-lg border border-slate-700/60 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800/60"
+            className="flex-1 rounded-lg border border-border/60 py-2 text-sm font-medium text-muted-foreground hover:bg-ink-900/60"
           >
             Abbrechen
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-orange-700 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-60"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-warning py-2 text-sm font-medium text-white hover:bg-warning disabled:opacity-60"
           >
             {loading && <Loader2 className="h-3 w-3 animate-spin" />} Sperren
           </button>
@@ -181,18 +181,20 @@ export default function AdminSellers() {
       onRowClick={(seller) => router.push(`/admin/sellers/${seller.id}`)}
       renderRow={(seller) => (
         <>
-          <TableCell className="px-4 py-3 font-medium text-slate-200">
+          <TableCell className="px-4 py-3 font-medium text-muted-foreground">
             {seller.companyName}
           </TableCell>
-          <TableCell className="px-4 py-3 text-slate-400">{seller.userEmail ?? "–"}</TableCell>
-          <TableCell className="px-4 py-3 text-slate-500">{seller.vatId ?? "–"}</TableCell>
+          <TableCell className="px-4 py-3 text-muted-foreground">
+            {seller.userEmail ?? "–"}
+          </TableCell>
+          <TableCell className="px-4 py-3 text-muted-foreground">{seller.vatId ?? "–"}</TableCell>
           <TableCell className="px-4 py-3">
             <StatusBadge
               label={statusLabel[seller.status]}
               colorClasses={statusColor[seller.status]}
             />
           </TableCell>
-          <TableCell className="px-4 py-3 text-slate-500">
+          <TableCell className="px-4 py-3 text-muted-foreground">
             {new Date(seller.createdAt).toLocaleDateString("de-DE")}
           </TableCell>
           <TableCell className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
@@ -201,14 +203,14 @@ export default function AdminSellers() {
                 <>
                   <button
                     onClick={() => handleApprove(seller)}
-                    className="rounded-lg p-1.5 text-emerald-500 transition-colors hover:bg-emerald-900/40"
+                    className="rounded-lg p-1.5 text-green-500 transition-colors hover:bg-green-700/40"
                     title="Genehmigen"
                   >
                     <CheckCircle2 className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => setRejectTarget(seller)}
-                    className="rounded-lg p-1.5 text-red-500 transition-colors hover:bg-red-900/40"
+                    className="rounded-lg p-1.5 text-danger transition-colors hover:bg-destructive/40"
                     title="Ablehnen"
                   >
                     <XCircle className="h-4 w-4" />
@@ -218,7 +220,7 @@ export default function AdminSellers() {
               {seller.status === "APPROVED" && (
                 <button
                   onClick={() => setSuspendTarget(seller)}
-                  className="rounded-lg p-1.5 text-orange-500 transition-colors hover:bg-orange-900/40"
+                  className="rounded-lg p-1.5 text-warning transition-colors hover:bg-warning/40"
                   title="Sperren"
                 >
                   <Ban className="h-4 w-4" />
@@ -227,7 +229,7 @@ export default function AdminSellers() {
               {seller.status === "SUSPENDED" && (
                 <button
                   onClick={() => handleApprove(seller)}
-                  className="rounded-lg p-1.5 text-emerald-500 transition-colors hover:bg-emerald-900/40"
+                  className="rounded-lg p-1.5 text-green-500 transition-colors hover:bg-green-700/40"
                   title="Entsperren"
                 >
                   <CheckCircle2 className="h-4 w-4" />

@@ -103,10 +103,10 @@ export default function AdminUsers() {
       onRowClick={(u) => router.push(`/admin/users/${u.id}`)}
       renderRow={(u) => (
         <>
-          <TableCell className="px-4 py-3 text-sm font-medium text-slate-200">
+          <TableCell className="px-4 py-3 text-sm font-medium text-muted-foreground">
             {u.firstName} {u.lastName}
           </TableCell>
-          <TableCell className="px-4 py-3 text-sm text-slate-400">{u.email}</TableCell>
+          <TableCell className="px-4 py-3 text-sm text-muted-foreground">{u.email}</TableCell>
           <TableCell className="px-4 py-3">
             <StatusBadge label={u.role} colorClasses={ADMIN_ROLE_COLOR[u.role]} />
           </TableCell>
@@ -116,12 +116,13 @@ export default function AdminUsers() {
               colorClasses={ADMIN_ACCOUNT_STATUS_COLOR[u.status]}
             />
           </TableCell>
-          <TableCell className="px-4 py-3 text-sm text-slate-400">
+          <TableCell className="px-4 py-3 text-sm text-muted-foreground">
             {u.sellerProfile ? (
               <StatusBadge
                 label={ADMIN_SELLER_STATUS_LABEL[u.sellerProfile.status] ?? u.sellerProfile.status}
                 colorClasses={
-                  ADMIN_SELLER_STATUS_COLOR[u.sellerProfile.status] ?? "bg-slate-800 text-slate-500"
+                  ADMIN_SELLER_STATUS_COLOR[u.sellerProfile.status] ??
+                  "bg-ink-900 text-muted-foreground"
                 }
               />
             ) : (

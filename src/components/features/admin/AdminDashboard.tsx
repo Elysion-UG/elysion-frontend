@@ -23,24 +23,24 @@ type AccentColor = "cyber" | "emerald" | "amber" | "indigo"
 
 const ACCENT_COLORS: Record<AccentColor, { icon: string; glow: string; ring: string }> = {
   cyber: {
-    icon: "text-cyber-400",
-    glow: "shadow-[0_0_12px_rgba(6,182,212,0.15)]",
-    ring: "ring-cyber-700/30",
+    icon: "text-green-500",
+    glow: "",
+    ring: "ring-green-500/30",
   },
   emerald: {
-    icon: "text-emerald-400",
-    glow: "shadow-[0_0_12px_rgba(16,185,129,0.15)]",
-    ring: "ring-emerald-700/30",
+    icon: "text-green-500",
+    glow: "",
+    ring: "ring-green-500/30",
   },
   amber: {
-    icon: "text-amber-400",
-    glow: "shadow-[0_0_12px_rgba(245,158,11,0.15)]",
-    ring: "ring-amber-700/30",
+    icon: "text-warning",
+    glow: "",
+    ring: "ring-warning/30",
   },
   indigo: {
-    icon: "text-indigo-400",
-    glow: "shadow-[0_0_12px_rgba(99,102,241,0.15)]",
-    ring: "ring-indigo-700/30",
+    icon: "text-info",
+    glow: "",
+    ring: "ring-info/30",
   },
 }
 
@@ -57,31 +57,31 @@ function KpiCard({ icon: Icon, title, value, subtitle, accentColor = "cyber" }: 
 
   return (
     <div
-      className={`rounded-xl border border-slate-800/60 bg-slate-900/80 p-5 ring-1 ${colors.ring} ${colors.glow} transition-shadow hover:shadow-lg`}
+      className={`rounded-xl border border-border/60 bg-ink-900/80 p-5 ring-1 ${colors.ring} ${colors.glow} transition-shadow hover:shadow-lg`}
     >
       <div className="mb-3 flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800/80">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-ink-900/80">
           <Icon className={`h-4.5 w-4.5 ${colors.icon}`} />
         </div>
-        <p className="font-mono text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <p className="font-mono text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {title}
         </p>
       </div>
       <p className="text-2xl font-bold tabular-nums text-white">{value.toLocaleString("de-DE")}</p>
-      <p className="mt-1 text-xs text-slate-500">{subtitle}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
     </div>
   )
 }
 
 function SkeletonCard() {
   return (
-    <div className="animate-pulse rounded-xl border border-slate-800/60 bg-slate-900/80 p-5">
+    <div className="animate-pulse rounded-xl border border-border/60 bg-ink-900/80 p-5">
       <div className="mb-3 flex items-center gap-3">
-        <div className="h-9 w-9 rounded-lg bg-slate-800" />
-        <div className="h-3 w-20 rounded bg-slate-800" />
+        <div className="h-9 w-9 rounded-lg bg-ink-900" />
+        <div className="h-3 w-20 rounded bg-ink-900" />
       </div>
-      <div className="h-7 w-16 rounded bg-slate-800" />
-      <div className="mt-2 h-3 w-28 rounded bg-slate-800" />
+      <div className="h-7 w-16 rounded bg-ink-900" />
+      <div className="mt-2 h-3 w-28 rounded bg-ink-900" />
     </div>
   )
 }
@@ -126,11 +126,11 @@ export default function AdminDashboard() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-        <AlertCircle className="h-10 w-10 text-red-400" />
-        <p className="text-sm text-slate-400">{error}</p>
+        <AlertCircle className="h-10 w-10 text-danger" />
+        <p className="text-sm text-muted-foreground">{error}</p>
         <button
           onClick={loadDashboard}
-          className="flex items-center gap-2 rounded-lg bg-cyber-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-cyber-500"
+          className="flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-green-500"
         >
           <RefreshCw className="h-4 w-4" />
           Erneut versuchen
@@ -143,7 +143,7 @@ export default function AdminDashboard() {
     <div>
       <div className="mb-6">
         <h1 className="font-mono text-lg font-semibold tracking-wide text-white">Dashboard</h1>
-        <p className="mt-1 text-sm text-slate-500">Operativer Gesamtüberblick</p>
+        <p className="mt-1 text-sm text-muted-foreground">Operativer Gesamtüberblick</p>
       </div>
 
       {isLoading ? (
@@ -214,7 +214,7 @@ export default function AdminDashboard() {
       ) : null}
 
       <div className="mt-8">
-        <h2 className="mb-3 font-mono text-xs font-semibold uppercase tracking-widest text-slate-600">
+        <h2 className="mb-3 font-mono text-xs font-semibold uppercase tracking-widest text-foreground">
           Schnellzugriff
         </h2>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -222,11 +222,11 @@ export default function AdminDashboard() {
             <Link
               key={href}
               href={href}
-              className="flex items-center gap-3 rounded-lg border border-slate-800/60 bg-slate-900/60 px-4 py-3 text-sm font-medium text-slate-400 transition-all hover:border-cyber-700/40 hover:bg-slate-800/60 hover:text-slate-200"
+              className="flex items-center gap-3 rounded-lg border border-border/60 bg-ink-900/60 px-4 py-3 text-sm font-medium text-muted-foreground transition-all hover:border-green-600/40 hover:bg-ink-900/60 hover:text-muted-foreground"
             >
-              <Icon className="h-4 w-4 text-slate-500" />
+              <Icon className="h-4 w-4 text-muted-foreground" />
               {label}
-              <ArrowRight className="ml-auto h-3.5 w-3.5 text-slate-600" />
+              <ArrowRight className="ml-auto h-3.5 w-3.5 text-foreground" />
             </Link>
           ))}
         </div>

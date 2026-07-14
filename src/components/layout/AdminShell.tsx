@@ -10,7 +10,10 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   return (
     <AdminGuard>
-      <div className="flex min-h-screen bg-ink-900">
+      {/* Admin ist eine dauerhaft dunkle Oberfläche: `dark` skopt die Design-
+          System-Tokens (foreground/card/border …) auf ihre Ink-Dark-Werte, damit
+          der migrierte Seiteninhalt korrekt auf Ink rendert. */}
+      <div className="dark flex min-h-screen bg-ink-900">
         <Suspense fallback={null}>
           <AdminSidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
         </Suspense>

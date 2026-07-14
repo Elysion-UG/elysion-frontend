@@ -1,10 +1,10 @@
 import type { ErrorSeverity, ErrorCategory } from "@/src/types/error"
 
 const SEVERITY_STYLES: Record<ErrorSeverity, string> = {
-  critical: "bg-red-900/40 text-red-400 ring-1 ring-red-700/40",
-  high: "bg-orange-900/40 text-orange-400 ring-1 ring-orange-700/40",
-  medium: "bg-yellow-900/40 text-yellow-400 ring-1 ring-yellow-700/40",
-  low: "bg-slate-800 text-slate-400 ring-1 ring-slate-700/40",
+  critical: "bg-destructive/40 text-danger ring-1 ring-danger/40",
+  high: "bg-warning/40 text-warning ring-1 ring-warning/40",
+  medium: "bg-warning/40 text-warning ring-1 ring-warning/40",
+  low: "bg-ink-900 text-muted-foreground ring-1 ring-border/40",
 }
 
 const SEVERITY_LABELS: Record<ErrorSeverity, string> = {
@@ -15,11 +15,11 @@ const SEVERITY_LABELS: Record<ErrorSeverity, string> = {
 }
 
 const CATEGORY_STYLES: Record<ErrorCategory, string> = {
-  api: "bg-blue-900/40 text-blue-400 ring-1 ring-blue-700/40",
-  auth: "bg-purple-900/40 text-purple-400 ring-1 ring-purple-700/40",
-  render: "bg-pink-900/40 text-pink-400 ring-1 ring-pink-700/40",
-  network: "bg-cyan-900/40 text-cyan-400 ring-1 ring-cyan-700/40",
-  unknown: "bg-slate-800 text-slate-400 ring-1 ring-slate-700/40",
+  api: "bg-info/40 text-info ring-1 ring-info/40",
+  auth: "bg-muted/40 text-muted-foreground ring-1 ring-border/40",
+  render: "bg-muted/40 text-muted-foreground ring-1 ring-border/40",
+  network: "bg-info/40 text-info ring-1 ring-info/40",
+  unknown: "bg-ink-900 text-muted-foreground ring-1 ring-border/40",
 }
 
 const CATEGORY_LABELS: Record<ErrorCategory, string> = {

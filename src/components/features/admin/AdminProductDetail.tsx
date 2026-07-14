@@ -79,19 +79,21 @@ export default function AdminProductDetailView() {
   }
 
   if (!product) {
-    return <div className="py-20 text-center text-slate-500">Produkt nicht gefunden.</div>
+    return <div className="py-20 text-center text-muted-foreground">Produkt nicht gefunden.</div>
   }
 
   return (
     <div className="mx-auto max-w-2xl">
       <BackButton label="Zurück zur Liste" className="mb-6" />
 
-      <div className="rounded-xl border border-slate-800/60 bg-slate-900/60 p-6">
+      <div className="rounded-xl border border-border/60 bg-ink-900/60 p-6">
         {/* Header */}
         <div className="mb-6 flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="truncate font-mono text-xl font-bold text-slate-100">{product.name}</h1>
-            <p className="mt-1 font-mono text-xs text-slate-500">{product.slug}</p>
+            <h1 className="truncate font-mono text-xl font-normal text-muted-foreground">
+              {product.name}
+            </h1>
+            <p className="mt-1 font-mono text-xs text-muted-foreground">{product.slug}</p>
           </div>
           <StatusBadge
             label={statusLabel[product.status]}
@@ -101,7 +103,7 @@ export default function AdminProductDetailView() {
         </div>
 
         {/* Details */}
-        <dl className="divide-y divide-slate-800/60">
+        <dl className="divide-y divide-border/60">
           <Row label="Produkt-ID" value={product.id} mono />
           <Row
             label="Verkäufer"
@@ -109,13 +111,13 @@ export default function AdminProductDetailView() {
               seller ? (
                 <Link
                   href={`/admin/sellers/${seller.id}`}
-                  className="flex items-center justify-end gap-1 text-cyber-400 hover:text-cyber-300"
+                  className="flex items-center justify-end gap-1 text-green-500 hover:text-green-500"
                 >
                   {seller.companyName}
                   <ExternalLink className="h-3 w-3 shrink-0" />
                 </Link>
               ) : (
-                <span className="font-mono text-xs text-slate-500">{product.sellerId}</span>
+                <span className="font-mono text-xs text-muted-foreground">{product.sellerId}</span>
               )
             }
           />
@@ -124,11 +126,11 @@ export default function AdminProductDetailView() {
             value={
               <span className="flex items-center gap-1.5">
                 <ShieldCheck
-                  className={`h-4 w-4 ${product.verifiedCertificateCount > 0 ? "text-emerald-400" : "text-slate-600"}`}
+                  className={`h-4 w-4 ${product.verifiedCertificateCount > 0 ? "text-green-500" : "text-foreground"}`}
                 />
                 {product.verifiedCertificateCount}
                 {product.verifiedCertificateCount === 0 && (
-                  <span className="text-xs text-amber-500">— Aktivierung nicht möglich</span>
+                  <span className="text-xs text-warning">— Aktivierung nicht möglich</span>
                 )}
               </span>
             }
@@ -143,11 +145,11 @@ export default function AdminProductDetailView() {
         {/* Actions */}
         <div className="mt-6 flex flex-wrap items-center gap-3">
           {actionLoading ? (
-            <Loader2 className="h-5 w-5 animate-spin text-cyber-500" />
+            <Loader2 className="h-5 w-5 animate-spin text-green-500" />
           ) : product.status === "ACTIVE" ? (
             <button
               onClick={handleDeactivate}
-              className="flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-800/60 px-4 py-2 text-sm text-slate-300 hover:text-slate-100"
+              className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-ink-900/60 px-4 py-2 text-sm text-muted-foreground hover:text-muted-foreground"
             >
               <ToggleLeft className="h-4 w-4" /> Deaktivieren
             </button>
@@ -155,7 +157,7 @@ export default function AdminProductDetailView() {
             <button
               onClick={handleActivate}
               disabled={product.verifiedCertificateCount === 0}
-              className="flex items-center gap-1.5 rounded-lg border border-emerald-800/60 bg-emerald-900/30 px-4 py-2 text-sm text-emerald-400 hover:text-emerald-300 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex items-center gap-1.5 rounded-lg border border-green-600/60 bg-green-700/30 px-4 py-2 text-sm text-green-500 hover:text-green-500 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ToggleRight className="h-4 w-4" /> Aktivieren
             </button>
@@ -165,7 +167,7 @@ export default function AdminProductDetailView() {
             href={`/product?slug=${product.slug}`}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-800/60 px-4 py-2 text-sm text-slate-400 hover:text-slate-200"
+            className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-ink-900/60 px-4 py-2 text-sm text-muted-foreground hover:text-muted-foreground"
           >
             <ExternalLink className="h-4 w-4" /> Im Shop ansehen
           </a>
@@ -178,8 +180,8 @@ export default function AdminProductDetailView() {
 function Row({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
     <div className="flex items-start justify-between gap-4 py-3">
-      <dt className="shrink-0 text-sm text-slate-500">{label}</dt>
-      <dd className={`text-right text-sm text-slate-200 ${mono ? "font-mono text-xs" : ""}`}>
+      <dt className="shrink-0 text-sm text-muted-foreground">{label}</dt>
+      <dd className={`text-right text-sm text-muted-foreground ${mono ? "font-mono text-xs" : ""}`}>
         {value}
       </dd>
     </div>

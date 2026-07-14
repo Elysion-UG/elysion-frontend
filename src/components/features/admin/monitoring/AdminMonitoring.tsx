@@ -63,12 +63,16 @@ export default function AdminMonitoring() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-mono text-xl font-bold tracking-tight text-slate-100">Monitoring</h1>
-          <p className="mt-1 text-sm text-slate-500">Frontend-Fehlerübersicht und Systemstatus</p>
+          <h1 className="font-mono text-xl font-normal tracking-tight text-muted-foreground">
+            Monitoring
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Frontend-Fehlerübersicht und Systemstatus
+          </p>
         </div>
         <button
           onClick={handleClear}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-medium text-slate-400 transition-colors hover:bg-slate-700 hover:text-slate-200"
+          className="inline-flex items-center gap-2 rounded-lg border border-border bg-ink-900 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-muted-foreground"
         >
           <Trash2 className="h-3.5 w-3.5" />
           Fehler zurücksetzen
@@ -81,15 +85,15 @@ export default function AdminMonitoring() {
       {/* Filters row */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Time range */}
-        <div className="flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-900/60 p-1">
+        <div className="flex items-center gap-1 rounded-lg border border-border bg-ink-900/60 p-1">
           {TIME_RANGES.map((r) => (
             <button
               key={r.hours}
               onClick={() => setHours(r.hours)}
               className={`rounded-md px-3 py-1.5 font-mono text-xs font-medium transition-colors ${
                 hours === r.hours
-                  ? "bg-cyber-900/60 text-cyber-300 shadow-[inset_0_0_0_1px_rgba(6,182,212,0.2)]"
-                  : "text-slate-500 hover:text-slate-300"
+                  ? "bg-green-700/60 text-green-500 shadow-[inset_0_0_0_1px_rgba(88,178,74,0.25)]"
+                  : "text-muted-foreground hover:text-muted-foreground"
               }`}
             >
               {r.label}
@@ -101,7 +105,7 @@ export default function AdminMonitoring() {
         <select
           value={filterSeverity}
           onChange={(e) => setFilterSeverity(e.target.value as ErrorSeverity | "")}
-          className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 font-mono text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-cyber-600"
+          className="rounded-lg border border-border bg-ink-900/60 px-3 py-2 font-mono text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-green-500"
         >
           <option value="">Alle Schweregrade</option>
           <option value="critical">Kritisch</option>
@@ -114,7 +118,7 @@ export default function AdminMonitoring() {
         <select
           value={filterCategory}
           onChange={(e) => setFilterCategory(e.target.value as ErrorCategory | "")}
-          className="rounded-lg border border-slate-800 bg-slate-900/60 px-3 py-2 font-mono text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-cyber-600"
+          className="rounded-lg border border-border bg-ink-900/60 px-3 py-2 font-mono text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-green-500"
         >
           <option value="">Alle Kategorien</option>
           <option value="api">API</option>

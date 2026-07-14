@@ -14,24 +14,24 @@ export default function HealthSummaryCards({ stats }: HealthSummaryCardsProps) {
   const statusConfig = {
     green: {
       label: "Gesund",
-      bg: "bg-emerald-900/40",
-      text: "text-emerald-400",
-      ring: "ring-emerald-700/40",
-      dot: "bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.8)]",
+      bg: "bg-green-700/40",
+      text: "text-green-500",
+      ring: "ring-green-500/40",
+      dot: "bg-green-500",
     },
     yellow: {
       label: "Erhöht",
-      bg: "bg-yellow-900/40",
-      text: "text-yellow-400",
-      ring: "ring-yellow-700/40",
-      dot: "bg-yellow-400 shadow-[0_0_6px_rgba(234,179,8,0.8)]",
+      bg: "bg-warning/40",
+      text: "text-warning",
+      ring: "ring-warning/40",
+      dot: "bg-warning",
     },
     red: {
       label: "Kritisch",
-      bg: "bg-red-900/40",
-      text: "text-red-400",
-      ring: "ring-red-700/40",
-      dot: "bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.8)]",
+      bg: "bg-destructive/40",
+      text: "text-danger",
+      ring: "ring-danger/40",
+      dot: "bg-destructive",
     },
   }
 
@@ -42,22 +42,22 @@ export default function HealthSummaryCards({ stats }: HealthSummaryCardsProps) {
       label: "Fehler (gesamt)",
       value: stats.total,
       icon: AlertTriangle,
-      accent: "text-slate-300",
-      iconColor: "text-slate-500",
+      accent: "text-muted-foreground",
+      iconColor: "text-muted-foreground",
     },
     {
       label: "Kritische Fehler",
       value: stats.bySeverity.critical,
       icon: Shield,
-      accent: stats.bySeverity.critical > 0 ? "text-red-400" : "text-slate-300",
-      iconColor: stats.bySeverity.critical > 0 ? "text-red-500" : "text-slate-500",
+      accent: stats.bySeverity.critical > 0 ? "text-danger" : "text-muted-foreground",
+      iconColor: stats.bySeverity.critical > 0 ? "text-danger" : "text-muted-foreground",
     },
     {
       label: "Fehler / Minute",
       value: stats.errorsPerMinute,
       icon: TrendingUp,
-      accent: "text-slate-300",
-      iconColor: "text-slate-500",
+      accent: "text-muted-foreground",
+      iconColor: "text-muted-foreground",
     },
     {
       label: "Systemstatus",
@@ -72,9 +72,9 @@ export default function HealthSummaryCards({ stats }: HealthSummaryCardsProps) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       {cards.map((card) => (
-        <div key={card.label} className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+        <div key={card.label} className="rounded-xl border border-border bg-ink-900/60 p-5">
           <div className="flex items-center justify-between">
-            <p className="font-mono text-[11px] font-medium uppercase tracking-wider text-slate-500">
+            <p className="font-mono text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
               {card.label}
             </p>
             <card.icon className={`h-4 w-4 ${card.iconColor}`} />
