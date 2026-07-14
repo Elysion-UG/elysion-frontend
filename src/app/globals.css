@@ -3,49 +3,54 @@
 @tailwind utilities;
 
 @layer base {
+  /* Elysion Website Design System v1.3 — vier Farben, ein Grün (Guide 02).
+     Sand·Seite als Fläche, Ink als Text, Logo-Grün #58B24A als Primary mit
+     Ink-Label (6,3:1). Ableitungen — keine eigenen Farben. */
   :root {
-    --background: 38 35% 97%;
-    --foreground: 25 22% 16%;
-    --card: 0 0% 100%;
-    --card-foreground: 25 22% 16%;
+    --background: 43 49% 92%; /* Sand · Seite #F4EEDF */
+    --foreground: 144 19% 11%; /* Ink #16201A */
+    --card: 0 0% 100%; /* Weiß nur als Kartenfläche auf Sand */
+    --card-foreground: 144 19% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 25 22% 16%;
-    --primary: 108 20% 45%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 35 28% 93%;
-    --secondary-foreground: 25 18% 22%;
-    --muted: 36 18% 94%;
-    --muted-foreground: 28 10% 50%;
-    --accent: 34 22% 91%;
-    --accent-foreground: 25 18% 20%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 34 14% 86%;
-    --input: 34 14% 86%;
-    --ring: 108 20% 45%;
-    --radius: 0.5rem;
+    --popover-foreground: 144 19% 11%;
+    --primary: 112 41% 49%; /* Grün #58B24A */
+    --primary-foreground: 144 19% 11%; /* Ink-Label auf Grün */
+    --secondary: 43 47% 88%; /* Sand · Fläche #EFE7D2 */
+    --secondary-foreground: 144 19% 11%;
+    --muted: 43 47% 88%;
+    --muted-foreground: 150 7% 39%; /* Ink-Muted #5D6B63 */
+    --accent: 43 47% 88%;
+    --accent-foreground: 144 19% 11%;
+    --destructive: 4 54% 50%; /* Danger #C5453B */
+    --destructive-foreground: 0 0% 100%;
+    --border: 44 25% 85%; /* Ink 8% über Sand — Hairline */
+    --input: 45 20% 77%; /* Ink 18% über Sand — Feldkontur */
+    --ring: 112 41% 49%; /* Grün-Fokusring */
+    --radius: 0.75rem; /* 12px — Buttons & Inputs */
   }
 
+  /* Dark Mode ist im Guide nicht spezifiziert — hier bewusst aus Ink #16201A
+     abgeleitet (Governance-Abweichung, siehe Fußnote). Grün bleibt Primary. */
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 142 76% 36%;
-    --primary-foreground: 355.7 100% 97.3%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 142 76% 36%;
+    --background: 144 19% 8%;
+    --foreground: 43 49% 92%;
+    --card: 144 17% 13%;
+    --card-foreground: 43 49% 92%;
+    --popover: 144 17% 13%;
+    --popover-foreground: 43 49% 92%;
+    --primary: 112 41% 49%;
+    --primary-foreground: 144 19% 11%;
+    --secondary: 144 14% 18%;
+    --secondary-foreground: 43 49% 92%;
+    --muted: 144 14% 18%;
+    --muted-foreground: 43 15% 70%;
+    --accent: 144 14% 18%;
+    --accent-foreground: 43 49% 92%;
+    --destructive: 4 54% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 144 12% 22%;
+    --input: 144 12% 24%;
+    --ring: 112 41% 49%;
   }
 }
 
@@ -54,7 +59,64 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background font-body text-foreground;
+    font-size: 0.9375rem; /* Body Mobil 15px */
+    line-height: 1.55;
+  }
+  @media (min-width: 768px) {
+    body {
+      font-size: 1.0625rem; /* Body D/T 17px */
+    }
+  }
+
+  /* Genau fünf Textstufen (Guide 01). Element-Defaults mit niedriger
+     Spezifität — Utility-Klassen überschreiben sie weiterhin. */
+  h1 {
+    font-family: var(--font-display), "Newsreader", serif;
+    font-weight: 400;
+    font-size: 2.375rem; /* Mobil 38px */
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    text-wrap: pretty;
+  }
+  h2 {
+    font-family: var(--font-heading), "Schibsted Grotesk", ui-sans-serif, sans-serif;
+    font-weight: 700;
+    font-size: 1.875rem; /* Mobil 30px */
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+  }
+  h3 {
+    font-family: var(--font-heading), "Schibsted Grotesk", ui-sans-serif, sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem; /* 20px */
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+  }
+  @media (min-width: 768px) {
+    h1 {
+      font-size: 3.375rem; /* Tablet 54px */
+    }
+    h2 {
+      font-size: 2.375rem; /* Tablet 38px */
+    }
+  }
+  @media (min-width: 1024px) {
+    h1 {
+      font-size: 4.75rem; /* Desktop 76px */
+    }
+    h2 {
+      font-size: 3rem; /* Desktop 48px */
+    }
+    h3 {
+      font-size: 1.5rem; /* Desktop 24px */
+    }
+  }
+
+  /* Text-Links: Ink mit grüner Unterstreichung — kein grüner Fließtext (Guide 02). */
+  a {
+    text-underline-offset: 2px;
+    text-decoration-color: #58b24a;
   }
 }
 
