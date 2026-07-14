@@ -131,13 +131,13 @@ export default function SustainableShop() {
 
       {/* ── Search bar ────────────────────────────────────────────────── */}
       <div ref={shopRef} className="relative mb-6">
-        <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+        <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500" />
         <input
           type="text"
           value={search}
           onChange={handleSearchChange}
           placeholder="Produkte suchen…"
-          className="w-full rounded-xl border border-stone-200 bg-white py-2.5 pl-10 pr-4 text-sm text-stone-800 placeholder:text-stone-400 focus:border-sage-400 focus:outline-none focus:ring-2 focus:ring-sage-100"
+          className="w-full rounded-xl border border-stone-200 bg-white py-2.5 pl-10 pr-4 text-sm text-stone-800 placeholder:text-stone-500 focus:border-sage-400 focus:outline-none focus:ring-2 focus:ring-sage-100"
         />
       </div>
 
@@ -161,7 +161,7 @@ export default function SustainableShop() {
           <div className="flex items-center justify-between">
             <p className="flex items-center gap-2 text-sm text-stone-500">
               {isLoading ? (
-                <span className="text-stone-400">Lädt…</span>
+                <span className="text-stone-500">Lädt…</span>
               ) : (
                 <>
                   <span className="font-semibold text-stone-700">{totalElements}</span> Produkte
@@ -205,7 +205,7 @@ export default function SustainableShop() {
               </div>
               <div className="text-center">
                 <p className="font-medium text-stone-700">Produkte konnten nicht geladen werden</p>
-                <p className="mt-1 text-sm text-stone-400">Bitte überprüfe deine Verbindung</p>
+                <p className="mt-1 text-sm text-stone-500">Bitte überprüfe deine Verbindung</p>
               </div>
               <button
                 onClick={() => refetch()}
@@ -224,7 +224,7 @@ export default function SustainableShop() {
               </div>
               <div className="text-center">
                 <p className="font-medium text-stone-700">Keine Produkte gefunden</p>
-                <p className="mt-1 text-sm text-stone-400">
+                <p className="mt-1 text-sm text-stone-500">
                   Versuche andere Suchbegriffe oder passe die Filter an
                 </p>
               </div>

@@ -49,7 +49,7 @@ export function ProductDetailView({
     <div>
       <button
         onClick={() => router.back()}
-        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-stone-400 transition-colors hover:text-sage-600"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors hover:text-sage-600"
       >
         <ArrowLeft className="h-4 w-4" />
         Zurück zu Produkten

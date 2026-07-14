@@ -95,7 +95,7 @@ export default function AddressForm({ isOpen, onClose, onSave, address }: Addres
       >
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 text-stone-400 hover:text-stone-600"
+          className="absolute right-4 top-4 text-stone-500 hover:text-stone-600"
           aria-label="Schliessen"
         >
           <X className="h-5 w-5" />

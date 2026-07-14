@@ -138,7 +138,7 @@ export default function ResetPassword() {
                   Neues Passwort
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500" />
                   <input
                     id="new-pw"
                     type={showPassword ? "text" : "password"}
@@ -150,7 +150,7 @@ export default function ResetPassword() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-600"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -160,7 +160,7 @@ export default function ResetPassword() {
                     {pwValidation.results.map((r) => (
                       <li
                         key={r.label}
-                        className={`flex items-center gap-1.5 text-xs ${r.passed ? "text-emerald-600" : "text-stone-400"}`}
+                        className={`flex items-center gap-1.5 text-xs ${r.passed ? "text-emerald-600" : "text-stone-500"}`}
                       >
                         {r.passed ? (
                           <CheckCircle2 className="h-3.5 w-3.5" />
@@ -182,7 +182,7 @@ export default function ResetPassword() {
                   Passwort bestätigen
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" />
+                  <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500" />
                   <input
                     id="confirm-pw"
                     type={showPassword ? "text" : "password"}

@@ -57,7 +57,7 @@ export default function Praeferenzen() {
             <Leaf className="h-6 w-6 text-stone-300" />
           </div>
           <p className="font-medium text-stone-700">Kein Werteprofil aktiv</p>
-          <p className="mt-1 text-sm text-stone-400">
+          <p className="mt-1 text-sm text-stone-500">
             Produkte werden ohne Nachhaltigkeitsgewichtung angezeigt.
           </p>
         </div>

@@ -23,9 +23,9 @@ export function SectionHeader({ id, icon: Icon, label, expanded, onToggle }: Sec
         <span className="text-lg font-semibold text-stone-800">{label}</span>
       </div>
       {expanded ? (
-        <ChevronDown className="h-5 w-5 text-stone-400" />
+        <ChevronDown className="h-5 w-5 text-stone-500" />
       ) : (
-        <ChevronRight className="h-5 w-5 text-stone-400" />
+        <ChevronRight className="h-5 w-5 text-stone-500" />
       )}
     </button>
   )

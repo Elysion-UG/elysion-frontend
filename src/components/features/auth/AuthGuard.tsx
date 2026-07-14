@@ -30,7 +30,7 @@ export default function AuthGuard({
   if (!isAuthenticated) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
-        <ShieldAlert className="mb-4 h-16 w-16 text-stone-400" />
+        <ShieldAlert className="mb-4 h-16 w-16 text-stone-500" />
         <h2 className="mb-2 text-2xl font-bold text-stone-800">Anmeldung erforderlich</h2>
         <p className="mb-6 max-w-md text-stone-500">
           Bitte melden Sie sich an, um auf diese Seite zuzugreifen.
@@ -48,7 +48,7 @@ export default function AuthGuard({
   if (requiredRoles && role && !requiredRoles.includes(role)) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
-        <ShieldAlert className="mb-4 h-16 w-16 text-stone-400" />
+        <ShieldAlert className="mb-4 h-16 w-16 text-stone-500" />
         <h2 className="mb-2 text-2xl font-bold text-stone-800">Zugriff verweigert</h2>
         <p className="max-w-md text-stone-500">{fallbackMessage}</p>
       </div>

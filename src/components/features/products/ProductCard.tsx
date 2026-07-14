@@ -69,7 +69,7 @@ export default function ProductCard({ product, productHref, sellerHref }: Produc
         />
 
         {soldOut && (
-          <div className="absolute inset-x-0 bottom-0 bg-stone-900/70 py-1 text-center text-[11px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
+          <div className="absolute inset-x-0 bottom-0 bg-stone-900/70 py-1 text-center text-xs font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
             Ausverkauft
           </div>
         )}
@@ -84,7 +84,7 @@ export default function ProductCard({ product, productHref, sellerHref }: Produc
 
         {/* Category badge */}
         {product.category?.name && (
-          <div className="absolute right-2 top-2 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-medium text-stone-600 shadow-sm backdrop-blur-sm">
+          <div className="absolute right-2 top-2 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-stone-600 shadow-sm backdrop-blur-sm">
             {product.category.name}
           </div>
         )}
@@ -109,7 +109,7 @@ export default function ProductCard({ product, productHref, sellerHref }: Produc
           {product.name ?? product.title}
         </h3>
         {product.shortDesc && (
-          <p className="line-clamp-2 text-xs leading-relaxed text-stone-400">{product.shortDesc}</p>
+          <p className="line-clamp-2 text-xs leading-relaxed text-stone-500">{product.shortDesc}</p>
         )}
 
         {/* Certificate chips */}
@@ -118,13 +118,13 @@ export default function ProductCard({ product, productHref, sellerHref }: Produc
             {certs.slice(0, 2).map((cert) => (
               <span
                 key={cert.id}
-                className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${certStyle(cert.certificateType)}`}
+                className={`rounded-full px-2 py-0.5 text-xs font-medium ${certStyle(cert.certificateType)}`}
               >
                 {certLabel(cert.certificateType)}
               </span>
             ))}
             {certs.length > 2 && (
-              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-medium text-stone-500">
+              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600">
                 +{certs.length - 2}
               </span>
             )}
@@ -133,9 +133,7 @@ export default function ProductCard({ product, productHref, sellerHref }: Produc
 
         <div className="flex items-center justify-between pt-2">
           <span className="text-base font-bold text-stone-900">{formatEuro(price)}</span>
-          <span
-            className={`text-[10px] font-medium ${soldOut ? "text-stone-400" : "text-sage-600"}`}
-          >
+          <span className={`text-xs font-medium ${soldOut ? "text-stone-500" : "text-sage-600"}`}>
             {soldOut ? "Ausverkauft" : "Auf Lager"}
           </span>
         </div>

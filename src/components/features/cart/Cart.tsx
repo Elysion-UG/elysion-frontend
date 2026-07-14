@@ -169,7 +169,7 @@ export default function Cart() {
                   <button
                     onClick={() => handleRemove(item.id, item.productName ?? "")}
                     disabled={isItemLoading}
-                    className="text-stone-400 transition-colors hover:text-red-500"
+                    className="text-stone-500 transition-colors hover:text-red-500"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -190,7 +190,7 @@ export default function Cart() {
               </div>
               <div className="flex justify-between">
                 <span>Versand</span>
-                <span className="text-stone-400">wird berechnet</span>
+                <span className="text-stone-500">wird berechnet</span>
               </div>
             </div>
             <div className="mt-4 flex justify-between border-t border-stone-100 pt-4 text-base font-bold text-stone-900">

@@ -47,7 +47,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       >
         <button
           onClick={handleClose}
-          className="absolute right-4 top-4 text-stone-400 transition-colors hover:text-stone-600"
+          className="absolute right-4 top-4 text-stone-500 transition-colors hover:text-stone-600"
           aria-label="Schliessen"
         >
           <X className="h-5 w-5" />

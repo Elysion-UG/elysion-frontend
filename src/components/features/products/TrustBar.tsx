@@ -20,7 +20,7 @@ export default function TrustBar() {
           </div>
           <div>
             <p className="text-xs font-semibold text-stone-700">{label}</p>
-            <p className="text-[11px] text-stone-400">{sub}</p>
+            <p className="text-xs text-stone-500">{sub}</p>
           </div>
         </div>
       ))}

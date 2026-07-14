@@ -10,7 +10,7 @@ export default function AgbPage() {
       <h1 className="mb-2 text-3xl font-bold text-stone-900">
         Allgemeine Geschäftsbedingungen (AGB)
       </h1>
-      <p className="mb-8 text-sm text-stone-400">Stand: [PLATZHALTER: Datum]</p>
+      <p className="mb-8 text-sm text-stone-500">Stand: [PLATZHALTER: Datum]</p>
 
       <section className="mb-8">
         <h2 className="mb-3 text-xl font-semibold text-stone-800">§ 1 Geltungsbereich</h2>
@@ -177,7 +177,7 @@ export default function AgbPage() {
         </p>
       </section>
 
-      <p className="mt-10 border-t border-stone-200 pt-6 text-xs text-stone-400">
+      <p className="mt-10 border-t border-stone-200 pt-6 text-xs text-stone-500">
         ⚠️ Diese AGB enthalten Platzhalter (<code>[PLATZHALTER: ...]</code>), die vor dem Launch
         durch echte Angaben ersetzt werden müssen. Empfehlung: Rechtliche Prüfung durch einen
         deutschen Rechtsanwalt oder einen spezialisierten Dienst (z. B. IT-Recht Kanzlei,

@@ -66,19 +66,19 @@ function DetailsPanel({
         <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
           {variant.sku && (
             <div className="rounded-lg border border-stone-100 bg-stone-50 px-3 py-2">
-              <p className="text-xs text-stone-400">SKU</p>
+              <p className="text-xs text-stone-500">SKU</p>
               <p className="font-medium text-stone-700">{variant.sku}</p>
             </div>
           )}
           {variant.material && (
             <div className="rounded-lg border border-stone-100 bg-stone-50 px-3 py-2">
-              <p className="text-xs text-stone-400">Material</p>
+              <p className="text-xs text-stone-500">Material</p>
               <p className="font-medium text-stone-700">{variant.material}</p>
             </div>
           )}
           {variant.stock !== undefined && (
             <div className="rounded-lg border border-stone-100 bg-stone-50 px-3 py-2">
-              <p className="text-xs text-stone-400">Lagerbestand</p>
+              <p className="text-xs text-stone-500">Lagerbestand</p>
               <p className="font-medium text-stone-700">{variant.stock} Stück</p>
             </div>
           )}

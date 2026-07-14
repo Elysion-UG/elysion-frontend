@@ -107,7 +107,7 @@ export function BuyerRegisterForm({
             >
               <Building2 className="mx-auto mb-1 h-5 w-5" />
               <span className="text-sm font-semibold">Verkäufer</span>
-              <span className="mt-0.5 block text-[10px] text-stone-400">→ Seller Portal</span>
+              <span className="mt-0.5 block text-xs text-stone-500">→ Seller Portal</span>
             </a>
           </div>
         </div>
