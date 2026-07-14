@@ -18,18 +18,18 @@ interface PasswordFieldProps {
 
 const styles = {
   light: {
-    label: "mb-1.5 block text-sm font-medium text-stone-700",
+    label: "mb-1.5 block text-sm font-medium text-foreground",
     input:
-      "w-full rounded-xl border border-stone-300 py-2.5 pl-10 pr-10 text-stone-800 focus:border-sage-500 focus:outline-none focus:ring-2 focus:ring-sage-500/20",
-    icon: "absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-500",
-    toggle: "absolute right-3 top-1/2 -translate-y-1/2 text-stone-500 hover:text-stone-600",
+      "w-full rounded-xl border border-border py-2.5 pl-10 pr-10 text-foreground focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500/20",
+    icon: "absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground",
+    toggle: "absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground",
   },
   dark: {
-    label: "mb-1.5 block text-xs font-medium uppercase tracking-wider text-slate-500",
+    label: "mb-1.5 block text-xs font-medium uppercase tracking-wider text-sand-page/60",
     input:
-      "w-full rounded-xl border border-slate-700/60 bg-slate-800/60 py-2.5 pl-10 pr-10 text-slate-100 placeholder-slate-600 focus:border-cyber-600 focus:outline-none focus:ring-2 focus:ring-cyber-600/20",
-    icon: "absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600",
-    toggle: "absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400",
+      "w-full rounded-xl border border-border/60 bg-ink-900/60 py-2.5 pl-10 pr-10 text-sand-page placeholder-sand-page/40 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500/20",
+    icon: "absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-sand-page/50",
+    toggle: "absolute right-3 top-1/2 -translate-y-1/2 text-foreground hover:text-muted-foreground",
   },
 } satisfies Record<Variant, Record<string, string>>
 

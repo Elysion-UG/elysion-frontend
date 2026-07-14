@@ -27,8 +27,8 @@ export default function BuyerGuard({ children }: { children: React.ReactNode }) 
 
   if (isLoading || role === "SELLER" || role === "ADMIN") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-stone-50">
-        <Loader2 className="h-8 w-8 animate-spin text-sage-600" />
+      <div className="flex min-h-screen items-center justify-center bg-secondary">
+        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
       </div>
     )
   }

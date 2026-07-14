@@ -80,41 +80,41 @@ export function BuyerRegisterForm({
   return (
     <div className="p-6">
       <div className="mb-1 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sage-600">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500">
           <User className="h-4 w-4 text-white" />
         </div>
-        <h2 className="text-2xl font-bold text-stone-800">Konto erstellen</h2>
+        <h2 className="text-2xl font-bold text-foreground">Konto erstellen</h2>
       </div>
-      <p className="mb-6 text-stone-500">Starten Sie Ihre nachhaltige Reise.</p>
+      <p className="mb-6 text-muted-foreground">Starten Sie Ihre nachhaltige Reise.</p>
 
       {error && <ErrorAlert message={error} className="mb-4" />}
 
       <form onSubmit={handleRegister} className="space-y-4">
         <div>
-          <label className="mb-2 block text-sm font-medium text-stone-700">Kontotyp</label>
+          <label className="mb-2 block text-sm font-medium text-foreground">Kontotyp</label>
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              className="rounded-xl border-2 border-sage-600 bg-sage-50 p-3 text-center text-sage-700"
+              className="rounded-xl border-2 border-green-600 bg-green-50 p-3 text-center text-green-600"
             >
               <User className="mx-auto mb-1 h-5 w-5" />
               <span className="text-sm font-semibold">Käufer</span>
             </button>
             <a
               href={sellerUrl("/login/seller")}
-              className="rounded-xl border-2 border-stone-200 p-3 text-center text-stone-500 transition-colors hover:border-sage-300 hover:text-sage-600"
+              className="rounded-xl border-2 border-border p-3 text-center text-muted-foreground transition-colors hover:border-green-600 hover:text-green-600"
               onClick={onSellerLinkClick}
             >
               <Building2 className="mx-auto mb-1 h-5 w-5" />
               <span className="text-sm font-semibold">Verkäufer</span>
-              <span className="mt-0.5 block text-xs text-stone-500">→ Seller Portal</span>
+              <span className="mt-0.5 block text-xs text-muted-foreground">→ Seller Portal</span>
             </a>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label htmlFor="reg-fn" className="mb-1 block text-sm font-medium text-stone-700">
+            <label htmlFor="reg-fn" className="mb-1 block text-sm font-medium text-foreground">
               Vorname
             </label>
             <input
@@ -123,11 +123,11 @@ export function BuyerRegisterForm({
               value={regFirstName}
               onChange={(e) => setRegFirstName(e.target.value)}
               required
-              className={`${textInputClass} text-stone-800`}
+              className={`${textInputClass} text-foreground`}
             />
           </div>
           <div>
-            <label htmlFor="reg-ln" className="mb-1 block text-sm font-medium text-stone-700">
+            <label htmlFor="reg-ln" className="mb-1 block text-sm font-medium text-foreground">
               Nachname
             </label>
             <input
@@ -136,7 +136,7 @@ export function BuyerRegisterForm({
               value={regLastName}
               onChange={(e) => setRegLastName(e.target.value)}
               required
-              className={`${textInputClass} text-stone-800`}
+              className={`${textInputClass} text-foreground`}
             />
           </div>
         </div>
@@ -171,29 +171,29 @@ export function BuyerRegisterForm({
             autoComplete="new-password"
           />
           {regConfirmPassword.length > 0 && regPassword !== regConfirmPassword && (
-            <p className="mt-1 flex items-center gap-1 text-xs text-red-600">
+            <p className="mt-1 flex items-center gap-1 text-xs text-danger">
               <XCircle className="h-3.5 w-3.5" /> Passwörter stimmen nicht überein
             </p>
           )}
         </div>
 
         {/* DSGVO Art. 7: Datenschutz-Einwilligung */}
-        <div className="rounded-xl border border-stone-200 bg-stone-50 p-3">
+        <div className="rounded-xl border border-border bg-secondary p-3">
           <label className="flex cursor-pointer items-start gap-2.5">
             <input
               type="checkbox"
               checked={privacyAccepted}
               onChange={(e) => setPrivacyAccepted(e.target.checked)}
               required
-              className="mt-0.5 h-4 w-4 accent-sage-600"
+              className="mt-0.5 h-4 w-4 accent-green-500"
             />
-            <span className="text-xs text-stone-600">
+            <span className="text-xs text-foreground">
               Ich habe die{" "}
               <Link
                 href="/datenschutz"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sage-600 underline hover:text-sage-800"
+                className="text-green-600 underline hover:text-green-600"
               >
                 Datenschutzerklärung
               </Link>{" "}
@@ -210,9 +210,12 @@ export function BuyerRegisterForm({
         />
       </form>
 
-      <p className="mt-4 text-center text-sm text-stone-500">
+      <p className="mt-4 text-center text-sm text-muted-foreground">
         {"Bereits ein Konto? "}
-        <button onClick={onLoginClick} className="font-semibold text-sage-600 hover:text-sage-800">
+        <button
+          onClick={onLoginClick}
+          className="font-semibold text-green-600 hover:text-green-600"
+        >
           Anmelden
         </button>
       </p>
