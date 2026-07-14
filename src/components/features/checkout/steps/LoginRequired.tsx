@@ -9,12 +9,12 @@ export function LoginRequired() {
   return (
     <>
       <div className="mx-auto flex max-w-md flex-col items-center gap-4 py-24 text-center">
-        <ShieldAlert className="h-16 w-16 text-slate-300" />
-        <h2 className="text-2xl font-bold text-slate-800">Anmeldung erforderlich</h2>
-        <p className="text-slate-500">Bitte melde dich an, um den Checkout fortzusetzen.</p>
+        <ShieldAlert className="h-16 w-16 text-muted-foreground" />
+        <h2 className="text-2xl font-bold text-foreground">Anmeldung erforderlich</h2>
+        <p className="text-muted-foreground">Bitte melde dich an, um den Checkout fortzusetzen.</p>
         <button
           onClick={() => setLoginModalOpen(true)}
-          className="mt-2 rounded-lg bg-teal-600 px-8 py-3 font-medium text-white transition-colors hover:bg-teal-700"
+          className="mt-2 rounded-lg bg-green-500 px-8 py-3 font-medium text-ink-900 transition-colors hover:bg-green-700"
         >
           Jetzt anmelden
         </button>

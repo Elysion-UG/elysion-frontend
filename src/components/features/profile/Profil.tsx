@@ -138,12 +138,14 @@ export default function Profil() {
   return (
     <div className="mx-auto max-w-3xl">
       <div className="mb-8 flex items-center gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sage-100">
-          <User className="h-6 w-6 text-sage-600" />
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-green-50">
+          <User className="h-6 w-6 text-green-600" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-stone-900">Mein Profil</h1>
-          <p className="text-sm text-stone-500">Persönliche Daten und Einstellungen verwalten</p>
+          <h1 className="text-2xl font-normal text-foreground">Mein Profil</h1>
+          <p className="text-sm text-muted-foreground">
+            Persönliche Daten und Einstellungen verwalten
+          </p>
         </div>
       </div>
 
