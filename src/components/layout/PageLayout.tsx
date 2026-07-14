@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useMounted } from "@/src/hooks/use-mounted"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -23,6 +23,7 @@ import { useCart } from "@/src/context/CartContext"
 import LoginModal from "@/src/components/features/auth/LoginModal"
 import Footer from "@/src/components/layout/Footer"
 import { sellerUrl, adminUrl } from "@/src/lib/seller-url"
+import { readRedirectTarget } from "@/src/lib/auth/redirect-param"
 import { toast } from "sonner"
 
 interface PageLayoutProps {
@@ -36,7 +37,34 @@ export default function PageLayout({ children }: PageLayoutProps) {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  // Deep link the visitor was bounced off by the middleware (#68), carried here
+  // as ?redirect=. When present and the visitor is unauthenticated, auto-open
+  // the login modal and return them there after a successful login (#121).
+  const [redirectTarget, setRedirectTarget] = useState<string | null>(null)
   const mounted = useMounted()
+
+  // Once auth has resolved to "unauthenticated", surface the login modal for a
+  // deep-link visitor the middleware forwarded here. Reacting to the async auth
+  // state is a legitimate effect; the setState it drives is the sanctioned
+  // exception (mirrors CartContext / CookieConsentContext).
+  useEffect(() => {
+    if (authLoading || isAuthenticated) return
+    const target = readRedirectTarget(window.location.search, "")
+    if (target) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRedirectTarget(target)
+      setIsLoginModalOpen(true)
+    }
+  }, [authLoading, isAuthenticated])
+
+  const handleLoginSuccess = () => {
+    setIsLoginModalOpen(false)
+    if (redirectTarget) {
+      const target = redirectTarget
+      setRedirectTarget(null)
+      router.push(target)
+    }
+  }
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -241,7 +269,11 @@ export default function PageLayout({ children }: PageLayoutProps) {
         {children}
       </main>
       <Footer />
-      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </div>
   )
 }

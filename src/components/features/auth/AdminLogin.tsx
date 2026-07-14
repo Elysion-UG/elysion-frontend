@@ -2,6 +2,7 @@
 
 import { ShieldCheck } from "lucide-react"
 import { buyerUrl } from "@/src/lib/seller-url"
+import { readRedirectTarget } from "@/src/lib/auth/redirect-param"
 import { LoginForm } from "@/src/components/features/auth/_shared/LoginForm"
 
 export default function AdminLogin() {
@@ -39,7 +40,9 @@ export default function AdminLogin() {
               invalidCredentialsMessage="Ungültige Anmeldedaten oder fehlende Berechtigung."
               successToast="Admin-Anmeldung erfolgreich."
               onSuccess={() => {
-                window.location.href = "/admin/users"
+                // Return to the originally requested page when the middleware
+                // (#68) forwarded one via ?redirect=, else the admin home (#121).
+                window.location.href = readRedirectTarget(window.location.search, "/admin/users")
               }}
               emailPlaceholder="admin@elysion.de"
               submitLabel="ANMELDEN"
