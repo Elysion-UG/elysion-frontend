@@ -22,8 +22,8 @@ export function AddToCartButton({ inStock, isAdding, justAdded, onClick }: AddTo
     <button
       onClick={onClick}
       disabled={!inStock || isAdding}
-      className={`flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-150 active:scale-95 disabled:cursor-not-allowed disabled:bg-stone-300 ${
-        justAdded ? "bg-green-600 hover:bg-green-700" : "bg-sage-600 hover:bg-sage-700"
+      className={`flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-ink-900 shadow-sm transition-all duration-150 active:scale-95 disabled:cursor-not-allowed disabled:bg-muted ${
+        justAdded ? "bg-green-600 hover:bg-green-700" : "bg-green-500 hover:bg-green-700"
       }`}
     >
       {isAdding ? (

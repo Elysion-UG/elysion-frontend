@@ -20,21 +20,24 @@ export default function CookieConsentBanner() {
       role="dialog"
       aria-modal="false"
       aria-label="Cookie-Einwilligung"
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-stone-200 bg-white shadow-xl sm:bottom-4 sm:left-auto sm:right-4 sm:max-w-sm sm:rounded-xl sm:border"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card shadow-xl sm:bottom-4 sm:left-auto sm:right-4 sm:max-w-sm sm:rounded-xl sm:border"
     >
       <div className="p-5">
         <div className="mb-3 flex items-center gap-2">
-          <Cookie className="h-5 w-5 text-sage-600" />
-          <h2 className="text-sm font-semibold text-stone-800">Cookie-Einstellungen</h2>
+          <Cookie className="h-5 w-5 text-green-600" />
+          <h2 className="text-sm font-semibold text-foreground">Cookie-Einstellungen</h2>
         </div>
-        <p className="mb-1 text-xs leading-relaxed text-stone-600">
+        <p className="mb-1 text-xs leading-relaxed text-muted-foreground">
           Wir verwenden technisch notwendige Cookies für den Login-Betrieb. Mit Ihrer Einwilligung
           nutzen wir außerdem <strong>funktionale Cookies</strong> (lokaler Speicher) für den
           Gäste-Warenkorb und schnellere Ladezeiten.
         </p>
-        <p className="mb-4 text-xs text-stone-500">
+        <p className="mb-4 text-xs text-muted-foreground">
           Weitere Informationen in unserer{" "}
-          <Link href="/datenschutz" className="text-sage-600 underline hover:text-sage-800">
+          <Link
+            href="/datenschutz"
+            className="text-foreground underline decoration-green-500 hover:text-green-600"
+          >
             Datenschutzerklärung
           </Link>
           .
@@ -42,13 +45,13 @@ export default function CookieConsentBanner() {
         <div className="flex gap-2">
           <button
             onClick={decline}
-            className="flex-1 rounded-lg border border-stone-300 px-3 py-2 text-xs font-medium text-stone-700 transition-colors hover:bg-stone-50"
+            className="flex-1 rounded-xl border-[1.5px] border-foreground px-3 py-2 text-xs font-bold text-foreground transition-colors hover:bg-secondary"
           >
             Nur notwendige
           </button>
           <button
             onClick={accept}
-            className="flex-1 rounded-lg bg-sage-600 px-3 py-2 text-xs font-medium text-white transition-colors hover:bg-sage-700"
+            className="flex-1 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition-colors hover:bg-green-600"
           >
             Alle akzeptieren
           </button>

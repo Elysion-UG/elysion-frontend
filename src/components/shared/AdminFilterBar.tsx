@@ -13,7 +13,7 @@ export function AdminFilterBar({ children, className }: AdminFilterBarProps) {
   return (
     <div
       className={cn(
-        "mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-slate-800/60 bg-slate-900/60 p-4",
+        "mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-border/60 bg-ink-900/60 p-4",
         className
       )}
     >
@@ -37,13 +37,13 @@ export function SearchInput({
 }: SearchInputProps) {
   return (
     <div className={cn("relative min-w-48 flex-1", className)}>
-      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
+      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground" />
       <input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-slate-700/60 bg-slate-800/60 py-2 pl-9 pr-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
+        className="w-full rounded-lg border border-border/60 bg-ink-900/60 py-2 pl-9 pr-3 text-sm text-muted-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
       />
     </div>
   )
@@ -61,7 +61,7 @@ export function RefreshButton({ onClick, isLoading, className }: RefreshButtonPr
       onClick={onClick}
       disabled={isLoading}
       className={cn(
-        "flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-400 hover:text-slate-200 disabled:opacity-50",
+        "flex items-center gap-1.5 rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground hover:text-muted-foreground disabled:opacity-50",
         className
       )}
     >

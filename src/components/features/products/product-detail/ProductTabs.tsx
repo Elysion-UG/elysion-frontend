@@ -22,7 +22,7 @@ export function ProductTabs({ product, selectedVariant, certificates }: ProductT
 
   return (
     <div className="mt-12">
-      <div className="border-b border-stone-200">
+      <div className="border-b border-border">
         <nav className="flex gap-1" role="tablist">
           {TABS.map((tab) => (
             <button
@@ -32,8 +32,8 @@ export function ProductTabs({ product, selectedVariant, certificates }: ProductT
               aria-selected={activeTab === tab.id}
               className={`border-b-2 px-4 py-3.5 text-sm font-medium transition-colors ${
                 activeTab === tab.id
-                  ? "border-sage-600 text-sage-700"
-                  : "border-transparent text-stone-500 hover:text-stone-800"
+                  ? "border-green-600 text-green-600"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               {tab.label}
@@ -59,27 +59,27 @@ function DetailsPanel({
 }) {
   return (
     <div className="space-y-6">
-      <p className="leading-relaxed text-stone-600">
+      <p className="leading-relaxed text-foreground">
         {product.description ?? "Keine Beschreibung vorhanden."}
       </p>
       {variant && (
         <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
           {variant.sku && (
-            <div className="rounded-lg border border-stone-100 bg-stone-50 px-3 py-2">
-              <p className="text-xs text-stone-400">SKU</p>
-              <p className="font-medium text-stone-700">{variant.sku}</p>
+            <div className="rounded-lg border border-border bg-secondary px-3 py-2">
+              <p className="text-xs text-muted-foreground">SKU</p>
+              <p className="font-medium text-foreground">{variant.sku}</p>
             </div>
           )}
           {variant.material && (
-            <div className="rounded-lg border border-stone-100 bg-stone-50 px-3 py-2">
-              <p className="text-xs text-stone-400">Material</p>
-              <p className="font-medium text-stone-700">{variant.material}</p>
+            <div className="rounded-lg border border-border bg-secondary px-3 py-2">
+              <p className="text-xs text-muted-foreground">Material</p>
+              <p className="font-medium text-foreground">{variant.material}</p>
             </div>
           )}
           {variant.stock !== undefined && (
-            <div className="rounded-lg border border-stone-100 bg-stone-50 px-3 py-2">
-              <p className="text-xs text-stone-400">Lagerbestand</p>
-              <p className="font-medium text-stone-700">{variant.stock} Stück</p>
+            <div className="rounded-lg border border-border bg-secondary px-3 py-2">
+              <p className="text-xs text-muted-foreground">Lagerbestand</p>
+              <p className="font-medium text-foreground">{variant.stock} Stück</p>
             </div>
           )}
         </div>

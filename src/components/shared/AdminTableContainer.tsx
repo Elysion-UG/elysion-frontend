@@ -20,10 +20,7 @@ export function AdminTableContainer({
 }: AdminTableContainerProps) {
   return (
     <div
-      className={cn(
-        "overflow-hidden rounded-xl border border-slate-800/60 bg-slate-900/60",
-        className
-      )}
+      className={cn("overflow-hidden rounded-xl border border-border/60 bg-ink-900/60", className)}
     >
       {isLoading ? (
         <LoadingFullPage />

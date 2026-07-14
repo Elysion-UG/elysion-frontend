@@ -19,8 +19,8 @@ export default function CategoryChips({
         onClick={onReset}
         className={`flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-sm transition-colors ${
           !activeSearch
-            ? "border-sage-300 bg-sage-600 text-white"
-            : "border-stone-200 bg-white text-stone-600 hover:border-sage-300 hover:bg-sage-50 hover:text-sage-700"
+            ? "border-green-600 bg-green-500 text-ink-900"
+            : "border-border bg-white text-foreground hover:border-green-600 hover:bg-green-50 hover:text-green-600"
         }`}
       >
         Alle
@@ -31,8 +31,8 @@ export default function CategoryChips({
           onClick={() => onSelectCategory(query)}
           className={`flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-sm transition-colors ${
             activeSearch === query
-              ? "border-sage-300 bg-sage-600 text-white"
-              : "border-stone-200 bg-white text-stone-600 hover:border-sage-300 hover:bg-sage-50 hover:text-sage-700"
+              ? "border-green-600 bg-green-500 text-ink-900"
+              : "border-border bg-white text-foreground hover:border-green-600 hover:bg-green-50 hover:text-green-600"
           }`}
         >
           <Icon className="h-3.5 w-3.5" />

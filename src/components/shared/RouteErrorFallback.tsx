@@ -39,20 +39,20 @@ export function RouteErrorFallback({
   const t =
     theme === "dark"
       ? {
-          iconBg: "bg-red-900/30",
-          icon: "text-red-400",
-          heading: "text-slate-100",
-          body: "text-slate-400",
-          primaryBtn: "bg-cyber-600 hover:bg-cyber-700",
-          secondaryBtn: "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700",
+          iconBg: "bg-destructive/30",
+          icon: "text-danger",
+          heading: "text-muted-foreground",
+          body: "text-muted-foreground",
+          primaryBtn: "bg-green-500 hover:bg-green-700",
+          secondaryBtn: "border-border bg-ink-900 text-muted-foreground hover:bg-muted",
         }
       : {
-          iconBg: "bg-red-100",
-          icon: "text-red-600",
-          heading: "text-gray-900",
-          body: "text-gray-500",
-          primaryBtn: "bg-emerald-600 hover:bg-emerald-700",
-          secondaryBtn: "border-gray-300 bg-white text-gray-700 hover:bg-gray-50",
+          iconBg: "bg-danger-tint",
+          icon: "text-danger",
+          heading: "text-foreground",
+          body: "text-muted-foreground",
+          primaryBtn: "bg-green-500 hover:bg-green-700",
+          secondaryBtn: "border-border bg-white text-foreground hover:bg-secondary",
         }
 
   return (

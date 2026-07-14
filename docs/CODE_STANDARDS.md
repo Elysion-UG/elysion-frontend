@@ -109,6 +109,33 @@ export function MyComponent() {
 
 ---
 
+## Barrierefreiheit (a11y)
+
+Verbindlich für **BFSG / WCAG 2.1 AA** (COMPLIANCE H9). Bei jedem UI-Change beachten:
+
+**Textkontrast (SC 1.4.3, ≥ 4,5:1 für Normal-/Kleintext):**
+
+- Sekundär-/Fließtext auf hellem Grund: **mindestens `text-stone-500`** (= 4,8:1 auf Weiß).
+  **Nie `text-stone-400` für Text** (~2,6:1 — fällt durch).
+- Auf getöntem Grund (`bg-stone-100` o. ä.) reicht `stone-500` nicht (~4,4:1) →
+  **`text-stone-600`** verwenden.
+- Primärtext bleibt `text-stone-700`/`-800`; die Hierarchie über 500 → 700 → 800 abbilden,
+  nicht über 400.
+
+**Schriftgröße:**
+
+- Inhalts-Chips/Badges (Zertifikate, Kategorie, „Auf Lager", Filter-Zähler): **mindestens
+  `text-xs`** — kein `text-[10px]`/`text-[11px]` für lesbaren Inhalt.
+- Ausgenommen (bewusst): rein numerische Zähler-Badges in Mini-Kreisen, Marken-/Logo-
+  Untertitel und das dichte Admin-Monitoring-Dashboard (eigene, dunkle Palette).
+
+**Modals/Dialoge:** `useFocusTrap(onClose)` anwenden (Fokus fangen, Escape schließt, Fokus
+zurück zum Trigger), `role="dialog"` + `aria-modal="true"` + `aria-labelledby`/`aria-label`,
+dekoratives Backdrop mit `aria-hidden="true"`. Formular-Labels immer via `htmlFor`/`id`
+(oder `useId`) mit dem Feld verknüpfen.
+
+---
+
 ## Testing
 
 **Framework:** Vitest + @testing-library/react

@@ -16,10 +16,10 @@ export type Tab = "products" | "orders" | "settlements" | "certificates" | "prof
 export const certStatusLabel: Record<CertificateStatus, string> = CERTIFICATE_STATUS_LABEL
 
 export const certStatusColor: Record<CertificateStatus, string> = {
-  PENDING: "bg-yellow-100 text-yellow-800",
-  VERIFIED: "bg-emerald-100 text-emerald-700",
-  REJECTED: "bg-red-100 text-red-700",
-  EXPIRED: "bg-slate-100 text-slate-500",
+  PENDING: "bg-warning-tint text-warning",
+  VERIFIED: "bg-green-50 text-green-600",
+  REJECTED: "bg-danger-tint text-danger",
+  EXPIRED: "bg-secondary text-muted-foreground",
 }
 
 export const CERT_TYPES: CertificateType[] = ["ORGANIC", "FAIR_TRADE", "RECYCLED", "VEGAN"]
@@ -27,26 +27,27 @@ export const CERT_TYPES: CertificateType[] = ["ORGANIC", "FAIR_TRADE", "RECYCLED
 export const productStatusLabel: Record<ProductStatus, string> = PRODUCT_STATUS_LABEL
 
 export const productStatusColor: Record<ProductStatus, string> = {
-  DRAFT: "bg-slate-100 text-slate-600",
-  REVIEW: "bg-amber-100 text-amber-700",
-  ACTIVE: "bg-emerald-100 text-emerald-700",
-  INACTIVE: "bg-slate-100 text-slate-500",
-  REJECTED: "bg-red-100 text-red-700",
+  DRAFT: "bg-secondary text-foreground",
+  REVIEW: "bg-warning-tint text-warning",
+  ACTIVE: "bg-green-50 text-green-600",
+  INACTIVE: "bg-secondary text-muted-foreground",
+  REJECTED: "bg-danger-tint text-danger",
 }
 
 export const orderStatusLabel: Record<OrderGroupStatus, string> = ORDER_GROUP_STATUS_LABEL
 
 export const orderStatusColor: Record<OrderGroupStatus, string> = {
-  PENDING: "bg-yellow-100 text-yellow-800",
-  CONFIRMED: "bg-blue-100 text-blue-800",
-  PROCESSING: "bg-orange-100 text-orange-800",
-  SHIPPED: "bg-purple-100 text-purple-800",
-  DELIVERED: "bg-green-100 text-green-800",
-  CANCELLED: "bg-red-100 text-red-800",
+  PENDING: "bg-warning-tint text-warning",
+  CONFIRMED: "bg-info-tint text-info",
+  PROCESSING: "bg-warning-tint text-warning",
+  SHIPPED: "bg-secondary text-foreground",
+  DELIVERED: "bg-green-50 text-green-700",
+  CANCELLED: "bg-danger-tint text-danger",
 }
 
 // Shared seller table styling (light theme)
-export const SELLER_TABLE_HEAD_CLASS = "px-6 py-3 text-xs font-medium uppercase text-slate-500"
+export const SELLER_TABLE_HEAD_CLASS =
+  "px-6 py-3 text-xs font-medium uppercase text-muted-foreground"
 export const SELLER_TABLE_CELL_CLASS = "px-6 py-4"
 
 export const settlementStatusLabel: Record<string, string> = {
@@ -55,8 +56,8 @@ export const settlementStatusLabel: Record<string, string> = {
 }
 
 export const settlementStatusColor: Record<string, string> = {
-  PAID: "bg-green-100 text-green-700",
-  PENDING: "bg-amber-100 text-amber-700",
+  PAID: "bg-green-50 text-green-700",
+  PENDING: "bg-warning-tint text-warning",
 }
 
 // ── Payout-Account (Stripe Connect Express, light theme) ──────────────
@@ -68,8 +69,8 @@ export const payoutAccountStatusLabel: Record<SellerPayoutAccountStatus, string>
 }
 
 export const payoutAccountStatusColor: Record<SellerPayoutAccountStatus, string> = {
-  NOT_CONNECTED: "bg-slate-100 text-slate-600",
-  PENDING: "bg-amber-100 text-amber-700",
-  ACTIVE: "bg-emerald-100 text-emerald-700",
-  RESTRICTED: "bg-red-100 text-red-700",
+  NOT_CONNECTED: "bg-secondary text-foreground",
+  PENDING: "bg-warning-tint text-warning",
+  ACTIVE: "bg-green-50 text-green-600",
+  RESTRICTED: "bg-danger-tint text-danger",
 }

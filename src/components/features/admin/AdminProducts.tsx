@@ -133,7 +133,7 @@ export default function AdminProducts() {
       onRowClick={(product) => router.push(`/admin/products/${product.id}`)}
       renderRow={(product) => (
         <>
-          <TableCell className="px-4 py-3 font-medium text-slate-200">
+          <TableCell className="px-4 py-3 font-medium text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <span className="max-w-[220px] truncate">{product.name}</span>
               <a
@@ -142,15 +142,15 @@ export default function AdminProducts() {
                 rel="noreferrer"
                 title="Im Shop ansehen"
                 onClick={(e) => e.stopPropagation()}
-                className="shrink-0 text-slate-600 hover:text-slate-400"
+                className="shrink-0 text-foreground hover:text-muted-foreground"
               >
                 <ExternalLink className="h-3 w-3" />
               </a>
             </div>
           </TableCell>
-          <TableCell className="px-4 py-3 text-sm text-slate-400">
+          <TableCell className="px-4 py-3 text-sm text-muted-foreground">
             {sellerNames[product.sellerId] ?? (
-              <span className="font-mono text-xs text-slate-600">
+              <span className="font-mono text-xs text-foreground">
                 {product.sellerId.slice(0, 8)}…
               </span>
             )}
@@ -161,17 +161,17 @@ export default function AdminProducts() {
               colorClasses={statusColor[product.status]}
             />
           </TableCell>
-          <TableCell className="px-4 py-3 text-slate-500">
+          <TableCell className="px-4 py-3 text-muted-foreground">
             {new Date(product.createdAt).toLocaleDateString("de-DE")}
           </TableCell>
           <TableCell className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-end gap-2">
               {actionLoading === product.id ? (
-                <Loader2 className="h-4 w-4 animate-spin text-cyber-500" />
+                <Loader2 className="h-4 w-4 animate-spin text-green-500" />
               ) : product.status === "ACTIVE" ? (
                 <button
                   onClick={() => handleDeactivate(product)}
-                  className="flex items-center gap-1 rounded-lg border border-slate-700/60 bg-slate-800/60 px-2 py-1 text-xs text-slate-400 hover:text-slate-200"
+                  className="flex items-center gap-1 rounded-lg border border-border/60 bg-ink-900/60 px-2 py-1 text-xs text-muted-foreground hover:text-muted-foreground"
                   title="Deaktivieren"
                 >
                   <ToggleLeft className="h-4 w-4" /> Deaktivieren
@@ -179,7 +179,7 @@ export default function AdminProducts() {
               ) : product.status === "INACTIVE" || product.status === "REVIEW" ? (
                 <button
                   onClick={() => handleActivate(product)}
-                  className="flex items-center gap-1 rounded-lg border border-emerald-800/60 bg-emerald-900/30 px-2 py-1 text-xs text-emerald-400 hover:text-emerald-300"
+                  className="flex items-center gap-1 rounded-lg border border-green-600/60 bg-green-700/30 px-2 py-1 text-xs text-green-500 hover:text-green-500"
                   title="Aktivieren"
                 >
                   <ToggleRight className="h-4 w-4" /> Aktivieren

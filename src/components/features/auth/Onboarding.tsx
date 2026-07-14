@@ -5,7 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
-import { ChevronRight, ChevronLeft, Check, Leaf, Heart, Recycle, ShieldCheck } from "lucide-react"
+import { ChevronRight, ChevronLeft, Check, Globe, Heart, Recycle, ShieldCheck } from "lucide-react"
 
 type SustainabilityPreference = {
   id: string
@@ -19,7 +19,7 @@ const sustainabilityOptions: SustainabilityPreference[] = [
     id: "organic",
     label: "Organic & Natural",
     description: "Products made from organic materials without harmful chemicals",
-    icon: Leaf,
+    icon: Globe,
   },
   {
     id: "ethical",
@@ -37,7 +37,7 @@ const sustainabilityOptions: SustainabilityPreference[] = [
     id: "local",
     label: "Locally Sourced",
     description: "Products sourced from local suppliers to reduce carbon footprint",
-    icon: Leaf,
+    icon: Globe,
   },
   {
     id: "carbon-neutral",
@@ -113,7 +113,7 @@ export default function Onboarding() {
               {Math.round((currentStep / totalSteps) * 100)}% Complete
             </span>
           </div>
-          <div className="h-2 w-full rounded-full bg-green-200">
+          <div className="h-2 w-full rounded-full bg-green-50">
             <div
               className="h-2 rounded-full bg-green-600 transition-all duration-300"
               style={{ width: `${(currentStep / totalSteps) * 100}%` }}
@@ -125,7 +125,7 @@ export default function Onboarding() {
         <div className="mb-8">
           {currentStep === 1 && (
             <div>
-              <h2 className="mb-2 text-2xl font-bold text-green-800">What matters most to you?</h2>
+              <h2 className="mb-2 text-2xl font-bold text-green-700">What matters most to you?</h2>
               <p className="mb-6 text-green-600">
                 Select the sustainability aspects that are important to you. This helps us recommend
                 the best products.
@@ -141,18 +141,18 @@ export default function Onboarding() {
                       className={`rounded-lg border-2 p-4 text-left transition-all hover:shadow-md ${
                         isSelected
                           ? "border-green-600 bg-green-50 shadow-md"
-                          : "border-green-200 hover:border-green-400"
+                          : "border-green-50 hover:border-green-500"
                       }`}
                     >
                       <div className="flex items-start gap-3">
                         <div
-                          className={`rounded-lg p-2 ${isSelected ? "bg-green-600 text-white" : "bg-green-100 text-green-600"}`}
+                          className={`rounded-lg p-2 ${isSelected ? "bg-green-600 text-ink-900" : "bg-green-50 text-green-600"}`}
                         >
                           <Icon className="h-5 w-5" />
                         </div>
                         <div className="flex-1">
                           <h3
-                            className={`mb-1 font-semibold ${isSelected ? "text-green-800" : "text-green-700"}`}
+                            className={`mb-1 font-semibold ${isSelected ? "text-green-700" : "text-green-700"}`}
                           >
                             {option.label}
                           </h3>
@@ -173,7 +173,7 @@ export default function Onboarding() {
 
           {currentStep === 2 && (
             <div>
-              <h2 className="mb-2 text-2xl font-bold text-green-800">What's your budget range?</h2>
+              <h2 className="mb-2 text-2xl font-bold text-green-700">What's your budget range?</h2>
               <p className="mb-6 text-green-600">
                 Help us show you products within your preferred price range for better
                 recommendations.
@@ -193,7 +193,7 @@ export default function Onboarding() {
                       onChange={(e) =>
                         setBudgetRange([budgetRange[0], Number.parseInt(e.target.value)])
                       }
-                      className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-green-200 accent-green-600"
+                      className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-green-50 accent-green-600"
                     />
                     <div className="mt-1 flex justify-between text-sm text-green-600">
                       <span>$25</span>
@@ -203,15 +203,15 @@ export default function Onboarding() {
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="rounded-lg bg-green-50 p-4 text-center">
-                    <h4 className="font-semibold text-green-800">Budget-Friendly</h4>
+                    <h4 className="font-semibold text-green-700">Budget-Friendly</h4>
                     <p className="text-sm text-green-600">$25 - $75</p>
                   </div>
                   <div className="rounded-lg bg-green-50 p-4 text-center">
-                    <h4 className="font-semibold text-green-800">Mid-Range</h4>
+                    <h4 className="font-semibold text-green-700">Mid-Range</h4>
                     <p className="text-sm text-green-600">$75 - $200</p>
                   </div>
                   <div className="rounded-lg bg-green-50 p-4 text-center">
-                    <h4 className="font-semibold text-green-800">Premium</h4>
+                    <h4 className="font-semibold text-green-700">Premium</h4>
                     <p className="text-sm text-green-600">$200+</p>
                   </div>
                 </div>
@@ -221,7 +221,7 @@ export default function Onboarding() {
 
           {currentStep === 3 && (
             <div>
-              <h2 className="mb-2 text-2xl font-bold text-green-800">How often do you shop?</h2>
+              <h2 className="mb-2 text-2xl font-bold text-green-700">How often do you shop?</h2>
               <p className="mb-6 text-green-600">
                 This helps us understand your shopping habits and provide personalized
                 recommendations.
@@ -255,13 +255,13 @@ export default function Onboarding() {
                     className={`w-full rounded-lg border-2 p-4 text-left transition-all hover:shadow-md ${
                       shoppingFrequency === option.value
                         ? "border-green-600 bg-green-50 shadow-md"
-                        : "border-green-200 hover:border-green-400"
+                        : "border-green-50 hover:border-green-500"
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div>
                         <h3
-                          className={`mb-1 font-semibold ${shoppingFrequency === option.value ? "text-green-800" : "text-green-700"}`}
+                          className={`mb-1 font-semibold ${shoppingFrequency === option.value ? "text-green-700" : "text-green-700"}`}
                         >
                           {option.label}
                         </h3>
@@ -283,12 +283,12 @@ export default function Onboarding() {
         </div>
 
         {/* DSGVO-Hinweis: Präferenzen dienen nur der Empfehlung (COMPLIANCE M8) */}
-        <div className="mb-6 flex items-start gap-2.5 rounded-lg border border-green-200 bg-green-50 p-3">
+        <div className="mb-6 flex items-start gap-2.5 rounded-lg border border-green-50 bg-green-50 p-3">
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
           <p className="text-xs text-green-700">
             Deine Angaben werden ausschließlich zur Verbesserung deiner Produktempfehlungen genutzt.
             Du kannst sie jederzeit unter{" "}
-            <Link href="/praeferenzen" className="underline hover:text-green-900">
+            <Link href="/praeferenzen" className="underline hover:text-green-700">
               Präferenzen
             </Link>{" "}
             anpassen. Details zur Verarbeitung findest du in unserer{" "}
@@ -296,7 +296,7 @@ export default function Onboarding() {
               href="/datenschutz"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline hover:text-green-900"
+              className="underline hover:text-green-700"
             >
               Datenschutzerklärung
             </Link>
@@ -309,7 +309,7 @@ export default function Onboarding() {
           <button
             onClick={handlePrevious}
             disabled={currentStep === 1}
-            className="flex items-center gap-2 px-4 py-2 text-green-700 transition-colors hover:text-green-900 disabled:cursor-not-allowed disabled:text-green-400"
+            className="flex items-center gap-2 px-4 py-2 text-green-700 transition-colors hover:text-green-700 disabled:cursor-not-allowed disabled:text-green-500"
           >
             <ChevronLeft className="h-4 w-4" />
             Previous
@@ -318,7 +318,7 @@ export default function Onboarding() {
           <button
             onClick={handleNext}
             disabled={!canProceed()}
-            className="flex items-center gap-2 rounded-lg bg-green-600 px-6 py-2 font-medium text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-green-400"
+            className="flex items-center gap-2 rounded-lg bg-green-600 px-6 py-2 font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {currentStep === totalSteps ? "Complete Setup" : "Next"}
             <ChevronRight className="h-4 w-4" />

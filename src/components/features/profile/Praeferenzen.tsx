@@ -1,6 +1,6 @@
 "use client"
 
-import { Leaf, Loader2 } from "lucide-react"
+import { Sparkles, Loader2 } from "lucide-react"
 import {
   ExtendedWeightsSection,
   PraeferenzenSkeleton,
@@ -29,7 +29,7 @@ export default function Praeferenzen() {
 
   if (hasError) {
     return (
-      <div className="mx-auto max-w-4xl py-16 text-center text-red-600">
+      <div className="mx-auto max-w-4xl py-16 text-center text-danger">
         Präferenzen konnten nicht geladen werden.
       </div>
     )
@@ -38,12 +38,12 @@ export default function Praeferenzen() {
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-8 flex items-center gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-sage-100">
-          <Leaf className="h-6 w-6 text-sage-600" />
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-green-50">
+          <Sparkles className="h-6 w-6 text-green-600" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-stone-900">Präferenzen</h1>
-          <p className="text-sm text-stone-500">
+          <h1 className="text-2xl font-normal text-foreground">Präferenzen</h1>
+          <p className="text-sm text-muted-foreground">
             Nachhaltigkeitswerte festlegen — beeinflusst Produktempfehlungen
           </p>
         </div>
@@ -52,12 +52,12 @@ export default function Praeferenzen() {
       <ProfileTypeSwitcher value={profileType} onChange={setProfileType} />
 
       {profileType === "none" && (
-        <div className="rounded-xl border border-stone-100 bg-stone-50 p-10 text-center shadow-sm">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-stone-100">
-            <Leaf className="h-6 w-6 text-stone-300" />
+        <div className="rounded-xl border border-border bg-secondary p-10 text-center shadow-sm">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-secondary">
+            <Sparkles className="h-6 w-6 text-muted-foreground" />
           </div>
-          <p className="font-medium text-stone-700">Kein Werteprofil aktiv</p>
-          <p className="mt-1 text-sm text-stone-400">
+          <p className="font-medium text-foreground">Kein Werteprofil aktiv</p>
+          <p className="mt-1 text-sm text-muted-foreground">
             Produkte werden ohne Nachhaltigkeitsgewichtung angezeigt.
           </p>
         </div>
@@ -75,7 +75,7 @@ export default function Praeferenzen() {
         <button
           onClick={save}
           disabled={isSaving}
-          className="flex items-center gap-2 rounded-lg bg-sage-600 px-8 py-3 font-semibold text-white transition-colors hover:bg-sage-700 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-lg bg-green-500 px-8 py-3 font-semibold text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-50"
         >
           {isSaving ? (
             <>

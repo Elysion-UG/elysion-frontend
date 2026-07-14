@@ -33,11 +33,11 @@ export default function SellerDashboard() {
     <div>
       {/* Approval banner */}
       {isPending && (
-        <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <Clock className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+        <div className="mb-6 flex items-start gap-3 rounded-xl border border-warning bg-warning-tint p-4">
+          <Clock className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
           <div>
-            <h3 className="font-semibold text-amber-800">Verkäuferkonto wird geprüft</h3>
-            <p className="mt-1 text-sm text-amber-700">
+            <h3 className="font-semibold text-warning">Verkäuferkonto wird geprüft</h3>
+            <p className="mt-1 text-sm text-warning">
               Ihr Konto wartet auf Genehmigung durch einen Administrator.
             </p>
           </div>
@@ -46,8 +46,8 @@ export default function SellerDashboard() {
 
       {/* Page heading */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-800">{title}</h1>
-        <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+        <h1 className="text-2xl font-normal text-foreground">{title}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
       </div>
 
       {/* Tab content */}

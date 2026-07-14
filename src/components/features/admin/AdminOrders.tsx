@@ -95,8 +95,10 @@ export default function AdminOrders() {
       onRowClick={(order) => router.push(`/admin/orders/${order.id}`)}
       renderRow={(order) => (
         <>
-          <TableCell className="px-4 py-3 font-mono text-slate-300">{order.orderNumber}</TableCell>
-          <TableCell className="px-4 py-3 text-slate-500">
+          <TableCell className="px-4 py-3 font-mono text-muted-foreground">
+            {order.orderNumber}
+          </TableCell>
+          <TableCell className="px-4 py-3 text-muted-foreground">
             {order.guestEmail ?? order.userId?.slice(0, 8) ?? "–"}
           </TableCell>
           <TableCell className="px-4 py-3">
@@ -105,11 +107,13 @@ export default function AdminOrders() {
               colorClasses={statusColor[order.status]}
             />
           </TableCell>
-          <TableCell className="px-4 py-3 text-xs text-slate-500">{order.paymentStatus}</TableCell>
-          <TableCell className="px-4 py-3 font-medium text-slate-200">
+          <TableCell className="px-4 py-3 text-xs text-muted-foreground">
+            {order.paymentStatus}
+          </TableCell>
+          <TableCell className="px-4 py-3 font-medium text-muted-foreground">
             {formatEuro(order.total)}
           </TableCell>
-          <TableCell className="px-4 py-3 text-slate-500">
+          <TableCell className="px-4 py-3 text-muted-foreground">
             {new Date(order.createdAt).toLocaleDateString("de-DE")}
           </TableCell>
         </>

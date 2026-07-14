@@ -69,14 +69,14 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
 
   return (
     <div className="mx-auto max-w-2xl animate-fade-up">
-      <h1 className="mb-8 flex items-center gap-3 text-3xl font-bold text-slate-800">
-        <CreditCard className="h-8 w-8 text-teal-600" />
+      <h1 className="mb-8 flex items-center gap-3 text-3xl font-normal text-foreground">
+        <CreditCard className="h-8 w-8 text-green-600" />
         Bestellung bestätigen
       </h1>
 
-      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6">
-        <h2 className="mb-4 flex items-center gap-2 font-semibold text-slate-700">
-          <ShoppingBag className="h-4 w-4 text-teal-600" />
+      <div className="mb-6 rounded-xl border border-border bg-white p-6">
+        <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
+          <ShoppingBag className="h-4 w-4 text-green-600" />
           Deine Artikel
         </h2>
         <div className="space-y-3">
@@ -93,14 +93,14 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
                     className="flex-shrink-0 rounded-lg object-cover"
                   />
                 ) : (
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100">
-                    <ShoppingBag className="h-5 w-5 text-slate-400" />
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-secondary">
+                    <ShoppingBag className="h-5 w-5 text-muted-foreground" />
                   </div>
                 )}
-                <span className="flex-1 text-slate-700">
+                <span className="flex-1 text-foreground">
                   {item.quantity}× {display?.name ?? "Artikel"}
                 </span>
-                <span className="font-medium text-slate-800">{formatEuro(item.lineTotal)}</span>
+                <span className="font-medium text-foreground">{formatEuro(item.lineTotal)}</span>
               </div>
             )
           })}
@@ -108,12 +108,12 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
       </div>
 
       {preview.shippingAddress && (
-        <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6">
-          <h2 className="mb-3 flex items-center gap-2 font-semibold text-slate-700">
-            <MapPin className="h-4 w-4 text-teal-600" />
+        <div className="mb-6 rounded-xl border border-border bg-white p-6">
+          <h2 className="mb-3 flex items-center gap-2 font-semibold text-foreground">
+            <MapPin className="h-4 w-4 text-green-600" />
             Lieferadresse
           </h2>
-          <address className="text-sm not-italic leading-relaxed text-slate-600">
+          <address className="text-sm not-italic leading-relaxed text-foreground">
             {preview.shippingAddress.firstName} {preview.shippingAddress.lastName}
             <br />
             {preview.shippingAddress.street} {preview.shippingAddress.houseNumber}
@@ -123,8 +123,8 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
         </div>
       )}
 
-      <div className="mb-6 rounded-xl border border-slate-200 bg-white p-6">
-        <div className="space-y-2 text-sm text-slate-600">
+      <div className="mb-6 rounded-xl border border-border bg-white p-6">
+        <div className="space-y-2 text-sm text-foreground">
           <div className="flex justify-between">
             <span>Zwischensumme (netto)</span>
             <span>{formatEuro((preview.subtotal ?? 0) - (preview.tax ?? 0))}</span>
@@ -144,28 +144,28 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
             </span>
           </div>
         </div>
-        <div className="mt-3 flex justify-between border-t border-slate-200 pt-3 font-bold text-slate-800">
+        <div className="mt-3 flex justify-between border-t border-border pt-3 font-bold text-foreground">
           <span>Gesamt (inkl. MwSt.)</span>
           <span>{formatEuro(preview.subtotal ?? 0)}</span>
         </div>
       </div>
 
       {/* AGB + Widerruf Checkbox — § 312j BGB */}
-      <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <div className="mb-6 rounded-xl border border-border bg-secondary p-4">
         <label className="flex cursor-pointer items-start gap-3">
           <input
             type="checkbox"
             checked={agbAccepted}
             onChange={(e) => setAgbAccepted(e.target.checked)}
-            className="mt-0.5 h-4 w-4 accent-teal-600"
+            className="mt-0.5 h-4 w-4 accent-green-500"
           />
-          <span className="text-sm text-slate-700">
+          <span className="text-sm text-foreground">
             Ich habe die{" "}
             <Link
               href="/agb"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-teal-700 underline underline-offset-2 hover:text-teal-900"
+              className="text-green-600 underline underline-offset-2 hover:text-green-600"
             >
               AGB
             </Link>{" "}
@@ -174,7 +174,7 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
               href="/widerruf"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-teal-700 underline underline-offset-2 hover:text-teal-900"
+              className="text-green-600 underline underline-offset-2 hover:text-green-600"
             >
               Widerrufsbelehrung
             </Link>{" "}
@@ -186,14 +186,14 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
       <div className="flex gap-3">
         <button
           onClick={onBack}
-          className="flex-1 rounded-lg border border-slate-300 py-3 font-medium text-slate-700 transition-colors hover:bg-slate-50"
+          className="flex-1 rounded-lg border border-border py-3 font-medium text-foreground transition-colors hover:bg-secondary"
         >
           Zurück
         </button>
         <button
           onClick={onComplete}
           disabled={isLoading || !agbAccepted}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-teal-600 py-3 font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-500 py-3 font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />

@@ -110,23 +110,23 @@ function PaymentForm({ paymentId, totalAmount, onSuccess, onError }: PaymentForm
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="rounded-xl border border-slate-200 bg-white p-6">
-        <h2 className="mb-4 flex items-center gap-2 font-semibold text-slate-700">
-          <CreditCard className="h-5 w-5 text-teal-600" />
+      <div className="rounded-xl border border-border bg-white p-6">
+        <h2 className="mb-4 flex items-center gap-2 font-semibold text-foreground">
+          <CreditCard className="h-5 w-5 text-green-600" />
           Zahlungsinformationen
         </h2>
         <PaymentElement />
       </div>
 
       {errorMessage && (
-        <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
-          <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" />
+        <div className="flex items-start gap-3 rounded-xl border border-danger bg-danger-tint p-4">
+          <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-danger" />
           <div className="flex-1">
-            <p className="text-sm text-red-700">{errorMessage}</p>
+            <p className="text-sm text-danger">{errorMessage}</p>
             <button
               type="button"
               onClick={handleRetry}
-              className="mt-2 flex items-center gap-1 text-sm font-medium text-red-600 underline underline-offset-2 hover:text-red-800"
+              className="mt-2 flex items-center gap-1 text-sm font-medium text-danger underline underline-offset-2 hover:text-danger"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Erneut versuchen
@@ -135,8 +135,8 @@ function PaymentForm({ paymentId, totalAmount, onSuccess, onError }: PaymentForm
         </div>
       )}
 
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-        <div className="flex justify-between font-bold text-slate-800">
+      <div className="rounded-xl border border-border bg-secondary p-4">
+        <div className="flex justify-between font-bold text-foreground">
           <span>Zu zahlen</span>
           <span>{formatEuro(totalAmount)}</span>
         </div>
@@ -145,7 +145,7 @@ function PaymentForm({ paymentId, totalAmount, onSuccess, onError }: PaymentForm
       <button
         type="submit"
         disabled={!stripe || !elements || submitting}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-teal-600 py-3 font-medium text-white transition-colors hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-500 py-3 font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {submitting ? (
           <>
@@ -215,9 +215,11 @@ export default function PaymentStep({
   if (!stripePromise) {
     return (
       <div className="mx-auto max-w-lg py-12 text-center">
-        <AlertCircle className="mx-auto mb-4 h-12 w-12 text-yellow-500" />
-        <h2 className="mb-2 text-xl font-bold text-slate-800">Zahlungssystem nicht konfiguriert</h2>
-        <p className="text-sm text-slate-500">
+        <AlertCircle className="mx-auto mb-4 h-12 w-12 text-warning" />
+        <h2 className="mb-2 text-xl font-bold text-foreground">
+          Zahlungssystem nicht konfiguriert
+        </h2>
+        <p className="text-sm text-muted-foreground">
           Der Stripe-Publishable-Key ist nicht hinterlegt. Bitte kontaktiere den Support.
         </p>
       </div>
@@ -227,8 +229,8 @@ export default function PaymentStep({
   if (loading) {
     return (
       <div className="flex min-h-[30vh] flex-col items-center justify-center gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
-        <p className="text-sm text-slate-500">Zahlungsvorgang wird vorbereitet...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+        <p className="text-sm text-muted-foreground">Zahlungsvorgang wird vorbereitet...</p>
       </div>
     )
   }
@@ -236,17 +238,17 @@ export default function PaymentStep({
   if (initError || !clientSecret || !paymentId) {
     return (
       <div className="mx-auto max-w-lg py-12 text-center">
-        <AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-400" />
-        <h2 className="mb-2 text-xl font-bold text-slate-800">Fehler</h2>
-        <p className="text-sm text-slate-500">{initError ?? "Unbekannter Fehler."}</p>
+        <AlertCircle className="mx-auto mb-4 h-12 w-12 text-danger" />
+        <h2 className="mb-2 text-xl font-bold text-foreground">Fehler</h2>
+        <p className="text-sm text-muted-foreground">{initError ?? "Unbekannter Fehler."}</p>
       </div>
     )
   }
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="mb-8 flex items-center gap-3 text-3xl font-bold text-slate-800">
-        <CreditCard className="h-8 w-8 text-teal-600" />
+      <h1 className="mb-8 flex items-center gap-3 text-3xl font-normal text-foreground">
+        <CreditCard className="h-8 w-8 text-green-600" />
         Zahlung
       </h1>
 
@@ -254,11 +256,15 @@ export default function PaymentStep({
         stripe={stripePromise}
         options={{
           clientSecret,
+          // Stripe Elements an das Elysion Design System v1.3 angeglichen
+          // (Logo-Grün als Primary, Ink-Text, Radius 12).
           appearance: {
             theme: "stripe",
             variables: {
-              colorPrimary: "#0d9488",
-              borderRadius: "8px",
+              colorPrimary: "#58B24A",
+              colorText: "#16201A",
+              colorDanger: "#C5453B",
+              borderRadius: "12px",
             },
           },
           locale: "de",

@@ -46,7 +46,7 @@ export default function ProductCard({ product, productHref, sellerHref }: Produc
   return (
     <article
       data-testid="product-card"
-      className="group relative overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm transition-all duration-200 focus-within:ring-2 focus-within:ring-sage-500 focus-within:ring-offset-2 hover:-translate-y-0.5 hover:border-sage-200 hover:shadow-lg"
+      className="group relative overflow-hidden rounded-xl border border-border bg-white shadow-sm transition-all duration-200 focus-within:ring-2 focus-within:ring-green-500 focus-within:ring-offset-2 hover:-translate-y-0.5 hover:border-green-600 hover:shadow-lg"
     >
       {/* Whole-card link (stretched over the card); interactive children below
           sit above it via z-index so they stay independently clickable. */}
@@ -57,7 +57,7 @@ export default function ProductCard({ product, productHref, sellerHref }: Produc
       />
 
       {/* Product image */}
-      <div className="relative aspect-square overflow-hidden bg-sage-50">
+      <div className="relative aspect-square overflow-hidden bg-green-50">
         <Image
           src={image}
           alt={title}
@@ -69,14 +69,14 @@ export default function ProductCard({ product, productHref, sellerHref }: Produc
         />
 
         {soldOut && (
-          <div className="absolute inset-x-0 bottom-0 bg-stone-900/70 py-1 text-center text-[11px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
+          <div className="absolute inset-x-0 bottom-0 bg-ink-900/70 py-1 text-center text-xs font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
             Ausverkauft
           </div>
         )}
 
         {/* Certificate count badge */}
         {certs.length > 0 && (
-          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-semibold text-sage-700 shadow-sm backdrop-blur-sm">
+          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-xs font-semibold text-green-600 shadow-sm backdrop-blur-sm">
             <ShieldCheck className="h-3 w-3" />
             {certs.length}
           </div>
@@ -84,7 +84,7 @@ export default function ProductCard({ product, productHref, sellerHref }: Produc
 
         {/* Category badge */}
         {product.category?.name && (
-          <div className="absolute right-2 top-2 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-medium text-stone-600 shadow-sm backdrop-blur-sm">
+          <div className="absolute right-2 top-2 rounded-full bg-white/90 px-2.5 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur-sm">
             {product.category.name}
           </div>
         )}
@@ -96,20 +96,22 @@ export default function ProductCard({ product, productHref, sellerHref }: Produc
           (sellerHref ? (
             <Link
               href={sellerHref}
-              className="relative z-10 inline-block text-xs font-semibold uppercase tracking-wider text-sage-600 hover:text-sage-700 hover:underline"
+              className="relative z-10 inline-block text-xs font-semibold uppercase tracking-wider text-green-600 hover:text-green-600 hover:underline"
             >
               {sellerName}
             </Link>
           ) : (
-            <span className="block text-xs font-semibold uppercase tracking-wider text-sage-600">
+            <span className="block text-xs font-semibold uppercase tracking-wider text-green-600">
               {sellerName}
             </span>
           ))}
-        <h3 className="line-clamp-1 text-sm font-semibold text-stone-800">
+        <h3 className="line-clamp-1 text-sm font-semibold text-foreground">
           {product.name ?? product.title}
         </h3>
         {product.shortDesc && (
-          <p className="line-clamp-2 text-xs leading-relaxed text-stone-400">{product.shortDesc}</p>
+          <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+            {product.shortDesc}
+          </p>
         )}
 
         {/* Certificate chips */}
@@ -118,13 +120,13 @@ export default function ProductCard({ product, productHref, sellerHref }: Produc
             {certs.slice(0, 2).map((cert) => (
               <span
                 key={cert.id}
-                className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${certStyle(cert.certificateType)}`}
+                className={`rounded-full px-2 py-0.5 text-xs font-medium ${certStyle(cert.certificateType)}`}
               >
                 {certLabel(cert.certificateType)}
               </span>
             ))}
             {certs.length > 2 && (
-              <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-medium text-stone-500">
+              <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-foreground">
                 +{certs.length - 2}
               </span>
             )}
@@ -132,9 +134,9 @@ export default function ProductCard({ product, productHref, sellerHref }: Produc
         )}
 
         <div className="flex items-center justify-between pt-2">
-          <span className="text-base font-bold text-stone-900">{formatEuro(price)}</span>
+          <span className="text-base font-bold text-foreground">{formatEuro(price)}</span>
           <span
-            className={`text-[10px] font-medium ${soldOut ? "text-stone-400" : "text-sage-600"}`}
+            className={`text-xs font-medium ${soldOut ? "text-muted-foreground" : "text-green-600"}`}
           >
             {soldOut ? "Ausverkauft" : "Auf Lager"}
           </span>

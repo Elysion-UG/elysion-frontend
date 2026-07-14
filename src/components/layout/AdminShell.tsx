@@ -10,18 +10,21 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   return (
     <AdminGuard>
-      <div className="flex min-h-screen bg-slate-950">
+      {/* Admin ist eine dauerhaft dunkle Oberfläche: `dark` skopt die Design-
+          System-Tokens (foreground/card/border …) auf ihre Ink-Dark-Werte, damit
+          der migrierte Seiteninhalt korrekt auf Ink rendert. */}
+      <div className="dark flex min-h-screen bg-ink-900">
         <Suspense fallback={null}>
           <AdminSidebar mobileOpen={mobileOpen} onMobileClose={() => setMobileOpen(false)} />
         </Suspense>
 
         <div className="flex min-w-0 flex-1 flex-col">
           {/* Mobile top bar */}
-          <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-slate-800/60 bg-slate-950 px-4 py-3 lg:hidden">
+          <div className="sticky top-0 z-30 flex items-center gap-3 border-b border-white/10 bg-ink-900 px-4 py-3 lg:hidden">
             <AdminMobileMenuButton onClick={() => setMobileOpen(true)} />
             <div className="flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-cyber-500" />
-              <span className="font-mono text-sm font-semibold tracking-wider text-slate-200">
+              <ShieldCheck className="h-4 w-4 text-green-500" />
+              <span className="font-heading text-sm font-semibold tracking-[0.14em] text-sand-page">
                 Elysion Admin
               </span>
             </div>

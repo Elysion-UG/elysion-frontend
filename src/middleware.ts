@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { DEFAULT_BACKEND_HOST } from "@/src/lib/constants/backend-host.mjs"
 import { SESSION_MARKER_COOKIE } from "@/src/lib/auth/session-marker"
+import { loginPathWithRedirect } from "@/src/lib/auth/redirect-param"
 
 // ── Startup guard ──────────────────────────────────────────────────────────
 // Fail fast if portal domains are not configured. Without these, the middleware
@@ -178,16 +179,21 @@ export function middleware(request: NextRequest) {
       return res
     }
 
-    // Root → redirect to dashboard (client-side AuthGuard handles login redirect)
+    // Root → dashboard when a session marker is present, otherwise straight to
+    // the login. Checking the marker here avoids a needless second redirect
+    // (/ → /seller-dashboard → /login/seller) for unauthenticated visitors (#120).
     if (pathname === "/") {
-      const res = NextResponse.redirect(new URL("/seller-dashboard", request.url))
+      const target = hasSessionMarker(request) ? "/seller-dashboard" : "/login/seller"
+      const res = NextResponse.redirect(new URL(target, request.url))
       applySecurityHeaders(request, res, nonce)
       return res
     }
 
-    // First line of defence (#68): no session marker → send to the seller login.
+    // First line of defence (#68): no session marker → send to the seller login,
+    // carrying the original destination so login can return the user there (#121).
     if (SELLER_PROTECTED.some((r) => pathname.startsWith(r)) && !hasSessionMarker(request)) {
-      const res = NextResponse.redirect(new URL("/login/seller", request.url))
+      const target = loginPathWithRedirect("/login/seller", pathname + request.nextUrl.search)
+      const res = NextResponse.redirect(new URL(target, request.url))
       applySecurityHeaders(request, res, nonce)
       return res
     }
@@ -211,16 +217,21 @@ export function middleware(request: NextRequest) {
       return res
     }
 
-    // Root → redirect to dashboard (client-side AdminGuard handles login redirect)
+    // Root → admin area when a session marker is present, otherwise straight to
+    // the login. Checking the marker here avoids a needless second redirect
+    // (/ → /admin → /login/admin) for unauthenticated visitors (#120).
     if (pathname === "/") {
-      const res = NextResponse.redirect(new URL("/admin", request.url))
+      const target = hasSessionMarker(request) ? "/admin" : "/login/admin"
+      const res = NextResponse.redirect(new URL(target, request.url))
       applySecurityHeaders(request, res, nonce)
       return res
     }
 
-    // First line of defence (#68): no session marker → send to the admin login.
+    // First line of defence (#68): no session marker → send to the admin login,
+    // carrying the original destination so login can return the user there (#121).
     if (ADMIN_PROTECTED.some((r) => pathname.startsWith(r)) && !hasSessionMarker(request)) {
-      const res = NextResponse.redirect(new URL("/login/admin", request.url))
+      const target = loginPathWithRedirect("/login/admin", pathname + request.nextUrl.search)
+      const res = NextResponse.redirect(new URL(target, request.url))
       applySecurityHeaders(request, res, nonce)
       return res
     }
@@ -269,10 +280,13 @@ export function middleware(request: NextRequest) {
   }
 
   // First line of defence (#68): protected buyer routes require a session
-  // marker. Login lives on the buyer domain root, so redirect there. The
-  // client-side AuthGuard still performs the full auth/role check afterwards.
+  // marker. Login lives on the buyer domain root, so redirect there — carrying
+  // the original destination as ?redirect= so the login modal can return the
+  // user there after signing in (#121). The client-side AuthGuard still performs
+  // the full auth/role check afterwards.
   if (BUYER_PROTECTED.some((r) => pathname.startsWith(r)) && !hasSessionMarker(request)) {
-    const res = NextResponse.redirect(new URL("/", request.url))
+    const target = loginPathWithRedirect("/", pathname + request.nextUrl.search)
+    const res = NextResponse.redirect(new URL(target, request.url))
     applySecurityHeaders(request, res, nonce)
     return res
   }

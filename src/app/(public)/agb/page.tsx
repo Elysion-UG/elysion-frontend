@@ -7,19 +7,19 @@ export const metadata = {
 export default function AgbPage() {
   return (
     <div className="mx-auto max-w-3xl py-12">
-      <h1 className="mb-2 text-3xl font-bold text-stone-900">
+      <h1 className="mb-2 text-3xl font-normal text-foreground">
         Allgemeine Geschäftsbedingungen (AGB)
       </h1>
-      <p className="mb-8 text-sm text-stone-400">Stand: [PLATZHALTER: Datum]</p>
+      <p className="mb-8 text-sm text-muted-foreground">Stand: [PLATZHALTER: Datum]</p>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-xl font-semibold text-stone-800">§ 1 Geltungsbereich</h2>
-        <p className="text-stone-700">
+        <h2 className="mb-3 text-xl font-semibold text-foreground">§ 1 Geltungsbereich</h2>
+        <p className="text-foreground">
           Diese Allgemeinen Geschäftsbedingungen (AGB) gelten für alle Nutzungsverhältnisse zwischen
           der Elysion GmbH, [PLATZHALTER: Adresse] (nachfolgend „Elysion") und den Nutzern der
           Plattform unter [PLATZHALTER: www.elysion.de].
         </p>
-        <p className="mt-2 text-stone-700">
+        <p className="mt-2 text-foreground">
           Elysion betreibt einen Marktplatz, auf dem Dritte (Verkäufer) Waren an Verbraucher
           (Käufer) verkaufen.{" "}
           <strong>
@@ -31,13 +31,13 @@ export default function AgbPage() {
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-xl font-semibold text-stone-800">§ 2 Registrierung und Konto</h2>
-        <p className="text-stone-700">
+        <h2 className="mb-3 text-xl font-semibold text-foreground">§ 2 Registrierung und Konto</h2>
+        <p className="text-foreground">
           Die Nutzung des Marktplatzes als Käufer setzt eine Registrierung voraus. Mit der
           Registrierung bestätigt der Nutzer, dass er mindestens 18 Jahre alt ist und die AGB
           akzeptiert. Jede natürliche Person darf nur ein Käuferkonto anlegen.
         </p>
-        <p className="mt-2 text-stone-700">
+        <p className="mt-2 text-foreground">
           Der Nutzer ist verpflichtet, seine Zugangsdaten geheim zu halten und Elysion unverzüglich
           zu benachrichtigen, wenn er Kenntnis von einer missbräuchlichen Nutzung seines Kontos
           erlangt.
@@ -45,14 +45,14 @@ export default function AgbPage() {
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-xl font-semibold text-stone-800">§ 3 Vertragsschluss</h2>
-        <p className="text-stone-700">
+        <h2 className="mb-3 text-xl font-semibold text-foreground">§ 3 Vertragsschluss</h2>
+        <p className="text-foreground">
           Die Darstellung von Produkten auf der Plattform stellt kein bindendes Angebot dar. Durch
           Klicken auf „Zahlungspflichtig bestellen" gibt der Käufer ein verbindliches Angebot zum
           Kauf ab. Der Kaufvertrag kommt durch die Annahme des Verkäufers zustande, die in der Regel
           durch die Versandbestätigung per E-Mail erklärt wird.
         </p>
-        <p className="mt-2 text-stone-700">
+        <p className="mt-2 text-foreground">
           Elysion sendet unmittelbar nach Bestelleingang eine automatische Bestellbestätigung. Diese
           stellt noch keine Annahme des Angebots dar, sondern bestätigt lediglich den Eingang der
           Bestellung.
@@ -60,20 +60,20 @@ export default function AgbPage() {
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-xl font-semibold text-stone-800">§ 4 Preise und Zahlung</h2>
-        <p className="text-stone-700">
+        <h2 className="mb-3 text-xl font-semibold text-foreground">§ 4 Preise und Zahlung</h2>
+        <p className="text-foreground">
           Alle Preise sind Bruttopreise in Euro und enthalten die gesetzliche Mehrwertsteuer.
           Versandkosten werden gesondert ausgewiesen und sind vom Käufer zu tragen, sofern nicht
           ausdrücklich „versandkostenfrei" angegeben.
         </p>
-        <p className="mt-2 text-stone-700">
+        <p className="mt-2 text-foreground">
           Die verfügbaren Zahlungsmethoden werden dem Käufer beim Checkout angezeigt.
         </p>
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-xl font-semibold text-stone-800">§ 5 Lieferung</h2>
-        <p className="text-stone-700">
+        <h2 className="mb-3 text-xl font-semibold text-foreground">§ 5 Lieferung</h2>
+        <p className="text-foreground">
           Die Lieferbedingungen (Lieferzeit, Liefergebiet, Versandkosten) werden jeweils auf der
           Produktseite angegeben und sind Bestandteil des Kaufvertrags zwischen Käufer und
           Verkäufer. Elysion übernimmt keine Haftung für Lieferverzögerungen durch den Verkäufer
@@ -82,13 +82,13 @@ export default function AgbPage() {
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-xl font-semibold text-stone-800">
+        <h2 className="mb-3 text-xl font-semibold text-foreground">
           § 6 Widerrufsrecht für Verbraucher
         </h2>
-        <p className="text-stone-700">
+        <p className="text-foreground">
           Verbrauchern steht ein gesetzliches Widerrufsrecht zu. Die vollständige Widerrufsbelehrung
           sowie das Muster-Widerrufsformular finden Sie auf unserer{" "}
-          <Link href="/widerruf" className="text-sage-600 underline hover:text-sage-800">
+          <Link href="/widerruf" className="text-green-600 underline hover:text-green-600">
             Widerrufsbelehrungsseite
           </Link>
           .
@@ -96,54 +96,54 @@ export default function AgbPage() {
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-xl font-semibold text-stone-800">§ 7 Gewährleistung</h2>
-        <p className="text-stone-700">
+        <h2 className="mb-3 text-xl font-semibold text-foreground">§ 7 Gewährleistung</h2>
+        <p className="text-foreground">
           Es gelten die gesetzlichen Gewährleistungsrechte. Der Käufer hat gegenüber dem jeweiligen
           Verkäufer im Fall eines Mangels Anspruch auf Nacherfüllung (Nachbesserung oder
           Ersatzlieferung). Die Verjährungsfrist für Mängelansprüche beträgt bei neuen Waren 2 Jahre
           ab Lieferung (§ 438 Abs. 1 Nr. 3 BGB).
         </p>
-        <p className="mt-2 text-stone-700">
+        <p className="mt-2 text-foreground">
           Elysion haftet nicht für Mängelansprüche aus dem Kaufvertrag zwischen Käufer und
           Verkäufer, da Elysion nicht Vertragspartei ist.
         </p>
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-xl font-semibold text-stone-800">§ 8 Haftung von Elysion</h2>
-        <p className="text-stone-700">
+        <h2 className="mb-3 text-xl font-semibold text-foreground">§ 8 Haftung von Elysion</h2>
+        <p className="text-foreground">
           Elysion haftet unbeschränkt für Schäden aus der Verletzung des Lebens, des Körpers oder
           der Gesundheit sowie für vorsätzliche oder grob fahrlässige Pflichtverletzungen von
           Elysion oder seinen Erfüllungsgehilfen.
         </p>
-        <p className="mt-2 text-stone-700">
+        <p className="mt-2 text-foreground">
           Für leicht fahrlässige Verletzungen wesentlicher Vertragspflichten haftet Elysion der Höhe
           nach begrenzt auf den vertragstypischen, vorhersehbaren Schaden. Im Übrigen ist die
           Haftung von Elysion für leicht fahrlässiges Verhalten ausgeschlossen.
         </p>
-        <p className="mt-2 text-stone-700">
+        <p className="mt-2 text-foreground">
           Elysion ist kein Vertragspartner des Kaufvertrags und übernimmt keine Haftung für die
           Qualität, Sicherheit oder Rechtmäßigkeit der durch Verkäufer angebotenen Produkte.
         </p>
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-xl font-semibold text-stone-800">§ 9 Nutzungsregeln</h2>
-        <p className="text-stone-700">
+        <h2 className="mb-3 text-xl font-semibold text-foreground">§ 9 Nutzungsregeln</h2>
+        <p className="text-foreground">
           Die Nutzung der Plattform für rechtswidrige Zwecke ist untersagt. Elysion behält sich vor,
           Konten bei Verstößen gegen diese AGB oder geltendes Recht zu sperren.
         </p>
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-xl font-semibold text-stone-800">§ 10 Streitbeilegung</h2>
-        <p className="text-stone-700">
+        <h2 className="mb-3 text-xl font-semibold text-foreground">§ 10 Streitbeilegung</h2>
+        <p className="text-foreground">
           Die EU-Kommission stellt eine Plattform zur Online-Streitbeilegung bereit:{" "}
           <a
             href="https://ec.europa.eu/consumers/odr/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sage-600 underline hover:text-sage-800"
+            className="text-green-600 underline hover:text-green-600"
           >
             https://ec.europa.eu/consumers/odr/
           </a>
@@ -153,23 +153,23 @@ export default function AgbPage() {
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-xl font-semibold text-stone-800">
+        <h2 className="mb-3 text-xl font-semibold text-foreground">
           § 11 Anwendbares Recht und Gerichtsstand
         </h2>
-        <p className="text-stone-700">
+        <p className="text-foreground">
           Es gilt deutsches Recht unter Ausschluss des UN-Kaufrechts. Für Verbraucher gilt diese
           Rechtswahl nur, soweit der Verbraucher dadurch nicht den Schutz zwingender
           Verbraucherschutzvorschriften seines gewöhnlichen Aufenthaltsstaates verliert.
         </p>
-        <p className="mt-2 text-stone-700">
+        <p className="mt-2 text-foreground">
           Gerichtsstand für Kaufleute und juristische Personen des öffentlichen Rechts ist
           [PLATZHALTER: Sitz von Elysion].
         </p>
       </section>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-xl font-semibold text-stone-800">§ 12 Änderungen der AGB</h2>
-        <p className="text-stone-700">
+        <h2 className="mb-3 text-xl font-semibold text-foreground">§ 12 Änderungen der AGB</h2>
+        <p className="text-foreground">
           Elysion behält sich vor, diese AGB zu ändern. Änderungen werden dem Nutzer per E-Mail
           mitgeteilt. Widerspricht der Nutzer der Änderung nicht innerhalb von 6 Wochen nach Zugang
           der Mitteilung, gelten die geänderten AGB als akzeptiert. Auf dieses Widerspruchs- und
@@ -177,11 +177,11 @@ export default function AgbPage() {
         </p>
       </section>
 
-      <p className="mt-10 border-t border-stone-200 pt-6 text-xs text-stone-400">
-        ⚠️ Diese AGB enthalten Platzhalter (<code>[PLATZHALTER: ...]</code>), die vor dem Launch
-        durch echte Angaben ersetzt werden müssen. Empfehlung: Rechtliche Prüfung durch einen
-        deutschen Rechtsanwalt oder einen spezialisierten Dienst (z. B. IT-Recht Kanzlei,
-        Händlerbund, Trusted Shops).
+      <p className="mt-10 border-t border-border pt-6 text-xs text-muted-foreground">
+        Diese AGB enthalten Platzhalter (<code>[PLATZHALTER: ...]</code>), die vor dem Launch durch
+        echte Angaben ersetzt werden müssen. Empfehlung: Rechtliche Prüfung durch einen deutschen
+        Rechtsanwalt oder einen spezialisierten Dienst (z. B. IT-Recht Kanzlei, Händlerbund, Trusted
+        Shops).
       </p>
     </div>
   )

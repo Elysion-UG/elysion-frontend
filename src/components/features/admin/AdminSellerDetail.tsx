@@ -135,7 +135,7 @@ export default function AdminSellerDetailView() {
   }
 
   if (!seller) {
-    return <div className="py-20 text-center text-slate-500">Verkäufer nicht gefunden.</div>
+    return <div className="py-20 text-center text-muted-foreground">Verkäufer nicht gefunden.</div>
   }
 
   return (
@@ -143,11 +143,13 @@ export default function AdminSellerDetailView() {
       <BackButton />
 
       {/* Seller Info */}
-      <div className="rounded-xl border border-slate-800/60 bg-slate-900/60 p-6">
+      <div className="rounded-xl border border-border/60 bg-ink-900/60 p-6">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
-            <h1 className="font-mono text-xl font-bold text-slate-100">{seller.companyName}</h1>
-            <p className="mt-1 text-sm text-slate-500">{seller.userEmail}</p>
+            <h1 className="font-mono text-xl font-normal text-muted-foreground">
+              {seller.companyName}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">{seller.userEmail}</p>
           </div>
           <StatusBadge
             label={sellerStatusLabel[seller.status]}
@@ -156,7 +158,7 @@ export default function AdminSellerDetailView() {
           />
         </div>
 
-        <dl className="divide-y divide-slate-800/60">
+        <dl className="divide-y divide-border/60">
           <Row label="Seller-ID" value={seller.id} mono />
           <Row label="User-ID" value={seller.userId} mono />
           <Row label="E-Mail" value={seller.userEmail} />
@@ -172,7 +174,7 @@ export default function AdminSellerDetailView() {
         {/* Actions */}
         {actionLoading ? (
           <div className="mt-6">
-            <Loader2 className="h-5 w-5 animate-spin text-cyber-500" />
+            <Loader2 className="h-5 w-5 animate-spin text-green-500" />
           </div>
         ) : (
           <div className="mt-6 space-y-3">
@@ -181,7 +183,7 @@ export default function AdminSellerDetailView() {
                 <>
                   <button
                     onClick={handleApprove}
-                    className="flex items-center gap-1.5 rounded-lg border border-emerald-800/60 bg-emerald-900/30 px-4 py-2 text-sm text-emerald-400 hover:text-emerald-300"
+                    className="flex items-center gap-1.5 rounded-lg border border-green-600/60 bg-green-700/30 px-4 py-2 text-sm text-green-500 hover:text-green-500"
                   >
                     <CheckCircle2 className="h-4 w-4" /> Genehmigen
                   </button>
@@ -190,7 +192,7 @@ export default function AdminSellerDetailView() {
                       setShowRejectInput((v) => !v)
                       setShowSuspendInput(false)
                     }}
-                    className="flex items-center gap-1.5 rounded-lg border border-red-800/60 bg-red-900/30 px-4 py-2 text-sm text-red-400 hover:text-red-300"
+                    className="flex items-center gap-1.5 rounded-lg border border-danger/60 bg-destructive/30 px-4 py-2 text-sm text-danger hover:text-danger"
                   >
                     <XCircle className="h-4 w-4" /> Ablehnen
                   </button>
@@ -202,7 +204,7 @@ export default function AdminSellerDetailView() {
                     setShowSuspendInput((v) => !v)
                     setShowRejectInput(false)
                   }}
-                  className="flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-800/60 px-4 py-2 text-sm text-slate-300 hover:text-slate-100"
+                  className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-ink-900/60 px-4 py-2 text-sm text-muted-foreground hover:text-muted-foreground"
                 >
                   <Ban className="h-4 w-4" /> Sperren
                 </button>
@@ -216,12 +218,12 @@ export default function AdminSellerDetailView() {
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
                   placeholder="Ablehnungsgrund (erforderlich)"
-                  className="flex-1 rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-red-600/20"
+                  className="flex-1 rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-danger/20"
                 />
                 <button
                   onClick={handleReject}
                   disabled={!rejectReason.trim()}
-                  className="rounded-lg border border-red-800/60 bg-red-900/30 px-4 py-2 text-sm text-red-400 hover:text-red-300 disabled:opacity-40"
+                  className="rounded-lg border border-danger/60 bg-destructive/30 px-4 py-2 text-sm text-danger hover:text-danger disabled:opacity-40"
                 >
                   Bestätigen
                 </button>
@@ -235,12 +237,12 @@ export default function AdminSellerDetailView() {
                   value={suspendReason}
                   onChange={(e) => setSuspendReason(e.target.value)}
                   placeholder="Sperrgrund (erforderlich)"
-                  className="flex-1 rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-slate-600/20"
+                  className="flex-1 rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-border/20"
                 />
                 <button
                   onClick={handleSuspend}
                   disabled={!suspendReason.trim()}
-                  className="rounded-lg border border-slate-700/60 bg-slate-800/60 px-4 py-2 text-sm text-slate-300 hover:text-slate-100 disabled:opacity-40"
+                  className="rounded-lg border border-border/60 bg-ink-900/60 px-4 py-2 text-sm text-muted-foreground hover:text-muted-foreground disabled:opacity-40"
                 >
                   Bestätigen
                 </button>
@@ -251,14 +253,14 @@ export default function AdminSellerDetailView() {
       </div>
 
       {/* Plattformgebühr */}
-      <div className="rounded-xl border border-slate-800/60 bg-slate-900/60 p-6">
+      <div className="rounded-xl border border-border/60 bg-ink-900/60 p-6">
         <div className="mb-4 flex items-center gap-2">
-          <Percent className="h-4 w-4 text-cyber-500" />
-          <h2 className="font-mono text-sm font-semibold uppercase tracking-wider text-slate-400">
+          <Percent className="h-4 w-4 text-green-500" />
+          <h2 className="font-mono text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Plattformgebühr
           </h2>
         </div>
-        <p className="mb-4 text-sm text-slate-500">
+        <p className="mb-4 text-sm text-muted-foreground">
           Provision auf den Warenwert (exkl. Versand) pro Bestellung. Default für neue Seller:
           15&nbsp;%.
         </p>
@@ -272,16 +274,16 @@ export default function AdminSellerDetailView() {
               value={commissionInput}
               onChange={(e) => setCommissionInput(e.target.value)}
               aria-label="Provision in Prozent"
-              className="w-32 rounded-lg border border-slate-700/60 bg-slate-800/60 py-2 pl-3 pr-8 text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
+              className="w-32 rounded-lg border border-border/60 bg-ink-900/60 py-2 pl-3 pr-8 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
             />
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-500">
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
               %
             </span>
           </div>
           <button
             onClick={handleSaveCommission}
             disabled={commissionSaving || commissionInput.trim() === ""}
-            className="flex items-center gap-1.5 rounded-lg border border-cyber-800/60 bg-cyber-950/30 px-4 py-2 text-sm text-cyber-400 hover:text-cyber-300 disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-lg border border-green-600/60 bg-green-700/30 px-4 py-2 text-sm text-green-500 hover:text-green-500 disabled:opacity-40"
           >
             {commissionSaving && <Loader2 className="h-4 w-4 animate-spin" />}
             Speichern
@@ -290,38 +292,38 @@ export default function AdminSellerDetailView() {
       </div>
 
       {/* Products */}
-      <div className="rounded-xl border border-slate-800/60 bg-slate-900/60">
-        <div className="border-b border-slate-800/60 px-5 py-4">
-          <h2 className="font-mono text-sm font-semibold uppercase tracking-wider text-slate-400">
+      <div className="rounded-xl border border-border/60 bg-ink-900/60">
+        <div className="border-b border-border/60 px-5 py-4">
+          <h2 className="font-mono text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Produkte ({products.length})
           </h2>
         </div>
         {products.length === 0 ? (
-          <p className="px-5 py-8 text-center text-sm text-slate-600">Keine Produkte vorhanden.</p>
+          <p className="px-5 py-8 text-center text-sm text-foreground">Keine Produkte vorhanden.</p>
         ) : (
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-800/60 bg-slate-800/20">
+            <thead className="border-b border-border/60 bg-ink-900/20">
               <tr>
-                <th className="px-5 py-2.5 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-5 py-2.5 text-left font-mono text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Name
                 </th>
-                <th className="px-5 py-2.5 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-5 py-2.5 text-left font-mono text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Status
                 </th>
-                <th className="px-5 py-2.5 text-left font-mono text-xs font-medium uppercase tracking-wider text-slate-500">
+                <th className="px-5 py-2.5 text-left font-mono text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Erstellt
                 </th>
                 <th className="px-5 py-2.5" />
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-border/60">
               {products.map((p) => (
                 <tr
                   key={p.id}
                   onClick={() => router.push(`/admin/products/${p.id}`)}
-                  className="cursor-pointer hover:bg-slate-800/30"
+                  className="cursor-pointer hover:bg-ink-900/30"
                 >
-                  <td className="px-5 py-3 font-medium text-slate-200">
+                  <td className="px-5 py-3 font-medium text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                       <span className="max-w-[240px] truncate">{p.name}</span>
                       <a
@@ -330,7 +332,7 @@ export default function AdminSellerDetailView() {
                         rel="noreferrer"
                         title="Im Shop ansehen"
                         onClick={(e) => e.stopPropagation()}
-                        className="shrink-0 text-slate-600 hover:text-slate-400"
+                        className="shrink-0 text-foreground hover:text-muted-foreground"
                       >
                         <ExternalLink className="h-3 w-3" />
                       </a>
@@ -342,14 +344,14 @@ export default function AdminSellerDetailView() {
                       colorClasses={productStatusColor[p.status]}
                     />
                   </td>
-                  <td className="px-5 py-3 text-slate-500">
+                  <td className="px-5 py-3 text-muted-foreground">
                     {new Date(p.createdAt).toLocaleDateString("de-DE")}
                   </td>
                   <td className="px-5 py-3 text-right">
                     <Link
                       href={`/admin/products/${p.id}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="text-xs text-cyber-500 hover:text-cyber-300"
+                      className="text-xs text-green-500 hover:text-green-500"
                     >
                       Details →
                     </Link>
@@ -367,8 +369,8 @@ export default function AdminSellerDetailView() {
 function Row({ label, value, mono }: { label: string; value: React.ReactNode; mono?: boolean }) {
   return (
     <div className="flex items-start justify-between gap-4 py-3">
-      <dt className="shrink-0 text-sm text-slate-500">{label}</dt>
-      <dd className={`text-right text-sm text-slate-200 ${mono ? "font-mono text-xs" : ""}`}>
+      <dt className="shrink-0 text-sm text-muted-foreground">{label}</dt>
+      <dd className={`text-right text-sm text-muted-foreground ${mono ? "font-mono text-xs" : ""}`}>
         {value}
       </dd>
     </div>

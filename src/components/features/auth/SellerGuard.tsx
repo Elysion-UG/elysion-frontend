@@ -2,8 +2,9 @@
 
 import type React from "react"
 import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/src/context/AuthContext"
+import { loginPathWithRedirect } from "@/src/lib/auth/redirect-param"
 import { Loader2, ShieldAlert } from "lucide-react"
 
 /**
@@ -14,29 +15,31 @@ import { Loader2, ShieldAlert } from "lucide-react"
 export default function SellerGuard({ children }: { children: React.ReactNode }) {
   const { role, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   const isSeller = isAuthenticated && role === "SELLER"
 
   useEffect(() => {
     if (isLoading) return
     if (!isSeller) {
-      router.replace("/login/seller")
+      // Preserve the requested page so login can return the user there (#121).
+      router.replace(loginPathWithRedirect("/login/seller", pathname))
     }
-  }, [isSeller, isLoading, router])
+  }, [isSeller, isLoading, router, pathname])
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-600" />
+      <div className="flex min-h-screen items-center justify-center bg-secondary">
+        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
       </div>
     )
   }
 
   if (!isSeller) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 text-center">
-        <ShieldAlert className="mb-4 h-12 w-12 text-teal-700" />
-        <p className="text-sm text-slate-500">Zugriff verweigert. Weiterleitung…</p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-secondary text-center">
+        <ShieldAlert className="mb-4 h-12 w-12 text-green-600" />
+        <p className="text-sm text-sand-page/70">Zugriff verweigert. Weiterleitung…</p>
       </div>
     )
   }

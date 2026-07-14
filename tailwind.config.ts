@@ -18,49 +18,53 @@ const config: Config = {
       },
     },
     extend: {
+      // Elysion Website Design System v1.3 — drei Stimmen (Guide 01)
+      fontFamily: {
+        sans: ["var(--font-body)", "Bricolage Grotesque", "system-ui", "sans-serif"],
+        body: ["var(--font-body)", "Bricolage Grotesque", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "Newsreader", "serif"],
+        heading: ["var(--font-heading)", "Schibsted Grotesk", "ui-sans-serif", "sans-serif"],
+        eyebrow: ["var(--font-eyebrow)", "Hanken Grotesk", "ui-sans-serif", "sans-serif"],
+        mono: ["var(--font-mono)", "Spline Sans Mono", "ui-monospace", "monospace"],
+      },
+      // Genau fünf Textstufen (Guide 01 · Desktop-Werte; T/M über globals.css)
+      fontSize: {
+        display: ["4.75rem", { lineHeight: "1.05", letterSpacing: "-0.015em", fontWeight: "400" }],
+        h2: ["3rem", { lineHeight: "1.08", letterSpacing: "-0.025em", fontWeight: "700" }],
+        h3: ["1.5rem", { lineHeight: "1.25", letterSpacing: "-0.015em", fontWeight: "700" }],
+        body: ["1.0625rem", { lineHeight: "1.55" }],
+        caption: ["0.75rem", { lineHeight: "1.4", letterSpacing: "0.09em" }],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-        sage: {
-          50: "#f2f7f0",
-          100: "#e0eddc",
-          200: "#c0dbb9",
-          300: "#94c38e",
-          400: "#65a65d",
-          500: "#458a3d",
-          600: "#346e2e",
-          700: "#295826",
-          800: "#214620",
-          900: "#173016",
+        // Vier Farben, ein Grün (Guide 02) — verbindliche Marken-Tokens
+        ink: {
+          DEFAULT: "#16201A",
+          900: "#16201A",
+          700: "#34403A",
+          muted: "#5D6B63",
         },
-        bark: {
-          50: "#faf6f1",
-          100: "#f2e9de",
-          200: "#e3d0bb",
-          300: "#cfaf92",
-          400: "#b88a68",
-          500: "#9e6c4a",
-          600: "#7c5438",
-          700: "#5e3f2b",
-          800: "#3e2b1e",
-          900: "#271b13",
+        sand: {
+          DEFAULT: "#F4EEDF",
+          page: "#F4EEDF",
+          surface: "#EFE7D2",
         },
-        cyber: {
-          50: "#ecfeff",
-          100: "#cffafe",
-          200: "#a5f3fc",
-          300: "#67e8f9",
-          400: "#22d3ee",
-          500: "#06b6d4",
-          600: "#0891b2",
-          700: "#0e7490",
-          800: "#155e75",
-          900: "#164e63",
-          950: "#083344",
+        green: {
+          DEFAULT: "#58B24A",
+          50: "#EEF8EC",
+          500: "#58B24A",
+          600: "#45963A",
+          700: "#357A2E",
         },
+        // Funktionsfarben — nur Systemzustände (Guide 02)
+        success: { DEFAULT: "#45963A", tint: "#D8F0D1" },
+        warning: { DEFAULT: "#C98A1E", tint: "#F6E6C4" },
+        danger: { DEFAULT: "#C5453B", tint: "#F4D9D6" },
+        info: { DEFAULT: "#3B6E8F", tint: "#DCE7EE" },
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
@@ -94,15 +98,24 @@ const config: Config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        // Vier Radius-Stufen (Guide 03): 8 Medien · 12 Buttons/Inputs · 16 Karten · Pill
+        xl: "0.75rem",
+        "2xl": "1rem",
+      },
+      // Elevation — zwei Schatten, immer Ink-getönt (Guide 03)
+      boxShadow: {
+        card: "0 20px 50px rgba(22,32,26,.12)",
+        float: "0 30px 70px rgba(22,32,26,.18)",
+        focus: "0 0 0 3px rgba(88,178,74,.32)",
+      },
+      // Motion — 180–240 ms (Guide 03)
+      transitionTimingFunction: {
+        brand: "cubic-bezier(0.22, 0.61, 0.36, 1)",
       },
       keyframes: {
         "bounce-subtle": {
           "0%, 100%": { transform: "scale(1)" },
           "50%": { transform: "scale(1.2)" },
-        },
-        "glow-pulse": {
-          "0%, 100%": { boxShadow: "0 0 8px rgba(6, 182, 212, 0.3)" },
-          "50%": { boxShadow: "0 0 20px rgba(6, 182, 212, 0.6)" },
         },
         "accordion-down": {
           from: { height: "0" },
@@ -127,7 +140,6 @@ const config: Config = {
       },
       animation: {
         "bounce-subtle": "bounce-subtle 0.3s ease-out",
-        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-up": "fade-up 0.5s ease-out both",

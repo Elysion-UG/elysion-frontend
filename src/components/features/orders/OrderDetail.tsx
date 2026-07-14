@@ -96,7 +96,7 @@ export default function OrderDetail() {
 
   if (error || !order) {
     return (
-      <div className="py-16 text-center text-red-600">{error ?? "Bestellung nicht gefunden."}</div>
+      <div className="py-16 text-center text-danger">{error ?? "Bestellung nicht gefunden."}</div>
     )
   }
 
@@ -104,38 +104,38 @@ export default function OrderDetail() {
     <div className="mx-auto max-w-3xl">
       <Link
         href="/orders"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-stone-400 transition-colors hover:text-sage-600"
+        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-green-600"
       >
         <ChevronLeft className="h-4 w-4" />
         Alle Bestellungen
       </Link>
 
-      <div className="mb-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
+      <div className="mb-6 rounded-xl border border-border bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sage-100">
-              <Package className="h-5 w-5 text-sage-600" />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-50">
+              <Package className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-stone-900">#{order.orderNumber}</h1>
-              <p className="text-sm text-stone-400">
+              <h1 className="text-xl font-normal text-foreground">#{order.orderNumber}</h1>
+              <p className="text-sm text-muted-foreground">
                 Aufgegeben am {formatDate(order.createdAt ?? "")}
               </p>
             </div>
           </div>
-          <span className="rounded-full border border-sage-200 bg-sage-50 px-3 py-1.5 text-sm font-medium text-sage-700">
+          <span className="rounded-full border border-green-600 bg-green-50 px-3 py-1.5 text-sm font-medium text-ink-900">
             {order.status ? orderStatusLabel[order.status] : ""}
           </span>
         </div>
       </div>
 
       {order.shippingAddress && (
-        <div className="mb-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-stone-700">
-            <MapPin className="h-4 w-4 text-sage-600" />
+        <div className="mb-6 rounded-xl border border-border bg-white p-6 shadow-sm">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-foreground">
+            <MapPin className="h-4 w-4 text-green-600" />
             Lieferadresse
           </h2>
-          <address className="text-sm not-italic leading-relaxed text-stone-600">
+          <address className="text-sm not-italic leading-relaxed text-foreground">
             {order.shippingAddress.firstName} {order.shippingAddress.lastName}
             <br />
             {order.shippingAddress.street} {order.shippingAddress.houseNumber}
@@ -148,12 +148,9 @@ export default function OrderDetail() {
       )}
 
       {order.groups?.map((group) => (
-        <div
-          key={group.id}
-          className="mb-6 rounded-xl border border-stone-200 bg-white p-6 shadow-sm"
-        >
+        <div key={group.id} className="mb-6 rounded-xl border border-border bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-stone-700">Verkäufer-Paket</h2>
+            <h2 className="text-sm font-semibold text-foreground">Verkäufer-Paket</h2>
             <StatusBadge
               label={groupStatusLabel[group.status]}
               colorClasses={groupStatusColor[group.status]}
@@ -162,8 +159,8 @@ export default function OrderDetail() {
           </div>
 
           {group.shipment?.trackingNumber && (
-            <div className="mb-4 flex items-center gap-2 rounded-lg border border-stone-100 bg-stone-50 p-3 text-sm text-stone-600">
-              <Truck className="h-4 w-4 flex-shrink-0 text-sage-600" />
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-secondary p-3 text-sm text-foreground">
+              <Truck className="h-4 w-4 flex-shrink-0 text-green-600" />
               <span>
                 Tracking: <span className="font-medium">{group.shipment.trackingNumber}</span>
                 {group.shipment.carrier && ` via ${group.shipment.carrier}`}
@@ -186,27 +183,27 @@ export default function OrderDetail() {
               const options = snap?.options ?? []
               return (
                 <div key={idx} className="flex gap-3">
-                  <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-sage-50">
+                  <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-green-50">
                     {imageUrl ? (
                       <Image src={imageUrl} alt={name} fill className="object-cover" sizes="56px" />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-stone-300">
+                      <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                         <Package className="h-6 w-6" />
                       </div>
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-stone-800">{name}</p>
+                    <p className="truncate text-sm font-medium text-foreground">{name}</p>
                     {options.length > 0 && (
-                      <p className="text-xs text-stone-500">
+                      <p className="text-xs text-muted-foreground">
                         {options.map((o) => `${o.type}: ${o.value}`).join(", ")}
                       </p>
                     )}
-                    <p className="mt-0.5 text-xs text-stone-500">
+                    <p className="mt-0.5 text-xs text-muted-foreground">
                       {item.quantity}× {formatEuro(item.pricePerUnit)}
                     </p>
                   </div>
-                  <span className="whitespace-nowrap text-sm font-medium text-stone-800">
+                  <span className="whitespace-nowrap text-sm font-medium text-foreground">
                     {formatEuro(item.subtotal)}
                   </span>
                 </div>
@@ -216,25 +213,25 @@ export default function OrderDetail() {
         </div>
       ))}
 
-      <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
-        <h2 className="mb-4 text-sm font-semibold text-stone-700">Zusammenfassung</h2>
-        <div className="space-y-2.5 text-sm text-stone-500">
+      <div className="rounded-xl border border-border bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-sm font-semibold text-foreground">Zusammenfassung</h2>
+        <div className="space-y-2.5 text-sm text-muted-foreground">
           <div className="flex justify-between">
             <span>Zwischensumme</span>
-            <span className="text-stone-700">{formatEuro(order.subtotal ?? 0)}</span>
+            <span className="text-foreground">{formatEuro(order.subtotal ?? 0)}</span>
           </div>
           <div className="flex justify-between">
             <span>Versand</span>
-            <span className="text-stone-700">{formatEuro(order.shippingCost ?? 0)}</span>
+            <span className="text-foreground">{formatEuro(order.shippingCost ?? 0)}</span>
           </div>
           {order.tax != null && order.tax > 0 && (
             <div className="flex justify-between">
               <span>MwSt.</span>
-              <span className="text-stone-700">{formatEuro(order.tax)}</span>
+              <span className="text-foreground">{formatEuro(order.tax)}</span>
             </div>
           )}
         </div>
-        <div className="mt-4 flex justify-between border-t border-stone-100 pt-4 text-base font-bold text-stone-900">
+        <div className="mt-4 flex justify-between border-t border-border pt-4 text-base font-bold text-foreground">
           <span>Gesamt</span>
           <span>{formatEuro(order.total ?? 0)}</span>
         </div>

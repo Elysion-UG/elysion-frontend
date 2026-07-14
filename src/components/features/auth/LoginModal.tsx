@@ -9,11 +9,17 @@ import { BuyerRegisterForm } from "@/src/components/features/auth/BuyerRegisterF
 interface LoginModalProps {
   isOpen: boolean
   onClose: () => void
+  /**
+   * Invoked after a successful login (before the modal is torn down). Lets the
+   * host return the user to a deep link they were bounced off (#121). When
+   * omitted, a successful login simply closes the modal.
+   */
+  onLoginSuccess?: () => void
 }
 
 type Mode = "login" | "register"
 
-export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
+export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginModalProps) {
   const [mode, setMode] = useState<Mode>("login")
   // Tracks the LoginForm's internal login/forgot view to keep the dialog
   // aria-label in sync (the forgot view is owned by LoginForm).
@@ -23,6 +29,11 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
     setMode("login")
     setLoginSubView("login")
     onClose()
+  }
+
+  const handleLoginSuccess = () => {
+    handleClose()
+    onLoginSuccess?.()
   }
 
   const modalRef = useFocusTrap(handleClose)
@@ -37,7 +48,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
         : "Anmelden"
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-900/50 p-4">
       <div
         ref={modalRef}
         role="dialog"
@@ -47,7 +58,7 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
       >
         <button
           onClick={handleClose}
-          className="absolute right-4 top-4 text-stone-400 transition-colors hover:text-stone-600"
+          className="absolute right-4 top-4 text-muted-foreground transition-colors hover:text-foreground"
           aria-label="Schliessen"
         >
           <X className="h-5 w-5" />
@@ -59,27 +70,27 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
               portal="customer"
               invalidCredentialsMessage="Ungültige Anmeldedaten. Bitte versuchen Sie es erneut."
               successToast="Erfolgreich angemeldet!"
-              onSuccess={handleClose}
+              onSuccess={handleLoginSuccess}
               emailId="login-email"
               passwordId="login-pw"
               onViewChange={setLoginSubView}
               loginHeader={
                 <>
                   <div className="mb-1 flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sage-600">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500">
                       <User className="h-4 w-4 text-white" />
                     </div>
-                    <h2 className="text-2xl font-bold text-stone-800">Willkommen zurück</h2>
+                    <h2 className="text-2xl font-bold text-foreground">Willkommen zurück</h2>
                   </div>
-                  <p className="mb-6 text-stone-500">Melden Sie sich an, um fortzufahren.</p>
+                  <p className="mb-6 text-muted-foreground">Melden Sie sich an, um fortzufahren.</p>
                 </>
               }
               loginFooter={
-                <p className="mt-4 text-center text-sm text-stone-500">
+                <p className="mt-4 text-center text-sm text-muted-foreground">
                   {"Noch kein Konto? "}
                   <button
                     onClick={() => setMode("register")}
-                    className="font-semibold text-sage-600 hover:text-sage-800"
+                    className="font-semibold text-green-600 hover:text-green-600"
                   >
                     Registrieren
                   </button>
@@ -89,10 +100,10 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
                 heading: null,
                 header: (
                   <div className="mb-1 flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sage-600">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500">
                       <Mail className="h-4 w-4 text-white" />
                     </div>
-                    <h2 className="text-2xl font-bold text-stone-800">Passwort vergessen</h2>
+                    <h2 className="text-2xl font-bold text-foreground">Passwort vergessen</h2>
                   </div>
                 ),
               }}

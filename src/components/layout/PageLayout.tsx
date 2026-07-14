@@ -1,12 +1,11 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useMounted } from "@/src/hooks/use-mounted"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
-  Leaf,
   Settings,
   User,
   LogOut,
@@ -22,7 +21,9 @@ import { useAuth } from "@/src/context/AuthContext"
 import { useCart } from "@/src/context/CartContext"
 import LoginModal from "@/src/components/features/auth/LoginModal"
 import Footer from "@/src/components/layout/Footer"
+import { BrandLogo } from "@/src/components/shared/BrandLogo"
 import { sellerUrl, adminUrl } from "@/src/lib/seller-url"
+import { readRedirectTarget } from "@/src/lib/auth/redirect-param"
 import { toast } from "sonner"
 
 interface PageLayoutProps {
@@ -36,7 +37,34 @@ export default function PageLayout({ children }: PageLayoutProps) {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  // Deep link the visitor was bounced off by the middleware (#68), carried here
+  // as ?redirect=. When present and the visitor is unauthenticated, auto-open
+  // the login modal and return them there after a successful login (#121).
+  const [redirectTarget, setRedirectTarget] = useState<string | null>(null)
   const mounted = useMounted()
+
+  // Once auth has resolved to "unauthenticated", surface the login modal for a
+  // deep-link visitor the middleware forwarded here. Reacting to the async auth
+  // state is a legitimate effect; the setState it drives is the sanctioned
+  // exception (mirrors CartContext / CookieConsentContext).
+  useEffect(() => {
+    if (authLoading || isAuthenticated) return
+    const target = readRedirectTarget(window.location.search, "")
+    if (target) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRedirectTarget(target)
+      setIsLoginModalOpen(true)
+    }
+  }, [authLoading, isAuthenticated])
+
+  const handleLoginSuccess = () => {
+    setIsLoginModalOpen(false)
+    if (redirectTarget) {
+      const target = redirectTarget
+      setRedirectTarget(null)
+      router.push(target)
+    }
+  }
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -55,7 +83,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
     <Link
       key={href}
       href={href}
-      className="relative flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-sage-600 after:transition-all after:duration-200 hover:text-sage-700 hover:after:w-full"
+      className="relative flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors after:absolute after:bottom-0 after:left-0 after:h-px after:w-0 after:bg-green-500 after:transition-all after:duration-200 hover:text-foreground hover:after:w-full"
     >
       {icon}
       {label}
@@ -63,25 +91,25 @@ export default function PageLayout({ children }: PageLayoutProps) {
   )
 
   return (
-    <div className="flex min-h-screen flex-col bg-stone-50">
+    <div className="flex min-h-screen flex-col bg-background">
       {/* WCAG 2.1 / BFSG: Skip-Navigation für Tastaturnutzer und Screenreader */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-sage-600 focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-green-500 focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-ink-900 focus:shadow-lg"
       >
         Zum Inhalt springen
       </a>
-      <header className="sticky top-0 z-40 border-b border-stone-200 bg-white/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2.5">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sage-600 shadow-sm">
-                <Leaf className="h-4 w-4 text-white" />
-              </div>
+            <Link href="/" className="flex items-center gap-2.5" aria-label="Elysion — Startseite">
+              <BrandLogo variant="mark" markSize={26} />
               <div className="flex flex-col leading-none">
-                <span className="text-base font-bold tracking-tight text-stone-900">Elysion</span>
-                <span className="hidden text-[10px] font-medium tracking-wide text-sage-600 sm:block">
-                  Nachhaltig. Zertifiziert.
+                <span className="font-heading text-base font-semibold tracking-[0.18em] text-foreground">
+                  ELYSION
+                </span>
+                <span className="hidden font-eyebrow text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground sm:block">
+                  Transparent · Fair · Geprüft
                 </span>
               </div>
             </Link>
@@ -103,7 +131,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
               {isAuthenticated && role === "SELLER" && (
                 <a
                   href={sellerUrl("/seller-dashboard")}
-                  className="flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors hover:text-stone-900"
+                  className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <BarChart3 className="h-3.5 w-3.5" />
                   Verkäufer
@@ -113,7 +141,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
               {isAuthenticated && role === "ADMIN" && (
                 <a
                   href={adminUrl("/admin/users")}
-                  className="flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors hover:text-sage-700"
+                  className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <ShieldCheck className="h-3.5 w-3.5" />
                   Admin
@@ -122,13 +150,13 @@ export default function PageLayout({ children }: PageLayoutProps) {
 
               <Link
                 href="/cart"
-                className="relative flex items-center text-stone-500 transition-colors hover:text-stone-900"
+                className="relative flex items-center text-muted-foreground transition-colors hover:text-foreground"
               >
                 <ShoppingCart className="h-5 w-5" />
                 {mounted && totalItems > 0 && (
                   <span
                     key={totalItems}
-                    className="absolute -right-2 -top-2 flex h-4 w-4 animate-bounce-subtle items-center justify-center rounded-full bg-sage-600 text-[10px] font-bold text-white"
+                    className="absolute -right-2 -top-2 flex h-4 w-4 animate-bounce-subtle items-center justify-center rounded-full bg-green-500 text-[10px] font-bold text-ink-900"
                   >
                     {totalItems > 9 ? "9+" : totalItems}
                   </span>
@@ -136,12 +164,12 @@ export default function PageLayout({ children }: PageLayoutProps) {
               </Link>
 
               {authLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin text-stone-300" />
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               ) : isAuthenticated ? (
                 <button
                   onClick={handleLogout}
                   disabled={loggingOut}
-                  className="flex items-center gap-1.5 text-sm font-medium text-stone-400 transition-colors hover:text-red-600"
+                  className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
                   {loggingOut ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -153,7 +181,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
               ) : (
                 <button
                   onClick={() => setIsLoginModalOpen(true)}
-                  className="rounded-lg bg-bark-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-bark-800"
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-green-600"
                 >
                   Anmelden
                 </button>
@@ -162,7 +190,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-stone-600 md:hidden"
+              className="text-foreground md:hidden"
               aria-label="Menü"
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -170,7 +198,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
           </div>
 
           {mobileMenuOpen && (
-            <nav className="mt-3 flex animate-fade-in flex-col gap-3 border-t border-stone-100 pb-3 pt-3 md:hidden">
+            <nav className="mt-3 flex animate-fade-in flex-col gap-3 border-t border-border pb-3 pt-3 md:hidden">
               {navLink("/", "Shop")}
               {navLink("/about", "Über uns")}
               {navLink("/contact", "Kontakt")}
@@ -183,7 +211,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
               {isAuthenticated && role === "SELLER" && (
                 <a
                   href={sellerUrl("/seller-dashboard")}
-                  className="flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors hover:text-stone-900"
+                  className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <BarChart3 className="h-3.5 w-3.5" />
                   Verkäufer
@@ -192,7 +220,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
               {isAuthenticated && role === "ADMIN" && (
                 <a
                   href={adminUrl("/admin/users")}
-                  className="flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors hover:text-sage-700"
+                  className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
                 >
                   <ShieldCheck className="h-3.5 w-3.5" />
                   Admin
@@ -200,14 +228,14 @@ export default function PageLayout({ children }: PageLayoutProps) {
               )}
               <Link
                 href="/cart"
-                className="flex items-center gap-1.5 text-sm font-medium text-stone-500 transition-colors hover:text-stone-900"
+                className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
                 <ShoppingCart className="h-4 w-4" />
                 Warenkorb
                 {mounted && totalItems > 0 && (
                   <span
                     key={totalItems}
-                    className="flex h-4 w-4 animate-bounce-subtle items-center justify-center rounded-full bg-sage-600 text-[10px] font-bold text-white"
+                    className="flex h-4 w-4 animate-bounce-subtle items-center justify-center rounded-full bg-green-500 text-[10px] font-bold text-ink-900"
                   >
                     {totalItems > 9 ? "9+" : totalItems}
                   </span>
@@ -217,7 +245,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
                 (isAuthenticated ? (
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-1.5 text-sm font-medium text-red-500"
+                    className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground"
                   >
                     <LogOut className="h-4 w-4" /> Abmelden
                   </button>
@@ -227,7 +255,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
                       setIsLoginModalOpen(true)
                       setMobileMenuOpen(false)
                     }}
-                    className="rounded-lg bg-bark-700 px-4 py-2 text-sm font-medium text-white"
+                    className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-green-600"
                   >
                     Anmelden
                   </button>
@@ -241,7 +269,11 @@ export default function PageLayout({ children }: PageLayoutProps) {
         {children}
       </main>
       <Footer />
-      <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} />
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+      />
     </div>
   )
 }

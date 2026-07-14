@@ -27,22 +27,22 @@ interface ForgotPasswordPanelProps {
 
 const styles = {
   light: {
-    heading: "mb-1 text-2xl font-bold text-stone-800",
-    intro: "mb-6 text-stone-500",
-    successText: "text-stone-600",
+    heading: "mb-1 text-2xl font-bold text-foreground",
+    intro: "mb-6 text-muted-foreground",
+    successText: "text-foreground",
     successIconBg:
-      "mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50",
-    successIcon: "h-7 w-7 text-emerald-500",
-    backBtn: "text-sm font-semibold text-sage-600 hover:text-sage-800",
+      "mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-50",
+    successIcon: "h-7 w-7 text-green-500",
+    backBtn: "text-sm font-semibold text-green-600 hover:text-green-600",
   },
   dark: {
-    heading: "mb-1 font-mono text-lg font-bold tracking-wider text-slate-100",
-    intro: "mb-6 text-sm text-slate-500",
-    successText: "text-sm text-slate-500",
+    heading: "mb-1 font-heading text-lg font-bold tracking-wide text-sand-page",
+    intro: "mb-6 text-sm text-sand-page/70",
+    successText: "text-sm text-sand-page/80",
     successIconBg:
-      "mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-cyber-800/60 bg-cyber-950/60",
-    successIcon: "h-6 w-6 text-cyber-400",
-    backBtn: "text-xs font-medium text-slate-600 transition-colors hover:text-cyber-400",
+      "mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-green-600/60 bg-green-700/60",
+    successIcon: "h-6 w-6 text-green-500",
+    backBtn: "text-xs font-medium text-sand-page/70 transition-colors hover:text-green-500",
   },
 } satisfies Record<Variant, Record<string, string>>
 

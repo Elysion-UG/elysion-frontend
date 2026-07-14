@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen } from "@testing-library/react"
 import React from "react"
 import { useAuth } from "@/src/context/AuthContext"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 
 // ── Mocks ──────────────────────────────────────────────────────────────────────
 
@@ -13,6 +13,7 @@ vi.mock("@/src/context/AuthContext", () => ({
 const replace = vi.fn()
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(() => ({ replace })),
+  usePathname: vi.fn(() => "/seller-dashboard"),
 }))
 
 import SellerGuard from "./SellerGuard"
@@ -31,6 +32,7 @@ describe("SellerGuard", () => {
   beforeEach(() => {
     replace.mockClear()
     vi.mocked(useRouter).mockReturnValue({ replace } as unknown as ReturnType<typeof useRouter>)
+    vi.mocked(usePathname).mockReturnValue("/seller-dashboard")
   })
 
   it("renders children for an authenticated SELLER", () => {
@@ -55,7 +57,7 @@ describe("SellerGuard", () => {
       </SellerGuard>
     )
 
-    expect(replace).toHaveBeenCalledWith("/login/seller")
+    expect(replace).toHaveBeenCalledWith("/login/seller?redirect=%2Fseller-dashboard")
     expect(screen.queryByText("Seller content")).not.toBeInTheDocument()
   })
 
@@ -68,7 +70,7 @@ describe("SellerGuard", () => {
       </SellerGuard>
     )
 
-    expect(replace).toHaveBeenCalledWith("/login/seller")
+    expect(replace).toHaveBeenCalledWith("/login/seller?redirect=%2Fseller-dashboard")
     expect(screen.queryByText("Seller content")).not.toBeInTheDocument()
   })
 
@@ -81,7 +83,22 @@ describe("SellerGuard", () => {
       </SellerGuard>
     )
 
-    expect(replace).toHaveBeenCalledWith("/login/seller")
+    expect(replace).toHaveBeenCalledWith("/login/seller?redirect=%2Fseller-dashboard")
+  })
+
+  it("preserves a deep-linked seller path as a return URL (#121)", () => {
+    setAuth({ isAuthenticated: false, isLoading: false, role: null })
+    vi.mocked(usePathname).mockReturnValue("/seller-dashboard/products/42")
+
+    render(
+      <SellerGuard>
+        <p>Seller content</p>
+      </SellerGuard>
+    )
+
+    expect(replace).toHaveBeenCalledWith(
+      "/login/seller?redirect=%2Fseller-dashboard%2Fproducts%2F42"
+    )
   })
 
   it("shows a loading state and does not redirect while auth is loading", () => {

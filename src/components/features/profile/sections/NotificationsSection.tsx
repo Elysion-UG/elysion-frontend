@@ -10,7 +10,7 @@ interface NotificationsSectionProps {
 
 export function NotificationsSection({ expanded, onToggle }: NotificationsSectionProps) {
   return (
-    <div className="overflow-hidden rounded-xl border border-stone-200 bg-white shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
       <SectionHeader
         id="notifications"
         icon={Bell}
@@ -20,11 +20,11 @@ export function NotificationsSection({ expanded, onToggle }: NotificationsSectio
       />
       {expanded && (
         <div className="space-y-3 px-5 pb-5">
-          <div className="rounded-lg border border-dashed border-stone-200 bg-stone-50 p-4 text-center">
-            <p className="text-sm font-medium text-stone-700">
+          <div className="rounded-lg border border-dashed border-border bg-secondary p-4 text-center">
+            <p className="text-sm font-medium text-foreground">
               Benachrichtigungseinstellungen folgen in Kürze
             </p>
-            <p className="mt-1 text-xs text-stone-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Wichtige Bestell-E-Mails erhalten Sie aktuell automatisch an Ihre hinterlegte Adresse.
             </p>
           </div>

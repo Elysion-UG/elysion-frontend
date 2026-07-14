@@ -112,21 +112,21 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
         </div>
       )}
       <div
-        className={`rounded-xl border border-slate-200 bg-white ${!isApproved ? "pointer-events-none opacity-60" : ""}`}
+        className={`rounded-xl border border-border bg-white ${!isApproved ? "pointer-events-none opacity-60" : ""}`}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 p-6">
-          <h2 className="text-xl font-semibold text-slate-800">Ihre Produkte</h2>
+        <div className="flex items-center justify-between border-b border-border p-6">
+          <h2 className="text-xl font-semibold text-foreground">Ihre Produkte</h2>
           <div className="flex items-center gap-2">
             <button
               onClick={() => void fetchProducts()}
-              className="text-slate-400 transition-colors hover:text-slate-600"
+              className="text-muted-foreground transition-colors hover:text-foreground"
               title="Aktualisieren"
             >
               <RefreshCw className={`h-4 w-4 ${productsLoading ? "animate-spin" : ""}`} />
             </button>
             <button
               disabled={!isApproved}
-              className="inline-flex items-center gap-2 rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-700 disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-50"
               onClick={() => {
                 setEditProduct(null)
                 setShowProductForm(true)
@@ -139,18 +139,20 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
 
         {productsLoading ? (
           <div className="flex justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-teal-600" />
+            <Loader2 className="h-6 w-6 animate-spin text-green-600" />
           </div>
         ) : products.length === 0 ? (
           <div className="py-12 text-center">
-            <Package className="mx-auto mb-4 h-12 w-12 text-slate-300" />
-            <h3 className="mb-2 text-lg font-semibold text-slate-800">Noch keine Produkte</h3>
-            <p className="text-slate-500">Fügen Sie Ihr erstes nachhaltiges Produkt hinzu.</p>
+            <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <h3 className="mb-2 text-lg font-semibold text-foreground">Noch keine Produkte</h3>
+            <p className="text-muted-foreground">
+              Fügen Sie Ihr erstes nachhaltiges Produkt hinzu.
+            </p>
           </div>
         ) : (
           <Table>
-            <TableHeader className="bg-slate-50">
-              <TableRow className="hover:bg-slate-50">
+            <TableHeader className="bg-secondary">
+              <TableRow className="hover:bg-secondary">
                 <TableHead className={SELLER_TABLE_HEAD_CLASS}>Produkt</TableHead>
                 <TableHead className={SELLER_TABLE_HEAD_CLASS}>Preis</TableHead>
                 <TableHead className={SELLER_TABLE_HEAD_CLASS}>Status</TableHead>
@@ -161,20 +163,22 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
               {products.map((product) => {
                 const status = product.status as ProductStatus | undefined
                 return (
-                  <TableRow key={product.id} className="hover:bg-slate-50">
+                  <TableRow key={product.id} className="hover:bg-secondary">
                     <TableCell className={SELLER_TABLE_CELL_CLASS}>
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-teal-100">
-                          <Package className="h-5 w-5 text-teal-600" />
+                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-50">
+                          <Package className="h-5 w-5 text-green-600" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-slate-800">{product.title}</p>
-                          <p className="text-xs text-slate-400">ID: {product.id.slice(0, 8)}…</p>
+                          <p className="text-sm font-medium text-foreground">{product.title}</p>
+                          <p className="text-xs text-muted-foreground">
+                            ID: {product.id.slice(0, 8)}…
+                          </p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell
-                      className={`${SELLER_TABLE_CELL_CLASS} text-sm font-medium text-slate-800`}
+                      className={`${SELLER_TABLE_CELL_CLASS} text-sm font-medium text-foreground`}
                     >
                       {formatEuro(product.price ?? 0)}
                     </TableCell>
@@ -185,7 +189,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                           colorClasses={productStatusColor[status]}
                         />
                       ) : (
-                        <span className="text-xs text-slate-400">–</span>
+                        <span className="text-xs text-muted-foreground">–</span>
                       )}
                     </TableCell>
                     <TableCell className={SELLER_TABLE_CELL_CLASS}>
@@ -195,7 +199,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                             setEditProduct(product)
                             setShowProductForm(true)
                           }}
-                          className="text-teal-600 transition-colors hover:text-teal-800"
+                          className="text-green-600 transition-colors hover:text-green-600"
                           title="Bearbeiten"
                         >
                           <Edit className="h-4 w-4" />
@@ -203,7 +207,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                         {status === "DRAFT" && (
                           <button
                             onClick={() => void handleStatusChange(product.id, "REVIEW")}
-                            className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800 hover:bg-amber-200"
+                            className="rounded bg-warning-tint px-2 py-0.5 text-xs text-warning hover:bg-warning-tint"
                           >
                             Zur Prüfung
                           </button>
@@ -211,7 +215,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                         {status === "ACTIVE" && (
                           <button
                             onClick={() => void handleStatusChange(product.id, "INACTIVE")}
-                            className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700 hover:bg-slate-200"
+                            className="rounded bg-secondary px-2 py-0.5 text-xs text-foreground hover:bg-muted"
                           >
                             Deaktivieren
                           </button>
@@ -219,7 +223,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                         {status === "INACTIVE" && (
                           <button
                             onClick={() => void handleStatusChange(product.id, "ACTIVE")}
-                            className="rounded bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800 hover:bg-emerald-200"
+                            className="rounded bg-green-50 px-2 py-0.5 text-xs text-green-600 hover:bg-green-50"
                           >
                             Aktivieren
                           </button>
@@ -227,7 +231,7 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                         {status === "DRAFT" && (
                           <button
                             onClick={() => setDeleteTarget(product)}
-                            className="text-red-500 transition-colors hover:text-red-700"
+                            className="text-danger transition-colors hover:text-danger"
                             title="Produkt löschen"
                           >
                             <Trash2 className="h-4 w-4" />

@@ -51,7 +51,7 @@ export default function ProductDetail() {
   if (isLoading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
-        <Loader2 className="h-7 w-7 animate-spin text-sage-500" />
+        <Loader2 className="h-7 w-7 animate-spin text-green-500" />
       </div>
     )
   }
@@ -59,15 +59,15 @@ export default function ProductDetail() {
   if (error || !product) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
-          <AlertCircle className="h-8 w-8 text-red-400" />
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-danger-tint">
+          <AlertCircle className="h-8 w-8 text-danger" />
         </div>
         <div className="text-center">
-          <p className="font-medium text-stone-700">{error ?? "Produkt nicht gefunden."}</p>
+          <p className="font-medium text-foreground">{error ?? "Produkt nicht gefunden."}</p>
         </div>
         <button
           onClick={() => router.back()}
-          className="rounded-xl bg-sage-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-sage-700"
+          className="rounded-xl bg-green-500 px-5 py-2.5 text-sm font-semibold text-ink-900 shadow-sm transition-colors hover:bg-green-700"
         >
           Zurück zum Shop
         </button>

@@ -1,13 +1,58 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import {
+  Newsreader,
+  Schibsted_Grotesk,
+  Bricolage_Grotesque,
+  Hanken_Grotesk,
+  Spline_Sans_Mono,
+} from "next/font/google"
 import "./globals.css"
 import { Providers } from "@/src/app/providers"
 import NavbarShell from "@/src/components/layout/NavbarShell"
 import { siteUrl } from "@/src/lib/seo"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+// Elysion Website Design System v1.3 — drei Stimmen (Guide 01):
+// Newsreader (Display/H1), Schibsted Grotesk (H2/H3), Bricolage Grotesque (Body/UI).
+// Hanken Grotesk als Eyebrow-/Fallback-Stimme, Spline Sans Mono für Mono-Captions.
+const fontDisplay = Newsreader({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
+  variable: "--font-display",
+})
+const fontHeading = Schibsted_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-heading",
+})
+const fontBody = Bricolage_Grotesque({
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-body",
+})
+const fontEyebrow = Hanken_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "600", "700"],
+  display: "swap",
+  variable: "--font-eyebrow",
+})
+const fontMono = Spline_Sans_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-mono",
+})
+
+const fontVariables = [
+  fontDisplay.variable,
+  fontHeading.variable,
+  fontBody.variable,
+  fontEyebrow.variable,
+  fontMono.variable,
+].join(" ")
 
 // Nonce-basierte CSP (src/middleware.ts) erfordert dynamisches Rendering:
 // Statisch vorgerenderte Seiten entstehen zur Build-Zeit ohne Request-Nonce,
@@ -49,7 +94,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="de">
+    <html lang="de" className={fontVariables}>
       <body className="font-sans antialiased">
         <Providers>
           <NavbarShell>{children}</NavbarShell>

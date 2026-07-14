@@ -65,10 +65,12 @@ function InfoRow({
   if (!value || value === "–") return null
   return (
     <div className="flex items-start gap-3 py-3">
-      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
+      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
       <div className="min-w-0">
-        <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</p>
-        <p className="mt-0.5 text-sm text-slate-200">{value}</p>
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          {label}
+        </p>
+        <p className="mt-0.5 text-sm text-muted-foreground">{value}</p>
       </div>
     </div>
   )
@@ -118,7 +120,7 @@ export default function AdminCertificateDetail() {
   if (isLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-cyber-500" />
+        <Loader2 className="h-8 w-8 animate-spin text-green-500" />
       </div>
     )
   }
@@ -126,10 +128,10 @@ export default function AdminCertificateDetail() {
   if (error || !cert) {
     return (
       <div className="py-16 text-center">
-        <p className="text-slate-500">{error ?? "Zertifikat nicht gefunden."}</p>
+        <p className="text-muted-foreground">{error ?? "Zertifikat nicht gefunden."}</p>
         <button
           onClick={() => router.push("/admin/certificates")}
-          className="mt-4 text-sm text-cyber-500 hover:text-cyber-400"
+          className="mt-4 text-sm text-green-500 hover:text-green-500"
         >
           ← Zurück zur Übersicht
         </button>
@@ -145,16 +147,16 @@ export default function AdminCertificateDetail() {
       <div className="mb-6 flex items-center gap-4">
         <button
           onClick={() => router.push("/admin/certificates")}
-          className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-800 hover:text-slate-200"
+          className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-ink-900 hover:text-muted-foreground"
           title="Zurück"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="min-w-0 flex-1">
-          <h1 className="font-mono text-2xl font-bold tracking-wide text-slate-100">
+          <h1 className="font-mono text-2xl font-normal tracking-wide text-muted-foreground">
             {cert.title}
           </h1>
-          <p className="mt-1 text-sm text-slate-500">Zertifikat-Details</p>
+          <p className="mt-1 text-sm text-muted-foreground">Zertifikat-Details</p>
         </div>
         <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusColor[cert.status]}`}>
           {statusLabel[cert.status]}
@@ -163,12 +165,12 @@ export default function AdminCertificateDetail() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Left: Certificate Info */}
-        <div className="rounded-xl border border-slate-800/60 bg-slate-900/60 p-6">
-          <h2 className="mb-4 flex items-center gap-2 font-mono text-sm font-semibold uppercase tracking-wider text-slate-400">
-            <Award className="h-4 w-4 text-cyber-500" />
+        <div className="rounded-xl border border-border/60 bg-ink-900/60 p-6">
+          <h2 className="mb-4 flex items-center gap-2 font-mono text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+            <Award className="h-4 w-4 text-green-500" />
             Zertifikat-Informationen
           </h2>
-          <div className="divide-y divide-slate-800/60">
+          <div className="divide-y divide-border/60">
             <InfoRow icon={Hash} label="ID" value={cert.id} />
             <InfoRow
               icon={Award}
@@ -187,12 +189,12 @@ export default function AdminCertificateDetail() {
 
         {/* Right: Dates & Status */}
         <div className="space-y-6">
-          <div className="rounded-xl border border-slate-800/60 bg-slate-900/60 p-6">
-            <h2 className="mb-4 flex items-center gap-2 font-mono text-sm font-semibold uppercase tracking-wider text-slate-400">
-              <Calendar className="h-4 w-4 text-cyber-500" />
+          <div className="rounded-xl border border-border/60 bg-ink-900/60 p-6">
+            <h2 className="mb-4 flex items-center gap-2 font-mono text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+              <Calendar className="h-4 w-4 text-green-500" />
               Zeitangaben
             </h2>
-            <div className="divide-y divide-slate-800/60">
+            <div className="divide-y divide-border/60">
               <InfoRow
                 icon={Calendar}
                 label="Ausgestellt am"
@@ -214,11 +216,11 @@ export default function AdminCertificateDetail() {
 
           {/* Moderation Info */}
           {(cert.verifiedAt || cert.rejectedAt) && (
-            <div className="rounded-xl border border-slate-800/60 bg-slate-900/60 p-6">
-              <h2 className="mb-4 font-mono text-sm font-semibold uppercase tracking-wider text-slate-400">
+            <div className="rounded-xl border border-border/60 bg-ink-900/60 p-6">
+              <h2 className="mb-4 font-mono text-sm font-semibold uppercase tracking-wider text-muted-foreground">
                 Moderation
               </h2>
-              <div className="divide-y divide-slate-800/60">
+              <div className="divide-y divide-border/60">
                 {cert.verifiedAt && (
                   <>
                     <InfoRow
@@ -258,18 +260,20 @@ export default function AdminCertificateDetail() {
 
       {/* Notes */}
       {cert.notes && (
-        <div className="mt-6 rounded-xl border border-slate-800/60 bg-slate-900/60 p-6">
-          <h2 className="mb-3 font-mono text-sm font-semibold uppercase tracking-wider text-slate-400">
+        <div className="mt-6 rounded-xl border border-border/60 bg-ink-900/60 p-6">
+          <h2 className="mb-3 font-mono text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Notizen
           </h2>
-          <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-300">{cert.notes}</p>
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+            {cert.notes}
+          </p>
         </div>
       )}
 
       {/* Document */}
       {cert.documentUrl && (
-        <div className="mt-6 rounded-xl border border-slate-800/60 bg-slate-900/60 p-6">
-          <h2 className="mb-3 font-mono text-sm font-semibold uppercase tracking-wider text-slate-400">
+        <div className="mt-6 rounded-xl border border-border/60 bg-ink-900/60 p-6">
+          <h2 className="mb-3 font-mono text-sm font-semibold uppercase tracking-wider text-muted-foreground">
             Dokument
           </h2>
           {safeDocumentUrl ? (
@@ -277,17 +281,19 @@ export default function AdminCertificateDetail() {
               href={safeDocumentUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg border border-cyber-800/60 bg-cyber-950/40 px-4 py-2.5 text-sm font-medium text-cyber-400 transition-colors hover:bg-cyber-900/40 hover:text-cyber-300"
+              className="inline-flex items-center gap-2 rounded-lg border border-green-600/60 bg-green-700/40 px-4 py-2.5 text-sm font-medium text-green-500 transition-colors hover:bg-green-700/40 hover:text-green-500"
             >
               <ExternalLink className="h-4 w-4" />
               Dokument öffnen
             </a>
           ) : (
             <div className="space-y-1">
-              <p className="text-sm font-medium text-amber-500">
-                ⚠ Unsichere Dokument-URL — kein Link (nur http/https erlaubt)
+              <p className="text-sm font-medium text-warning">
+                Unsichere Dokument-URL — kein Link (nur http/https erlaubt)
               </p>
-              <p className="break-all font-mono text-xs text-slate-500">{cert.documentUrl}</p>
+              <p className="break-all font-mono text-xs text-muted-foreground">
+                {cert.documentUrl}
+              </p>
             </div>
           )}
         </div>
@@ -298,14 +304,14 @@ export default function AdminCertificateDetail() {
         <div className="mt-6 flex gap-3">
           <button
             onClick={handleVerify}
-            className="flex items-center gap-2 rounded-lg bg-emerald-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-emerald-600"
+            className="flex items-center gap-2 rounded-lg bg-green-700 px-5 py-2.5 text-sm font-medium text-ink-900 transition-colors hover:bg-green-500"
           >
             <CheckCircle2 className="h-4 w-4" />
             Verifizieren
           </button>
           <button
             onClick={() => setRejectOpen(true)}
-            className="flex items-center gap-2 rounded-lg bg-red-700 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-600"
+            className="flex items-center gap-2 rounded-lg bg-destructive px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-destructive"
           >
             <XCircle className="h-4 w-4" />
             Ablehnen

@@ -14,8 +14,8 @@ export function PasswordStrengthHints({
 }: PasswordStrengthHintsProps) {
   if (password.length === 0) return null
 
-  const passedColor = variant === "dark" ? "text-emerald-400" : "text-emerald-600"
-  const pendingColor = variant === "dark" ? "text-slate-500" : "text-stone-400"
+  const passedColor = variant === "dark" ? "text-green-500" : "text-green-600"
+  const pendingColor = variant === "dark" ? "text-muted-foreground" : "text-muted-foreground"
 
   return (
     <ul className="mt-2 space-y-1">

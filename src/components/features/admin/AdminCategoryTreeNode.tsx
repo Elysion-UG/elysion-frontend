@@ -4,9 +4,9 @@ import { ChevronRight, ChevronDown, Pencil, ToggleLeft, ToggleRight, Loader2 } f
 import type { CategoryTreeNode } from "@/src/types"
 
 const levelColor: Record<number, string> = {
-  1: "bg-cyber-900/40 text-cyber-400 ring-1 ring-cyber-700/40",
-  2: "bg-indigo-900/40 text-indigo-400 ring-1 ring-indigo-700/40",
-  3: "bg-purple-900/40 text-purple-400 ring-1 ring-purple-700/40",
+  1: "bg-green-700/40 text-green-500 ring-1 ring-green-500/40",
+  2: "bg-info/40 text-info ring-1 ring-info/40",
+  3: "bg-muted/40 text-muted-foreground ring-1 ring-border/40",
 }
 
 const levelLabel: Record<number, string> = {
@@ -43,14 +43,14 @@ export default function AdminCategoryTreeNode({
 
   return (
     <>
-      <tr className="transition-colors hover:bg-slate-800/30">
+      <tr className="transition-colors hover:bg-ink-900/30">
         {/* Name with expand toggle */}
         <td className="px-4 py-3">
           <div className="flex items-center" style={{ paddingLeft: `${depth * 24}px` }}>
             {hasChildren ? (
               <button
                 onClick={() => onToggleExpand(node.id)}
-                className="mr-2 shrink-0 rounded p-0.5 text-slate-500 hover:text-slate-300"
+                className="mr-2 shrink-0 rounded p-0.5 text-muted-foreground hover:text-muted-foreground"
               >
                 {isExpanded ? (
                   <ChevronDown className="h-4 w-4" />
@@ -62,7 +62,7 @@ export default function AdminCategoryTreeNode({
               <span className="mr-2 inline-block w-5" />
             )}
             <span
-              className={`font-medium ${isActive ? "text-slate-200" : "text-slate-500 line-through"}`}
+              className={`font-medium ${isActive ? "text-muted-foreground" : "text-muted-foreground line-through"}`}
             >
               {node.name}
             </span>
@@ -70,7 +70,7 @@ export default function AdminCategoryTreeNode({
         </td>
 
         {/* Slug */}
-        <td className="px-4 py-3 font-mono text-xs text-slate-500">{node.slug}</td>
+        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{node.slug}</td>
 
         {/* Level badge */}
         <td className="px-4 py-3">
@@ -82,15 +82,15 @@ export default function AdminCategoryTreeNode({
         </td>
 
         {/* Order */}
-        <td className="px-4 py-3 text-sm text-slate-400">{node.order}</td>
+        <td className="px-4 py-3 text-sm text-muted-foreground">{node.order}</td>
 
         {/* Status */}
         <td className="px-4 py-3">
           <span
             className={`rounded-full px-2 py-0.5 text-xs font-medium ${
               isActive
-                ? "bg-emerald-900/40 text-emerald-400 ring-1 ring-emerald-700/40"
-                : "bg-slate-800 text-slate-500"
+                ? "bg-green-700/40 text-green-500 ring-1 ring-green-500/40"
+                : "bg-ink-900 text-muted-foreground"
             }`}
           >
             {isActive ? "Aktiv" : "Inaktiv"}
@@ -102,18 +102,18 @@ export default function AdminCategoryTreeNode({
           <div className="flex items-center justify-end gap-2">
             <button
               onClick={() => onEdit(node)}
-              className="flex items-center gap-1 rounded-lg border border-slate-700/60 bg-slate-800/60 px-2 py-1 text-xs text-slate-400 hover:text-slate-200"
+              className="flex items-center gap-1 rounded-lg border border-border/60 bg-ink-900/60 px-2 py-1 text-xs text-muted-foreground hover:text-muted-foreground"
               title="Bearbeiten"
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>
 
             {statusLoading === node.id ? (
-              <Loader2 className="h-4 w-4 animate-spin text-cyber-500" />
+              <Loader2 className="h-4 w-4 animate-spin text-green-500" />
             ) : isActive ? (
               <button
                 onClick={() => onToggleStatus(node, true)}
-                className="flex items-center gap-1 rounded-lg border border-slate-700/60 bg-slate-800/60 px-2 py-1 text-xs text-slate-400 hover:text-slate-200"
+                className="flex items-center gap-1 rounded-lg border border-border/60 bg-ink-900/60 px-2 py-1 text-xs text-muted-foreground hover:text-muted-foreground"
                 title="Deaktivieren"
               >
                 <ToggleLeft className="h-4 w-4" />
@@ -121,7 +121,7 @@ export default function AdminCategoryTreeNode({
             ) : (
               <button
                 onClick={() => onToggleStatus(node, false)}
-                className="flex items-center gap-1 rounded-lg border border-emerald-800/60 bg-emerald-900/30 px-2 py-1 text-xs text-emerald-400 hover:text-emerald-300"
+                className="flex items-center gap-1 rounded-lg border border-green-600/60 bg-green-700/30 px-2 py-1 text-xs text-green-500 hover:text-green-500"
                 title="Aktivieren"
               >
                 <ToggleRight className="h-4 w-4" />

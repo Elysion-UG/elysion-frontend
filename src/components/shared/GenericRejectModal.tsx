@@ -41,13 +41,15 @@ export function GenericRejectModal({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md rounded-xl border border-slate-800/60 bg-slate-900 p-6 shadow-2xl">
+      <DialogContent className="max-w-md rounded-xl border border-border/60 bg-ink-900 p-6 shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="font-mono text-lg font-semibold text-slate-100">
+          <DialogTitle className="font-mono text-lg font-semibold text-muted-foreground">
             {title}
           </DialogTitle>
           {description && (
-            <DialogDescription className="text-sm text-slate-500">{description}</DialogDescription>
+            <DialogDescription className="text-sm text-muted-foreground">
+              {description}
+            </DialogDescription>
           )}
         </DialogHeader>
         <Textarea
@@ -55,19 +57,19 @@ export function GenericRejectModal({
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           placeholder="Ablehnungsgrund..."
-          className="w-full rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyber-600/20"
+          className="w-full rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
         />
         <DialogFooter className="mt-4 flex gap-3 sm:flex-row">
           <button
             onClick={onClose}
-            className="flex-1 rounded-lg border border-slate-700/60 py-2 text-sm font-medium text-slate-400 hover:bg-slate-800/60"
+            className="flex-1 rounded-lg border border-border/60 py-2 text-sm font-medium text-muted-foreground hover:bg-ink-900/60"
           >
             Abbrechen
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-700 py-2 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-60"
+            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-destructive py-2 text-sm font-medium text-white hover:bg-destructive disabled:opacity-60"
           >
             {loading && <Loader2 className="h-3 w-3 animate-spin" />} Ablehnen
           </button>
