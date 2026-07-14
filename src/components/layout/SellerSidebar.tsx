@@ -2,8 +2,9 @@
 
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { Package, TrendingUp, Award, DollarSign, User, Leaf, LogOut, X, Menu } from "lucide-react"
+import { Package, TrendingUp, Award, DollarSign, User, LogOut, X, Menu } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
+import { BrandLogo } from "@/src/components/shared/BrandLogo"
 
 type Tab = "products" | "orders" | "certificates" | "settlements" | "profile"
 
@@ -35,21 +36,23 @@ function SidebarContent({
     : "?"
 
   return (
-    <div className="flex h-full flex-col bg-slate-900 text-white">
+    <div className="flex h-full flex-col bg-ink-900 text-sand-page">
       {/* Logo */}
-      <div className="flex items-center gap-3 border-b border-slate-800 px-5 py-5">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-600">
-          <Leaf className="h-4 w-4 text-white" />
-        </div>
+      <div className="flex items-center gap-3 border-b border-white/10 px-5 py-5">
+        <BrandLogo variant="mark" inverted markSize={26} />
         <div>
-          <span className="text-sm font-semibold text-white">Elysion</span>
-          <p className="text-xs text-slate-400">Verkäufer-Portal</p>
+          <span className="font-heading text-sm font-semibold tracking-[0.18em] text-sand-page">
+            ELYSION
+          </span>
+          <p className="font-eyebrow text-[10px] font-semibold uppercase tracking-widest text-green-500">
+            Verkäufer-Portal
+          </p>
         </div>
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4">
-        <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <p className="mb-2 px-2 font-eyebrow text-[10px] font-semibold uppercase tracking-widest text-sand-page/40">
           Navigation
         </p>
         {NAV_ITEMS.map(({ key, label, icon: Icon }) => {
@@ -61,8 +64,8 @@ function SidebarContent({
               onClick={onNavClick}
               className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive
-                  ? "bg-teal-700 text-white"
-                  : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                  ? "bg-green-500/15 text-green-500"
+                  : "text-sand-page/60 hover:bg-white/5 hover:text-sand-page"
               }`}
             >
               <Icon className="h-4 w-4 shrink-0" />
@@ -73,21 +76,21 @@ function SidebarContent({
       </nav>
 
       {/* User footer */}
-      <div className="border-t border-slate-800 p-3">
+      <div className="border-t border-white/10 p-3">
         <div className="flex items-center gap-3 rounded-lg px-2 py-2">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-teal-700 text-xs font-semibold text-white">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-green-500/15 text-xs font-semibold text-green-500">
             {initials}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium text-white">
+            <p className="truncate text-xs font-medium text-sand-page/90">
               {user?.firstName} {user?.lastName}
             </p>
-            <p className="truncate text-xs text-slate-400">{user?.email}</p>
+            <p className="truncate text-xs text-sand-page/50">{user?.email}</p>
           </div>
           <button
             onClick={onLogout}
             title="Abmelden"
-            className="shrink-0 rounded-md p-1.5 text-slate-500 transition-colors hover:bg-slate-800 hover:text-slate-200"
+            className="shrink-0 rounded-md p-1.5 text-sand-page/50 transition-colors hover:bg-white/5 hover:text-sand-page"
           >
             <LogOut className="h-4 w-4" />
           </button>
@@ -120,7 +123,7 @@ export default function SellerSidebar({ mobileOpen, onMobileClose }: SellerSideb
       {mobileOpen && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+            className="fixed inset-0 z-40 bg-ink-900/70 lg:hidden"
             onClick={onMobileClose}
             aria-hidden="true"
           />
@@ -128,7 +131,7 @@ export default function SellerSidebar({ mobileOpen, onMobileClose }: SellerSideb
             <div className="relative h-full">
               <button
                 onClick={onMobileClose}
-                className="absolute right-3 top-4 z-10 rounded-md p-1 text-slate-400 hover:text-white"
+                className="absolute right-3 top-4 z-10 rounded-md p-1 text-sand-page/60 hover:text-sand-page"
                 aria-label="Schließen"
               >
                 <X className="h-5 w-5" />
@@ -150,7 +153,7 @@ export function SellerMobileMenuButton({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="rounded-md p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
+      className="rounded-md p-2 text-foreground hover:bg-secondary lg:hidden"
       aria-label="Menü öffnen"
     >
       <Menu className="h-5 w-5" />
