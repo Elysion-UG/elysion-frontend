@@ -130,8 +130,8 @@ export default function ImpressumPage() {
       </section>
 
       <p className="mt-10 border-t border-border pt-6 text-xs text-muted-foreground">
-        ⚠️ Dieses Impressum enthält Platzhalter (<code>[PLATZHALTER: ...]</code>), die vor dem
-        Launch durch echte Unternehmensdaten ersetzt werden müssen.
+        Dieses Impressum enthält Platzhalter (<code>[PLATZHALTER: ...]</code>), die vor dem Launch
+        durch echte Unternehmensdaten ersetzt werden müssen.
       </p>
     </div>
   )

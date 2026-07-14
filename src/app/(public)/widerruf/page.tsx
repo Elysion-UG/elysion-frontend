@@ -120,7 +120,7 @@ export default function WiderrufPage() {
       </p>
 
       <p className="mt-10 border-t border-border pt-6 text-xs text-muted-foreground">
-        ⚠️ Diese Widerrufsbelehrung enthält Platzhalter (<code>[PLATZHALTER: ...]</code>). Vor dem
+        Diese Widerrufsbelehrung enthält Platzhalter (<code>[PLATZHALTER: ...]</code>). Vor dem
         Launch durch echte Angaben ersetzen und rechtlich prüfen lassen.
       </p>
     </div>

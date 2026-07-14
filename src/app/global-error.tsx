@@ -23,11 +23,11 @@ export default function GlobalError({
 
   return (
     <html lang="de">
-      <body className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+      <body className="flex min-h-screen items-center justify-center bg-secondary p-4">
         <div className="mx-auto max-w-md text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-danger-tint">
             <svg
-              className="h-8 w-8 text-red-600"
+              className="h-8 w-8 text-danger"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -40,21 +40,21 @@ export default function GlobalError({
               />
             </svg>
           </div>
-          <h1 className="mb-2 text-xl font-bold text-gray-900">Kritischer Fehler</h1>
-          <p className="mb-6 text-sm text-gray-600">
+          <h1 className="mb-2 text-xl font-bold text-foreground">Kritischer Fehler</h1>
+          <p className="mb-6 text-sm text-foreground">
             Die Anwendung hat einen schwerwiegenden Fehler festgestellt. Bitte versuchen Sie es
             erneut oder kehren Sie zur Startseite zurück.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
             <button
               onClick={reset}
-              className="rounded-md bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700"
+              className="rounded-md bg-green-500 px-5 py-2.5 text-sm font-medium text-ink-900 shadow-sm hover:bg-green-700"
             >
               Erneut versuchen
             </button>
             <Link
               href="/"
-              className="rounded-md border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+              className="rounded-md border border-border bg-white px-5 py-2.5 text-sm font-medium text-foreground shadow-sm hover:bg-secondary"
             >
               Zur Startseite
             </Link>

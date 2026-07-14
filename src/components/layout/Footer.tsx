@@ -17,7 +17,7 @@ export default function Footer() {
     // Dunkles Band = Ink (Guide 02), Text in Sand-Hell.
     <footer className="bg-ink-900 text-sand-page/75">
       {/* Trust-Band — Schild + Check zuerst (Guide 05) */}
-      <div className="border-b border-white/10 bg-black/10">
+      <div className="border-b border-white/10 bg-ink-900/30">
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6">
             <div className="flex items-center gap-2 text-xs text-sand-page/60">

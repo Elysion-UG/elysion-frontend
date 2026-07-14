@@ -6,5 +6,5 @@ interface EmptyMessageProps {
 }
 
 export function EmptyMessage({ message, className }: EmptyMessageProps) {
-  return <div className={cn("py-16 text-center text-slate-500", className)}>{message}</div>
+  return <div className={cn("py-16 text-center text-muted-foreground", className)}>{message}</div>
 }

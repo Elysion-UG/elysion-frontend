@@ -181,7 +181,7 @@ export default function DatenschutzPage() {
       </section>
 
       <p className="mt-10 border-t border-border pt-6 text-xs text-muted-foreground">
-        ⚠️ Diese Datenschutzerklärung enthält Platzhalter (<code>[PLATZHALTER: ...]</code>), die vor
+        Diese Datenschutzerklärung enthält Platzhalter (<code>[PLATZHALTER: ...]</code>), die vor
         dem Launch durch echte Angaben ersetzt werden müssen. Bitte durch einen Datenschutzexperten
         oder Rechtsanwalt prüfen lassen.
       </p>
