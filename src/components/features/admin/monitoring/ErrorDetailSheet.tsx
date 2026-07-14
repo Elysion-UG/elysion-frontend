@@ -15,7 +15,9 @@ export default function ErrorDetailSheet({ event, open, onOpenChange }: ErrorDet
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full border-border bg-ink-900 text-muted-foreground sm:max-w-lg">
+      {/* `dark`: Portal rendert am body außerhalb des Admin-dark-Scopes → Tokens
+          sonst auf Light-Werten, Text nur ~3:1 (Issue #140). */}
+      <SheetContent className="dark w-full border-border bg-ink-900 text-muted-foreground sm:max-w-lg">
         <SheetHeader>
           <SheetTitle className="text-muted-foreground">Fehlerdetails</SheetTitle>
         </SheetHeader>

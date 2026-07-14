@@ -41,7 +41,9 @@ export function GenericRejectModal({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md rounded-xl border border-border/60 bg-ink-900 p-6 shadow-2xl">
+      {/* `dark` re-skopt die Tokens im Portal (body-Level) auf die Ink-Dark-Werte;
+          sonst rendert der Modal-Text mit den Light-Tokens → nur ~3:1 (Issue #140). */}
+      <DialogContent className="dark max-w-md rounded-xl border border-border/60 bg-ink-900 p-6 shadow-2xl">
         <DialogHeader>
           <DialogTitle className="font-mono text-lg font-semibold text-muted-foreground">
             {title}
