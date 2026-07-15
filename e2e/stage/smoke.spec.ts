@@ -18,8 +18,10 @@ const ADMIN_URL = process.env.STAGE_ADMIN_URL || "https://elysion-stage-admin.ve
 
 // Keine Passwort-Fallbacks (FE#65): Die Staging-Passwörter sind von den
 // dokumentierten lokalen Seed-Passwörtern entkoppelt und existieren nur als
-// Secrets (GitHub Actions: E2E_*_PASSWORD; lokal: ~\.elysion\deploy.env).
-// Fehlen sie, werden die Login-Tests übersprungen statt mit eingebauten
+// GitHub-Secrets (E2E_*_PASSWORD). Eine lokale Kopie gibt es bewusst nicht —
+// der früher hier genannte Pfad ~\.elysion\deploy.env existiert nicht mehr.
+// Neu rotieren: scripts/rotate-stage-passwords.py im Backend-Repo (FE#106).
+// Fehlen die Secrets, werden die Login-Tests übersprungen statt mit eingebauten
 // Credentials zu laufen.
 const SELLER_EMAIL = process.env.E2E_SELLER_EMAIL || "seller1@greenthread.dev"
 const SELLER_PASSWORD = process.env.E2E_SELLER_PASSWORD
