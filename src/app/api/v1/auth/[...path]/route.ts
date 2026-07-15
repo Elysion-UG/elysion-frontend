@@ -117,6 +117,21 @@ async function proxy(request: NextRequest, { params }: { params: Promise<{ path:
     outgoingHeaders["X-Auth-Proxy-Secret"] = proxySecret
   }
 
+  // The backend enforces Origin on its cookie-bearing endpoints: /auth/refresh
+  // answers 401 for a known origin but 403 when Origin is absent or foreign.
+  // Because this handler rebuilds the header set from scratch, the browser's
+  // Origin was dropped and every proxied refresh 403'd — invisible while auth
+  // traffic still went to the backend directly (#148).
+  //
+  // Forwarded verbatim and never fabricated: the value is the backend's CSRF
+  // signal, so it has to stay the browser's claim for the backend to reject a
+  // foreign one. A same-origin request carries no Origin on some browsers, so
+  // absence is passed through as absence rather than filled in.
+  const origin = request.headers.get("origin")
+  if (origin) {
+    outgoingHeaders["Origin"] = origin
+  }
+
   const authorization = request.headers.get("authorization")
   if (authorization) {
     outgoingHeaders["Authorization"] = authorization
