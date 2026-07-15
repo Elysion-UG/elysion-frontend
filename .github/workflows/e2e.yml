@@ -1,5 +1,9 @@
 name: E2E Tests
 
+# Nur manuell: Der tägliche Cron ist stillgelegt, weil dieser Workflow noch nie
+# grün war (0/40 Läufe) und jeden Morgen eine Fehler-Mail erzeugt hat. Ursachen
+# und offene Designfrage (wogegen soll die Suite laufen?) siehe #144 — der Cron
+# gehört erst zurück, wenn der Lauf tatsächlich grün ist.
 on:
   # Manuell starten — z.B. gegen Staging-URL
   workflow_dispatch:
@@ -8,10 +12,6 @@ on:
         description: "URL to test against (leave empty for staging default)"
         required: false
         default: ""
-
-  # Täglich um 6 Uhr gegen Staging
-  schedule:
-    - cron: "0 6 * * *"
 
 concurrency:
   group: e2e-${{ github.ref }}

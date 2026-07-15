@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import type { NextRequest } from "next/server"
+// Next's own bundled matcher — the rewrite-shadowing test below has to make the
+// same routing decision Next makes, not an approximation of it.
+import { pathToRegexp } from "next/dist/compiled/path-to-regexp"
 
 import { POST } from "./route"
 import { SESSION_MARKER_COOKIE } from "@/src/lib/auth/session-marker"
@@ -212,5 +215,70 @@ describe("auth proxy session-presence marker (#68)", () => {
     expect(cookies.some((c) => c.startsWith(`${SESSION_MARKER_COOKIE}=`))).toBe(false)
     // The unrelated cookie is still passed through.
     expect(cookies.some((c) => c.startsWith("cartSessionId="))).toBe(true)
+  })
+})
+
+/**
+ * Guards the seam the tests above cannot see (#143).
+ *
+ * Every test in this file calls the route handler directly, so they all pass
+ * even when nothing ever routes a request to it. That is exactly what happened
+ * on staging: the `/api/v1/:path*` rewrite in next.config.mjs is an `afterFiles`
+ * rewrite, and those match before dynamic routes — so it shadowed this catch-all
+ * handler, no session_present marker was emitted, and the middleware bounced
+ * every authenticated seller/admin straight back to the login page.
+ *
+ * The rewrite only exists when API_URL is set, which is never the case locally
+ * (.env.local leaves it empty) and always the case once deployed — so no local
+ * run and no unit test could catch it. Hence this test asserts the routing
+ * decision itself, using the same matcher Next.js uses.
+ */
+describe("auth proxy reachability: rewrites must not shadow this handler (#143)", () => {
+  const withApiUrl = async (apiUrl: string | undefined) => {
+    const previous = process.env.API_URL
+    if (apiUrl === undefined) delete process.env.API_URL
+    else process.env.API_URL = apiUrl
+    try {
+      const { default: nextConfig } = await import("@/next.config.mjs")
+      return (await nextConfig.rewrites?.()) ?? []
+    } finally {
+      if (previous === undefined) delete process.env.API_URL
+      else process.env.API_URL = previous
+    }
+  }
+
+  const matches = (source: string, pathname: string) => pathToRegexp(source).test(pathname)
+
+  it("does not rewrite auth paths away from this handler", async () => {
+    const rewrites = await withApiUrl("https://backend.example.com")
+    expect(rewrites.length).toBeGreaterThan(0)
+
+    for (const pathname of [
+      "/api/v1/auth/seller/login",
+      "/api/v1/auth/admin/login",
+      "/api/v1/auth/customer/login",
+      "/api/v1/auth/refresh",
+      "/api/v1/auth/logout",
+    ]) {
+      expect(
+        rewrites.some((r: { source: string }) => matches(r.source, pathname)),
+        `${pathname} must reach the auth proxy, not the rewrite`
+      ).toBe(false)
+    }
+  })
+
+  it("still rewrites every non-auth /api/v1 path to the backend", async () => {
+    const rewrites = await withApiUrl("https://backend.example.com")
+
+    for (const pathname of ["/api/v1/products", "/api/v1/cart", "/api/v1/users/me"]) {
+      expect(
+        rewrites.some((r: { source: string }) => matches(r.source, pathname)),
+        `${pathname} must still be proxied by the rewrite`
+      ).toBe(true)
+    }
+  })
+
+  it("registers no rewrites at all when API_URL is unset", async () => {
+    expect(await withApiUrl(undefined)).toEqual([])
   })
 })
