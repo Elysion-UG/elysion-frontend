@@ -5,6 +5,7 @@
  * window error handlers, and React components alike.
  */
 
+import { API_BASE } from "@/src/lib/api-base"
 import type {
   FrontendErrorEvent,
   ErrorSeverity,
@@ -33,9 +34,9 @@ const STACK_MAX = 8 * 1024
 const MAX_BACKOFF_MS = 5 * 60 * 1000
 const MONITORING_PATH = "/api/v1/monitoring/errors"
 
-function monitoringEndpoint(): string {
-  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
-  return `${base}${MONITORING_PATH}`
+/** Exported for tests: the endpoint must follow API_BASE, never a host of its own. */
+export function monitoringEndpoint(): string {
+  return `${API_BASE}${MONITORING_PATH}`
 }
 
 /** Auto-flush + network are disabled during SSR and unit tests. */

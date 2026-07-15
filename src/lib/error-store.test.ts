@@ -3,9 +3,35 @@ import {
   errorStore,
   serializeErrorEvent,
   buildErrorBatch,
+  monitoringEndpoint,
   type ReportErrorInput,
 } from "./error-store"
+import { API_BASE } from "./api-base"
 import type { FrontendErrorEvent } from "@/src/types"
+
+/**
+ * Regression for #148. This module used to resolve its own base URL with
+ * `process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"`, while api-client
+ * used `?? ""`. The two disagreed on what "unset" means, so switching staging to
+ * same-origin proxy mode left error reporting pointed at localhost from a
+ * deployed page and the CSP blocked it. The endpoint must follow API_BASE.
+ */
+describe("monitoringEndpoint base URL (#148)", () => {
+  it("stays relative when no API base is configured", () => {
+    // NEXT_PUBLIC_API_URL is unset under test, which is the deployed proxy-mode
+    // configuration: API_BASE is "" and the endpoint has to be same-origin.
+    expect(API_BASE).toBe("")
+    expect(monitoringEndpoint()).toBe("/api/v1/monitoring/errors")
+  })
+
+  it("never falls back to a hardcoded host", () => {
+    expect(monitoringEndpoint()).not.toMatch(/localhost|https?:\/\//)
+  })
+
+  it("agrees with api-client instead of resolving its own base", () => {
+    expect(monitoringEndpoint().startsWith(API_BASE)).toBe(true)
+  })
+})
 
 function makeInput(overrides: Partial<ReportErrorInput> = {}): ReportErrorInput {
   return {

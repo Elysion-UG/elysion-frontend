@@ -10,8 +10,9 @@
  */
 
 import type { User, TokensResponse } from "@/src/types"
+import { API_BASE } from "./api-base"
 
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? ""
+export { API_BASE }
 
 // ── Session persistence ────────────────────────────────────────────────────────
 // Storing { token, user } in sessionStorage lets us survive full-page navigations

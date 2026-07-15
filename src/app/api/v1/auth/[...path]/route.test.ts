@@ -132,6 +132,52 @@ describe("auth proxy client IP forwarding", () => {
 })
 
 /**
+ * The backend treats Origin as its CSRF signal on cookie-bearing auth endpoints:
+ * /auth/refresh answers 401 for a known origin but 403 when Origin is absent or
+ * foreign. This handler rebuilds the outgoing header set from scratch, so the
+ * browser's Origin has to be re-attached explicitly — without it every proxied
+ * refresh 403s and the user is bounced back to the login page (#148).
+ *
+ * Forwarded verbatim, never fabricated: inventing an allowed Origin here would
+ * turn the backend's check into a rubber stamp for genuinely foreign requests.
+ */
+describe("auth proxy Origin forwarding (#148)", () => {
+  beforeEach(() => {
+    vi.unstubAllEnvs()
+    vi.stubEnv("API_URL", "http://backend.test")
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+  })
+
+  it("forwards the browser's Origin so the backend can accept the request", async () => {
+    const headers = await invokeProxy({
+      "x-real-ip": "203.0.113.10",
+      origin: "https://elysion-stage-seller.vercel.app",
+    })
+
+    expect(headers["Origin"]).toBe("https://elysion-stage-seller.vercel.app")
+  })
+
+  it("passes a foreign Origin through unchanged so the backend can reject it", async () => {
+    const headers = await invokeProxy({
+      "x-real-ip": "203.0.113.10",
+      origin: "https://evil.example.com",
+    })
+
+    expect(headers["Origin"]).toBe("https://evil.example.com")
+  })
+
+  it("sends no Origin when the browser sent none", async () => {
+    const headers = await invokeProxy({ "x-real-ip": "203.0.113.10" })
+
+    expect(headers["Origin"]).toBeUndefined()
+  })
+})
+
+/**
  * Tests for the session-presence marker cookie the proxy mirrors from the
  * backend's refresh cookie (#68). The marker must be Path=/, carry no token,
  * and track the refresh cookie's set/clear lifecycle.
