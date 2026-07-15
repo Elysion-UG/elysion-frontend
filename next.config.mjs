@@ -20,8 +20,18 @@ const nextConfig = {
     if (!apiUrl) return []
     return [
       {
-        source: "/api/v1/:path*",
-        destination: `${apiUrl}/api/v1/:path*`,
+        // /api/v1/auth/* is deliberately excluded: it must reach the route
+        // handler at src/app/api/v1/auth/[...path]/route.ts, which emits the
+        // session_present marker the middleware gates on (#68).
+        //
+        // The exclusion is load-bearing, not defensive. A rewrite returned as a
+        // plain array is an `afterFiles` rewrite, and those are matched BEFORE
+        // dynamic routes — so `/api/v1/:path*` shadows the catch-all handler
+        // and the marker is never set. That is invisible locally (.env.local
+        // leaves API_URL empty → no rewrite at all → the handler runs) and only
+        // breaks where API_URL is set, i.e. every deployed environment (#143).
+        source: "/api/v1/:path((?!auth/).*)",
+        destination: `${apiUrl}/api/v1/:path`,
       },
     ]
   },
