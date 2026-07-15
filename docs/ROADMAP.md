@@ -1,97 +1,47 @@
 # Entwicklungs-Roadmap
 
-## Elysion — Sustainable Online Shop
-
-**Stand:** 2026-05-31
-**Tech Stack:** Next.js 16 (Frontend) + Spring Boot (Backend)
-**Team:** 2 Entwickler (Gründer)
-
-> Aktueller Launch-Status und offene Blocker: [`LAUNCH_READINESS.md`](./LAUNCH_READINESS.md)
+Planung über die Phasen hinweg. **Was gerade offen ist, steht in den GitHub-Issues** —
+diese Datei gibt nur die grobe Richtung. Launch-Stand und Blocker mit Begründung:
+[`LAUNCH_READINESS.md`](./LAUNCH_READINESS.md).
 
 ---
 
-## Phase 1 — MVP ✅ Abgeschlossen
+## Phase 1 — MVP ✅ abgeschlossen
 
-Alle Kernfeatures sind implementiert und ins Backend integriert.
+Alle Kernmodule sind implementiert und ans Backend angebunden: Auth, Profile,
+Adressen, Werteprofile, Admin-Panel, Produkte, Kategorien, Zertifikate, Warenkorb,
+Checkout, Bestellungen, Matching, File-Upload, Payments. Der Modul-Stand FE+BE steht
+in [`LAUNCH_READINESS.md`](./LAUNCH_READINESS.md) §1.
 
-### Frontend (Next.js 16 + React 18 + TypeScript)
+Dazu: App Router mit Route Groups, zentraler API-Client mit Token-Handling und
+401-Retry, AuthContext, CartContext mit optimistischen Updates, Route-Schutz via
+`middleware.ts`, Pre-commit-Pipeline.
 
-- [x] App Router mit Route Groups `(admin)`, `(auth)`, `(buyer)`, `(public)`, `(seller)`
-- [x] Zentraler API-Client mit Token-Handling, 401-Retry, `ApiError`
-- [x] AuthContext (Login, Register, Logout, Token-Refresh)
-- [x] CartContext mit optimistischen Updates
-- [x] Route-Schutz via `middleware.ts`
+## Phase 2 — Feature-Erweiterung
 
-### Implementierte Module
+**Erledigt:** Stripe-Zahlungsintegration (nur der Key fehlt, B1) · Skeleton-Loading
+States · Toast-Abdeckung im SellerDashboard · `resend-verification` verdrahtet ·
+Producer-Seite auf echte Daten umgebaut · Kontaktformular mit `mailto:`-Fallback ·
+Session-Wiederherstellung nach Reload · `/dev`-Routen entfernt · E2E-Tests mit
+Playwright.
 
-- [x] Authentication (Login / Register / Logout / Verify Email / Reset Password)
-- [x] User-Profil (GET / PATCH / DELETE)
-- [x] Adressen (CRUD + Standard-Adresse)
-- [x] Buyer Value Profile
-- [x] Seller Profile + Seller Value Profile
-- [x] Admin Panel (User- + Seller-Verwaltung, Produkte, Bestellungen, Zertifikate, Finance)
-- [x] Produkte (CRUD + Status + Bilder + Varianten + Suche + Filter + Pagination)
-- [x] Kategorien
-- [x] Zertifikate
-- [x] Warenkorb
-- [x] Checkout (3-Schritt: Adresse → Vorschau → Bestätigung)
-- [x] Bestellungen (Buyer + Seller)
-- [x] Matching / Recommendations (mit Match-Score)
-- [x] File Upload
-- [x] Payments (Stripe Elements — Frontend voll integriert, benötigt nur `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`)
+**Offen:**
 
-### Testing
-
-- [x] 266 Unit-Tests mit ~97% Coverage (Vitest + Testing Library)
-- [x] Pre-commit Pipeline (ESLint + Prettier + Husky + lint-staged)
-
----
-
-## Launch-Blocker (vor Go-Live) — siehe LAUNCH_READINESS.md
-
-- [ ] **B1** `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` in `.env` setzen (Stripe-Integration ist fertig)
-- [ ] **B2/B3** Stripe Live-Secrets (Backend) + Webhook-Erreichbarkeit in Prod
-- [ ] **B4** Rechtstexte (Impressum/Datenschutz/AGB/Widerruf) + Kontaktdaten mit Echtdaten füllen, anwaltlich prüfen
-- [ ] **B5** Prod-Secrets + SMTP aktivieren, CORS/Cookies absichern
-- [ ] **B6** Plattformgebühr + Payout-Workflow entscheiden (MANAGEMENT_DECISIONS §1.1/§1.2)
-
-## Phase 2 — Feature-Erweiterung (Geplant)
-
-### Polish & Hardening (P5) — abgeschlossen
-
-- [x] **P5-1** Toast-Benachrichtigungen vollständig: SellerDashboard (Ship, Status-Update)
-- [x] **P5-2a** Skeleton-Loading-States: SustainableShop (Produktlisting) — React Query Cache
-- [x] **P5-2b** Skeleton-Loading-States: Cart, OrderDetail, Checkout, Profil, Präferenzen
-- [x] `POST /api/v1/auth/resend-verification` UI verdrahtet (Backend-Endpoint vorhanden, `EmailVerification.tsx`)
-- [x] Stripe-Zahlungsintegration (`PaymentStep.tsx` mit Stripe Elements — nur Key-Konfiguration offen, siehe B1)
-
-### Neue Features
-
-- [x] Producer-Seite auf echte Daten umgebaut (Seller-Produkte via `useSellerProducts`; Mock/Fake-Reviews entfernt)
-- [ ] Optionaler Public-Seller-Profil-Endpoint im Backend für reicheres Producer-Profil (Beschreibung, Seller-Zertifikate)
-- [x] Kontaktformular: `mailto:`-Fallback (Fake-Stub entfernt; Adresse via `NEXT_PUBLIC_SUPPORT_EMAIL`)
-- [ ] Optionaler Kontakt-Endpoint im Backend (serverseitige Speicherung/Weiterleitung)
-- [ ] Monitoring-Persistenz (`monitoring.service.ts` + Backend-Endpoint, Spec in `monitoring-api.md`)
+- [ ] Monitoring-Persistenz (Backend-Endpoint, Spec in [`monitoring-api.md`](./monitoring-api.md))
+- [ ] Optionaler Public-Seller-Profil-Endpoint für ein reicheres Producer-Profil
+- [ ] Optionaler Kontakt-Endpoint (serverseitige Speicherung/Weiterleitung)
 - [ ] Guest Checkout
 - [ ] Wishlist / Favoriten
 - [ ] Retouren- und Erstattungs-UI (Buyer-facing)
-- [ ] Seller Analytics Dashboard (Charts)
+- [ ] Seller-Analytics-Dashboard
 - [ ] Bewertungs- und Rezensions-System
 
-### Technisch
+## Phase 3 — Skalierung & Optimierung
 
-- [x] Session-Wiederherstellung nach Page-Reload (sessionStorage + useLayoutEffect, kein Auth-Flash)
-- [x] Next.js `router.push()` / `<Link>` statt `window.location.href`
-- [x] `/dev`-Routen in Produktion absichern — durch vollständige Löschung der Routen erledigt (Commit `7d7ae13`, siehe Issue #71)
-- [x] E2E-Tests mit Playwright für kritische User-Flows
-
----
-
-## Phase 3 — Skalierung & Optimierung (Zukunft)
-
-- [ ] Server-Side Rendering / Static Generation für Produktseiten (SEO)
-- [ ] Internationalisierung (i18n) — DE / EN
-- [ ] Performance-Optimierungen (Image Optimization, Bundle-Splitting)
-- [ ] Seller Analytics mit echten Daten und Charts
+- [ ] SSR / Static Generation für Produktseiten (SEO) — setzt serverseitige
+      Token-Validierung voraus, siehe [`ARCHITECTURE.md`](./ARCHITECTURE.md) §4.1.1
+- [ ] Internationalisierung (DE / EN) — `src/lib/i18n/de.ts` ist angelegt, aber noch
+      nicht eingebunden
+- [ ] Performance (Image Optimization, Bundle-Splitting)
 - [ ] Push-Benachrichtigungen für Bestellstatus
 - [ ] Mobile App (React Native / Expo)

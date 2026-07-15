@@ -1,28 +1,11 @@
 /**
  * AdminService — API calls for admin panel operations.
  *
- * All endpoints require ADMIN role.
+ * Every endpoint here requires the ADMIN role. Endpoint catalogue:
+ * docs/api-integration.md.
  *
- * User moderation:
- *   GET   /api/v1/admin/users                         — list users (paginated)
- *   GET   /api/v1/admin/users/{id}                    — get user details
- *   POST  /api/v1/admin/users/{id}/suspend             — suspend user
- *   POST  /api/v1/admin/users/{id}/unsuspend           — reactivate user
- *
- * Seller profile review:
- *   POST  /api/v1/admin/sellers/{id}/approve  — approve seller profile
- *   POST  /api/v1/admin/sellers/{id}/reject   — reject seller profile
- *   POST  /api/v1/admin/sellers/{id}/suspend  — suspend seller profile
- *
- * Certificate verification:
- *   PATCH /api/v1/admin/certificates/{id}/verify      — verify certificate
- *   PATCH /api/v1/admin/certificates/{id}/reject      — reject certificate
- *
- * Note: Certificate verify/reject are also in CertificateService.
- * Use either service — they hit the same endpoint.
- *
- * Dashboard:
- *   GET   /api/v1/admin/dashboard                       — operational overview stats
+ * Certificate verify/reject also exist on CertificateService — same endpoint,
+ * either service works.
  */
 import { apiRequest, buildQuery } from "@/src/lib/api-client"
 import type {

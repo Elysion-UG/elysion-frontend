@@ -1,19 +1,12 @@
 /**
- * AuthService — real API calls to the backend authentication endpoints.
+ * AuthService — backend authentication endpoints (base: /api/v1/auth).
  *
- * Endpoints (base: /api/v1/auth):
- *   POST /register              — register BUYER or SELLER
- *   POST /customer/login        — customer portal login
- *   POST /seller/login          — seller portal login
- *   POST /admin/login           — admin portal login
- *   POST /refresh               — rotates refresh token (cookie), returns new accessToken
- *   POST /logout                — revokes refresh token, clears cookie
- *   POST /verify-email          — verify email with one-time token
- *   GET  /verify-email?token=   — link-friendly email verification
- *   POST /resend-verification   — resend verification email
- *   POST /forgot-password       — trigger password reset email (always 200 to prevent enumeration)
- *   POST /reset-password        — set new password with reset token
- *   POST /reset-password/validate — validate reset token (does not consume token)
+ * Login is portal-specific — there is no generic /login. Endpoint catalogue:
+ * docs/api-integration.md.
+ *
+ * Requests route through the Next.js auth proxy, which round-trips the HttpOnly
+ * refresh cookie and mirrors it as the session-presence marker (see
+ * app/api/v1/auth/[...path]/route.ts).
  */
 import { apiRequest } from "@/src/lib/api-client"
 import { parseApiResponse, tokensResponseSchema } from "@/src/lib/api-schemas"
