@@ -1,5 +1,9 @@
 name: E2E Tests
 
+# Nur manuell: Der tägliche Cron ist stillgelegt, weil dieser Workflow noch nie
+# grün war (0/40 Läufe) und jeden Morgen eine Fehler-Mail erzeugt hat. Ursachen
+# und offene Designfrage (wogegen soll die Suite laufen?) siehe #144 — der Cron
+# gehört erst zurück, wenn der Lauf tatsächlich grün ist.
 on:
   # Manuell starten — z.B. gegen Staging-URL
   workflow_dispatch:
@@ -8,10 +12,6 @@ on:
         description: "URL to test against (leave empty for staging default)"
         required: false
         default: ""
-
-  # Täglich um 6 Uhr gegen Staging
-  schedule:
-    - cron: "0 6 * * *"
 
 concurrency:
   group: e2e-${{ github.ref }}
@@ -33,10 +33,10 @@ jobs:
       E2E_ADMIN_PASSWORD: ${{ secrets.E2E_ADMIN_PASSWORD }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
 
       - name: Install dependencies
         run: bun install
@@ -61,7 +61,7 @@ jobs:
         run: bunx playwright test
 
       - name: Upload Playwright report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: playwright-report
@@ -69,7 +69,7 @@ jobs:
           retention-days: 14
 
       - name: Upload test videos/screenshots on failure
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: failure()
         with:
           name: playwright-artifacts

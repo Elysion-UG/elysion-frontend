@@ -29,19 +29,24 @@ jobs:
         (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')) &&
         contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association))
     runs-on: ubuntu-latest
+    # Least privilege: matches the upstream-recommended baseline for
+    # anthropics/claude-code-action (examples/claude.yml). id-token:write is NOT
+    # only for cloud-provider (Bedrock/Vertex) OIDC — the action exchanges the
+    # GitHub OIDC token for its short-lived GitHub App token, so removing it
+    # breaks the integration even with the OAuth-token auth used here (#69).
     permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-      id-token: write
-      actions: read
+      contents: write # Claude commits/pushes on branches
+      pull-requests: write # comment on / open PRs
+      issues: write # comment on issues
+      id-token: write # required: GitHub OIDC token exchange (see note above)
+      actions: read # read CI results on PRs
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 1
 
       - name: Run Claude Code
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@f1bd27ca5b54584506e40e17884d90bdaaa1a9b3 # v1.0.173
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
