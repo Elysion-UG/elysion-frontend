@@ -74,7 +74,7 @@ Impressum (~15× `[PLATZHALTER]`), Datenschutz (~8×), AGB (~4×), Widerruf (~2�
 Die Geschäftsregeln sind **entschieden** (siehe [`MANAGEMENT_DECISIONS.md`](../MANAGEMENT_DECISIONS.md) §1.1 / §1.2):
 
 - **Provision:** 15 % Default, pro Seller vom Admin anpassbar, auf Warenwert exkl. Versand; die Stripe-Gebühr trägt der Seller und wird pro Transaktion separat ausgewiesen.
-- **Payouts:** monatliche manuelle Admin-Freigabe über **Stripe Connect Express**, kein Mindestbetrag, Settlement ab `DELIVERED`, eigene Payout-Mail.
+- **Payouts:** **wöchentliche** manuelle Admin-Freigabe (fester Auszahlungstag **Mittwoch**, **7-Tage-Kalenderhaltefrist**) über **Stripe Connect Express**, kein Mindestbetrag, Settlement ab `DELIVERED`, eigene Payout-Mail. _(zuvor „monatlich" — korrigiert nach MANAGEMENT_DECISIONS §1.2, 2026-06-10.)_
 
 **Frontend ist umgesetzt** (Admin-Provisions-Editor, Seller-Connect-Onboarding-Karte, Admin-Tab „Fällige Auszahlungen").
 
@@ -82,7 +82,37 @@ Die Geschäftsregeln sind **entschieden** (siehe [`MANAGEMENT_DECISIONS.md`](../
 
 ---
 
-## 3. 🟡 Wichtig, aber nicht zwingend blockierend
+## 3. 🟠 Operations-Readiness (kann man betreiben?)
+
+Die Blocker-Liste B1–B6 misst **„kann man deployen?"**. Sie sagt nichts darüber,
+ob der Marktplatz **betrieben** werden kann: mehrfach bedient fertige Frontend-UI
+ein Backend, dessen Geld-/Abrechnungspfade noch aus Stubs bestehen
+(Payouts, Provision, Settlements, Refunds). „✅ Frontend umgesetzt" heißt daher
+**nicht** „operativ fertig". Diese Liste prüft die End-to-End-Betriebsfähigkeit
+(Pre-Mortem-Querschnittsbefund, [`PRE_MORTEM.md`](./PRE_MORTEM.md)).
+
+> **Empfehlung:** Der Launch wird an **beiden** Listen gemessen — die
+> Deploy-Blocker (B1–B6) **und** die Operations-Readiness (O1–O7) müssen grün
+> sein. Ein grüner Deploy über einem Stub-Backend ist kein betriebsfähiger Shop.
+
+| #   | End-to-End-Kriterium                                                                                   | Status | Issues / Quelle                                                        |
+| --- | ------------------------------------------------------------------------------------------------------ | ------ | ---------------------------------------------------------------------- |
+| O1  | **Payout end-to-end:** Connect-Onboarding → Settlement → Mittwoch-Freigabe → Geld auf Seller-Testkonto | ❌     | BE#110, BE#111 (FE fertig; `createPayout()`-Stub)                      |
+| O2  | **Refund end-to-end:** Seller löst aus → Settlement-Reversal → Buyer-Geld zurück                       | ❌     | BE#142                                                                 |
+| O3  | **Backup aktiviert + Restore einmal geprobt** (Prod-DB-Neuaufbau, s. Kopf)                             | ❌     | BE#122                                                                 |
+| O4  | **MwSt.-Ausweis korrekt** in Checkout **und** Provisionsabrechnung                                     | 🟡     | MANAGEMENT_DECISIONS §8.1/§8.5 (Checkout ✅, Provisionsrechnung offen) |
+| O5  | **Zertifikats-Verifikations-SOP** existiert und wurde einmal durchlaufen                               | ❌     | MANAGEMENT_DECISIONS §2.4                                              |
+| O6  | **Pilot-Erfolgskriterien** definiert                                                                   | ❌     | MANAGEMENT_DECISIONS §12.1                                             |
+| O7  | **Alerting aktiv:** jemand erfährt von Downtime / ausbleibenden Webhooks                               | ❌     | BE Uptime-/Webhook-Monitoring-Issue                                    |
+
+**Status-Legende:** ❌ nicht begonnen · 🟡 teilweise (Detail in der Zeile) · ✅ end-to-end geprobt.
+Die O-Kriterien liegen fachlich überwiegend im Backend/Betrieb; das Frontend liefert
+die bedienende UI bereits (B6/§1.2, Admin-Finance, Refund-UI). Erst wenn die
+Gegenstücke live sind, wird aus „UI vorhanden" ein betriebener Fluss.
+
+---
+
+## 4. 🟡 Wichtig, aber nicht zwingend blockierend
 
 ### W1 — Public Seller-/Producer-Profil ✅ (Frontend erledigt 2026-05-31)
 
@@ -114,7 +144,7 @@ Zahlungen können nach Order-Ablauf eintreffen → Backend erkennt + loggt das f
 
 ---
 
-## 4. 🟢 Tests & Qualität
+## 5. 🟢 Tests & Qualität
 
 - **Unit (Vitest):** solide Coverage der Service-, Context- und Lib-Schicht;
   Feature-Komponenten sind noch weitgehend ungetestet. Schwellen:
@@ -129,19 +159,19 @@ Zahlungen können nach Order-Ablauf eintreffen → Backend erkennt + loggt das f
 
 ---
 
-## 5. Detail-Findings nach Datei
+## 6. Detail-Findings nach Datei
 
-| Bereich           | Datei / Ort                                         | Befund                                                                                                                                                  | Kategorie |
-| ----------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| Stripe Key        | `.env.example`, `.env.local`                        | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` dokumentiert; Key-Wert noch einzutragen                                                                            | 🔴 B1     |
-| Producer          | `src/components/features/products/ProducerPage.tsx` | ✅ Auf echte Daten umgebaut (Seller-Produkte via `useSellerProducts`); Mock/Fake-Reviews entfernt                                                       | ✅ W1     |
-| Kontakt           | `src/components/shared/Contact.tsx`                 | ✅ `mailto:`-Fallback (`src/lib/contact.ts`); Fake-Stub entfernt                                                                                        | ✅ W2     |
-| Onboarding        | `src/components/features/auth/Onboarding.tsx:75`    | „Advisory", keine Persistenz (bewusst)                                                                                                                  | 🟡 W3     |
-| Monitoring        | `src/services/monitoring.service.ts`                | ✅ Frontend fertig (Flush in `error-store.ts` + MonitoringService, committet 2026-06-07); Backend-Ingestion offen → BE#115                              | 🟡 W4     |
-| Impressum         | `src/app/(public)/impressum/page.tsx`               | ~15× `[PLATZHALTER]`                                                                                                                                    | 🔴 B4     |
-| Datenschutz       | `src/app/(public)/datenschutz/page.tsx`             | ~8× Platzhalter                                                                                                                                         | 🔴 B4     |
-| AGB               | `src/app/(public)/agb/page.tsx`                     | ~4× Platzhalter                                                                                                                                         | 🔴 B4     |
-| Widerruf          | `src/app/(public)/widerruf/page.tsx`                | ~2× Platzhalter                                                                                                                                         | 🔴 B4     |
-| Public Seller API | Backend                                             | `GET /api/v1/sellers/{id}/profile` fehlt                                                                                                                | 🟡 W1     |
-| Contact API       | Backend                                             | Kein Kontakt-Endpoint (optional; Frontend nutzt `mailto:`)                                                                                              | 🟢 W2     |
-| Payout-Execution  | Backend                                             | Entschieden: Stripe Connect Express + monatliche Admin-Freigabe. FE fertig; `createPayout()` (wirft noch `ConflictException`) + Connect-Endpoints offen | ⚠️ B6     |
+| Bereich           | Datei / Ort                                         | Befund                                                                                                                                                                                      | Kategorie |
+| ----------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| Stripe Key        | `.env.example`, `.env.local`                        | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` dokumentiert; Key-Wert noch einzutragen                                                                                                                | 🔴 B1     |
+| Producer          | `src/components/features/products/ProducerPage.tsx` | ✅ Auf echte Daten umgebaut (Seller-Produkte via `useSellerProducts`); Mock/Fake-Reviews entfernt                                                                                           | ✅ W1     |
+| Kontakt           | `src/components/shared/Contact.tsx`                 | ✅ `mailto:`-Fallback (`src/lib/contact.ts`); Fake-Stub entfernt                                                                                                                            | ✅ W2     |
+| Onboarding        | `src/components/features/auth/Onboarding.tsx:75`    | „Advisory", keine Persistenz (bewusst)                                                                                                                                                      | 🟡 W3     |
+| Monitoring        | `src/services/monitoring.service.ts`                | ✅ Frontend fertig (Flush in `error-store.ts` + MonitoringService, committet 2026-06-07); Backend-Ingestion offen → BE#115                                                                  | 🟡 W4     |
+| Impressum         | `src/app/(public)/impressum/page.tsx`               | ~15× `[PLATZHALTER]`                                                                                                                                                                        | 🔴 B4     |
+| Datenschutz       | `src/app/(public)/datenschutz/page.tsx`             | ~8× Platzhalter                                                                                                                                                                             | 🔴 B4     |
+| AGB               | `src/app/(public)/agb/page.tsx`                     | ~4× Platzhalter                                                                                                                                                                             | 🔴 B4     |
+| Widerruf          | `src/app/(public)/widerruf/page.tsx`                | ~2× Platzhalter                                                                                                                                                                             | 🔴 B4     |
+| Public Seller API | Backend                                             | `GET /api/v1/sellers/{id}/profile` fehlt                                                                                                                                                    | 🟡 W1     |
+| Contact API       | Backend                                             | Kein Kontakt-Endpoint (optional; Frontend nutzt `mailto:`)                                                                                                                                  | 🟢 W2     |
+| Payout-Execution  | Backend                                             | Entschieden: Stripe Connect Express + **wöchentliche** Admin-Freigabe (Mittwoch, 7-Tage-Haltefrist). FE fertig; `createPayout()` (wirft noch `ConflictException`) + Connect-Endpoints offen | ⚠️ B6     |
