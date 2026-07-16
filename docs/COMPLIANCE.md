@@ -17,17 +17,18 @@ die **einzige** Statusquelle; Launch-Blocker mit Begründung stehen in
 
 ## KRITISCH — vor Launch
 
-| #   | Aufgabe                                           | Gesetz          | Status                           |
-| --- | ------------------------------------------------- | --------------- | -------------------------------- |
-| K1  | Impressum `/impressum` + Footer-Link              | § 5 DDG         | ✅ Seite steht — Echtdaten offen |
-| K2  | Datenschutzerklärung `/datenschutz` + Footer-Link | Art. 13 DSGVO   | ✅ Seite steht — Echtdaten offen |
-| K3  | Cookie-Consent-Banner                             | § 25 TDDDG      | ✅                               |
-| K4  | Checkout-Button „Zahlungspflichtig bestellen"     | § 312j BGB      | ✅                               |
-| K5  | AGB `/agb` + Checkout-Akzeptanz-Checkbox          | § 305 ff. BGB   | ✅ Seite steht — Echtdaten offen |
-| K6  | Widerrufsbelehrung `/widerruf` + Musterformular   | § 312g, 356 BGB | ✅ Seite steht — Echtdaten offen |
-| K7  | Datenschutz-Checkbox bei Registrierung            | Art. 7 DSGVO    | ✅                               |
-| K8  | MwSt.-Hinweis auf der Produktdetailseite          | § 1 PAngV       | ✅ `PriceWithStock.tsx`          |
-| K8b | MwSt.-Hinweis auf den Produktkarten im Shop       | § 1 PAngV       | ⏳ offen → #155                  |
+| #   | Aufgabe                                            | Gesetz          | Status                                |
+| --- | -------------------------------------------------- | --------------- | ------------------------------------- |
+| K1  | Impressum `/impressum` + Footer-Link               | § 5 DDG         | ✅ Seite steht — Echtdaten offen      |
+| K2  | Datenschutzerklärung `/datenschutz` + Footer-Link  | Art. 13 DSGVO   | ✅ Seite steht — Echtdaten offen      |
+| K3  | Cookie-Consent-Banner                              | § 25 TDDDG      | ✅                                    |
+| K4  | Checkout-Button „Zahlungspflichtig bestellen"      | § 312j BGB      | ✅                                    |
+| K5  | AGB `/agb` + Checkout-Akzeptanz-Checkbox           | § 305 ff. BGB   | ✅ Seite steht — Echtdaten offen      |
+| K6  | Widerrufsbelehrung `/widerruf` + Musterformular    | § 312g, 356 BGB | ✅ Seite steht — Echtdaten offen      |
+| K7  | Datenschutz-Checkbox bei Registrierung             | Art. 7 DSGVO    | ✅                                    |
+| K8  | MwSt.-Hinweis auf der Produktdetailseite           | § 1 PAngV       | ✅ `PriceWithStock.tsx`               |
+| K8b | MwSt.-Hinweis auf den Produktkarten im Shop        | § 1 PAngV       | ✅ `ProductCard.tsx` (#155)           |
+| K8c | `/versand`-Seite (Versandkosten + MwSt.), verlinkt | § 1 PAngV       | ✅ `(public)/versand` + Footer (#155) |
 
 > **Blocker B4:** Die Seitengerüste existieren, die Texte enthalten aber noch
 > `[PLATZHALTER]` (Impressum ~15×, Datenschutz ~8×, AGB ~4×, Widerruf ~2×) sowie

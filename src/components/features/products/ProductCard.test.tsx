@@ -42,6 +42,13 @@ describe("ProductCard — availability", () => {
   })
 })
 
+describe("ProductCard — PAngV price notice (#155)", () => {
+  it("renders the VAT / shipping notice next to the price", () => {
+    render(<ProductCard product={baseProduct()} productHref={HREF} />)
+    expect(screen.getByText("inkl. MwSt., zzgl. Versand")).toBeInTheDocument()
+  })
+})
+
 describe("ProductCard — links", () => {
   it("renders the whole card as a link to the product with an accessible name", () => {
     render(<ProductCard product={baseProduct()} productHref={HREF} />)

@@ -132,6 +132,11 @@ export default function Footer() {
                     Widerrufsrecht
                   </Link>
                 </li>
+                <li>
+                  <Link href="/versand" className="transition-colors hover:text-sand-page/80">
+                    Versand &amp; Preise
+                  </Link>
+                </li>
               </ul>
             </nav>
           </div>
