@@ -2,8 +2,15 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import { PackageSearch, Loader2, AlertCircle, Search } from "lucide-react"
+import { PackageSearch, Loader2, AlertCircle, Search, SlidersHorizontal } from "lucide-react"
 import type { ProductDetail } from "@/src/types"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/src/components/ui/sheet"
 import { useProducts, PRODUCTS_PAGE_SIZE } from "@/src/hooks/useProducts"
 import { useMaterials } from "@/src/hooks/useMaterials"
 import { useAuth } from "@/src/context/AuthContext"
@@ -13,6 +20,7 @@ import {
   profileWeightToSlider,
   MIDDLE_IMPORTANCE,
   sortOptions,
+  countActiveFilters,
 } from "./shop-constants"
 import HeroBanner from "./HeroBanner"
 import TrustBar from "./TrustBar"
@@ -35,6 +43,7 @@ export default function SustainableShop() {
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([])
   const [sortBy, setSortBy] = useState("newest")
   const [currentPage, setCurrentPage] = useState(0)
+  const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false)
   const { data: materials } = useMaterials()
   const [sustainabilityImportance, setSustainabilityImportance] =
     useState<Record<string, string>>(MIDDLE_IMPORTANCE)
@@ -103,6 +112,13 @@ export default function SustainableShop() {
   const totalElements = data?.totalElements ?? 0
   const totalPages = data?.totalPages ?? 0
 
+  // Count for the mobile "Filter (N)" trigger (search has its own bar → excluded).
+  const activeFilterCount = countActiveFilters({
+    selectedMaterials,
+    priceRange,
+    sustainabilityImportance,
+  })
+
   // ── Handlers ───────────────────────────────────────────────────────
   const handleImportanceChange = (attribute: string, importance: string) => {
     setSustainabilityImportance((prev) => ({ ...prev, [attribute]: importance }))
@@ -142,23 +158,26 @@ export default function SustainableShop() {
       </div>
 
       <div className="grid gap-8 md:grid-cols-[280px_1fr]">
-        <FilterSidebar
-          isAuthenticated={isAuthenticated}
-          hasValueProfile={!!valueProfile?.simpleProfile}
-          sustainabilityImportance={sustainabilityImportance}
-          onImportanceChange={handleImportanceChange}
-          priceRange={priceRange}
-          onPriceRangeChange={setPriceRange}
-          materials={materials ?? []}
-          selectedMaterials={selectedMaterials}
-          onToggleMaterial={handleToggleMaterial}
-          onPageReset={() => setCurrentPage(0)}
-        />
+        {/* Desktop: Sidebar in der linken Spalte; mobil ausgeblendet (→ Sheet). */}
+        <div className="hidden md:block">
+          <FilterSidebar
+            isAuthenticated={isAuthenticated}
+            hasValueProfile={!!valueProfile?.simpleProfile}
+            sustainabilityImportance={sustainabilityImportance}
+            onImportanceChange={handleImportanceChange}
+            priceRange={priceRange}
+            onPriceRangeChange={setPriceRange}
+            materials={materials ?? []}
+            selectedMaterials={selectedMaterials}
+            onToggleMaterial={handleToggleMaterial}
+            onPageReset={() => setCurrentPage(0)}
+          />
+        </div>
 
         {/* ── Products Section ─────────────────────────────────────────── */}
         <div className="space-y-5">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-3">
             <p className="flex items-center gap-2 text-sm text-muted-foreground">
               {isLoading ? (
                 <span className="text-muted-foreground">Lädt…</span>
@@ -172,7 +191,44 @@ export default function SustainableShop() {
               )}
             </p>
 
-            <SortControls sortBy={sortBy} onSortChange={handleSortChange} />
+            <div className="flex items-center gap-2">
+              {/* Mobiler Filter-Trigger — nur unterhalb md, öffnet das Sheet (#78). */}
+              <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
+                <SheetTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 rounded-xl border border-border bg-white px-4 py-2 text-sm text-foreground shadow-sm transition-colors hover:bg-secondary md:hidden"
+                  >
+                    <SlidersHorizontal className="h-3.5 w-3.5" />
+                    Filter
+                    {activeFilterCount > 0 && (
+                      <span className="rounded-full bg-green-500 px-1.5 py-0.5 text-xs font-semibold text-ink-900">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[88vw] max-w-sm overflow-y-auto p-4">
+                  <SheetHeader className="mb-4 text-left">
+                    <SheetTitle>Produkte filtern</SheetTitle>
+                  </SheetHeader>
+                  <FilterSidebar
+                    isAuthenticated={isAuthenticated}
+                    hasValueProfile={!!valueProfile?.simpleProfile}
+                    sustainabilityImportance={sustainabilityImportance}
+                    onImportanceChange={handleImportanceChange}
+                    priceRange={priceRange}
+                    onPriceRangeChange={setPriceRange}
+                    materials={materials ?? []}
+                    selectedMaterials={selectedMaterials}
+                    onToggleMaterial={handleToggleMaterial}
+                    onPageReset={() => setCurrentPage(0)}
+                  />
+                </SheetContent>
+              </Sheet>
+
+              <SortControls sortBy={sortBy} onSortChange={handleSortChange} />
+            </div>
           </div>
 
           {/* Skeleton — shown only on first load */}

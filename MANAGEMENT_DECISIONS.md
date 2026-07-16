@@ -524,15 +524,30 @@ entkoppelt statt den Zustand zu akzeptieren.
 
 **Umsetzung:**
 
-- Alle 5 Staging-Seed-Accounts (Admin, 2× Seller, 2× Buyer) haben rotierte,
-  zufällige Passwörter — abgelegt ausschließlich als Secrets
-  (`~\.elysion\deploy.env` → `STAGE_E2E_*`; GitHub Actions `E2E_*_PASSWORD`).
+- Die Staging-Seed-Accounts haben rotierte, zufällige Passwörter — abgelegt
+  ausschließlich als GitHub-Secrets (`E2E_*_PASSWORD`). Eine lokale Kopie gibt es
+  bewusst nicht.
 - `e2e/stage/smoke.spec.ts` hat keine Passwort-Fallbacks mehr; ohne Env-Vars
   werden die Login-Tests übersprungen.
 - Die dokumentierten Seed-Passwörter (`Seller123!` etc.) gelten weiterhin
   **nur lokal** — markiert in CLAUDE.md und den lokalen E2E-Specs.
 - **Verbindlich:** Produktion wird niemals mit `seed-data.sql` befüllt; die
   Seed-Accounts dürfen in Produktion nicht existieren (relevant für BE#119).
+
+**Nachtrag FE#106 (2026-07-15):** Zwei Korrekturen an der ursprünglichen
+Umsetzung, beide beim Aufarbeiten des Klartext-Leaks in CI-Artefakten entdeckt:
+
+- Die hier genannten Ablageorte `~\.elysion\deploy.env` → `STAGE_E2E_*` und das
+  Rotationsskript `~\.elysion\seed\rotate-stage-passwords.ts` **existierten auf
+  keiner erreichbaren Maschine**; das Skript war nie versioniert. Damit war die
+  Rotation faktisch nicht durchführbar. Ersatz: `scripts/rotate-stage-passwords.py`
+  im Backend-Repo (dort privat, mit Render-/Neon-IDs).
+- „Alle 5 Seed-Accounts" traf nicht zu: GitHub-Secrets existieren nur für
+  Admin/Seller/Buyer, und `e2e/buyer.setup.ts` liest sie gar nicht, sondern hat
+  lokale Credentials hartkodiert. Rotiert sind die zwei Accounts, die der
+  Stage-Smoke tatsächlich nutzt (`seller1@greenthread.dev`,
+  `admin@marketplace.dev`) — die übrigen Seed-Accounts tragen weiterhin die
+  dokumentierten Passwörter.
 
 ---
 

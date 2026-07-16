@@ -2,6 +2,8 @@ import { defineConfig, devices } from "@playwright/test"
 import { fileURLToPath } from "url"
 import path from "path"
 
+import { traceMode } from "./e2e/trace-policy"
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const SELLER_AUTH_FILE = path.join(__dirname, "e2e/.auth/seller.json")
 const BUYER_AUTH_FILE = path.join(__dirname, "e2e/.auth/buyer.json")
@@ -20,7 +22,9 @@ export default defineConfig({
 
   use: {
     baseURL: process.env.BASE_URL || "http://localhost:3000",
-    trace: "on-first-retry",
+    // In CI aus, weil der Trace den Login-Body im Klartext enthält (#106).
+    // Begründung und Messung: e2e/trace-policy.ts
+    trace: traceMode(),
     screenshot: "only-on-failure",
     video: "retain-on-failure",
   },

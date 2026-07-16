@@ -1,14 +1,14 @@
 # Frontend-Architektur — elysion-frontend
 
-> Architektonische Leitplanken für das Next.js-Frontend. Ergänzt `CLAUDE.md`
-> (Projekt-Überblick), `README.md` (Setup) und `docs/api-integration.md`
-> (Backend-Vertrag).
+> Architektonische Leitplanken für das Next.js-Frontend. Ergänzt
+> [`README.md`](../README.md) (Setup) und
+> [`api-integration.md`](./api-integration.md) (Backend-Vertrag).
 
 ## 1. High-Level-Überblick
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  Next.js 14 App Router (React 18 + TypeScript)               │
+│  Next.js 16 App Router (React 18 + TypeScript)               │
 │  ─────────────────────────────────────────────────────────── │
 │  app/(public)  app/(buyer)  app/(seller)  app/(admin)        │
 │       │            │            │             │              │
@@ -118,7 +118,7 @@ UI Component
 **Regeln:**
 
 - Service-Schicht normalisiert Backend-Besonderheiten (siehe
-  `CLAUDE.md → Bekannte Abweichungen`).
+  [`BACKEND_QUIRKS.md`](./BACKEND_QUIRKS.md)).
 - Komponenten nutzen **keine** direkten `fetch`-Aufrufe.
 
 ## 4. Querschnittsthemen
@@ -204,8 +204,7 @@ Subdomains). Keine Komponente baut Portal-URLs von Hand.
      api-client, validation, schemas, services)
 ```
 
-- Coverage-Schwelle: 20% Lines/Statements/Functions, 15% Branches (Phase 1 —
-  **nicht final**; Phase 4 erhöht sie wieder auf ≥50%).
+- Coverage-Schwellen: [`CODE_STANDARDS.md`](./CODE_STANDARDS.md#coverage-schwellen).
 - E2E-Auth: `storageState` aus `e2e/.auth/seller.json`; Serial Mode wegen
   Single-Use-Refresh-Rotation.
 
@@ -218,8 +217,9 @@ Subdomains). Keine Komponente baut Portal-URLs von Hand.
 - **Services:** camelCase-Objekte mit async-Methoden; keine Klassen.
 - **Styles:** Tailwind + shadcn-Primitives; keine CSS-Module, keine Inline-
   Styles außer dynamische Werte (z.B. `width: ${pct}%`).
-- **Strings:** Deutsch im UI; langfristig zentralisiert unter
-  `src/lib/i18n/de.ts` (Phase 5).
+- **Strings:** Deutsch im UI, überwiegend direkt in den Komponenten.
+  `src/lib/i18n/de.ts` ist angelegt, aber noch nirgends eingebunden — die
+  Umstellung steht aus (Phase 5).
 
 ## 7. Bewusst ausgeschlossen
 

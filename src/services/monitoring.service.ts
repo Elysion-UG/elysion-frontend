@@ -1,9 +1,7 @@
 /**
  * MonitoringService — Admin-Reads für persistierte Frontend-Fehlerereignisse.
  *
- * Endpoints (ADMIN role):
- *   GET /api/v1/admin/monitoring/errors        — paginierte Fehlerliste mit Filtern
- *   GET /api/v1/admin/monitoring/errors/stats  — aggregierte Stats über ein Zeitfenster
+ * ADMIN-Rolle. Endpoint-Katalog: docs/api-integration.md.
  *
  * Die Ingestion (Frontend → Backend) läuft separat über den Flush-Mechanismus
  * in `src/lib/error-store.ts` (POST /api/v1/monitoring/errors, public).

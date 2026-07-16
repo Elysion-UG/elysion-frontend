@@ -52,14 +52,18 @@ Newsreader (H1/Display) · Schibsted Grotesk (H2/H3) · Bricolage Grotesque
 Weitere bewusste Abweichungen sind hier zu ergänzen (mit neuer Versionsnummer),
 stille Abweichungen gelten als Fehler.
 
-## Konformitäts-Checks (Batch-8-Audit)
+## Konformitäts-Checks
 
-Vor dem Merge stilrelevanter Änderungen sollten diese Greps **leer** sein
-(Produktionscode, ohne Tests):
+Vor dem Merge stilrelevanter Änderungen müssen diese Greps **leer** sein. Sie
+prüfen Produktionscode: ohne Tests, ohne `components/ui/` (shadcn-Primitives, siehe
+oben: nicht manuell editieren) und ohne Kommentarzeilen.
 
 ```bash
 # Keine Fremdpaletten
-grep -rE '\b(text|bg|border|ring|from|to|via|fill|stroke)-(sage|bark|cyber|teal|emerald|amber|slate|zinc|neutral|stone|sky|blue|indigo|purple|pink|rose|violet|fuchsia|lime|yellow|orange)-[0-9]{2,3}' src --include=*.tsx --include=*.ts | grep -v '.test.'
+grep -rE '\b(text|bg|border|ring|from|to|via|fill|stroke)-(sage|bark|cyber|teal|emerald|amber|slate|zinc|neutral|stone|sky|blue|indigo|purple|pink|rose|violet|fuchsia|lime|yellow|orange)-[0-9]{2,3}' \
+  src --include=*.tsx --include=*.ts | grep -v '.test.' | grep -v '/ui/'
+
 # Kein Leaf-Motiv, kein Pure-Black, keine Cyan-/Glow-Reste
-grep -rnE '\bLeaf\b|bg-black|rgba\(6,182,212|shadow-\[0_0_[0-9]' src --include=*.tsx | grep -v '.test.'
+grep -rnE '\bLeaf\b|bg-black|rgba\(6,182,212|shadow-\[0_0_[0-9]' \
+  src --include=*.tsx | grep -v '.test.' | grep -v '/ui/' | grep -vE ':\s*(\*|//)'
 ```

@@ -1,31 +1,15 @@
 /**
  * ProductService — API calls for products.
  *
- * Public endpoints (no auth):
- *   GET /api/v1/products            — paginated list (wrapped ApiResponse, custom pagination)
- *   GET /api/v1/products/{slug}     — public storefront detail (wrapped ApiResponse)
+ * List and detail are public; writes are seller-only. Endpoint catalogue:
+ * docs/api-integration.md.
  *
- * Authenticated:
- *   GET /api/v1/products/by-id/{id} — internal UUID detail (wrapped ApiResponse)
+ * The list endpoint paginates with its own shape — data.items (not content),
+ * data.totalItems (not totalElements), data.page (not number). list() normalises
+ * that to ProductPage, so callers must never hit the endpoint directly.
  *
- * Seller-only:
- *   POST   /api/v1/products                              — create product
- *   PATCH  /api/v1/products/{id}                         — update product
- *   PATCH  /api/v1/products/{id}/status                  — status transition
- *   DELETE /api/v1/products/{id}                         — delete product
- *   POST   /api/v1/products/{id}/images                  — add image
- *   DELETE /api/v1/products/{id}/images/{imageId}        — remove image
- *   PATCH  /api/v1/products/{id}/images/order            — reorder images
- *   POST   /api/v1/products/{id}/variants                — add variant
- *   PATCH  /api/v1/products/{id}/variants/{variantId}    — update variant
- *   DELETE /api/v1/products/{id}/variants/{variantId}    — delete variant
- *
- * Note on response styles:
- *   - All endpoints return a wrapped ApiResponse { status, message, data }
- *     → use apiRequest (extracts body.data) for all calls
- *   - The list endpoint uses a custom pagination shape:
- *     data.items (not content), data.totalItems (not totalElements), data.page (not number)
- *     → ProductService.list() normalises this to the internal ProductPage type
+ * Public detail is addressed by {slug} and returns `name`; the internal
+ * by-id/{id} route returns `title` and requires ADMIN or the owning SELLER.
  */
 import { apiRequest, buildQuery } from "@/src/lib/api-client"
 

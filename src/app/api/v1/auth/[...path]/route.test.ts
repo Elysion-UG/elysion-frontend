@@ -328,3 +328,36 @@ describe("auth proxy reachability: rewrites must not shadow this handler (#143)"
     expect(await withApiUrl(undefined)).toEqual([])
   })
 })
+
+describe("auth proxy path whitelist (#70.2)", () => {
+  beforeEach(() => {
+    vi.unstubAllEnvs()
+    vi.stubEnv("API_URL", "http://backend.test")
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+  })
+
+  it("forwards a whitelisted subpath to the backend", async () => {
+    const mockFetch = mockUpstream()
+    const res = await POST(makeRequest({}), {
+      params: Promise.resolve({ path: ["customer", "login"] }),
+    })
+    expect(res.status).toBe(200)
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([["admin", "secrets"], ["../users/me"], ["unknown"], ["refresh", "extra"]])(
+    "answers 404 for the non-whitelisted path %j without calling the backend",
+    async (...path) => {
+      const mockFetch = mockUpstream()
+      const res = await POST(makeRequest({}), {
+        params: Promise.resolve({ path }),
+      })
+      expect(res.status).toBe(404)
+      expect(mockFetch).not.toHaveBeenCalled()
+    }
+  )
+})

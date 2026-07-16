@@ -1,9 +1,16 @@
-# Monitoring API — Frontend Error Persistierung
+# Monitoring-API — Persistenz für Frontend-Fehler
 
-> **Status (2026-06-01): FRONTEND UMGESETZT — Backend offen**
-> Der Flush-Mechanismus in `src/lib/error-store.ts` (Timer-Flush 30 s, Threshold-Flush ab 20 Events, `beforeunload`-Beacon, Exponential-Backoff, Truncation, direkter `fetch` ohne api-client) und `src/services/monitoring.service.ts` (Admin-Reads) sind implementiert und getestet. Solange der Backend-Endpoint fehlt, schlägt der Flush still fehl und die Events bleiben im Buffer (kein Datenverlust im Sinne der Live-Ansicht, aber keine Persistenz). **Offen ist der Backend-Teil** (Tabelle, Ingestion-/Admin-Controller, Cleanup-Job) — siehe unten.
+Spezifikation der **Backend-Erweiterung**, mit der Frontend-Fehler über Sessions
+hinweg in der Datenbank landen.
 
-Spezifikation für die Backend-seitige Persistierung von Frontend-Fehlerereignissen. Das Frontend erfasst bereits Fehler in einem In-Memory-Ring-Buffer (`src/lib/error-store.ts`) und zeigt sie im Admin-Dashboard (`/admin/monitoring`). Diese Spezifikation beschreibt die notwendige Backend-Erweiterung, um Fehler über Sessions hinweg in der Datenbank zu speichern.
+> **Status:** Das Frontend ist fertig (Flush in `src/lib/error-store.ts`,
+> `src/services/monitoring.service.ts`), der Backend-Teil — Tabelle, Ingestion-/
+> Admin-Controller, Cleanup-Job — ist offen. Solange der Endpoint fehlt, schlägt der
+> Flush still fehl; die Live-Ansicht funktioniert weiter, persistiert wird nichts.
+> Hintergrund: [`LAUNCH_READINESS.md`](./LAUNCH_READINESS.md) §W4.
+
+Das Frontend erfasst Fehler in einem In-Memory-Ring-Buffer und zeigt sie im
+Admin-Dashboard (`/admin/monitoring`).
 
 ---
 

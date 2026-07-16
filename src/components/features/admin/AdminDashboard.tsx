@@ -19,14 +19,11 @@ import type { AdminDashboardData } from "@/src/types"
 import { AdminService } from "@/src/services/admin.service"
 import { toast } from "sonner"
 
-type AccentColor = "cyber" | "emerald" | "amber" | "indigo"
+// v0-Leftover-Akzent „cyber" entfernt (#83): war wertgleich mit „emerald" (beide
+// Logo-Grün) — konsolidiert auf die markenkonforme Benennung.
+type AccentColor = "emerald" | "amber" | "indigo"
 
 const ACCENT_COLORS: Record<AccentColor, { icon: string; glow: string; ring: string }> = {
-  cyber: {
-    icon: "text-green-500",
-    glow: "",
-    ring: "ring-green-500/30",
-  },
   emerald: {
     icon: "text-green-500",
     glow: "",
@@ -52,7 +49,7 @@ interface KpiCardProps {
   accentColor?: AccentColor
 }
 
-function KpiCard({ icon: Icon, title, value, subtitle, accentColor = "cyber" }: KpiCardProps) {
+function KpiCard({ icon: Icon, title, value, subtitle, accentColor = "emerald" }: KpiCardProps) {
   const colors = ACCENT_COLORS[accentColor]
 
   return (
@@ -159,7 +156,7 @@ export default function AdminDashboard() {
             title="Benutzer"
             value={data.users.total}
             subtitle={`${data.users.buyers} Käufer, ${data.users.sellers} Verkäufer, ${data.users.admins} Admins`}
-            accentColor="cyber"
+            accentColor="emerald"
           />
           <KpiCard
             icon={Store}
@@ -201,7 +198,7 @@ export default function AdminDashboard() {
             title="Zertifikate"
             value={data.certificates.total}
             subtitle={`${data.certificates.verified} verifiziert, ${data.certificates.rejected} abgelehnt`}
-            accentColor="cyber"
+            accentColor="emerald"
           />
           <KpiCard
             icon={Award}

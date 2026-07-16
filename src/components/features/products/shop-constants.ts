@@ -91,6 +91,30 @@ export const MIDDLE_IMPORTANCE: Record<string, string> = Object.keys(sustainabil
   {}
 )
 
+// Default price bounds of the shop filter — a range narrower than this counts as
+// an active filter (used for the mobile "Filter (N)" badge, #78).
+export const DEFAULT_PRICE_RANGE = { min: 0, max: 300 } as const
+
+/**
+ * Number of *active* filters in the FilterSidebar — materials, a narrowed price
+ * range, and any sustainability slider moved off its neutral middle value.
+ * Drives the count on the mobile filter trigger (#78). Search is excluded: it
+ * has its own search bar, not part of the sidebar.
+ */
+export function countActiveFilters(args: {
+  selectedMaterials: string[]
+  priceRange: { min: number; max: number }
+  sustainabilityImportance: Record<string, string>
+}): number {
+  const { selectedMaterials, priceRange, sustainabilityImportance } = args
+  const priceNarrowed =
+    priceRange.min > DEFAULT_PRICE_RANGE.min || priceRange.max < DEFAULT_PRICE_RANGE.max
+  const movedSliders = Object.keys(sustainabilityImportance).filter(
+    (key) => sustainabilityImportance[key] !== MIDDLE_IMPORTANCE[key]
+  ).length
+  return selectedMaterials.length + (priceNarrowed ? 1 : 0) + movedSliders
+}
+
 // ── Sort options ───────────────────────────────────────────────────────────────
 
 export const sortOptions = [

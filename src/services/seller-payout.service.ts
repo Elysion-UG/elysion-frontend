@@ -1,9 +1,7 @@
 /**
  * SellerPayoutService — Stripe-Connect-Express-Auszahlungskonto des Sellers.
  *
- * Endpoints (SELLER role):
- *   GET  /api/v1/seller/payout-account                  — Konto-Status abrufen
- *   POST /api/v1/seller/payout-account/onboarding-link  — Stripe Account Link erzeugen
+ * SELLER-Rolle. Endpoint-Katalog: docs/api-integration.md.
  *
  * Der Seller verbindet sein Auszahlungskonto, indem das Frontend ihn zur
  * zurückgelieferten Stripe-URL weiterleitet. Stripe übernimmt KYC und

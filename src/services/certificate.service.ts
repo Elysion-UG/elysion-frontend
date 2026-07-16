@@ -1,22 +1,12 @@
 /**
  * CertificateService — API calls for sustainability certificates.
  *
- * Seller flow:
- *   POST  /api/v1/certificates             — create certificate
- *   GET   /api/v1/certificates             — list own certificates
- *   GET   /api/v1/certificates/{id}        — get certificate detail
- *   PATCH /api/v1/certificates/{id}        — update certificate (only PENDING state)
+ * Spans three path families for one domain: /api/v1/certificates (seller),
+ * /api/v1/seller/certificates (portal-specific) and /api/v1/admin/certificates.
+ * The seller* methods below target the second family. Endpoint catalogue:
+ * docs/api-integration.md.
  *
- * Link management (Seller/Admin):
- *   POST   /api/v1/certificates/{certId}/products/{productId}  — link to product
- *   DELETE /api/v1/certificates/{certId}/products/{productId}  — unlink from product
- *
- * Admin:
- *   PATCH /api/v1/admin/certificates/{id}/verify  — verify certificate
- *   PATCH /api/v1/admin/certificates/{id}/reject  — reject certificate
- *
- * Public:
- *   GET /api/v1/products/{productId}/certificates — public certificates for a product
+ * A certificate is only editable while PENDING.
  */
 import { apiRequest } from "@/src/lib/api-client"
 import type {
