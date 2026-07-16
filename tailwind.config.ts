@@ -125,9 +125,15 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        // fade-up lebt ausschließlich in globals.css (#83) — dort inkl. der
-        // Stagger-Varianten .animate-fade-up-1/2/3, die es hier nie gab. Alle
-        // Verwendungen sind einfache Klassen (keine Tailwind-Varianten).
+        // fade-up: Keyframe + Basis-Utility bleiben hier die einzige Quelle (#83).
+        // globals.css definiert nur noch die Stagger-Varianten
+        // .animate-fade-up-1/2/3, die dieses @keyframes fade-up mitnutzen. Wichtig:
+        // `animate-fade-up` MUSS hier bleiben, sonst behandelt
+        // prettier-plugin-tailwindcss die Klasse als unbekannt und sortiert sie um.
+        "fade-up": {
+          from: { opacity: "0", transform: "translateY(14px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
         "fade-in": {
           from: { opacity: "0" },
           to: { opacity: "1" },
@@ -141,6 +147,7 @@ const config: Config = {
         "bounce-subtle": "bounce-subtle 0.3s ease-out",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-up": "fade-up 0.5s ease-out both",
         "fade-in": "fade-in 0.4s ease-out both",
         "scale-in": "scale-in 0.3s ease-out both",
       },
