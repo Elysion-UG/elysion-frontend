@@ -103,6 +103,15 @@ function hasSessionMarker(request: NextRequest): boolean {
 // `x-nonce` request header that Next.js reads during SSR. Dev mode still needs
 // 'unsafe-eval' for HMR / React Fast Refresh.
 //
+// Nonce wiring (#67): this follows Next.js' official CSP-nonce pattern exactly —
+// the middleware sets the `Content-Security-Policy` header on the *forwarded
+// request* (see `requestHeaders` below), and Next.js reads the nonce back out of
+// that header during render to stamp it onto its own <script> tags. We therefore
+// do NOT read the nonce manually in layout.tsx; doing so would double-apply it.
+// The wiring is verifiable only against rendered HTML (staging): the Next.js
+// bootstrap <script> tags must carry `nonce="…"`. Tracked as a staging check —
+// if they do not, the nonce is inert and script-src silently relies on 'self'.
+//
 // style-src is split into the granular -attr / -elem directives (#33) so the
 // permission for inline STYLE ATTRIBUTES is separated from inline <style>
 // ELEMENTS — this is the "differenzieren" step and the prerequisite for ever
@@ -148,6 +157,9 @@ function buildCsp(nonce: string): string {
     "style-src 'self' 'unsafe-inline'",
     "style-src-elem 'self' 'unsafe-inline'",
     "style-src-attr 'unsafe-inline'",
+    // Kept aligned with next.config.mjs `images.remotePatterns` (#67): both the
+    // browser-facing img-src and the server-side optimiser allowlist trust only
+    // self + the backend origin (data:/blob: for inline previews).
     `img-src 'self' data: blob: ${BACKEND_ORIGIN}`,
     `connect-src 'self' ${BACKEND_ORIGIN} https://js.stripe.com`,
     "frame-src https://js.stripe.com https://hooks.stripe.com",
