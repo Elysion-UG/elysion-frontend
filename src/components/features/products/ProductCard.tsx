@@ -141,6 +141,9 @@ export default function ProductCard({ product, productHref, sellerHref }: Produc
             {soldOut ? "Ausverkauft" : "Auf Lager"}
           </span>
         </div>
+        {/* § 1 PAngV: MwSt.-Hinweis auch auf der Produktkarte (#155). Plain text,
+            da die ganze Karte bereits ein gestreckter Link ist. */}
+        <p className="mt-0.5 text-[11px] text-muted-foreground">inkl. MwSt., zzgl. Versand</p>
       </div>
     </article>
   )
