@@ -198,32 +198,10 @@ html {
   display: none;
 }
 
-/* Custom animations */
-@keyframes accordion-down {
-  from {
-    height: 0;
-  }
-  to {
-    height: var(--radix-accordion-content-height);
-  }
-}
-
-@keyframes accordion-up {
-  from {
-    height: var(--radix-accordion-content-height);
-  }
-  to {
-    height: 0;
-  }
-}
-
-.animate-accordion-down {
-  animation: accordion-down 0.2s ease-out;
-}
-
-.animate-accordion-up {
-  animation: accordion-up 0.2s ease-out;
-}
+/* Die accordion-Keyframes/-Utilities leben ausschließlich in tailwind.config.ts
+   (#83): accordion.tsx nutzt sie als Tailwind-Data-Varianten
+   `data-[state=open]:animate-accordion-down`, die nur generiert werden, wenn die
+   Utility Tailwind bekannt ist. Frühere Duplikate hier wurden entfernt. */
 
 /* Accessibility: disable animations for users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
