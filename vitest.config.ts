@@ -38,7 +38,8 @@ export default defineConfig({
         "src/hooks/useProducts.ts", // thin useQuery wrapper — no business logic
         "src/hooks/useProfile.ts", // thin useQuery wrapper — no business logic
         "src/hooks/useBuyerValueProfile.ts", // thin useQuery wrapper — no business logic
-        "src/hooks/useFocusTrap.ts", // DOM focus management — UI-only, no business logic
+        // useFocusTrap is a11y-critical and its Tab-cycle / Escape / restore logic
+        // is jsdom-testable — now covered by useFocusTrap.test.tsx (#42).
         "src/hooks/useInView.ts", // IntersectionObserver wrapper — UI-only
         "src/services/index.ts", // barrel re-export
         "src/lib/constants/**", // pure label/color data objects — no logic
