@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen, act } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import React from "react"
 
 // ── Mocks ──────────────────────────────────────────────────────────────────────
@@ -137,6 +138,32 @@ describe("SustainableShop — sustainability sliders", () => {
     // Sliders are only rendered when the section is expanded
     const sliders = container.querySelectorAll('input[type="range"][max="5"]')
     expect(sliders.length).toBeGreaterThan(0)
+  })
+})
+
+describe("SustainableShop — mobile filter Sheet (#78)", () => {
+  beforeEach(() => {
+    defaultProductsState()
+    mockUseAuth.mockReturnValue({ isAuthenticated: false })
+    mockUseBuyerValueProfile.mockReturnValue({ data: undefined })
+  })
+
+  it("renders a mobile 'Filter' trigger and keeps the Sheet closed initially", () => {
+    render(<SustainableShop />)
+    expect(screen.getByRole("button", { name: "Filter" })).toBeInTheDocument()
+    // The Sheet's own title is not mounted while the Sheet is closed.
+    expect(screen.queryByText("Produkte filtern")).not.toBeInTheDocument()
+  })
+
+  it("opens the Sheet with the filter controls when the trigger is clicked", async () => {
+    const user = userEvent.setup()
+    render(<SustainableShop />)
+
+    await user.click(screen.getByRole("button", { name: "Filter" }))
+
+    expect(await screen.findByText("Produkte filtern")).toBeInTheDocument()
+    // Filter controls (the sustainability section) are now reachable inside the Sheet.
+    expect(screen.getAllByText("Nachhaltigkeitspräferenzen").length).toBeGreaterThan(0)
   })
 })
 
