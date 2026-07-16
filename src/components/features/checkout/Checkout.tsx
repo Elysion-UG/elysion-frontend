@@ -13,6 +13,11 @@ import { AddressStep } from "./steps/AddressStep"
 import { PreviewStep } from "./steps/PreviewStep"
 import { SuccessStep } from "./steps/SuccessStep"
 import { LoginRequired } from "./steps/LoginRequired"
+import {
+  CHECKOUT_ADDRESS_LOAD_ERROR,
+  CHECKOUT_PREVIEW_ERROR,
+  CHECKOUT_COMPLETE_ERROR,
+} from "./checkout-error-messages"
 
 type Step = "address" | "preview" | "payment" | "success"
 
@@ -34,7 +39,7 @@ export default function Checkout() {
         const def = list.find((a) => a.isDefault) ?? list[0]
         if (def) setSelectedAddressId(def.id)
       })
-      .catch(() => toast.error("Adressen konnten nicht geladen werden."))
+      .catch(() => toast.error(CHECKOUT_ADDRESS_LOAD_ERROR))
   }, [isAuthenticated])
 
   const handlePreview = useCallback(async () => {
@@ -51,7 +56,7 @@ export default function Checkout() {
       setPreview(data)
       setStep("preview")
     } catch {
-      toast.error("Bestellung konnte nicht vorgeprüft werden.")
+      toast.error(CHECKOUT_PREVIEW_ERROR)
     } finally {
       setIsLoading(false)
     }
@@ -68,7 +73,7 @@ export default function Checkout() {
       setResult(data)
       setStep("payment")
     } catch {
-      toast.error("Bestellung konnte nicht abgeschlossen werden.")
+      toast.error(CHECKOUT_COMPLETE_ERROR)
     } finally {
       setIsLoading(false)
     }

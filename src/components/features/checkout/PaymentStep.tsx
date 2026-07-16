@@ -7,6 +7,11 @@ import { Loader2, CreditCard, AlertCircle, RefreshCw } from "lucide-react"
 import { PaymentService } from "@/src/services/payment.service"
 import { formatEuro } from "@/src/lib/currency"
 import type { PaymentStatusResponse } from "@/src/types"
+import {
+  paymentConfirmError,
+  PAYMENT_DECLINED_ERROR,
+  PAYMENT_INIT_ERROR,
+} from "./checkout-error-messages"
 
 // ── Stripe singleton (module-level per Stripe best practices) ────────
 const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ""
@@ -47,10 +52,9 @@ interface PaymentFormProps {
   paymentId: string
   totalAmount: number
   onSuccess: () => void
-  onError: (msg: string) => void
 }
 
-function PaymentForm({ paymentId, totalAmount, onSuccess, onError }: PaymentFormProps) {
+function PaymentForm({ paymentId, totalAmount, onSuccess }: PaymentFormProps) {
   const stripe = useStripe()
   const elements = useElements()
   const [submitting, setSubmitting] = useState(false)
@@ -65,43 +69,57 @@ function PaymentForm({ paymentId, totalAmount, onSuccess, onError }: PaymentForm
       setSubmitting(true)
       setErrorMessage(null)
 
+      let confirmError: { message?: string } | undefined
       try {
-        const { error } = await stripe.confirmPayment({
+        // Nichts wurde bis hierher belastet: ein Fehler von confirmPayment (oder
+        // ein Netzwerk-Throw) bedeutet, dass keine Zahlung eingezogen wurde.
+        const result = await stripe.confirmPayment({
           elements,
           confirmParams: { return_url: window.location.href },
           redirect: "if_required",
         })
-
-        if (error) {
-          setErrorMessage(error.message ?? "Zahlung fehlgeschlagen.")
-          setSubmitting(false)
-          return
-        }
-
-        // Payment confirmed on Stripe side -- verify via backend
-        setPolling(true)
-        const status = await pollPaymentStatus(paymentId)
-
-        if (status.status === "SUCCEEDED") {
-          onSuccess()
-        } else if (status.status === "FAILED" || status.status === "CANCELLED") {
-          setErrorMessage(
-            "Die Zahlung wurde nicht erfolgreich abgeschlossen. Bitte versuche es erneut."
-          )
-          setPolling(false)
-          setSubmitting(false)
-        } else {
-          // Still pending after polling -- treat as success (webhook will finalize)
-          onSuccess()
-        }
+        confirmError = result.error ?? undefined
       } catch {
-        setErrorMessage("Ein unerwarteter Fehler ist aufgetreten.")
-        onError("Zahlungsverarbeitung fehlgeschlagen.")
+        // Throw vor bestätigter Zahlung → wie ein confirm-Fehler behandeln:
+        // Instanz (Zahlungsdienstleister) + Konsequenz (nichts belastet, erneut).
+        setErrorMessage(paymentConfirmError())
         setSubmitting(false)
+        return
+      }
+
+      if (confirmError) {
+        // Stripe liefert eine instanz-genaue, lokalisierte Meldung — ergänzt um
+        // die Konsequenz (§1.9). Nichts belastet.
+        setErrorMessage(paymentConfirmError(confirmError.message))
+        setSubmitting(false)
+        return
+      }
+
+      // Zahlung Stripe-seitig bestätigt → Status per Backend verifizieren. Ein
+      // Fehler NUR bei dieser Verifikation ist ein interner/transienter Fehler
+      // OHNE bestätigten Kundennachteil (das Webhook finalisiert die Bestellung)
+      // → nicht alarmierend surfacen (§1.9), sondern als Erfolg behandeln.
+      setPolling(true)
+      let status: PaymentStatusResponse
+      try {
+        status = await pollPaymentStatus(paymentId)
+      } catch {
+        onSuccess()
+        return
+      }
+
+      if (status.status === "SUCCEEDED") {
+        onSuccess()
+      } else if (status.status === "FAILED" || status.status === "CANCELLED") {
+        setErrorMessage(PAYMENT_DECLINED_ERROR)
         setPolling(false)
+        setSubmitting(false)
+      } else {
+        // Nach Polling weiterhin pending → als Erfolg behandeln (Webhook finalisiert).
+        onSuccess()
       }
     },
-    [stripe, elements, paymentId, onSuccess, onError]
+    [stripe, elements, paymentId, onSuccess]
   )
 
   const handleRetry = useCallback(() => {
@@ -196,11 +214,9 @@ export default function PaymentStep({
         }
       } catch {
         if (!cancelled) {
-          setInitError(
-            "Zahlungsvorgang konnte nicht gestartet werden. Bitte versuche es später erneut."
-          )
+          setInitError(PAYMENT_INIT_ERROR)
           setLoading(false)
-          onErrorRef.current("PaymentIntent konnte nicht erstellt werden.")
+          onErrorRef.current(PAYMENT_INIT_ERROR)
         }
       }
     }
@@ -270,12 +286,7 @@ export default function PaymentStep({
           locale: "de",
         }}
       >
-        <PaymentForm
-          paymentId={paymentId}
-          totalAmount={totalAmount}
-          onSuccess={onSuccess}
-          onError={onError}
-        />
+        <PaymentForm paymentId={paymentId} totalAmount={totalAmount} onSuccess={onSuccess} />
       </Elements>
     </div>
   )
