@@ -48,6 +48,13 @@ function isValidUser(value: unknown): value is User {
  * claimed role is trustworthy enough for UI gating. firstName/lastName remain
  * empty placeholders — they aren't load-bearing for AuthGuard / AdminGuard /
  * SellerGuard, and the rest of the UI shows them as " " harmlessly.
+ *
+ * emailVerified / status are NOT carried by the access-token claims, so this
+ * stub must not assert them positively (#70.3): claiming `emailVerified: true`
+ * / `status: "ACTIVE"` would make a SUSPENDED or unverified account look valid
+ * for the brief window before /users/me eventually resolves. They are set to
+ * the conservative, non-asserting values instead — safe because nothing gates
+ * on the current user's own emailVerified/status (only the role guards run).
  */
 function userFromAccessToken(accessToken: string): User | null {
   const claims = decodeJwtClaims(accessToken)
@@ -61,8 +68,9 @@ function userFromAccessToken(accessToken: string): User | null {
     firstName: "",
     lastName: "",
     role: claims.role,
-    emailVerified: true,
-    status: "ACTIVE",
+    // Unknown from the token → do not assert verified/active (#70.3).
+    emailVerified: false,
+    status: "PENDING",
     createdAt: claims.iat ? new Date(claims.iat * 1000).toISOString() : new Date(0).toISOString(),
   }
 }

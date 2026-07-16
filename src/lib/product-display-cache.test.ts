@@ -97,4 +97,32 @@ describe("variant options cache", () => {
     expect(getVariantOptions("v1")?.[0].value).toBe("S")
     expect(getVariantOptions("v2")?.[0].value).toBe("Blau")
   })
+
+  describe("tampered localStorage narrowing (#70.5)", () => {
+    it("drops display entries whose name is not a string", () => {
+      localStorage.setItem(
+        "product_display_cache",
+        JSON.stringify({ p1: { name: null }, p2: { name: "Valid", imageUrl: "/i.jpg" } })
+      )
+      expect(getProductDisplay("p1")).toBeNull()
+      expect(getProductDisplay("p2")).toEqual({ name: "Valid", imageUrl: "/i.jpg" })
+    })
+
+    it("drops display entries with a non-string imageUrl/slug", () => {
+      localStorage.setItem(
+        "product_display_cache",
+        JSON.stringify({ p1: { name: "N", imageUrl: 42 }, p2: { name: "N", slug: {} } })
+      )
+      expect(getProductDisplayCache()).toEqual({})
+    })
+
+    it("drops variant options that are not { name, value } string pairs", () => {
+      localStorage.setItem(
+        "variant_options_cache",
+        JSON.stringify({ v1: [{ name: "Größe", value: 1 }], v2: [{ name: "Farbe", value: "Rot" }] })
+      )
+      expect(getVariantOptions("v1")).toBeNull()
+      expect(getVariantOptions("v2")?.[0].value).toBe("Rot")
+    })
+  })
 })
