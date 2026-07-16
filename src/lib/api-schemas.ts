@@ -102,8 +102,15 @@ export class ApiSchemaError extends ApiError {
 export function parseApiResponse<T>(schema: z.ZodType<T>, data: unknown, label: string): T {
   const result = schema.safeParse(data)
   if (!result.success) {
-    if (typeof console !== "undefined") {
-      console.error(`[api-schema] validation failed for ${label}`, result.error.issues)
+    // Log only in dev, and only path + code — never the received values, which
+    // may carry token fragments or other sensitive payload data (#70.4). In
+    // production the ApiSchemaError below still surfaces a user-safe message.
+    if (process.env.NODE_ENV !== "production" && typeof console !== "undefined") {
+      const redacted = result.error.issues.map((issue) => ({
+        path: issue.path.join("."),
+        code: issue.code,
+      }))
+      console.error(`[api-schema] validation failed for ${label}`, redacted)
     }
     throw new ApiSchemaError(label, result.error.issues)
   }

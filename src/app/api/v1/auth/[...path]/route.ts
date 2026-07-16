@@ -90,9 +90,35 @@ function sessionMarkerFor(refreshSetCookie: string): string | null {
   return parts.join("; ")
 }
 
+// Explicit allowlist of the auth subpaths this proxy forwards (#70.2). The
+// catch-all would otherwise relay ANY path under /api/v1/auth/* — plus every
+// cookie — to the backend. Only the endpoints the app actually calls (see
+// src/services/auth.service.ts) are permitted; anything else gets a 404 without
+// ever reaching the backend. Keep this in sync when a new auth endpoint is added.
+const ALLOWED_AUTH_PATHS = new Set([
+  "customer/login",
+  "seller/login",
+  "admin/login",
+  "register",
+  "logout",
+  "refresh",
+  "verify-email",
+  "resend-verification",
+  "forgot-password",
+  "reset-password",
+  "reset-password/validate",
+])
+
 async function proxy(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params
   const subpath = path.join("/")
+
+  if (!ALLOWED_AUTH_PATHS.has(subpath)) {
+    return new NextResponse(JSON.stringify({ message: "Not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    })
+  }
   const url = new URL(request.url)
   const qs = url.search
 

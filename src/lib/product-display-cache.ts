@@ -27,6 +27,19 @@ export interface ProductDisplayEntry {
 
 type CacheMap = Record<string, ProductDisplayEntry>
 
+// Narrow a single parsed entry to the ProductDisplayEntry shape (#70.5).
+// localStorage is user-writable, so a tampered blob ({ name: null, … }) must not
+// reach the render logic. `name` is required (string); imageUrl/slug are optional
+// strings. Anything else → entry dropped.
+function isValidDisplayEntry(value: unknown): value is ProductDisplayEntry {
+  if (!value || typeof value !== "object") return false
+  const e = value as Record<string, unknown>
+  if (typeof e.name !== "string") return false
+  if (e.imageUrl !== undefined && typeof e.imageUrl !== "string") return false
+  if (e.slug !== undefined && typeof e.slug !== "string") return false
+  return true
+}
+
 function readCache(): CacheMap {
   if (typeof window === "undefined") return {}
   try {
@@ -34,7 +47,11 @@ function readCache(): CacheMap {
     if (!raw) return {}
     const parsed: unknown = JSON.parse(raw)
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {}
-    return parsed as CacheMap
+    const clean: CacheMap = {}
+    for (const [id, entry] of Object.entries(parsed as Record<string, unknown>)) {
+      if (isValidDisplayEntry(entry)) clean[id] = entry
+    }
+    return clean
   } catch {
     return {}
   }
@@ -72,6 +89,21 @@ export function getProductDisplayCache(): CacheMap {
 type VariantOption = { name: string; value: string }
 type VariantOptionsMap = Record<string, VariantOption[]>
 
+// Narrow a parsed value to VariantOption[] (#70.5): an array of { name, value }
+// string pairs. Tampered / malformed entries are dropped rather than rendered.
+function isValidVariantOptions(value: unknown): value is VariantOption[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (o) =>
+        !!o &&
+        typeof o === "object" &&
+        typeof (o as Record<string, unknown>).name === "string" &&
+        typeof (o as Record<string, unknown>).value === "string"
+    )
+  )
+}
+
 function readVariantOptionsCache(): VariantOptionsMap {
   if (typeof window === "undefined") return {}
   try {
@@ -79,7 +111,11 @@ function readVariantOptionsCache(): VariantOptionsMap {
     if (!raw) return {}
     const parsed: unknown = JSON.parse(raw)
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {}
-    return parsed as VariantOptionsMap
+    const clean: VariantOptionsMap = {}
+    for (const [id, options] of Object.entries(parsed as Record<string, unknown>)) {
+      if (isValidVariantOptions(options)) clean[id] = options
+    }
+    return clean
   } catch {
     return {}
   }

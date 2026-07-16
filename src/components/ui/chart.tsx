@@ -65,6 +65,17 @@ const ChartContainer = React.forwardRef<
 })
 ChartContainer.displayName = "Chart"
 
+// Guard color values before they flow into the injected <style> block (#70.1).
+// Complementing the id sanitisation (#34), this stops a CSS-injection / -breakout
+// (e.g. `red; } body { … }` or a `url(...)` exfil) should ChartConfig ever be fed
+// from a dynamic source. The charset deliberately excludes `;`, `{`, `}`, `:`,
+// `/`, quotes and `<`, so declaration/rule breakout and url() are impossible,
+// while all real color forms pass: hex, rgb()/hsl()/oklch(), var(--x), named.
+const SAFE_CSS_COLOR = /^[#a-zA-Z0-9(),.%\s-]+$/
+export function sanitizeCssColor(color: string): string {
+  return SAFE_CSS_COLOR.test(color) ? color : "transparent"
+}
+
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
   const colorConfig = Object.entries(config).filter(([_, config]) => config.theme || config.color)
 
@@ -82,7 +93,7 @@ ${prefix} [data-chart=${id}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
     const color = itemConfig.theme?.[theme as keyof typeof itemConfig.theme] || itemConfig.color
-    return color ? `  --color-${key}: ${color};` : null
+    return color ? `  --color-${key}: ${sanitizeCssColor(color)};` : null
   })
   .join("\n")}
 }
