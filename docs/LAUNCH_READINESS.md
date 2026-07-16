@@ -1,32 +1,20 @@
 # Launch-Readiness — Elysion Sustainable Marketplace
 
-**Stand:** 2026-06-07
 **Scope:** Frontend (`elysion-frontend`) + Backend (`elysion-marketplace-backend`)
-**Zweck:** Konsolidierter Ist-Stand beider Repos und inhaltlicher Hintergrund der Launch-Vorbereitung.
+**Zweck:** Konsolidierter Ist-Stand beider Repos und inhaltlicher Hintergrund der
+Launch-Vorbereitung — **warum** etwas offen ist.
 
-> **Tracking seit 2026-06-07:** Der aktuelle Offen-Status lebt in den **GitHub-Issues** beider
-> Repos (Label `launch-blocker` = 🔴) — dieses Dokument liefert Kontext und Begründungen,
-> die Issues sind die Single Source of Truth für „was ist noch offen".
-> Mapping: B1→FE#10, B2→BE#117, B3→BE#118, B4→FE#9, B5→BE#119, B6→BE#109–112,
-> W1-FF→BE#104, W2-FF→BE#120, W4-Backend→BE#115, W5→FE#11, W6→BE#121, E2E-Stripe→FE#12.
+> **Was noch offen ist, steht in den GitHub-Issues** beider Repos (Label
+> `launch-blocker` = 🔴), nicht hier. Dieses Dokument liefert Kontext und
+> Begründungen. Mapping: B1→FE#10, B2→BE#117, B3→BE#118, B4→FE#9, B5→BE#119,
+> B6→BE#109–112, W1-FF→BE#104, W2-FF→BE#120, W4-Backend→BE#115, W5→FE#11,
+> W6→BE#121, E2E-Stripe→FE#12.
 
-> Verwandte Dokumente: rechtliche Details in [`COMPLIANCE.md`](./COMPLIANCE.md), Management-Entscheidungen in [`../MANAGEMENT_DECISIONS.md`](../MANAGEMENT_DECISIONS.md), Backend-Go-Live-Schritte in `../../elysion-marketplace-backend/docs/backend/go-live-checklist.md`.
-
----
-
-## Staging-Umgebung (live seit 2026-06-07)
-
-| Komponente    | URL                                                                       |
-| ------------- | ------------------------------------------------------------------------- |
-| Buyer-Portal  | https://elysion-stage.vercel.app                                          |
-| Seller-Portal | https://elysion-stage-seller.vercel.app                                   |
-| Admin-Portal  | https://elysion-stage-admin.vercel.app                                    |
-| Backend-API   | https://elysion-backend-stage.onrender.com (Free-Tier-Kaltstart ~60–90 s) |
-
-Deployt automatisch bei Merge nach `stage` (Render + Vercel, branch-gebundene Domains).
-Test-Logins: Seed-Credentials (`../../elysion-marketplace-backend/docs/seed-data-credentials.md`).
-Setup/Betrieb: Backend-Repo → `docs/backend/deployment.md` + `operations-runbook.md` (BE#127).
-**Produktion** ist derzeit außer Betrieb (alte Render-DB gelöscht) — Neuaufbau vor Launch: BE#122.
+Verwandt: [`COMPLIANCE.md`](./COMPLIANCE.md) (rechtliche Details),
+[`MANAGEMENT_DECISIONS.md`](../MANAGEMENT_DECISIONS.md) (Geschäftsregeln),
+Backend-Repo `docs/backend/go-live-checklist.md` (Go-Live-Schritte).
+Umgebungen und URLs: [`INDEX.md`](./INDEX.md#umgebungen). **Produktion** ist derzeit
+außer Betrieb (alte Render-DB gelöscht) — Neuaufbau vor Launch: BE#122.
 
 ---
 
@@ -85,7 +73,7 @@ Impressum (~15× `[PLATZHALTER]`), Datenschutz (~8×), AGB (~4×), Widerruf (~2�
 
 Die Geschäftsregeln sind **entschieden** (siehe [`MANAGEMENT_DECISIONS.md`](../MANAGEMENT_DECISIONS.md) §1.1 / §1.2):
 
-- **Provision:** 15 % Default, pro Seller vom Admin anpassbar, auf Warenwert exkl. Versand; Stripe-Gebühr trägt die Plattform.
+- **Provision:** 15 % Default, pro Seller vom Admin anpassbar, auf Warenwert exkl. Versand; die Stripe-Gebühr trägt der Seller und wird pro Transaktion separat ausgewiesen.
 - **Payouts:** monatliche manuelle Admin-Freigabe über **Stripe Connect Express**, kein Mindestbetrag, Settlement ab `DELIVERED`, eigene Payout-Mail.
 
 **Frontend ist umgesetzt** (Admin-Provisions-Editor, Seller-Connect-Onboarding-Karte, Admin-Tab „Fällige Auszahlungen").
@@ -128,8 +116,11 @@ Zahlungen können nach Order-Ablauf eintreffen → Backend erkennt + loggt das f
 
 ## 4. 🟢 Tests & Qualität
 
-- **Unit (Vitest):** ~39 Testdateien, solide Service-/Context-/Komponenten-Coverage. Thresholds in `vitest.config.ts` (global ≥50 % Lines, `lib`/`services` ≥75 %, `context` ≥70 %).
-- **E2E (Playwright):** ~26 Specs — Admin (breit), Auth (alle Portale), Buyer-Checkout, Buyer-Orders, Seller, Public-Smoke + a11y-Smoke + Static-Assets.
+- **Unit (Vitest):** solide Coverage der Service-, Context- und Lib-Schicht;
+  Feature-Komponenten sind noch weitgehend ungetestet. Schwellen:
+  [`CODE_STANDARDS.md`](./CODE_STANDARDS.md#coverage-schwellen).
+- **E2E (Playwright):** Admin (breit), Auth (alle Portale), Buyer-Checkout,
+  Buyer-Orders, Seller, Public-Smoke + a11y-Smoke + Static-Assets.
 - **Backend:** Keine offenen `TODO/FIXME` im Java-Code; Webhook-Idempotenz, Rate-Limiting, Audit-Logging vorhanden.
 
 ### Test-Lücken
@@ -138,21 +129,7 @@ Zahlungen können nach Order-Ablauf eintreffen → Backend erkennt + loggt das f
 
 ---
 
-## 5. Empfohlene Reihenfolge bis Launch
-
-**Pflicht (Blocker):**
-
-1. Stripe-Keys Frontend (B1) + Backend (B2) konfigurieren, Webhook-Erreichbarkeit in Prod testen (B3)
-2. Rechtstexte + Kontaktdaten mit echten Daten füllen, anwaltlich prüfen (B4)
-3. Prod-Secrets + SMTP aktivieren, CORS/Cookies absichern (B5)
-4. Plattformgebühr + Payout-Workflow entscheiden (B6)
-5. Backend-Go-Live-Checklist Schritt für Schritt durchgehen (Health, Checkout-Happy-Path, Mail)
-
-**Fast-Follow (nach Launch ok):** 6. Optionaler Public-Seller-Profil-Endpoint für reicheres Producer-Profil (W1, Producer-Seite läuft bereits auf echten Produktdaten) 7. Kontaktformular an echtes Postfach (W2) 8. Monitoring-Persistenz (W4), E2E-Payment-Test, Fokus-Trapping (W5)
-
----
-
-## 6. Detail-Findings nach Datei
+## 5. Detail-Findings nach Datei
 
 | Bereich           | Datei / Ort                                         | Befund                                                                                                                                                  | Kategorie |
 | ----------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
@@ -168,15 +145,3 @@ Zahlungen können nach Order-Ablauf eintreffen → Backend erkennt + loggt das f
 | Public Seller API | Backend                                             | `GET /api/v1/sellers/{id}/profile` fehlt                                                                                                                | 🟡 W1     |
 | Contact API       | Backend                                             | Kein Kontakt-Endpoint (optional; Frontend nutzt `mailto:`)                                                                                              | 🟢 W2     |
 | Payout-Execution  | Backend                                             | Entschieden: Stripe Connect Express + monatliche Admin-Freigabe. FE fertig; `createPayout()` (wirft noch `ConflictException`) + Connect-Endpoints offen | ⚠️ B6     |
-
----
-
-## 7. Was bereits fertig ist (zur Klarstellung — nicht mehr „offen")
-
-Mehrere früher als „geplant/Mock" geführte Punkte sind inzwischen **erledigt** und sollten nicht erneut als offen gelistet werden:
-
-- ✅ **Stripe-Frontend** — voll integriert (`PaymentStep.tsx`, `@stripe/react-stripe-js`), nicht mehr Mock. Es fehlt nur der Key (B1).
-- ✅ **Skeleton-Loading-States** — `CartSkeleton`, `CheckoutSkeleton`, `OrderDetailSkeleton`, `ProfileSkeleton`, `PraeferenzenSkeleton` existieren.
-- ✅ **`resend-verification`** — Backend-Endpoint vorhanden, Frontend ruft ihn real auf (`auth.service.ts:103`, `EmailVerification.tsx:53`), kein Mock mehr.
-- ✅ **Seller-Dashboard** — vollständiges Tab-Dashboard (Produkte, Bestellungen, Zertifikate, Profil, Settlements, Versand-Modal), kein Stub.
-- ✅ **Rechtsseiten-Gerüste** — `/impressum`, `/datenschutz`, `/agb`, `/widerruf` + Footer-Links + Cookie-Consent + Checkout-Pflichtangaben (nur Inhalte/Echtdaten offen, siehe B4).

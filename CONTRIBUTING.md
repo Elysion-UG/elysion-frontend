@@ -112,7 +112,7 @@ Immer voll qualifiziert: `Elysion-UG/elysion-frontend#10` bzw.
 ### 4.3 Definition of Done
 
 - [ ] CI grün (Lint, Typecheck/Build, Tests)
-- [ ] Neue Logik ist getestet (Ziel ≥ 80 % Coverage, s. CLAUDE.md)
+- [ ] Neue Logik ist getestet; die Coverage-Schwellen des Repos werden gehalten
 - [ ] **Doku-Sync:** API-Vertrag geändert ⇒ Backend `docs/api/` **und** Frontend
       `docs/api-integration.md` im selben Arbeitsgang aktualisiert
 - [ ] Keine Secrets, keine hardcodierten Werte
@@ -169,17 +169,18 @@ bun run dev   # → http://localhost:3000
 | Command                                         | Beschreibung                 |
 | ----------------------------------------------- | ---------------------------- |
 | `bun run dev`                                   | Dev-Server (localhost:3000)  |
-| `bun run build`                                 | Production-Build             |
+| `bun run build` / `bun run start`               | Production-Build / -Server   |
 | `bun run lint` / `bun run format`               | ESLint / Prettier (auto-fix) |
+| `bun run format:check`                          | Prettier-Check (wie in CI)   |
 | `bun run typecheck`                             | TypeScript type check        |
 | `bun run test` / `test:watch` / `test:coverage` | Unit-Tests (Vitest)          |
 | `bun run test:integration`                      | Integrations-Tests           |
+| `bun run test:e2e` / `test:e2e:ui`              | E2E-Tests (Playwright)       |
 
 **Vor jedem Commit prüft Husky automatisch:** ESLint + Prettier (lint-staged).
+Typecheck und Tests laufen nicht im Hook — vor dem Push lokal ausführen:
+`bun run typecheck && bun run lint && bun run test`.
 
 ### Weiterführend
 
-- Code-Standards: [`docs/CODE_STANDARDS.md`](./docs/CODE_STANDARDS.md)
-- CI-Pipeline: [`docs/CICD_PIPELINE.md`](./docs/CICD_PIPELINE.md)
-- API-Client-Pattern: [`docs/api-integration.md`](./docs/api-integration.md)
-- Architektur: [`README.md`](./README.md)
+Alle Dokumente: [`docs/INDEX.md`](./docs/INDEX.md).

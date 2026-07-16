@@ -1,9 +1,7 @@
 /**
  * BuyerValueProfileService — API calls for the buyer's sustainability value profile.
  *
- * Endpoints:
- *   GET /api/v1/users/me/profile  — get current value profile
- *   PUT /api/v1/users/me/profile  — upsert value profile
+ * Lives on /api/v1/users/me/profile — not /users/me/value-profile.
  *
  * API quirks handled here (transparent to callers):
  *   - activeProfileType: API uses uppercase ("NONE"/"SIMPLE"/"EXTENDED");

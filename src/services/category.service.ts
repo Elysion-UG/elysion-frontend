@@ -1,15 +1,10 @@
 /**
  * CategoryService — API calls for product categories.
  *
- * Public:
- *   GET /api/v1/categories            — flat list of active categories (wrapped ApiResponse)
- *   GET /api/v1/categories/tree       — active categories as nested tree
+ * Reads are public and return only active categories; writes are admin-only.
+ * Endpoint catalogue: docs/api-integration.md.
  *
- * Admin-only:
- *   POST   /api/v1/categories              — create category
- *   PATCH  /api/v1/categories/{id}         — update category
- *   PATCH  /api/v1/categories/{id}/activate   — activate category
- *   PATCH  /api/v1/categories/{id}/deactivate — deactivate category
+ * Categories are deactivated, never deleted — there is no delete method.
  */
 import { apiRequest } from "@/src/lib/api-client"
 import type { Category, CategoryTreeNode, CategoryCreateDTO, CategoryUpdateDTO } from "@/src/types"

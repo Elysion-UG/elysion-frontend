@@ -1,220 +1,104 @@
 # Elysion — Sustainable Online Shop (Frontend)
 
-Next.js 16 frontend for **Elysion**, a marketplace for sustainably certified textile products. Buyers discover and purchase certified products matched to their personal value profile. Sellers manage their catalogue and orders. Admins oversee the platform.
+Next.js-Frontend für **Elysion**, einen Marktplatz für nachhaltig zertifizierte
+Textilprodukte. Käufer finden Produkte, die zu ihrem persönlichen Werteprofil passen;
+Seller pflegen Katalog und Bestellungen; Admins moderieren die Plattform.
 
-**Backend:** Spring Boot REST API → `https://marketplace-backend-1-1w30.onrender.com`
-**Backend repo:** `../elysion-marketplace-backend/`
+Drei Portale auf eigenen Subdomains (Buyer / Seller / Admin) teilen sich diese
+Codebasis. Backend: Spring Boot REST API im Repo `../elysion-marketplace-backend/`.
 
----
-
-## Tech Stack
-
-| Layer      | Technology               | Version |
-| ---------- | ------------------------ | ------- |
-| Framework  | Next.js (App Router)     | ^16.2.1 |
-| UI Library | React                    | ^18.2.0 |
-| Language   | TypeScript               | ^5      |
-| Styling    | Tailwind CSS             | ^3.4    |
-| Components | shadcn/ui + Radix UI     | latest  |
-| Icons      | lucide-react             | ^0.454  |
-| Toasts     | sonner                   | ^2      |
-| Testing    | Vitest + Testing Library | ^4      |
-| Linting    | ESLint 9 + Prettier 3    | —       |
-| Git Hooks  | Husky + lint-staged      | —       |
+**Alle Dokumente im Überblick: [`docs/INDEX.md`](./docs/INDEX.md)**
 
 ---
 
-## Quick Start
+## Tech-Stack
+
+| Ebene        | Technologie              | Version |
+| ------------ | ------------------------ | ------- |
+| Framework    | Next.js (App Router)     | ^16.2   |
+| UI           | React                    | ^18.2   |
+| Sprache      | TypeScript               | ^5      |
+| Styling      | Tailwind CSS             | ^3.4    |
+| Komponenten  | shadcn/ui + Radix UI     | —       |
+| Server-State | TanStack React Query     | ^5      |
+| Validierung  | Zod                      | ^4      |
+| Zahlungen    | Stripe Elements          | ^3      |
+| Tests        | Vitest + Testing Library | ^4      |
+| E2E          | Playwright               | ^1.52   |
+
+---
+
+## Schnellstart
 
 ```bash
-# 1. Install dependencies
 bun install
-
-# 2. Configure environment
-cp .env.example .env.local
-# Edit .env.local — set NEXT_PUBLIC_API_URL
-
-# 3. Start dev server
-bun run dev
-# → http://localhost:3000
+cp .env.example .env.local   # Pflichtvariablen sind dort kommentiert
+bun run dev                  # → http://localhost:3000
 ```
 
-### Environment Variables
+Für lokale Entwicklung gegen das Backend wird das Backend-Repo benötigt.
+Alle Env-Variablen — inklusive der in jeder deployten Umgebung **erforderlichen**
+`API_URL` — sind in [`.env.example`](./.env.example) dokumentiert; `.env.example` ist
+dafür die maßgebliche Quelle.
 
-```env
-# .env.local
-NEXT_PUBLIC_API_URL=http://localhost:8080                               # local backend
-# NEXT_PUBLIC_API_URL=https://marketplace-backend-1-1w30.onrender.com  # production
-
-# Stripe — REQUIRED for checkout payments. Without it, PaymentStep disables payment.
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...                          # Stripe publishable key
-
-# Portal subdomains (see .env.example for full list)
-NEXT_PUBLIC_SELLER_DOMAIN=seller.localhost:3000
-NEXT_PUBLIC_ADMIN_DOMAIN=admin.localhost:3000
-NEXT_PUBLIC_BUYER_DOMAIN=localhost:3000
-```
+Voraussetzungen, Scripts und der PR-Prozess stehen in
+[`CONTRIBUTING.md`](./CONTRIBUTING.md).
 
 ---
 
-## Scripts
-
-| Command                 | Description                  |
-| ----------------------- | ---------------------------- |
-| `bun run dev`           | Dev server (localhost:3000)  |
-| `bun run build`         | Production build             |
-| `bun run lint`          | ESLint                       |
-| `bun run format:check`  | Prettier check               |
-| `bun run typecheck`     | TypeScript type check        |
-| `bun run test`          | Unit tests (Vitest)          |
-| `bun run test:coverage` | Unit tests + coverage report |
-
----
-
-## Project Structure
+## Projektstruktur
 
 ```
 src/
   app/                    — Next.js App Router
-    (admin)/              — Admin routes (/admin/*)
-    (auth)/               — Auth routes (/login/*, /verify-email, /reset-password)
-    (buyer)/              — Buyer routes (/cart, /checkout, /orders, /profil, ...)
-    (public)/             — Public routes (/, /product, /about, /contact, /producer)
-    (seller)/             — Seller routes (/seller-dashboard)
-    layout.tsx            — Root layout (fonts, metadata, Providers)
-    providers.tsx         — Client providers (AuthProvider, CartProvider, Toaster)
+    (public)/             — /, /product, /producer, /cart, /about, /contact + Rechtsseiten
+    (auth)/               — /login/*, /verify-email, /reset-password
+    (buyer)/              — /checkout, /orders, /profil, /praeferenzen, /onboarding
+    (seller)/             — /seller-dashboard
+    (admin)/              — /admin/*
+    api/v1/auth/          — Auth-Proxy (reicht den Refresh-Cookie durch)
+    layout.tsx            — Root-Layout · providers.tsx — Client-Provider
   components/
-    features/             — Feature components grouped by domain
-      admin/              — AdminUsers, AdminSellers, AdminProducts, AdminOrders, ...
-      auth/               — LoginModal, AdminLogin, SellerLogin, EmailVerification, ...
-      cart/               — Cart
-      checkout/           — Checkout (3-step: address → preview → confirm)
-      orders/             — Orders, OrderDetail
-      products/           — SustainableShop, ProductDetail, ProductForm, RecommendationsWidget, ProducerPage
-      profile/            — Profil, AddressForm, Praeferenzen
-      seller/             — SellerDashboard (tab-based: products, orders, certificates, profile, settlements, ship modal)
-    layout/               — PageLayout (sticky header, nav, cart badge)
-    shared/               — About, Contact
-    ui/                   — shadcn/ui base components (Button, Dialog, Card, ...)
-  context/
-    AuthContext.tsx        — Auth state (user, token, role, isAuthenticated)
-    CartContext.tsx        — Cart state with optimistic updates + backend sync
-  hooks/                  — Custom React hooks (useAuth, useCart, ...)
-  lib/
-    api-client.ts          — Central HTTP client (fetch, token handling, error handling)
-    currency.ts            — Euro formatting utilities
-    validation.ts          — Input validation helpers
-    utils.ts               — shadcn cn() utility
-  services/               — Backend API service layer (one file per domain)
-  types/
-    index.ts               — All TypeScript types and DTOs
-docs/                     — Project documentation
-public/                   — Static assets (icon.svg, placeholder.svg)
+    features/             — Fach-Komponenten je Domäne (admin, auth, cart, checkout,
+                            orders, products, profile, seller)
+    layout/               — PageLayout, NavbarShell, Footer, Admin-/Seller-Shell
+    shared/               — About, Contact, BrandLogo, Error-Fallbacks, Admin-Tabellen
+    ui/                   — shadcn/ui-Primitives (nicht manuell editieren)
+  context/                — AuthContext, CartContext, ErrorContext, CookieConsentContext
+  hooks/                  — useAuth, useCart, useProducts, useFocusTrap, …
+  lib/                    — api-client, schemas (Zod), error-store, currency, seo, …
+  services/               — API-Service je Domäne
+  types/                  — Domain-Typen, re-exportiert über index.ts
+  middleware.ts           — Portal-Routing + erste Auth-Verteidigungslinie
+docs/                     — Projektdokumentation
+e2e/                      — Playwright-Specs
 ```
 
 ---
 
-## Architecture
+## Architektur in Kürze
 
-### API Client
+Ausführlich: [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md).
 
-All backend requests go through `src/lib/api-client.ts`:
-
-- Base URL: `NEXT_PUBLIC_API_URL` (default: `http://localhost:8080`)
-- Access token held **in memory** — not localStorage, XSS-safe
-- `credentials: 'include'` always set for the HttpOnly refresh-token cookie
-- Automatic 401 → refresh → retry cycle
-- Response envelope `{ status, message, data }` — returns `data` directly
-- Errors throw `ApiError(status, message)`
-
-### Auth Flow
-
-1. Login → `AuthService.login()` → access token stored in memory via `setAccessToken()`
-2. All requests → `api-client` attaches `Authorization: Bearer <token>`
-3. Token expired (401) → `AuthService.refresh()` → cookie sent automatically → new token issued
-4. Logout → `AuthService.logout()` → cookie cleared, token nulled
-
-### Cart
-
-`CartContext` manages cart state with **optimistic updates**: the UI updates immediately on user action, then syncs with the backend. If the backend returns a valid response, the server state replaces the optimistic state. On failure, the optimistic state is retained.
-
-### Route Protection
-
-`middleware.ts` checks for the refresh-token cookie on protected routes (`/cart`, `/checkout`, `/orders/*`, `/profil`, `/praeferenzen`, `/seller-dashboard`, `/admin/*`). Unauthenticated users are redirected to `/`.
+- **API-Client** — alle Backend-Requests laufen über `src/lib/api-client.ts`, nie
+  direkt `fetch()`. Der Access-Token liegt im Modul-Memory (XSS-Schutz), der
+  Refresh-Token als HttpOnly-Cookie. Vertrag und Endpoints:
+  [`docs/api-integration.md`](./docs/api-integration.md).
+- **Auth** — drei portal-spezifische Login-Endpoints. Bei 401 refresht der Client
+  einmal automatisch und wiederholt den Request.
+- **Route-Schutz** — `middleware.ts` prüft auf geschützten Pfaden (`/checkout`,
+  `/orders`, `/profil`, `/praeferenzen`, `/onboarding`, `/seller-dashboard`,
+  `/admin/*`) ein tokenloses Presence-Marker-Cookie und leitet sonst zur Login-Seite.
+  Das ist Defence-in-Depth, **keine** Autorisierung — die Client-Guards und das
+  Backend setzen durch. `/cart` ist bewusst öffentlich.
+- **Warenkorb** — `CartContext` aktualisiert optimistisch und synchronisiert danach
+  mit dem Backend.
 
 ---
 
-## Implemented Modules
+## Status
 
-All backend modules are fully integrated:
-
-| Module                                                      | Service                                       | UI Components                                                                         |
-| ----------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Auth (Login / Register / Logout / Refresh / Verify / Reset) | `auth.service.ts`                             | LoginModal, AdminLogin, SellerLogin, EmailVerification, ResetPassword, Onboarding     |
-| User Profile (GET / PATCH / DELETE)                         | `user.service.ts`                             | Profil                                                                                |
-| Addresses (CRUD + Default)                                  | `address.service.ts`                          | AddressForm                                                                           |
-| Buyer Value Profile                                         | `buyer-value-profile.service.ts`              | Praeferenzen                                                                          |
-| Seller Profile                                              | `seller-profile.service.ts`                   | SellerDashboard                                                                       |
-| Seller Value Profile                                        | `seller-value-profile.service.ts`             | SellerDashboard                                                                       |
-| Admin (User + Seller management)                            | `admin.service.ts`                            | AdminUsers, AdminSellers, AdminProducts, AdminOrders, AdminCertificates, AdminFinance |
-| Products (CRUD + Status + Images + Variants)                | `product.service.ts`                          | SustainableShop, ProductDetail, ProductForm                                           |
-| Categories                                                  | `category.service.ts`                         | ProductForm                                                                           |
-| Certificates                                                | `certificate.service.ts`                      | SellerDashboard                                                                       |
-| Cart                                                        | `cart.service.ts`                             | Cart                                                                                  |
-| Checkout                                                    | `checkout.service.ts`                         | Checkout                                                                              |
-| Orders (Buyer + Seller)                                     | `order.service.ts`, `seller-order.service.ts` | Orders, OrderDetail, SellerDashboard                                                  |
-| Matching / Recommendations                                  | `recommendation.service.ts`                   | RecommendationsWidget                                                                 |
-| File Upload                                                 | `file.service.ts`                             | ProductForm, SellerDashboard                                                          |
-| Payments (Stripe)                                           | `payment.service.ts`                          | Checkout / PaymentStep (Stripe Elements — needs `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`) |
-
----
-
-## Testing
-
-```bash
-bun run test             # run all tests
-bun run test:coverage    # with coverage report
-```
-
-- **Framework:** Vitest + @testing-library/react
-- **Test files:** `*.test.ts` / `*.test.tsx` co-located with source files
-- **Coverage thresholds (enforced in `vitest.config.ts`):**
-  - Global: ≥ 50 % lines/functions/statements, ≥ 40 % branches
-  - `src/lib/**` and `src/services/**`: ≥ 75 % lines (business logic)
-  - `src/context/**`: ≥ 70 % lines
-- Services, contexts, hooks, and lib utilities are the primary covered surface;
-  feature components are covered incrementally — see `vitest.config.ts` for
-  the exact include/exclude scope.
-
----
-
-## Known Open Items
-
-> Full launch-readiness assessment and open items: [`docs/LAUNCH_READINESS.md`](./docs/LAUNCH_READINESS.md)
-
-| Item                                             | Status                                                                         |
-| ------------------------------------------------ | ------------------------------------------------------------------------------ |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` config      | 🔴 Launch blocker — Stripe integration is built, key missing in env            |
-| Legal pages (Impressum/Datenschutz/AGB/Widerruf) | 🔴 Launch blocker — page scaffolds exist, contain `[PLATZHALTER]` data         |
-| Public seller/producer profile                   | ✅ `ProducerPage` shows real seller products; richer profile endpoint optional |
-| Contact form API                                 | ✅ `Contact.tsx` uses a `mailto:` fallback; backend endpoint optional          |
-| Monitoring persistence                           | 🟡 `monitoring.service.ts` missing — admin monitoring is in-memory only        |
-| Guest checkout                                   | Planned — Phase 2                                                              |
-| Wishlist / favorites                             | Planned — Phase 2                                                              |
-| Returns / refund UI (buyer-facing)               | Planned — Phase 2                                                              |
-
----
-
-## Documentation
-
-| File                       | Description                                                              |
-| -------------------------- | ------------------------------------------------------------------------ |
-| `docs/LAUNCH_READINESS.md` | Consolidated launch readiness — current state + open items (blockers)    |
-| `docs/COMPLIANCE.md`       | German/EU legal compliance plan (DSGVO, Impressum, AGB, BFSG)            |
-| `docs/api-integration.md`  | Complete API integration reference (all endpoints, DTOs, error handling) |
-| `docs/BACKEND_QUIRKS.md`   | Known API response discrepancies (field names, missing wrappers)         |
-| `docs/CODE_STANDARDS.md`   | Naming conventions, architecture patterns, code review checklist         |
-| `docs/CICD_PIPELINE.md`    | GitHub Actions workflows, quality gates, pre-commit hooks                |
-| `docs/ROADMAP.md`          | Development roadmap — Phase 1 status, Phase 2 plans                      |
-| `docs/INDEX.md`            | Topic → SSOT reference map for contributors                              |
-| `docs/archive/`            | Superseded and planning-phase documents                                  |
+- **Launch-Stand FE+BE, Blocker mit Begründung:**
+  [`docs/LAUNCH_READINESS.md`](./docs/LAUNCH_READINESS.md)
+- **Was gerade offen ist:** die GitHub-Issues dieses Repos (Label `launch-blocker` = 🔴)
+- **Planung:** [`docs/ROADMAP.md`](./docs/ROADMAP.md)
