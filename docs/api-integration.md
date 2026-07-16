@@ -305,6 +305,23 @@ haben ihre gewohnte HTTP-Bedeutung.
 Regeln: Fehler nie still schlucken, dem Nutzer nie rohe Error-Objekte oder
 Stack-Traces zeigen (`sonner`-Toast mit lesbarer Meldung).
 
+### Checkout- & Payment-Fehler (Kommunikationsprinzip §1.9)
+
+Für den Checkout-/Payment-Pfad gilt zusätzlich das Kommunikationsprinzip aus
+`MANAGEMENT_DECISIONS.md` §1.9:
+
+- **Nur** kommunizieren, wenn dem Kunden ein Nachteil über unsere Versprechen
+  hinaus entsteht. Interne/transiente Fehler **ohne** Kundennachteil werden still
+  behandelt/retryt — z. B. ein Status-Check-Fehler **nach** erfolgreicher
+  Stripe-Bestätigung wird als Erfolg behandelt (das Webhook finalisiert), nicht
+  als Fehler gesurfacet.
+- Wird kommuniziert, dann mit **Instanz** (Kunde / Elysion / Seller /
+  Zahlungsdienstleister) **+ konkreter Konsequenz** (was ist passiert, was ist zu
+  tun). Die Meldungen liegen zentral in
+  `src/components/features/checkout/checkout-error-messages.ts` (bis die
+  Backend-Fehler-Attribution aus backend#147 verfügbar ist, mappt das Frontend die
+  bekannten Fälle).
+
 ---
 
 ## Auth-Flow: Seller-Registrierung
