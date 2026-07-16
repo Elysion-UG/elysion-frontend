@@ -53,10 +53,15 @@ const nextConfig = {
     ]
   },
   images: {
+    // Server-side allowlist for hosts next/image is permitted to fetch and
+    // optimise. Kept aligned with the browser-facing `img-src` in
+    // src/middleware.ts (self + backend origin, plus localhost in dev): both
+    // layers must agree, otherwise an image passes one gate and is blocked by
+    // the other (#67). The v0-generation demo hosts placehold.co /
+    // images.unsplash.com were unused and have been dropped so neither layer
+    // trusts a host the app never loads from.
     remotePatterns: [
       { protocol: "https", hostname: backendHost },
-      { protocol: "https", hostname: "placehold.co" },
-      { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "http", hostname: "localhost" },
       ...(devHostIp ? [{ protocol: /** @type {"http"} */ ("http"), hostname: devHostIp }] : []),
     ],
