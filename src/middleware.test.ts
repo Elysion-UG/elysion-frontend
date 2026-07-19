@@ -182,4 +182,11 @@ describe("Content-Security-Policy (#33)", () => {
     const policy = csp(middleware(request(`http://${BUYER_HOST}/`, BUYER_HOST)))
     expect(policy).toMatch(/script-src[^;]*'nonce-[a-f0-9]+'/)
   })
+
+  it("denies framing and upgrades insecure subresources (#172)", () => {
+    const policy = csp(middleware(request(`http://${BUYER_HOST}/`, BUYER_HOST)))
+    // Modern counterpart to X-Frame-Options: DENY in next.config.mjs.
+    expect(policy).toContain("frame-ancestors 'none'")
+    expect(policy).toContain("upgrade-insecure-requests")
+  })
 })

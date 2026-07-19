@@ -167,6 +167,13 @@ function buildCsp(nonce: string): string {
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
+    // Clickjacking: the modern counterpart to `X-Frame-Options: DENY` in
+    // next.config.mjs. Both are kept and must stay in sync — XFO covers
+    // browsers that ignore frame-ancestors, this covers the rest (#172).
+    "frame-ancestors 'none'",
+    // Lift stray http: subresources to https: instead of letting them fail as
+    // mixed content. Complements HSTS, which only governs our own origin.
+    "upgrade-insecure-requests",
   ].join("; ")
 }
 
