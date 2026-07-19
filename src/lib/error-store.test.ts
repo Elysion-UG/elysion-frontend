@@ -184,6 +184,52 @@ describe("ErrorStore", () => {
     expect("userAgent" in event.metadata).toBe(true)
   })
 
+  /**
+   * Regression for #171, the sequel to #66. `reportApiError` strips the query
+   * from `apiPath`, but the page URL is captured separately in `report()` and
+   * used to go through unfiltered — so a failing token validation on
+   * /reset-password?token=… persisted the one-time token in the monitoring.
+   */
+  describe("URL sanitising (#171)", () => {
+    it("strips the query string from the captured page URL", () => {
+      window.history.replaceState({}, "", "/reset-password?token=LEAKTEST123SECRET")
+
+      errorStore.report(makeInput())
+
+      const { url } = errorStore.getAll()[0].metadata
+      expect(url).not.toContain("LEAKTEST123SECRET")
+      expect(url).not.toContain("?")
+      expect(url).toContain("/reset-password")
+    })
+
+    it("strips the fragment as well", () => {
+      window.history.replaceState({}, "", "/verify-email#token=FRAGMENTSECRET")
+
+      errorStore.report(makeInput())
+
+      const { url } = errorStore.getAll()[0].metadata
+      expect(url).not.toContain("FRAGMENTSECRET")
+      expect(url).not.toContain("#")
+    })
+
+    it("sanitises a caller-supplied url too", () => {
+      errorStore.report(makeInput({ metadata: { url: "/reset-password?token=CALLERSECRET" } }))
+
+      expect(errorStore.getAll()[0].metadata.url).toBe("/reset-password")
+    })
+
+    it("survives the flush path — no secret reaches the transmitted batch", () => {
+      window.history.replaceState({}, "", "/reset-password?token=BATCHSECRET")
+
+      errorStore.report(makeInput())
+      // The flush queue holds the very same event objects as the display
+      // buffer, so serialising these covers what goes over the wire.
+      const batch = buildErrorBatch(errorStore.getAll())
+
+      expect(JSON.stringify(batch)).not.toContain("BATCHSECRET")
+    })
+  })
+
   it("prevents infinite loops via isReporting guard", () => {
     // Subscribe a listener that tries to report another error
     const listener = vi.fn(() => {

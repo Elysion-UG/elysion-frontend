@@ -24,6 +24,22 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 }
 
+/**
+ * Drop query string and fragment from a page URL, keeping origin + path.
+ *
+ * Password-reset and e-mail-verification links carry a one-time token in the
+ * query (`/reset-password?token=…`). A failing validation call on such a page
+ * reports an error, so the raw `location.href` would carry that token into the
+ * persisted monitoring — the same leak #66 closed for `apiPath`, reopened here
+ * because the page URL is captured separately (#171). Origin and path are
+ * enough to locate an error; nothing after them is worth the risk.
+ */
+function stripUrlSecrets(url: string): string {
+  // Split first: it also covers relative or malformed values, for which the
+  // URL constructor would throw.
+  return url.split(/[?#]/)[0]
+}
+
 // ── Flush configuration (see docs/monitoring-api.md) ────────────────────────────
 
 const FLUSH_INTERVAL_MS = 30_000
@@ -118,6 +134,14 @@ class ErrorStore {
     if (this.isReporting) return
     this.isReporting = true
     try {
+      const metadata: ErrorEventMetadata = {
+        url: typeof window !== "undefined" ? window.location.href : undefined,
+        userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
+        ...input.metadata,
+      }
+      // Sanitise after the merge, so a caller-supplied url is covered too.
+      if (metadata.url) metadata.url = stripUrlSecrets(metadata.url)
+
       const event: FrontendErrorEvent = {
         id: generateId(),
         timestamp: new Date().toISOString(),
@@ -125,11 +149,7 @@ class ErrorStore {
         category: input.category,
         message: input.message,
         stack: input.stack ?? null,
-        metadata: {
-          url: typeof window !== "undefined" ? window.location.href : undefined,
-          userAgent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
-          ...input.metadata,
-        },
+        metadata,
       }
 
       this.buffer.push(event)
