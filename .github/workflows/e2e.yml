@@ -24,9 +24,28 @@ jobs:
 
     env:
       BASE_URL: ${{ github.event.inputs.base_url || vars.E2E_BASE_URL || 'http://localhost:3000' }}
-      NEXT_PUBLIC_API_URL: ${{ vars.E2E_API_URL || 'https://marketplace-backend-1-1w30.onrender.com' }}
+
+      # Backend-Adresse NUR server-seitig setzen. NEXT_PUBLIC_API_URL wäre der
+      # falsche Hebel: gesetzt schaltet sie den Direkt-Modus ohne Auth-Proxy
+      # ein, in dem das session_present-Cookie und damit das Middleware-Gate
+      # (#68) konstruktionsbedingt nicht funktionieren — siehe #145. Der bis
+      # hierher eingetragene Host (marketplace-backend-1-1w30) ist zudem tot.
+      API_URL: ${{ vars.E2E_API_URL || 'https://elysion-backend-stage.onrender.com' }}
+
+      # Ohne diese drei wirft der Startup-Guard in src/middleware.ts bei JEDEM
+      # Request — die Hauptursache, warum der Workflow nie grün war (#144).
+      SELLER_DOMAIN: seller.localhost:3000
+      ADMIN_DOMAIN: admin.localhost:3000
+      BUYER_DOMAIN: localhost:3000
+      NEXT_PUBLIC_SELLER_DOMAIN: seller.localhost:3000
+      NEXT_PUBLIC_ADMIN_DOMAIN: admin.localhost:3000
+      NEXT_PUBLIC_BUYER_DOMAIN: localhost:3000
+
       E2E_BUYER_EMAIL: ${{ secrets.E2E_BUYER_EMAIL }}
       E2E_BUYER_PASSWORD: ${{ secrets.E2E_BUYER_PASSWORD }}
+      # buyer2 (Warenkorb + Adresse) — eigener Account, eigenes Secret-Paar.
+      E2E_BUYER2_EMAIL: ${{ secrets.E2E_BUYER2_EMAIL }}
+      E2E_BUYER2_PASSWORD: ${{ secrets.E2E_BUYER2_PASSWORD }}
       E2E_SELLER_EMAIL: ${{ secrets.E2E_SELLER_EMAIL }}
       E2E_SELLER_PASSWORD: ${{ secrets.E2E_SELLER_PASSWORD }}
       E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}
@@ -44,21 +63,30 @@ jobs:
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps chromium
 
-      # Nur wenn BASE_URL localhost ist: App lokal starten
-      - name: Build app (local mode only)
-        if: ${{ env.BASE_URL == 'http://localhost:3000' }}
+      # Die Portal-Tests sprechen seller./admin.localhost an. Ob *.localhost
+      # auf 127.0.0.1 auflöst, hängt am Resolver des Runners — explizite
+      # hosts-Einträge machen das unabhängig davon deterministisch.
+      - name: Portal-Hosts eintragen
+        run: |
+          echo "127.0.0.1 seller.localhost admin.localhost" | sudo tee -a /etc/hosts
+
+      - name: Build app
         run: bun run build
 
-      - name: Start app (local mode only)
-        if: ${{ env.BASE_URL == 'http://localhost:3000' }}
-        run: bun run start &
-
-      - name: Wait for app to be ready (local mode only)
-        if: ${{ env.BASE_URL == 'http://localhost:3000' }}
-        run: bunx wait-on http://localhost:3000 --timeout 60000
-
+      # Start/wait-on übernimmt jetzt der webServer-Block in
+      # playwright.config.ts — `bun run start &` überlebte den Step-Wechsel
+      # nicht und ließ wait-on in den 60-s-Timeout laufen (#144).
+      # stage-smoke ist bewusst NICHT dabei: das Projekt läuft gegen die
+      # deployten Stage-Domains, hat einen eigenen Workflow (stage-smoke.yml)
+      # und würde hier nur zusätzliche Logins gegen dasselbe IP-Rate-Limit
+      # verbrauchen. Die Setup-Projekte zieht Playwright über `dependencies`.
       - name: Run Playwright tests
-        run: bunx playwright test
+        run: >
+          bunx playwright test
+          --project=chromium
+          --project=seller
+          --project=buyer
+          --project=admin
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

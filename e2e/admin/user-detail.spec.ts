@@ -10,8 +10,11 @@
 import { test, expect, type Page } from "@playwright/test"
 import { AdminUsersPage, AdminUserDetailPage } from "../pages"
 import { persistAdminState } from "../fixtures/admin-state"
+import { BUYER_WITH_CART } from "../fixtures/credentials"
 
-const TEST_USER_EMAIL = "buyer2@example.dev"
+// Kein Login mit diesem Account — nur die Ziel-Adresse für die User-Suche.
+// Aus credentials.ts, damit sie der Secret-Konfiguration folgt (#144).
+const TEST_USER_EMAIL = BUYER_WITH_CART.email
 
 test.describe.configure({ mode: "serial" })
 

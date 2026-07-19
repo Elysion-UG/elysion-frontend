@@ -9,6 +9,12 @@
  *
  * Eindeutiger Test-Name: e2e-cat-<timestamp> damit parallele Läufe nicht
  * kollidieren und der Test-Eintrag in der DB erkennbar bleibt.
+ *
+ * EINZIGE schreibende Spec-Datei der Suite (#144). Weil das Backend kein
+ * Hard-Delete anbietet, bleibt pro Lauf eine deaktivierte Kategorie
+ * `e2e-cat-<timestamp>` zurück. Gegen ein geteiltes Stage-Backend sammeln die
+ * sich über die Zeit an — erkennbar am Präfix und gefahrlos löschbar, sobald
+ * das Backend einen Delete-Endpunkt hat (dann hier nachziehen).
  */
 import { test, expect } from "@playwright/test"
 import { AdminCategoriesPage } from "../pages"

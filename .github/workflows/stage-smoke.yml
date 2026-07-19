@@ -67,6 +67,10 @@ jobs:
 
       - name: Stage-Smoke ausführen
         env:
+          # Dieser Workflow baut die App nicht — der webServer-Block aus
+          # playwright.config.ts (#144) muss hier aus bleiben, sonst läuft
+          # `bun run start` ohne .next-Build in den Timeout.
+          E2E_SKIP_WEBSERVER: "1"
           E2E_SELLER_EMAIL: ${{ secrets.E2E_SELLER_EMAIL }}
           E2E_SELLER_PASSWORD: ${{ secrets.E2E_SELLER_PASSWORD }}
           E2E_ADMIN_EMAIL: ${{ secrets.E2E_ADMIN_EMAIL }}

@@ -4,20 +4,20 @@
  * Speichert den Refresh-Cookie + sessionStorage, damit Folge-Tests ohne erneuten
  * Login auskommen (Backend-Rate-Limit: 5 Versuche / 15 min).
  *
- * SECURITY (FE#65): Die hier codierten Credentials sind die LOKALEN
- * Seed-Accounts (docs/seed-data.sql) und gelten nur gegen ein lokales Backend.
- * Auf Staging sind die Passwörter rotiert (nur als Secrets verfügbar); in
- * Produktion dürfen diese Accounts niemals angelegt werden.
+ * Credentials kommen aus e2e/fixtures/credentials.ts (Secret, sonst lokaler
+ * Seed-Default) — siehe FE#65 und #144.
  */
 import { test as setup } from "@playwright/test"
 import { fileURLToPath } from "url"
 import path from "path"
 
+import { BUYER_WITH_CART } from "./fixtures/credentials"
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export const BUYER_AUTH_FILE = path.join(__dirname, ".auth/buyer.json")
 
 setup("Buyer Login einmalig durchführen", async ({ page }) => {
-  await page.goto("http://localhost:3000/")
+  await page.goto("/")
 
   // Login-Modal über Navbar-Button öffnen. Der Button ist in desktop + mobile
   // Nav je einmal vorhanden — `.first()` nimmt den sichtbaren.
@@ -25,8 +25,8 @@ setup("Buyer Login einmalig durchführen", async ({ page }) => {
 
   // buyer2 hat einen aktiven Warenkorb (siehe CLAUDE.md → Seed-Daten) —
   // ideal für Checkout- und Cart-Tests ohne Vor-Setup pro Lauf.
-  await page.getByPlaceholder("ihre@email.de").fill("buyer2@example.dev")
-  await page.getByPlaceholder("Passwort").fill("Buyer123!")
+  await page.getByPlaceholder("ihre@email.de").fill(BUYER_WITH_CART.email)
+  await page.getByPlaceholder("Passwort").fill(BUYER_WITH_CART.password)
 
   const refreshAfterLogin = page.waitForResponse(
     (res) =>
