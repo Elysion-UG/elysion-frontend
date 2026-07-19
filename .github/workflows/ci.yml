@@ -65,8 +65,10 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     needs: [quality, test]
-    env:
-      NEXT_PUBLIC_API_URL: https://marketplace-backend-1-1w30.onrender.com
+    # No NEXT_PUBLIC_API_URL on purpose (#153): unset means same-origin proxy
+    # mode, which is the deployed default. Setting it would switch the artefact
+    # to direct mode — the very configuration that broke the session gate in
+    # #143/#145 — and bake a build-time host into a build that makes no requests.
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
