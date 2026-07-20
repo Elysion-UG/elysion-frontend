@@ -150,6 +150,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
 
               <Link
                 href="/cart"
+                aria-label="Warenkorb"
                 className="relative flex items-center text-muted-foreground transition-colors hover:text-foreground"
               >
                 <ShoppingCart className="h-5 w-5" />
