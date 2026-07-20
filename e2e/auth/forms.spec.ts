@@ -24,11 +24,21 @@ test.describe("Auth – Register (Modal, Buyer-Portal)", () => {
     await page.getByLabel(/Vorname/i).fill("Max")
     await page.getByLabel(/Nachname/i).fill("Muster")
     await page.getByPlaceholder("ihre@email.de").fill("keine-email")
-    // Submit-Button im Register-View: "Konto erstellen"
-    await page.getByRole("button", { name: /Konto erstellen/i }).click()
 
-    // HTML5-Validation des type=email-Inputs blockiert Submit — Heading bleibt sichtbar.
-    await expect(page.getByRole("heading", { name: "Konto erstellen" })).toBeVisible()
+    const submit = page.getByRole("button", { name: /Konto erstellen/i })
+
+    // Der Submit-Button hängt an der Datenschutz-Zustimmung
+    // (BuyerRegisterForm: disabled={!privacyAccepted}). Ohne Haken bleibt er
+    // deaktiviert — der frühere Test klickte hier ins Leere und lief in den
+    // Timeout, weil er die Checkbox nie setzte (#144).
+    await expect(submit).toBeDisabled()
+    await page.getByRole("checkbox").check()
+    await expect(submit).toBeEnabled()
+
+    // Jetzt greift die Validierung: handleRegister bricht bei ungültiger E-Mail
+    // vor jedem API-Call ab, es wird also kein Konto angelegt.
+    await submit.click()
+    await expect(page.getByText(/gültige E-Mail-Adresse/i)).toBeVisible()
   })
 })
 
@@ -64,7 +74,10 @@ test.describe("Auth – E-Mail-Verifizierung", () => {
 
   test("Resend-Button erfordert E-Mail-Eingabe", async ({ page }) => {
     await page.goto("/verify-email")
-    const button = page.getByRole("button", { name: /Neuen Link anfordern/i })
+    // Ohne Token rendert die Seite den "awaiting"-State — dessen Button heißt
+    // "Erneut senden". "Neuen Link anfordern" gibt es nur im error-State,
+    // also nach einem fehlgeschlagenen Token-Check (#144).
+    const button = page.getByRole("button", { name: /Erneut senden/i })
     await expect(button).toBeDisabled()
 
     await page.getByPlaceholder(/Ihre E-Mail-Adresse/i).fill("test@example.com")
