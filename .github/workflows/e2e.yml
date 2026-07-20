@@ -73,6 +73,26 @@ jobs:
       - name: Build app
         run: bun run build
 
+      # Render fährt das Stage-Backend bei Inaktivität herunter; der erste
+      # Request weckt es (Kaltstart 30–60 s). Ohne Warmup lief der erste Login
+      # in den 20-s-waitForResponse-Timeout und riss alle Setups (#144). Wir
+      # warten hier, bis das Backend gesund antwortet — analog stage-smoke.yml.
+      - name: Auf Backend warten (Kaltstart)
+        run: |
+          echo "Warte auf $API_URL ..."
+          for i in $(seq 1 40); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 \
+              "$API_URL/api/v1/products?size=1" || true)
+            if [ "$code" = "200" ]; then
+              echo "Backend bereit (Versuch $i)"
+              exit 0
+            fi
+            echo "Versuch $i: HTTP $code — warte 15 s"
+            sleep 15
+          done
+          echo "::error::Backend nach 10 Minuten nicht erreichbar"
+          exit 1
+
       # Start/wait-on übernimmt jetzt der webServer-Block in
       # playwright.config.ts — `bun run start &` überlebte den Step-Wechsel
       # nicht und ließ wait-on in den 60-s-Timeout laufen (#144).
