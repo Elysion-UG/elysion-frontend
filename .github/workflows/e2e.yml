@@ -70,6 +70,13 @@ jobs:
         run: |
           echo "127.0.0.1 seller.localhost admin.localhost" | sudo tee -a /etc/hosts
 
+      # e2e/** wird vom Haupt-typecheck (tsconfig.check.json) NICHT erfasst.
+      # Genau dadurch schlüpften undefinierte Referenzen durch (persistAdminState
+      # ohne Import → ReferenceError erst zur Laufzeit, #144). Hier prüfen wir die
+      # Specs eigenständig, bevor Build/Playwright überhaupt starten.
+      - name: E2E-Typen prüfen
+        run: bun run typecheck:e2e
+
       - name: Build app
         run: bun run build
 

@@ -94,7 +94,15 @@ test.describe("Admin – Categories Create + Cleanup", () => {
     await persistAdminState(page)
   })
 
-  test("Neue Test-Kategorie erstellen → in Liste sichtbar → deaktivieren", async ({ page }) => {
+  // QUARANTÄNE (#178): Gegen das Stage-Backend schließt sich der Create-Modal
+  // nach dem Speichern nicht — der POST auf den Kategorie-Endpunkt geht nicht
+  // durch (Save war enabled, Modal bleibt offen, keine Client-Fehlermeldung).
+  // Ursache liegt backend-seitig und braucht dortige Logs; bis dahin würde
+  // dieser einzige schreibende Test die Suite rot halten. Read-Pfad (oben)
+  // läuft weiter. Wieder aktivieren, sobald #178 geklärt ist.
+  test.fixme("Neue Test-Kategorie erstellen → in Liste sichtbar → deaktivieren", async ({
+    page,
+  }) => {
     const testName = `e2e-cat-${Date.now()}`
     const cats = new AdminCategoriesPage(page)
     await cats.goto()
