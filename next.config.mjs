@@ -65,6 +65,15 @@ const nextConfig = {
       { protocol: "http", hostname: "localhost" },
       ...(devHostIp ? [{ protocol: /** @type {"http"} */ ("http"), hostname: devHostIp }] : []),
     ],
+    // SVG is served through next/image because product/brand assets from the
+    // backend include it. An SVG is an active document, so the three settings
+    // below only make sense together — do not enable the first without the
+    // other two:
+    //   - contentDispositionType "attachment" stops the browser from rendering
+    //     a fetched SVG as a top-level document on our own origin,
+    //   - the per-image CSP sandboxes it and forbids any script inside it.
+    // Residual assumption: backend-delivered SVGs stay trustworthy. If images
+    // ever come from an untrusted uploader, rasterise instead of relaxing this.
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",

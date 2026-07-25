@@ -13,9 +13,9 @@
  * auf Staging rotiert, in Produktion niemals vorhanden.
  */
 import { test, expect } from "@playwright/test"
+import { BUYER as CREDS } from "../fixtures/credentials"
 
 const BUYER = "http://localhost:3000"
-const CREDS = { email: "buyer1@example.dev", password: "Buyer123!" }
 
 test("Deep-Link → Login → Ziel: /orders bleibt nach dem Login erhalten", async ({ page }) => {
   // 1. Deep-Link auf geschützte Route → Middleware bounct auf / mit ?redirect=.
