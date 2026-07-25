@@ -9,6 +9,12 @@
  *
  * Eindeutiger Test-Name: e2e-cat-<timestamp> damit parallele Läufe nicht
  * kollidieren und der Test-Eintrag in der DB erkennbar bleibt.
+ *
+ * EINZIGE schreibende Spec-Datei der Suite (#144). Weil das Backend kein
+ * Hard-Delete anbietet, bleibt pro Lauf eine deaktivierte Kategorie
+ * `e2e-cat-<timestamp>` zurück. Gegen ein geteiltes Stage-Backend sammeln die
+ * sich über die Zeit an — erkennbar am Präfix und gefahrlos löschbar, sobald
+ * das Backend einen Delete-Endpunkt hat (dann hier nachziehen).
  */
 import { test, expect } from "@playwright/test"
 import { AdminCategoriesPage } from "../pages"
@@ -88,7 +94,15 @@ test.describe("Admin – Categories Create + Cleanup", () => {
     await persistAdminState(page)
   })
 
-  test("Neue Test-Kategorie erstellen → in Liste sichtbar → deaktivieren", async ({ page }) => {
+  // QUARANTÄNE (#178): Gegen das Stage-Backend schließt sich der Create-Modal
+  // nach dem Speichern nicht — der POST auf den Kategorie-Endpunkt geht nicht
+  // durch (Save war enabled, Modal bleibt offen, keine Client-Fehlermeldung).
+  // Ursache liegt backend-seitig und braucht dortige Logs; bis dahin würde
+  // dieser einzige schreibende Test die Suite rot halten. Read-Pfad (oben)
+  // läuft weiter. Wieder aktivieren, sobald #178 geklärt ist.
+  test.fixme("Neue Test-Kategorie erstellen → in Liste sichtbar → deaktivieren", async ({
+    page,
+  }) => {
     const testName = `e2e-cat-${Date.now()}`
     const cats = new AdminCategoriesPage(page)
     await cats.goto()

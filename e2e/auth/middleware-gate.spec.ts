@@ -55,8 +55,10 @@ test.describe("Middleware – Session-Gate (#68)", () => {
   })
 
   test("Öffentliche Shop-Seite bleibt ohne Login erreichbar", async ({ page }) => {
-    const res = await page.goto(`${BUYER}/products`)
+    // Die Produktliste liegt unter /product (Singular) — /products existiert
+    // nicht und lieferte 404. Fiel nie auf, weil der Workflow nie lief (#144).
+    const res = await page.goto(`${BUYER}/product`)
     expect(res?.status()).toBeLessThan(400)
-    await expect(page).toHaveURL(`${BUYER}/products`)
+    await expect(page).toHaveURL(`${BUYER}/product`)
   })
 })

@@ -15,11 +15,9 @@
  *   `APP_AUTH_RATE_LIMIT_LOGIN_IP_CAPACITY=100` im Backend setzen.
  */
 import { test, expect } from "@playwright/test"
+import { BUYER, SELLER } from "../fixtures/credentials"
 
-// SECURITY (FE#65): Lokale Seed-Accounts — gelten nur gegen ein lokales Backend,
-// auf Staging rotiert, dürfen in Produktion niemals existieren.
-const BUYER = { email: "buyer1@example.dev", password: "Buyer123!" }
-const SELLER = { email: "seller1@greenthread.dev", password: "Seller123!" }
+// Credentials: e2e/fixtures/credentials.ts (Secret, sonst lokaler Seed-Default).
 const INVALID_CREDS_MESSAGE = "Ungültige Anmeldedaten. Bitte versuchen Sie es erneut."
 
 async function openLoginModal(page: import("@playwright/test").Page) {

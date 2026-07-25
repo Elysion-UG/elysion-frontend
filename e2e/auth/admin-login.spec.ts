@@ -18,13 +18,11 @@
  *    Version verlor in dem Szenario stillschweigend die Session.
  */
 import { test, expect } from "@playwright/test"
+import { ADMIN, BUYER } from "../fixtures/credentials"
 
 const ADMIN_LOGIN_URL = "http://admin.localhost:3000/login/admin"
 
-// SECURITY (FE#65): Lokale Seed-Accounts — gelten nur gegen ein lokales Backend,
-// auf Staging rotiert, dürfen in Produktion niemals existieren.
-const ADMIN = { email: "admin@marketplace.dev", password: "Admin123!" }
-const BUYER = { email: "buyer1@example.dev", password: "Buyer123!" }
+// Credentials: e2e/fixtures/credentials.ts (Secret, sonst lokaler Seed-Default).
 const INVALID_CREDS_MESSAGE = "Ungültige Anmeldedaten oder fehlende Berechtigung."
 
 async function fillAndSubmit(

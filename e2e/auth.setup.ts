@@ -3,23 +3,23 @@
  * Loggt den Seller ein und speichert den Refresh-Cookie (HttpOnly).
  * Alle Seller-Tests laden diesen State und bekommen via Refresh ein frisches Access-Token.
  *
- * SECURITY (FE#65): Die hier codierten Credentials sind die LOKALEN
- * Seed-Accounts (docs/seed-data.sql) und gelten nur gegen ein lokales Backend.
- * Auf Staging sind die Passwörter rotiert (nur als Secrets verfügbar); in
- * Produktion dürfen diese Accounts niemals angelegt werden.
+ * Credentials kommen aus e2e/fixtures/credentials.ts (Secret, sonst lokaler
+ * Seed-Default) — siehe FE#65 und #144.
  */
 import { test as setup } from "@playwright/test"
 import { fileURLToPath } from "url"
 import path from "path"
 
+import { SELLER } from "./fixtures/credentials"
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 export const SELLER_AUTH_FILE = path.join(__dirname, ".auth/seller.json")
 
 setup("Seller Login einmalig durchführen", async ({ page }) => {
-  await page.goto("http://seller.localhost:3000/login/seller")
+  await page.goto("/login/seller")
 
-  await page.getByPlaceholder("ihre@firma.de").fill("seller1@greenthread.dev")
-  await page.getByPlaceholder("Passwort").fill("Seller123!")
+  await page.getByPlaceholder("ihre@firma.de").fill(SELLER.email)
+  await page.getByPlaceholder("Passwort").fill(SELLER.password)
 
   // Warte auf die Refresh-Antwort NACH dem Login-Redirect — AuthContext Phase 2
   // ruft /auth/refresh automatisch auf und rotiert den Cookie. Ohne dieses Warten

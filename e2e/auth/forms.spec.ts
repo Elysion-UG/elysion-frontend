@@ -21,14 +21,18 @@ test.describe("Auth – Register (Modal, Buyer-Portal)", () => {
     await page.getByRole("button", { name: "Anmelden" }).first().click()
     await page.getByRole("button", { name: "Registrieren" }).click()
 
-    await page.getByLabel(/Vorname/i).fill("Max")
-    await page.getByLabel(/Nachname/i).fill("Muster")
-    await page.getByPlaceholder("ihre@email.de").fill("keine-email")
-    // Submit-Button im Register-View: "Konto erstellen"
-    await page.getByRole("button", { name: /Konto erstellen/i }).click()
+    // Das E-Mail-Feld ist ein type=email-Input (EmailField). Client-seitige
+    // Validierung heißt hier: die HTML5-Constraint-Validity lehnt eine
+    // Eingabe ohne @ ab — deterministisch und ohne Backend prüfbar. Ein Submit
+    // würde nur die native Bubble auslösen (die JS-Meldung in handleRegister
+    // wird davor nie erreicht), deshalb prüfen wir die Validity direkt (#144).
+    const emailInput = page.locator("#reg-email")
+    await emailInput.fill("keine-email")
+    expect(await emailInput.evaluate((el: HTMLInputElement) => el.validity.valid)).toBe(false)
 
-    // HTML5-Validation des type=email-Inputs blockiert Submit — Heading bleibt sichtbar.
-    await expect(page.getByRole("heading", { name: "Konto erstellen" })).toBeVisible()
+    // Gegenprobe: eine gültige Adresse erfüllt die Constraint.
+    await emailInput.fill("gueltig@example.com")
+    expect(await emailInput.evaluate((el: HTMLInputElement) => el.validity.valid)).toBe(true)
   })
 })
 
@@ -64,7 +68,10 @@ test.describe("Auth – E-Mail-Verifizierung", () => {
 
   test("Resend-Button erfordert E-Mail-Eingabe", async ({ page }) => {
     await page.goto("/verify-email")
-    const button = page.getByRole("button", { name: /Neuen Link anfordern/i })
+    // Ohne Token rendert die Seite den "awaiting"-State — dessen Button heißt
+    // "Erneut senden". "Neuen Link anfordern" gibt es nur im error-State,
+    // also nach einem fehlgeschlagenen Token-Check (#144).
+    const button = page.getByRole("button", { name: /Erneut senden/i })
     await expect(button).toBeDisabled()
 
     await page.getByPlaceholder(/Ihre E-Mail-Adresse/i).fill("test@example.com")

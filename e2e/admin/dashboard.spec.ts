@@ -5,8 +5,7 @@
  * laden und alle 7 Schnellzugriff-Links zu ihrem Bereich navigieren.
  */
 import { test, expect } from "@playwright/test"
-import { fileURLToPath } from "url"
-import path from "path"
+import { persistAdminState } from "../fixtures/admin-state"
 
 test.describe.configure({ mode: "serial" })
 

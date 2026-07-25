@@ -2,6 +2,8 @@ import { test, expect } from "@playwright/test"
 import { fileURLToPath } from "url"
 import path from "path"
 
+import { persistAuthState } from "../fixtures/auth-state"
+
 // baseURL=http://seller.localhost:3000 + storageState (Refresh-Cookie) kommen aus playwright.config.ts
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -25,10 +27,11 @@ test.describe("Seller – Produkte", () => {
     })
   })
 
-  // Speichert den rotierten Refresh-Cookie zurück, damit der nächste Test
-  // nicht den bereits invalidierten Token aus der Datei liest.
+  // Speichert den rotierten Refresh-Cookie robust zurück (single-use Token,
+  // siehe auth-state.ts), damit der nächste Test nicht den bereits
+  // invalidierten Token aus der Datei liest (#144).
   test.afterEach(async ({ page }) => {
-    await page.context().storageState({ path: SELLER_AUTH_FILE })
+    await persistAuthState(page, SELLER_AUTH_FILE)
   })
 
   test("Produkte-Tab zeigt Tabelle nach Login", async ({ page }) => {
