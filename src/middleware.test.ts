@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from "vitest"
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 import { NextRequest } from "next/server"
 
 import { SESSION_MARKER_COOKIE } from "@/src/lib/auth/session-marker"
@@ -188,5 +188,42 @@ describe("Content-Security-Policy (#33)", () => {
     // Modern counterpart to X-Frame-Options: DENY in next.config.mjs.
     expect(policy).toContain("frame-ancestors 'none'")
     expect(policy).toContain("upgrade-insecure-requests")
+  })
+})
+
+// ── Startup drift guard (#168) ───────────────────────────────────────────────
+//
+// The middleware runs assertDomainConfig() at import time. It must fail loudly
+// when a NEXT_PUBLIC_ portal domain drifts from its server counterpart, instead
+// of letting seller-url.ts silently fall back to relative redirect paths.
+
+describe("startup domain-config drift guard (#168)", () => {
+  afterEach(() => {
+    delete process.env.NEXT_PUBLIC_SELLER_DOMAIN
+    delete process.env.NEXT_PUBLIC_ADMIN_DOMAIN
+    delete process.env.NEXT_PUBLIC_BUYER_DOMAIN
+    vi.resetModules()
+  })
+
+  function importMiddlewareFresh() {
+    vi.resetModules()
+    return import("./middleware")
+  }
+
+  it("throws when a NEXT_PUBLIC_ domain drifts from its server value", async () => {
+    // Server hosts come from the top-level beforeAll; drift only the client one.
+    process.env.NEXT_PUBLIC_SELLER_DOMAIN = "attacker.example.com"
+    process.env.NEXT_PUBLIC_ADMIN_DOMAIN = ADMIN_HOST
+    process.env.NEXT_PUBLIC_BUYER_DOMAIN = BUYER_HOST
+
+    await expect(importMiddlewareFresh()).rejects.toThrow(/Drift/i)
+  })
+
+  it("does not throw when server and NEXT_PUBLIC_ domains match", async () => {
+    process.env.NEXT_PUBLIC_SELLER_DOMAIN = SELLER_HOST
+    process.env.NEXT_PUBLIC_ADMIN_DOMAIN = ADMIN_HOST
+    process.env.NEXT_PUBLIC_BUYER_DOMAIN = BUYER_HOST
+
+    await expect(importMiddlewareFresh()).resolves.toBeDefined()
   })
 })
