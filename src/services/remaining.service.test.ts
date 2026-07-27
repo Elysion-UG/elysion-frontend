@@ -112,7 +112,16 @@ import { CartService } from "./cart.service"
 
 describe("CartService", () => {
   it("get calls GET /api/v1/cart", async () => {
-    mockApiRequest.mockResolvedValue({ items: [] })
+    mockApiRequest.mockResolvedValue({
+      id: "cart1",
+      ownershipType: "AUTHENTICATED",
+      totalQuantity: 0,
+      subtotal: 0,
+      currency: "EUR",
+      items: [],
+      createdAt: "",
+      updatedAt: "",
+    })
     await CartService.get()
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/cart")
   })
@@ -463,20 +472,26 @@ describe("RecommendationService", () => {
 import { SellerOrderService } from "./seller-order.service"
 
 describe("SellerOrderService", () => {
+  // Minimal but contract-valid shapes — SellerOrderService now validates the
+  // response at the boundary (#38), so these smoke tests need real shapes.
+  const validGroup = {
+    id: "og1",
+    orderId: "o1",
+    status: "CONFIRMED",
+    items: [],
+    total: 0,
+    createdAt: "",
+  }
+  const validPage = { items: [], page: 0, size: 20, totalItems: 0, totalPages: 0 }
+
   it("list calls GET /api/v1/seller/orders with no params", async () => {
-    mockApiRequest.mockResolvedValue({
-      items: [],
-      page: 0,
-      size: 20,
-      totalElements: 0,
-      totalPages: 0,
-    })
+    mockApiRequest.mockResolvedValue(validPage)
     await SellerOrderService.list()
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/seller/orders")
   })
 
   it("list includes query params when provided", async () => {
-    mockApiRequest.mockResolvedValue({ items: [] })
+    mockApiRequest.mockResolvedValue(validPage)
     await SellerOrderService.list({ page: 1, size: 10, status: "SHIPPED" })
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/seller/orders?page=1&size=10&status=SHIPPED"
@@ -484,13 +499,13 @@ describe("SellerOrderService", () => {
   })
 
   it("getById calls correct endpoint", async () => {
-    mockApiRequest.mockResolvedValue({ id: "og1" })
+    mockApiRequest.mockResolvedValue(validGroup)
     await SellerOrderService.getById("og1")
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/seller/orders/og1")
   })
 
   it("updateStatus calls PATCH with status", async () => {
-    mockApiRequest.mockResolvedValue({ id: "og1" })
+    mockApiRequest.mockResolvedValue(validGroup)
     await SellerOrderService.updateStatus("og1", "CONFIRMED")
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/seller/orders/og1/status",
@@ -499,7 +514,7 @@ describe("SellerOrderService", () => {
   })
 
   it("ship calls POST with tracking info", async () => {
-    mockApiRequest.mockResolvedValue({ id: "og1" })
+    mockApiRequest.mockResolvedValue(validGroup)
     await SellerOrderService.ship("og1", { trackingNumber: "TRK123", carrier: "DHL" })
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/seller/orders/og1/ship",
@@ -508,7 +523,7 @@ describe("SellerOrderService", () => {
   })
 
   it("deliver calls POST deliver endpoint", async () => {
-    mockApiRequest.mockResolvedValue({ id: "og1" })
+    mockApiRequest.mockResolvedValue(validGroup)
     await SellerOrderService.deliver("og1")
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/seller/orders/og1/deliver",

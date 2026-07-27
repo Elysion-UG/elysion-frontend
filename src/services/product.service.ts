@@ -11,67 +11,9 @@
  * Public detail is addressed by {slug} and returns `name`; the internal
  * by-id/{id} route returns `title` and requires ADMIN or the owning SELLER.
  */
+import { z } from "zod"
 import { apiRequest, buildQuery } from "@/src/lib/api-client"
-
-// ── Raw API types (list endpoint) ─────────────────────────────────────────────
-// These reflect the actual JSON the backend returns inside data{}.
-// They are normalised to internal types before leaving this module.
-
-interface ApiProductListItem {
-  id: string
-  slug: string
-  name: string
-  price: number
-  currency: string
-  primaryImage: string | null
-  seller: { id: string; companyName: string } | null
-  createdAt: string
-  matchScore: number | null
-  status?: string
-  inStock?: boolean
-}
-
-interface ApiProductPage {
-  items: ApiProductListItem[]
-  page: number
-  size: number
-  totalItems: number
-  totalPages: number
-}
-
-// ── Raw API types (detail endpoint) ──────────────────────────────────────────
-
-interface ApiProductVariant {
-  id: string
-  sku?: string
-  price?: number | null
-  stock?: number
-  available?: boolean
-  imageUrls?: string[]
-  options?: Array<{ type: string; value: string }>
-  size?: string
-  color?: string
-  material?: string
-}
-
-interface ApiProductDetail {
-  id: string
-  name: string
-  slug: string
-  title?: string
-  description?: string
-  shortDescription?: string // API uses shortDescription, internal type uses shortDesc
-  price?: number
-  basePrice?: number
-  currency?: string
-  taxRate?: number
-  images?: Array<{ id?: string; url: string; altText?: string; order?: number }>
-  variants?: ApiProductVariant[]
-  seller?: { id: string; companyName?: string; firstName?: string; lastName?: string } | null
-  category?: { id?: string; name: string; slug?: string } | null
-  matchScore?: number | null
-  matchBreakdown?: unknown
-}
+import { parseApiResponse } from "@/src/lib/api-schemas"
 import { normalizePage } from "@/src/lib/normalize-page"
 import type {
   Page,
@@ -87,11 +29,92 @@ import type {
   ProductVariantInput,
 } from "@/src/types"
 
+// ── Raw API schemas (list endpoint) ───────────────────────────────────────────
+// Zod mirrors the JSON the backend returns inside data{} (same required/optional
+// shape as the previous interfaces) and is validated at the boundary before the
+// response is normalised, so contract drift fails loud instead of surfacing as
+// `undefined.foo` deep in the shop UI (#38).
+
+const apiProductListItemSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  name: z.string(),
+  price: z.number(),
+  currency: z.string(),
+  primaryImage: z.string().nullable(),
+  seller: z.object({ id: z.string(), companyName: z.string() }).nullable(),
+  createdAt: z.string(),
+  matchScore: z.number().nullable(),
+  status: z.string().optional(),
+  inStock: z.boolean().optional(),
+})
+
+const apiProductPageSchema = z.object({
+  items: z.array(apiProductListItemSchema),
+  page: z.number(),
+  size: z.number(),
+  totalItems: z.number(),
+  totalPages: z.number(),
+})
+
+// ── Raw API schemas (detail endpoint) ─────────────────────────────────────────
+
+const apiProductVariantSchema = z.object({
+  id: z.string(),
+  sku: z.string().optional(),
+  price: z.number().nullish(),
+  stock: z.number().optional(),
+  available: z.boolean().optional(),
+  imageUrls: z.array(z.string()).optional(),
+  options: z.array(z.object({ type: z.string(), value: z.string() })).optional(),
+  size: z.string().optional(),
+  color: z.string().optional(),
+  material: z.string().optional(),
+})
+
+const apiProductDetailSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  // API uses shortDescription, internal type uses shortDesc
+  shortDescription: z.string().optional(),
+  price: z.number().optional(),
+  basePrice: z.number().optional(),
+  currency: z.string().optional(),
+  taxRate: z.number().optional(),
+  images: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        url: z.string(),
+        altText: z.string().optional(),
+        order: z.number().optional(),
+      })
+    )
+    .optional(),
+  variants: z.array(apiProductVariantSchema).optional(),
+  seller: z
+    .object({
+      id: z.string(),
+      companyName: z.string().optional(),
+      firstName: z.string().optional(),
+      lastName: z.string().optional(),
+    })
+    .nullish(),
+  category: z
+    .object({ id: z.string().optional(), name: z.string(), slug: z.string().optional() })
+    .nullish(),
+  matchScore: z.number().nullish(),
+  matchBreakdown: z.unknown().optional(),
+})
+
 export const ProductService = {
   // ── Public ────────────────────────────────────────────────────────
 
   async list(params: ProductListParams = {}): Promise<Page<ProductDetail>> {
-    const raw = await apiRequest<ApiProductPage>(
+    const raw = await apiRequest<unknown>(
       `/api/v1/products${buildQuery({
         search: params.search,
         categoryId: params.categoryId,
@@ -105,7 +128,8 @@ export const ProductService = {
         size: params.size,
       })}`
     )
-    return normalizePage(raw, (item) => ({
+    const page = parseApiResponse(apiProductPageSchema, raw, "product.list")
+    return normalizePage(page, (item) => ({
       id: item.id,
       slug: item.slug,
       name: item.name,
@@ -124,7 +148,11 @@ export const ProductService = {
   },
 
   async getBySlug(slug: string): Promise<ProductDetail> {
-    const raw = await apiRequest<ApiProductDetail>(`/api/v1/products/${slug}`)
+    const raw = parseApiResponse(
+      apiProductDetailSchema,
+      await apiRequest<unknown>(`/api/v1/products/${slug}`),
+      "product.getBySlug"
+    )
     return {
       id: raw.id,
       name: raw.name,
