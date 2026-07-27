@@ -17,6 +17,56 @@ import { loginPathWithRedirect } from "@/src/lib/auth/redirect-param"
         "Set them in .env.local (dev) or your deployment environment (prod)."
     )
   }
+
+  // Portal domains are configured twice: server-side (X_DOMAIN, used here for
+  // routing) and client-side (NEXT_PUBLIC_X_DOMAIN, used in lib/seller-url.ts for
+  // portal redirect URLs). If the two sets drift apart, seller-url.ts silently
+  // falls back to a relative path → post-login/portal-switch redirects land on
+  // the wrong domain, with no error. Rather than drift silently, fail loudly (#168).
+  //
+  // NEXT_PUBLIC_ references must stay static member expressions so Next inlines
+  // them at build time — hence the explicit per-domain list instead of a loop
+  // over a computed key.
+  const domains = [
+    {
+      name: "SELLER_DOMAIN",
+      server: process.env.SELLER_DOMAIN,
+      client: process.env.NEXT_PUBLIC_SELLER_DOMAIN,
+    },
+    {
+      name: "ADMIN_DOMAIN",
+      server: process.env.ADMIN_DOMAIN,
+      client: process.env.NEXT_PUBLIC_ADMIN_DOMAIN,
+    },
+    {
+      name: "BUYER_DOMAIN",
+      server: process.env.BUYER_DOMAIN,
+      client: process.env.NEXT_PUBLIC_BUYER_DOMAIN,
+    },
+  ] as const
+
+  const drift = domains
+    .map(({ name, server, client }) => {
+      if (client === undefined) {
+        // A missing client var means seller-url.ts falls back to relative paths.
+        // Harmless in local dev (same-origin), but broken portal routing in prod.
+        return process.env.NODE_ENV === "production"
+          ? `${name}: NEXT_PUBLIC_${name} fehlt (Server="${server}")`
+          : null
+      }
+      return client !== server
+        ? `${name}: Server="${server}" ≠ NEXT_PUBLIC_${name}="${client}"`
+        : null
+    })
+    .filter((d): d is string => d !== null)
+
+  if (drift.length > 0) {
+    throw new Error(
+      "Portal-Domain-Drift zwischen Server- und NEXT_PUBLIC_-Vars:\n  " +
+        drift.join("\n  ") +
+        "\nBeide Sets müssen identisch gesetzt sein (siehe .env.example)."
+    )
+  }
 })()
 
 // ── Route definitions ──────────────────────────────────────────────────────
