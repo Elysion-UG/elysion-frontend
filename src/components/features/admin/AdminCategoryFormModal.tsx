@@ -41,6 +41,8 @@ interface AdminCategoryFormModalProps {
   parentOptions: { id: string; name: string; level: number }[]
   /** Hide parent selector when editing (parent cannot be changed). */
   hideParent?: boolean
+  /** Inline error shown when the save request failed; keeps the modal open (#178). */
+  error?: string | null
 }
 
 export default function AdminCategoryFormModal({
@@ -52,6 +54,7 @@ export default function AdminCategoryFormModal({
   isSaving,
   parentOptions,
   hideParent,
+  error,
 }: AdminCategoryFormModalProps) {
   const handleNameChange = (name: string) => {
     onChange({ ...form, name, slug: slugify(name) })
@@ -191,6 +194,15 @@ export default function AdminCategoryFormModal({
             />
           </div>
         </div>
+
+        {error && (
+          <p
+            role="alert"
+            className="mt-4 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-300"
+          >
+            {error}
+          </p>
+        )}
 
         <div className="mt-6 flex justify-end gap-3">
           <button

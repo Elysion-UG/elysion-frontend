@@ -1,7 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest"
 import { renderHook, act } from "@testing-library/react"
 import React from "react"
-import { AuthProvider, useAuth } from "./AuthContext"
+import {
+  AuthProvider,
+  useAuth,
+  SESSION_RESTORE_RETRY_DELAYS_MS,
+  SESSION_RESTORE_RETRY_DELAYS_COLD_MS,
+} from "./AuthContext"
 import type { LoginDTO, RegisterDTO, User, TokensResponse } from "@/src/types"
 
 // ── Mock AuthService ───────────────────────────────────────────────────────────
@@ -743,15 +748,35 @@ describe("session restore — transiente Refresh-Fehler (#89)", () => {
 
     const { result } = renderHook(() => useAuth(), { wrapper })
 
+    // Persistierte Session → Kaltstart-Budget (mehr Retries, Summe ~60 s, #170).
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(10_000)
+      await vi.advanceTimersByTimeAsync(61_000)
     })
 
-    // Initial + 2 Retries, dann aufgeben — aber Session NICHT löschen:
-    // der Refresh-Cookie ist möglicherweise noch gültig.
-    expect(refreshSession).toHaveBeenCalledTimes(3)
+    // Initial + alle Kaltstart-Retries, dann aufgeben — aber Session NICHT
+    // löschen: der Refresh-Cookie ist möglicherweise noch gültig.
+    expect(refreshSession).toHaveBeenCalledTimes(SESSION_RESTORE_RETRY_DELAYS_COLD_MS.length + 1)
     expect(result.current.user).toEqual(mockUser)
     expect(clearAuthSession).not.toHaveBeenCalled()
+    expect(result.current.isLoading).toBe(false)
+  })
+
+  it("nutzt für Gäste (keine Session) das kurze Budget statt des Kaltstart-Budgets (#170)", async () => {
+    vi.useFakeTimers()
+    // Kein persistierter User → Gast: kurzes Budget, damit der Erstbesuch nicht
+    // hinter dem Spinner hängt.
+    vi.mocked(loadAuthSession).mockReturnValue(null)
+    vi.mocked(refreshSession).mockRejectedValue(new MockApiError(0, "Netzwerkfehler") as never)
+
+    const { result } = renderHook(() => useAuth(), { wrapper })
+
+    // Kurzes Budget (~4 s) reicht; das lange Kaltstart-Budget würde hier nicht
+    // greifen.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000)
+    })
+
+    expect(refreshSession).toHaveBeenCalledTimes(SESSION_RESTORE_RETRY_DELAYS_MS.length + 1)
     expect(result.current.isLoading).toBe(false)
   })
 

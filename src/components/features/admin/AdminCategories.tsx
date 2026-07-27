@@ -4,8 +4,16 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { Plus, Loader2, RefreshCw } from "lucide-react"
 import { CategoryService } from "@/src/services/category.service"
+import { ApiError } from "@/src/lib/api-client"
 import type { CategoryTreeNode, CategoryCreateDTO, CategoryUpdateDTO, Category } from "@/src/types"
 import { toast } from "sonner"
+
+/** Extract the backend's error message so a failed save is diagnosable (#178). */
+function saveErrorMessage(err: unknown, fallback: string): string {
+  if (err instanceof ApiError && err.message) return err.message
+  if (err instanceof Error && err.message) return err.message
+  return fallback
+}
 import AdminCategoryTreeNode from "./AdminCategoryTreeNode"
 import AdminCategoryFormModal, { type FormState, EMPTY_FORM } from "./AdminCategoryFormModal"
 
@@ -36,6 +44,14 @@ export default function AdminCategories() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [isSaving, setIsSaving] = useState(false)
+  // Inline save error surfaced in the modal — the POST can fail while the modal
+  // stays open; a transient toast alone loses the diagnosis (#178).
+  const [saveError, setSaveError] = useState<string | null>(null)
+
+  const closeModal = useCallback(() => {
+    setModalMode(null)
+    setSaveError(null)
+  }, [])
 
   const statusMap = useMemo(() => {
     const map: Record<string, string> = {}
@@ -95,6 +111,7 @@ export default function AdminCategories() {
   const handleOpenCreate = () => {
     setForm(EMPTY_FORM)
     setEditingId(null)
+    setSaveError(null)
     setModalMode("create")
   }
 
@@ -108,11 +125,13 @@ export default function AdminCategories() {
       order: String(node.order),
     })
     setEditingId(node.id)
+    setSaveError(null)
     setModalMode("edit")
   }
 
   const handleSubmitCreate = async () => {
     setIsSaving(true)
+    setSaveError(null)
     try {
       const dto: CategoryCreateDTO = {
         name: form.name.trim(),
@@ -123,10 +142,12 @@ export default function AdminCategories() {
       }
       await CategoryService.create(dto)
       toast.success(`Kategorie "${dto.name}" erstellt.`)
-      setModalMode(null)
+      closeModal()
       load()
-    } catch {
-      toast.error("Fehler beim Erstellen der Kategorie.")
+    } catch (err) {
+      const message = saveErrorMessage(err, "Fehler beim Erstellen der Kategorie.")
+      setSaveError(message)
+      toast.error(message)
     } finally {
       setIsSaving(false)
     }
@@ -143,10 +164,12 @@ export default function AdminCategories() {
       }
       await CategoryService.update(editingId, dto)
       toast.success("Kategorie aktualisiert.")
-      setModalMode(null)
+      closeModal()
       load()
-    } catch {
-      toast.error("Fehler beim Aktualisieren der Kategorie.")
+    } catch (err) {
+      const message = saveErrorMessage(err, "Fehler beim Aktualisieren der Kategorie.")
+      setSaveError(message)
+      toast.error(message)
     } finally {
       setIsSaving(false)
     }
@@ -259,9 +282,10 @@ export default function AdminCategories() {
           form={form}
           onChange={setForm}
           onSubmit={handleSubmitCreate}
-          onClose={() => setModalMode(null)}
+          onClose={closeModal}
           isSaving={isSaving}
           parentOptions={parentOptions}
+          error={saveError}
         />
       )}
       {modalMode === "edit" && (
@@ -270,10 +294,11 @@ export default function AdminCategories() {
           form={form}
           onChange={setForm}
           onSubmit={handleSubmitEdit}
-          onClose={() => setModalMode(null)}
+          onClose={closeModal}
           isSaving={isSaving}
           parentOptions={parentOptions}
           hideParent
+          error={saveError}
         />
       )}
     </div>

@@ -64,3 +64,18 @@ describe("AdminCategoryFormModal – a11y", () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 })
+
+describe("AdminCategoryFormModal – save error (#178)", () => {
+  it("shows no alert when there is no error", () => {
+    renderModal()
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
+
+  it("surfaces the backend error inline as an alert, keeping the modal open", () => {
+    renderModal({ error: "Kategorie konnte nicht erstellt werden (400)" })
+    const alert = screen.getByRole("alert")
+    expect(alert).toHaveTextContent("Kategorie konnte nicht erstellt werden (400)")
+    // The dialog stays mounted so the user can correct and retry.
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+  })
+})
