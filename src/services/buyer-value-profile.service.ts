@@ -9,8 +9,17 @@
  *   - simpleProfile / extendedProfile: API expects/returns JSON strings, not objects.
  *     We serialize on write and parse on read so callers always work with plain objects.
  */
+import { z } from "zod"
 import { apiRequest } from "@/src/lib/api-client"
 import type { BuyerValueProfile, BuyerValueProfileUpsertDTO, ValuesProfileType } from "@/src/types"
+
+// Guard schemas for the JSON-string profile fields the backend delivers.
+// The data is only rendered as weights/labels (never executed), so the guard is
+// deliberately lenient about value ranges — its job is to reject a wrong *shape*
+// (contract drift / corrupt cache) rather than to re-validate the domain rules,
+// which live server-side. See #173 (F3).
+const simpleProfileSchema = z.record(z.string(), z.number())
+const extendedProfileSchema = z.record(z.string(), z.record(z.string(), z.number()))
 
 function toApiProfileType(t: ValuesProfileType): string {
   return t.toUpperCase()
@@ -20,16 +29,23 @@ function fromApiProfileType(t: string): ValuesProfileType {
   return t.toLowerCase() as ValuesProfileType
 }
 
-function parseProfileField<T>(value: unknown): T | null {
+/**
+ * Parse a backend JSON-string (or already-decoded object) and validate its shape
+ * with `schema` instead of an unchecked `as T` cast. Returns null when the field
+ * is absent, the JSON is malformed, or the decoded value fails the shape guard.
+ */
+function parseProfileField<T>(value: unknown, schema: z.ZodType<T>): T | null {
   if (value == null) return null
+  let decoded: unknown = value
   if (typeof value === "string") {
     try {
-      return JSON.parse(value) as T
+      decoded = JSON.parse(value)
     } catch {
       return null
     }
   }
-  return value as T
+  const result = schema.safeParse(decoded)
+  return result.success ? result.data : null
 }
 
 export const BuyerValueProfileService = {
@@ -38,10 +54,8 @@ export const BuyerValueProfileService = {
     return {
       ...raw,
       activeProfileType: fromApiProfileType(raw.activeProfileType as unknown as string),
-      simpleProfile: parseProfileField<Record<string, number>>(raw.simpleProfile),
-      extendedProfile: parseProfileField<Record<string, Record<string, number>>>(
-        raw.extendedProfile
-      ),
+      simpleProfile: parseProfileField(raw.simpleProfile, simpleProfileSchema),
+      extendedProfile: parseProfileField(raw.extendedProfile, extendedProfileSchema),
     }
   },
 
@@ -58,10 +72,8 @@ export const BuyerValueProfileService = {
     return {
       ...raw,
       activeProfileType: fromApiProfileType(raw.activeProfileType as unknown as string),
-      simpleProfile: parseProfileField<Record<string, number>>(raw.simpleProfile),
-      extendedProfile: parseProfileField<Record<string, Record<string, number>>>(
-        raw.extendedProfile
-      ),
+      simpleProfile: parseProfileField(raw.simpleProfile, simpleProfileSchema),
+      extendedProfile: parseProfileField(raw.extendedProfile, extendedProfileSchema),
     }
   },
 }

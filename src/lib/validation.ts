@@ -1,3 +1,16 @@
+/**
+ * validation.ts — the deliberate client-side UX validation layer.
+ *
+ * These lightweight helpers (`validatePassword`, `isValidEmail`) are what the
+ * forms actually run for immediate user feedback. They are intentionally NOT a
+ * security boundary: the backend is the authoritative validator for every write.
+ *
+ * A parallel set of Zod input schemas (`lib/schemas.ts`) used to exist but was
+ * wired to no form — only to its own test — which gave a false sense of
+ * validation coverage. It was removed (see #173, F4). If forms are later migrated
+ * to react-hook-form, reintroduce Zod schemas via `@hookform/resolvers/zod` and
+ * wire them to the forms so the tested rules are the rules that actually run.
+ */
 export interface PasswordRule {
   label: string
   test: (pw: string) => boolean

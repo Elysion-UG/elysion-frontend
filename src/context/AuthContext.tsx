@@ -84,6 +84,19 @@ function userFromAccessToken(accessToken: string): User | null {
 export const SESSION_RESTORE_RETRY_DELAYS_MS = [1_000, 3_000]
 
 /**
+ * Längeres Retry-Budget für den Fall, dass eine persistierte Session
+ * wiederhergestellt werden soll. Renders Free-Tier-Backend kann >90 s kalt
+ * starten (#170); das kurze [1s,3s]-Budget (~4 s) gibt dann vorschnell auf und
+ * der zurückkehrende Nutzer erscheint beim Erstbesuch fälschlich „ausgeloggt".
+ * Die Summe der Delays (~60 s) plus die Request-Laufzeiten selbst überbrückt
+ * einen realistischen Kaltstart; währenddessen bleibt isLoading true, sodass
+ * Guards einen Spinner statt des Login-Prompts zeigen. Gäste (keine Session)
+ * nutzen bewusst NICHT dieses Budget, um den Erstbesuch nicht hinter einem
+ * Spinner zu blockieren.
+ */
+export const SESSION_RESTORE_RETRY_DELAYS_COLD_MS = [1_000, 2_000, 4_000, 8_000, 15_000, 30_000]
+
+/**
  * Transient = der Refresh-Cookie ist möglicherweise noch gültig, nur die
  * Zustellung ist gescheitert: Netzwerkfehler (Status 0), Rate-Limit (429)
  * oder Server-/Infrastrukturfehler (5xx). Alles andere — insbesondere 401 —
@@ -147,6 +160,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const gen = getAuthGeneration()
     let cancelled = false
 
+    // Nutzer mit persistierter Session bekommen das längere Kaltstart-Budget
+    // (#170); Gäste das kurze, damit ein Erstbesuch nicht hinter dem Spinner
+    // hängt. Einmal beim Mount ausgewertet (Phase 1 hat die Session bereits
+    // synchron aus sessionStorage gelesen).
+    const retryDelays =
+      loadAuthSession() != null
+        ? SESSION_RESTORE_RETRY_DELAYS_COLD_MS
+        : SESSION_RESTORE_RETRY_DELAYS_MS
+
     // Transiente Fehler (Netzwerk, 429, 5xx) mit Backoff erneut versuchen —
     // eine definitive Ablehnung (401) bricht sofort ab. isLoading bleibt
     // während der Retries true, sodass Guards den Spinner statt des
@@ -156,7 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           return await refreshSession()
         } catch (err) {
-          const outOfRetries = attempt >= SESSION_RESTORE_RETRY_DELAYS_MS.length
+          const outOfRetries = attempt >= retryDelays.length
           if (
             !isTransientRefreshError(err) ||
             outOfRetries ||
@@ -165,9 +187,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           ) {
             throw err
           }
-          await new Promise((resolve) =>
-            setTimeout(resolve, SESSION_RESTORE_RETRY_DELAYS_MS[attempt])
-          )
+          await new Promise((resolve) => setTimeout(resolve, retryDelays[attempt]))
           // Während des Sleeps kann unmount/logout passiert sein — vor dem
           // nächsten Netzwerk-Call erneut prüfen.
           if (cancelled || gen !== getAuthGeneration()) throw err
