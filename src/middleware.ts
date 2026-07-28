@@ -192,10 +192,20 @@ const isDev = process.env.NODE_ENV !== "production"
 const BACKEND_HOST = process.env.NEXT_PUBLIC_BACKEND_HOST || DEFAULT_BACKEND_HOST
 const BACKEND_ORIGIN = `https://${BACKEND_HOST}`
 
-function buildCsp(nonce: string): string {
+// script-src is nonce-based for dynamically-rendered routes (portals + auth),
+// where the middleware can hand Next.js a per-request nonce to stamp onto its
+// bootstrap scripts. Public routes are served statically/ISR (#37) and have no
+// per-request nonce, so they fall back to 'unsafe-inline' for script-src. That
+// is a deliberate, scoped relaxation: it applies ONLY to the token-free public
+// shop pages, and the rest of the policy still bounds it — connect-src/img-src
+// are restricted to self + the single backend origin, object-src 'none',
+// base-uri 'self', frame-ancestors 'none' — so an injected inline script cannot
+// exfiltrate to an arbitrary origin. The strict nonce policy is retained on
+// every authenticated surface (see middleware() route classification).
+function buildCsp(nonce: string | null): string {
   const scriptSrc = [
     "'self'",
-    `'nonce-${nonce}'`,
+    ...(nonce ? [`'nonce-${nonce}'`] : ["'unsafe-inline'"]),
     "https://js.stripe.com",
     ...(isDev ? ["'unsafe-eval'"] : []),
   ].join(" ")
@@ -233,7 +243,33 @@ function generateNonce(): string {
   return crypto.randomUUID().replace(/-/g, "")
 }
 
-function applySecurityHeaders(request: NextRequest, response: NextResponse, nonce: string): void {
+// Routes in the (public) group — statically/ISR-rendered, no per-request nonce
+// (#37). Kept in sync with src/app/(public)/. "/" is the shop home. The check
+// only matters on the buyer/main domain; seller/admin domains never serve these.
+const PUBLIC_ROUTES = [
+  "/about",
+  "/agb",
+  "/cart",
+  "/contact",
+  "/datenschutz",
+  "/impressum",
+  "/producer",
+  "/product",
+  "/versand",
+  "/widerruf",
+]
+
+function isPublicRoute(pathname: string): boolean {
+  return (
+    pathname === "/" || PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`))
+  )
+}
+
+function applySecurityHeaders(
+  request: NextRequest,
+  response: NextResponse,
+  nonce: string | null
+): void {
   response.headers.set("Content-Security-Policy", buildCsp(nonce))
   // Expose the nonce to downstream request handlers via the request header on
   // the cloned response — already applied on `request` by the caller.
@@ -244,13 +280,24 @@ function applySecurityHeaders(request: NextRequest, response: NextResponse, nonc
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const nonce = generateNonce()
+
+  // Public shop routes are served statically/ISR with a nonce-free CSP (#37);
+  // every authenticated surface (portals + auth) keeps the strict per-request
+  // nonce and stays dynamically rendered. Seller/admin domains only ever serve
+  // portal routes, so they always get a nonce regardless of pathname.
+  const usesNonce = !(
+    isPublicRoute(pathname) &&
+    !isSellerDomain(request) &&
+    !isAdminDomain(request)
+  )
+  const nonce = usesNonce ? generateNonce() : null
   const csp = buildCsp(nonce)
 
-  // Forward the nonce to the app so <Script nonce={…}> and Next.js' own
-  // inline bootstrap scripts can adopt it during SSR.
+  // Forward the nonce to the app so <Script nonce={…}> and Next.js' own inline
+  // bootstrap scripts can adopt it during SSR. Omitted for public routes, which
+  // render statically and use the nonce-free policy.
   const requestHeaders = new Headers(request.headers)
-  requestHeaders.set("x-nonce", nonce)
+  if (nonce) requestHeaders.set("x-nonce", nonce)
   requestHeaders.set("Content-Security-Policy", csp)
 
   const nextWithNonce = () => NextResponse.next({ request: { headers: requestHeaders } })
