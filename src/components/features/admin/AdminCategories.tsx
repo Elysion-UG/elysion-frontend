@@ -3,9 +3,14 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { Plus, Loader2, RefreshCw } from "lucide-react"
-import { CategoryService } from "@/src/services/category.service"
+import {
+  useAdminCategories,
+  useCreateCategory,
+  useUpdateCategory,
+  useToggleCategoryStatus,
+} from "@/src/hooks/useAdminCategories"
 import { ApiError } from "@/src/lib/api-client"
-import type { CategoryTreeNode, CategoryCreateDTO, CategoryUpdateDTO, Category } from "@/src/types"
+import type { CategoryTreeNode, CategoryCreateDTO, CategoryUpdateDTO } from "@/src/types"
 import { toast } from "sonner"
 
 /** Extract the backend's error message so a failed save is diagnosable (#178). */
@@ -32,21 +37,26 @@ function flattenTree(
 }
 
 export default function AdminCategories() {
-  const [tree, setTree] = useState<CategoryTreeNode[]>([])
-  const [flatCategories, setFlatCategories] = useState<Category[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { data, isLoading, refetch } = useAdminCategories()
+  const tree = useMemo(() => data?.tree ?? [], [data])
+  const flatCategories = useMemo(() => data?.flat ?? [], [data])
+  const createCategory = useCreateCategory()
+  const updateCategory = useUpdateCategory()
+  const toggleStatus = useToggleCategoryStatus()
+
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
-  const [statusLoading, setStatusLoading] = useState<string | null>(null)
   const isFirstLoad = useRef(true)
 
   // Modal state
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
-  const [isSaving, setIsSaving] = useState(false)
   // Inline save error surfaced in the modal — the POST can fail while the modal
   // stays open; a transient toast alone loses the diagnosis (#178).
   const [saveError, setSaveError] = useState<string | null>(null)
+
+  const isSaving = createCategory.isPending || updateCategory.isPending
+  const statusLoading = toggleStatus.isPending ? (toggleStatus.variables?.id ?? null) : null
 
   const closeModal = useCallback(() => {
     setModalMode(null)
@@ -63,34 +73,17 @@ export default function AdminCategories() {
     return map
   }, [flatCategories])
 
-  const load = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      // The flat list is still needed alongside the tree: it carries status
-      // and description, which the tree nodes don't include.
-      const [treeData, listData] = await Promise.all([
-        CategoryService.tree(),
-        CategoryService.list(),
-      ])
-      setTree(treeData)
-      setFlatCategories(listData)
-      if (isFirstLoad.current) {
-        setExpandedIds(new Set(treeData.map((n) => n.id)))
-        isFirstLoad.current = false
-      }
-    } catch {
-      toast.error("Fehler beim Laden der Kategorien.")
-    } finally {
-      setIsLoading(false)
+  // Expand all top-level nodes on first successful load (useEffectEvent keeps the
+  // set-state-in-effect lint rule happy, as in useAdminList).
+  const seedExpanded = useEffectEvent(() => {
+    if (data && isFirstLoad.current) {
+      setExpandedIds(new Set(data.tree.map((n) => n.id)))
+      isFirstLoad.current = false
     }
-  }, [])
-
-  const runEffect = useEffectEvent(() => {
-    load()
   })
   useEffect(() => {
-    runEffect()
-  }, [load])
+    seedExpanded()
+  }, [data])
 
   const parentOptions = useMemo(() => flattenTree(tree), [tree])
 
@@ -129,68 +122,47 @@ export default function AdminCategories() {
     setModalMode("edit")
   }
 
-  const handleSubmitCreate = async () => {
-    setIsSaving(true)
+  const handleSubmitCreate = () => {
     setSaveError(null)
-    try {
-      const dto: CategoryCreateDTO = {
-        name: form.name.trim(),
-        slug: form.slug.trim() || undefined,
-        parentId: form.parentId || undefined,
-        description: form.description.trim() || undefined,
-        order: Number(form.order) || undefined,
-      }
-      await CategoryService.create(dto)
-      toast.success(`Kategorie "${dto.name}" erstellt.`)
-      closeModal()
-      load()
-    } catch (err) {
-      const message = saveErrorMessage(err, "Fehler beim Erstellen der Kategorie.")
-      setSaveError(message)
-      toast.error(message)
-    } finally {
-      setIsSaving(false)
+    const dto: CategoryCreateDTO = {
+      name: form.name.trim(),
+      slug: form.slug.trim() || undefined,
+      parentId: form.parentId || undefined,
+      description: form.description.trim() || undefined,
+      order: Number(form.order) || undefined,
     }
+    createCategory.mutate(dto, {
+      onSuccess: closeModal,
+      onError: (err) => {
+        const message = saveErrorMessage(err, "Fehler beim Erstellen der Kategorie.")
+        setSaveError(message)
+        toast.error(message)
+      },
+    })
   }
 
-  const handleSubmitEdit = async () => {
+  const handleSubmitEdit = () => {
     if (!editingId) return
-    setIsSaving(true)
-    try {
-      const dto: CategoryUpdateDTO = {
-        name: form.name.trim() || undefined,
-        description: form.description.trim() || undefined,
-        order: Number(form.order) || undefined,
-      }
-      await CategoryService.update(editingId, dto)
-      toast.success("Kategorie aktualisiert.")
-      closeModal()
-      load()
-    } catch (err) {
-      const message = saveErrorMessage(err, "Fehler beim Aktualisieren der Kategorie.")
-      setSaveError(message)
-      toast.error(message)
-    } finally {
-      setIsSaving(false)
+    const dto: CategoryUpdateDTO = {
+      name: form.name.trim() || undefined,
+      description: form.description.trim() || undefined,
+      order: Number(form.order) || undefined,
     }
+    updateCategory.mutate(
+      { id: editingId, dto },
+      {
+        onSuccess: closeModal,
+        onError: (err) => {
+          const message = saveErrorMessage(err, "Fehler beim Aktualisieren der Kategorie.")
+          setSaveError(message)
+          toast.error(message)
+        },
+      }
+    )
   }
 
-  const handleToggleStatus = async (node: CategoryTreeNode, currentlyActive: boolean) => {
-    setStatusLoading(node.id)
-    try {
-      if (currentlyActive) {
-        await CategoryService.deactivate(node.id)
-        toast.success(`"${node.name}" deaktiviert.`)
-      } else {
-        await CategoryService.activate(node.id)
-        toast.success(`"${node.name}" aktiviert.`)
-      }
-      load()
-    } catch {
-      toast.error("Fehler beim Statuswechsel.")
-    } finally {
-      setStatusLoading(null)
-    }
+  const handleToggleStatus = (node: CategoryTreeNode, currentlyActive: boolean) => {
+    toggleStatus.mutate({ id: node.id, name: node.name, currentlyActive })
   }
 
   // ── Render ─────────────────────────────────────────────────────────
@@ -208,7 +180,7 @@ export default function AdminCategories() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={load}
+            onClick={() => void refetch()}
             className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground hover:text-muted-foreground"
           >
             <RefreshCw className="h-4 w-4" /> Aktualisieren
