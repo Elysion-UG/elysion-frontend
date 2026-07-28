@@ -1,12 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { DollarSign, RefreshCw, Loader2 } from "lucide-react"
-import { SellerOrderService } from "@/src/services/seller-order.service"
-import type { Settlement } from "@/src/types"
+import { useSellerSettlements } from "@/src/hooks/useSellerDashboard"
 import { formatEuro } from "@/src/lib/currency"
-import { toast } from "sonner"
 import {
   Table,
   TableHeader,
@@ -25,27 +21,7 @@ import {
 import SellerPayoutAccountCard from "./SellerPayoutAccountCard"
 
 export default function SellerSettlementsTab() {
-  const [settlements, setSettlements] = useState<Settlement[]>([])
-  const [settlementsLoading, setSettlementsLoading] = useState(false)
-
-  const fetchSettlements = useCallback(async () => {
-    setSettlementsLoading(true)
-    try {
-      const data = await SellerOrderService.listSettlements()
-      setSettlements(data)
-    } catch {
-      toast.error("Auszahlungen konnten nicht geladen werden.")
-    } finally {
-      setSettlementsLoading(false)
-    }
-  }, [])
-
-  const runSettlementsEffect = useEffectEvent(() => {
-    fetchSettlements()
-  })
-  useEffect(() => {
-    runSettlementsEffect()
-  }, [fetchSettlements])
+  const { data: settlements = [], isFetching, refetch } = useSellerSettlements()
 
   return (
     <div className="space-y-6">
@@ -60,14 +36,14 @@ export default function SellerSettlementsTab() {
             </p>
           </div>
           <button
-            onClick={fetchSettlements}
+            onClick={() => void refetch()}
             className="text-muted-foreground transition-colors hover:text-foreground"
           >
-            <RefreshCw className={`h-4 w-4 ${settlementsLoading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
           </button>
         </div>
 
-        {settlementsLoading ? (
+        {isFetching && settlements.length === 0 ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-green-600" />
           </div>

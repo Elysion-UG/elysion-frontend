@@ -1,12 +1,11 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useEffectEvent } from "@/src/hooks/use-effect-event"
+import { useState } from "react"
 import { Plus, Award, RefreshCw, Loader2, ExternalLink } from "lucide-react"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
-import { CertificateService } from "@/src/services/certificate.service"
+import { useSellerCertificates, useCreateSellerCertificate } from "@/src/hooks/useSellerDashboard"
 import { isSafeHttpUrl, safeHttpUrl } from "@/src/lib/safe-url"
-import type { Certificate, CertificateType } from "@/src/types"
+import type { CertificateType } from "@/src/types"
 import { toast } from "sonner"
 import { StatusBadge } from "@/src/components/shared"
 import { certStatusLabel, certStatusColor, CERT_TYPES } from "./sellerDashboard.constants"
@@ -22,9 +21,9 @@ function CertForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
   const [issueDate, setIssueDate] = useState("")
   const [expiryDate, setExpiryDate] = useState("")
   const [notes, setNotes] = useState("")
-  const [isSaving, setIsSaving] = useState(false)
+  const createCert = useCreateSellerCertificate()
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!title.trim()) {
       toast.error("Bitte Titel eingeben.")
       return
@@ -41,9 +40,8 @@ function CertForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
       toast.error("Dokument-URL muss mit http:// oder https:// beginnen.")
       return
     }
-    setIsSaving(true)
-    try {
-      await CertificateService.sellerCreate({
+    createCert.mutate(
+      {
         certificateType: certType,
         title: title.trim(),
         issuerName: issuerName.trim(),
@@ -52,14 +50,9 @@ function CertForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
         issueDate: issueDate || undefined,
         expiryDate: expiryDate || undefined,
         notes: notes.trim() || undefined,
-      })
-      toast.success("Zertifikat erstellt und zur Prüfung eingereicht.")
-      onSaved()
-    } catch {
-      toast.error("Fehler beim Erstellen.")
-    } finally {
-      setIsSaving(false)
-    }
+      },
+      { onSuccess: onSaved }
+    )
   }
 
   const modalRef = useFocusTrap(onClose)
@@ -177,10 +170,10 @@ function CertForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
           </button>
           <button
             onClick={handleSubmit}
-            disabled={isSaving}
+            disabled={createCert.isPending}
             className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-500 py-2 text-sm font-medium text-ink-900 hover:bg-green-700 disabled:opacity-60"
           >
-            {isSaving && <Loader2 className="h-3 w-3 animate-spin" />} Erstellen
+            {createCert.isPending && <Loader2 className="h-3 w-3 animate-spin" />} Erstellen
           </button>
         </div>
       </div>
@@ -191,28 +184,8 @@ function CertForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
 // ── Certificates Tab ─────────────────────────────────────────────────────────
 
 export default function SellerCertificatesTab() {
-  const [certs, setCerts] = useState<Certificate[]>([])
-  const [certsLoading, setCertsLoading] = useState(false)
+  const { data: certs = [], isFetching, refetch } = useSellerCertificates()
   const [showCertForm, setShowCertForm] = useState(false)
-
-  const fetchCerts = useCallback(async () => {
-    setCertsLoading(true)
-    try {
-      const data = await CertificateService.sellerList()
-      setCerts(Array.isArray(data) ? data : [])
-    } catch {
-      toast.error("Zertifikate konnten nicht geladen werden.")
-    } finally {
-      setCertsLoading(false)
-    }
-  }, [])
-
-  const runCertsEffect = useEffectEvent(() => {
-    fetchCerts()
-  })
-  useEffect(() => {
-    runCertsEffect()
-  }, [fetchCerts])
 
   return (
     <>
@@ -226,11 +199,11 @@ export default function SellerCertificatesTab() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={fetchCerts}
+              onClick={() => void refetch()}
               className="text-muted-foreground transition-colors hover:text-foreground"
               title="Aktualisieren"
             >
-              <RefreshCw className={`h-4 w-4 ${certsLoading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             </button>
             <button
               onClick={() => setShowCertForm(true)}
@@ -241,7 +214,7 @@ export default function SellerCertificatesTab() {
           </div>
         </div>
 
-        {certsLoading ? (
+        {isFetching && certs.length === 0 ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-green-600" />
           </div>
@@ -314,13 +287,7 @@ export default function SellerCertificatesTab() {
       </div>
 
       {showCertForm && (
-        <CertForm
-          onClose={() => setShowCertForm(false)}
-          onSaved={() => {
-            setShowCertForm(false)
-            fetchCerts()
-          }}
-        />
+        <CertForm onClose={() => setShowCertForm(false)} onSaved={() => setShowCertForm(false)} />
       )}
     </>
   )
