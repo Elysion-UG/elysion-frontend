@@ -1,77 +1,34 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { useParams } from "next/navigation"
 import Link from "next/link"
 import { ExternalLink, Loader2, ToggleLeft, ToggleRight, ShieldCheck } from "lucide-react"
-import { AdminService } from "@/src/services/admin.service"
-import type { AdminProductDetail, AdminSellerDetail, ProductStatus } from "@/src/types"
+import {
+  useAdminProduct,
+  useProductSeller,
+  useActivateProduct,
+  useDeactivateProduct,
+} from "@/src/hooks/useAdminDetail"
 import {
   ADMIN_PRODUCT_STATUS_LABEL as statusLabel,
   ADMIN_PRODUCT_STATUS_COLOR as statusColor,
 } from "@/src/lib/constants"
 import { BackButton, LoadingFullPage, StatusBadge } from "@/src/components/shared"
-import { toast } from "sonner"
 
 export default function AdminProductDetailView() {
   const { id } = useParams<{ id: string }>()
-  const [product, setProduct] = useState<AdminProductDetail | null>(null)
-  const [seller, setSeller] = useState<AdminSellerDetail | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [actionLoading, setActionLoading] = useState(false)
+  const { data: product, isLoading } = useAdminProduct(id)
+  const { data: seller } = useProductSeller(product?.sellerId)
+  const activate = useActivateProduct()
+  const deactivate = useDeactivateProduct()
+  const actionLoading = activate.isPending || deactivate.isPending
 
-  const load = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const data = await AdminService.getProduct(id)
-      setProduct(data)
-      AdminService.listSellers({ page: 0, size: 200 })
-        .then((res) => {
-          const match = res.items.find((s) => s.userId === data.sellerId || s.id === data.sellerId)
-          if (match) setSeller(match as AdminSellerDetail)
-        })
-        .catch(() => {})
-    } catch {
-      toast.error("Produkt konnte nicht geladen werden.")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [id])
-
-  const runEffect = useEffectEvent(() => {
-    load()
-  })
-  useEffect(() => {
-    runEffect()
-  }, [load])
-
-  const handleActivate = async () => {
-    if (!product) return
-    setActionLoading(true)
-    try {
-      await AdminService.activateProduct(product.id)
-      toast.success(`"${product.name}" aktiviert.`)
-      load()
-    } catch {
-      toast.error("Fehler beim Aktivieren.")
-    } finally {
-      setActionLoading(false)
-    }
+  const handleActivate = () => {
+    if (product) activate.mutate({ id: product.id, name: product.name })
   }
 
-  const handleDeactivate = async () => {
-    if (!product) return
-    setActionLoading(true)
-    try {
-      await AdminService.deactivateProduct(product.id)
-      toast.success(`"${product.name}" deaktiviert.`)
-      load()
-    } catch {
-      toast.error("Fehler beim Deaktivieren.")
-    } finally {
-      setActionLoading(false)
-    }
+  const handleDeactivate = () => {
+    if (product) deactivate.mutate({ id: product.id, name: product.name })
   }
 
   if (isLoading) {
