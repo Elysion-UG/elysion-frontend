@@ -449,4 +449,25 @@ describe("ProductService", () => {
       )
     })
   })
+
+  // ── contract validation (#38) ────────────────────────────────────────
+
+  describe("response validation", () => {
+    it("rejects a list response whose items drift from the contract", async () => {
+      // price is required and numeric; a missing/string value must fail loud
+      mockApiRequest.mockResolvedValue({
+        items: [{ id: "p1", slug: "s", name: "N", currency: "EUR" }],
+        page: 0,
+        size: 10,
+        totalItems: 1,
+        totalPages: 1,
+      })
+      await expect(ProductService.list()).rejects.toThrow(/Server-Antwort/)
+    })
+
+    it("rejects a detail response missing required identity fields", async () => {
+      mockApiRequest.mockResolvedValue({ id: "p1", name: "N" }) // slug missing
+      await expect(ProductService.getBySlug("s")).rejects.toThrow(/Server-Antwort/)
+    })
+  })
 })

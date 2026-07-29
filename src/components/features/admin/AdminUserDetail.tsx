@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { useParams } from "next/navigation"
 import {
   Loader2,
@@ -15,8 +14,11 @@ import {
   XCircle,
   AlertTriangle,
 } from "lucide-react"
-import type { User as UserType } from "@/src/types"
-import { UserService } from "@/src/services/user.service"
+import {
+  useAdminUser,
+  useUpdateUserStatus,
+  useUpdateSellerStatus,
+} from "@/src/hooks/useAdminDetail"
 import {
   ADMIN_ACCOUNT_STATUS_LABEL,
   ADMIN_ACCOUNT_STATUS_COLOR,
@@ -25,60 +27,24 @@ import {
   ADMIN_SELLER_DETAIL_STATUS_COLOR,
 } from "@/src/lib/constants"
 import { BackButton, LoadingFullPage, StatusBadge } from "@/src/components/shared"
-import { toast } from "sonner"
 
 export default function AdminUserDetail() {
   const { id } = useParams<{ id: string }>()
-  const [user, setUser] = useState<UserType | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isUpdating, setIsUpdating] = useState(false)
+  const { data: user, isLoading } = useAdminUser(id)
+  const updateUserStatus = useUpdateUserStatus()
+  const updateSellerStatus = useUpdateSellerStatus()
+  const isUpdating = updateUserStatus.isPending || updateSellerStatus.isPending
 
-  useEffect(() => {
-    async function load() {
-      if (!id) return
-      try {
-        const u = await UserService.getUserById(id)
-        setUser(u)
-      } catch {
-        toast.error("Benutzer nicht gefunden.")
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    load()
-  }, [id])
-
-  const handleSuspend = async () => {
+  const handleSuspend = () => {
     if (!user) return
-    setIsUpdating(true)
-    try {
-      const newStatus = user.status === "SUSPENDED" ? "ACTIVE" : "SUSPENDED"
-      await UserService.updateUserStatus(user.id, newStatus)
-      setUser({ ...user, status: newStatus })
-      toast.success(newStatus === "SUSPENDED" ? "Benutzer gesperrt." : "Benutzer aktiviert.")
-    } catch {
-      toast.error("Fehler beim Aktualisieren.")
-    } finally {
-      setIsUpdating(false)
-    }
+    const newStatus = user.status === "SUSPENDED" ? "ACTIVE" : "SUSPENDED"
+    updateUserStatus.mutate({ userId: user.id, status: newStatus })
   }
 
-  const handleSellerAction = async (action: "APPROVED" | "REJECTED") => {
+  const handleSellerAction = (action: "APPROVED" | "REJECTED") => {
     if (!user?.sellerProfile) return
-    setIsUpdating(true)
-    try {
-      // Use the seller profile's own ID (not the user ID) for admin seller endpoints
-      await UserService.updateSellerStatus(user.sellerProfile.id, action)
-      setUser({
-        ...user,
-        sellerProfile: { ...user.sellerProfile, status: action },
-      })
-      toast.success(action === "APPROVED" ? "Verkäufer genehmigt." : "Verkäufer abgelehnt.")
-    } catch {
-      toast.error("Fehler beim Aktualisieren.")
-    } finally {
-      setIsUpdating(false)
-    }
+    // Use the seller profile's own ID (not the user ID) for admin seller endpoints
+    updateSellerStatus.mutate({ userId: user.id, sellerProfileId: user.sellerProfile.id, action })
   }
 
   if (isLoading) {

@@ -1,7 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useEffectEvent } from "@/src/hooks/use-effect-event"
+import { useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import {
   ArrowLeft,
@@ -16,15 +15,17 @@ import {
   Hash,
   Building,
 } from "lucide-react"
-import { CertificateService } from "@/src/services/certificate.service"
+import {
+  useAdminCertificate,
+  useVerifyCertificate,
+  useRejectCertificate,
+} from "@/src/hooks/useAdminDetail"
 import { safeHttpUrl } from "@/src/lib/safe-url"
-import type { Certificate } from "@/src/types"
 import {
   ADMIN_CERTIFICATE_STATUS_LABEL as statusLabel,
   ADMIN_CERTIFICATE_STATUS_COLOR as statusColor,
 } from "@/src/lib/constants"
 import { GenericRejectModal } from "@/src/components/shared"
-import { toast } from "sonner"
 
 const typeLabel: Record<string, string> = {
   ORGANIC: "Bio / Organic",
@@ -79,42 +80,13 @@ function InfoRow({
 export default function AdminCertificateDetail() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
-  const [cert, setCert] = useState<Certificate | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data: cert, isLoading, isError } = useAdminCertificate(params.id)
+  const verify = useVerifyCertificate()
+  const rejectCert = useRejectCertificate()
   const [rejectOpen, setRejectOpen] = useState(false)
 
-  const load = useCallback(async () => {
-    if (!params.id) return
-    setIsLoading(true)
-    setError(null)
-    try {
-      const data = await CertificateService.adminGetById(params.id)
-      setCert(data)
-    } catch {
-      setError("Zertifikat konnte nicht geladen werden.")
-      toast.error("Fehler beim Laden des Zertifikats.")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [params.id])
-
-  const runEffect = useEffectEvent(() => {
-    load()
-  })
-  useEffect(() => {
-    runEffect()
-  }, [load])
-
-  const handleVerify = async () => {
-    if (!cert) return
-    try {
-      await CertificateService.verify(cert.id)
-      toast.success("Zertifikat verifiziert.")
-      load()
-    } catch {
-      toast.error("Fehler beim Verifizieren.")
-    }
+  const handleVerify = () => {
+    if (cert) verify.mutate(cert.id)
   }
 
   if (isLoading) {
@@ -125,10 +97,12 @@ export default function AdminCertificateDetail() {
     )
   }
 
-  if (error || !cert) {
+  if (isError || !cert) {
     return (
       <div className="py-16 text-center">
-        <p className="text-muted-foreground">{error ?? "Zertifikat nicht gefunden."}</p>
+        <p className="text-muted-foreground">
+          {isError ? "Zertifikat konnte nicht geladen werden." : "Zertifikat nicht gefunden."}
+        </p>
         <button
           onClick={() => router.push("/admin/certificates")}
           className="mt-4 text-sm text-green-500 hover:text-green-500"
@@ -323,10 +297,8 @@ export default function AdminCertificateDetail() {
         <GenericRejectModal
           title="Zertifikat ablehnen"
           onSubmit={async (reason) => {
-            await CertificateService.reject(cert.id, reason)
-            toast.success("Zertifikat abgelehnt.")
+            await rejectCert.mutateAsync({ id: cert.id, reason })
             setRejectOpen(false)
-            load()
           }}
           onClose={() => setRejectOpen(false)}
         />

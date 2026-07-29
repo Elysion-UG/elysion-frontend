@@ -1,17 +1,24 @@
+import { z } from "zod"
 import type { OrderProductSnapshot } from "@/src/types"
 
 // ── Raw backend shape ─────────────────────────────────────────────────────────
+// Zod mirrors the interface exactly (all fields optional/nullable as before), so
+// callers get the same static type while gaining runtime validation at the
+// service boundary — contract drift fails loud instead of surfacing as
+// `undefined.foo` deep in the order UI (#38).
 
-export interface ApiOrderProductSnapshot {
-  id?: string
-  name?: string
-  slug?: string
-  seller?: { id?: string } | null
-  variantId?: string
-  sku?: string
-  options?: Array<{ type: string; value: string }>
-  currency?: string
-}
+export const apiOrderProductSnapshotSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().optional(),
+  slug: z.string().optional(),
+  seller: z.object({ id: z.string().optional() }).nullish(),
+  variantId: z.string().optional(),
+  sku: z.string().optional(),
+  options: z.array(z.object({ type: z.string(), value: z.string() })).optional(),
+  currency: z.string().optional(),
+})
+
+export type ApiOrderProductSnapshot = z.infer<typeof apiOrderProductSnapshotSchema>
 
 // ── Normalizer ────────────────────────────────────────────────────────────────
 

@@ -1,17 +1,18 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useEffect, useState } from "react"
 import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Loader2, CheckCircle2, XCircle, Ban, ExternalLink, Percent } from "lucide-react"
-import { AdminService } from "@/src/services/admin.service"
-import type {
-  AdminSellerDetail,
-  AdminProductListItem,
-  SellerStatus,
-  ProductStatus,
-} from "@/src/types"
+import {
+  useAdminSeller,
+  useAdminSellerProducts,
+  useApproveSeller,
+  useRejectSeller,
+  useSuspendSeller,
+  useUpdateSellerCommission,
+} from "@/src/hooks/useAdminDetail"
 import {
   ADMIN_SELLER_STATUS_LABEL as sellerStatusLabel,
   ADMIN_SELLER_DETAIL_STATUS_COLOR as sellerStatusColor,
@@ -24,110 +25,69 @@ import { toast } from "sonner"
 export default function AdminSellerDetailView() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
-  const [seller, setSeller] = useState<AdminSellerDetail | null>(null)
-  const [products, setProducts] = useState<AdminProductListItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [actionLoading, setActionLoading] = useState(false)
+  const { data: seller, isLoading } = useAdminSeller(id)
+  const { data: products = [] } = useAdminSellerProducts(seller)
+  const approve = useApproveSeller()
+  const reject = useRejectSeller()
+  const suspend = useSuspendSeller()
+  const commission = useUpdateSellerCommission()
+  const actionLoading = approve.isPending || reject.isPending || suspend.isPending
+  const commissionSaving = commission.isPending
+
   const [rejectReason, setRejectReason] = useState("")
   const [suspendReason, setSuspendReason] = useState("")
   const [showRejectInput, setShowRejectInput] = useState(false)
   const [showSuspendInput, setShowSuspendInput] = useState(false)
   const [commissionInput, setCommissionInput] = useState("")
-  const [commissionSaving, setCommissionSaving] = useState(false)
 
-  const load = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const data = await AdminService.getSeller(id)
-      setSeller(data)
-      setCommissionInput(data.commissionRate != null ? String(data.commissionRate) : "")
-      // fetch all products and filter by this seller (no server-side seller filter available)
-      AdminService.listProducts({ page: 0, size: 200 })
-        .then((res) => {
-          const sellerProducts = (res.items ?? []).filter(
-            (p) => p.sellerId === data.id || p.sellerId === data.userId
-          )
-          setProducts(sellerProducts)
-        })
-        .catch(() => {})
-    } catch {
-      toast.error("Verkäufer konnte nicht geladen werden.")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [id])
-
-  const runEffect = useEffectEvent(() => {
-    load()
+  // Seed the commission field from the loaded seller (useEffectEvent keeps the
+  // set-state-in-effect lint rule happy, as in useAdminList).
+  const seedCommission = useEffectEvent(() => {
+    if (seller)
+      setCommissionInput(seller.commissionRate != null ? String(seller.commissionRate) : "")
   })
   useEffect(() => {
-    runEffect()
-  }, [load])
+    seedCommission()
+  }, [seller])
 
-  const handleApprove = async () => {
-    if (!seller) return
-    setActionLoading(true)
-    try {
-      await AdminService.approveSellerProfile(seller.id)
-      toast.success(`"${seller.companyName}" genehmigt.`)
-      load()
-    } catch {
-      toast.error("Fehler beim Genehmigen.")
-    } finally {
-      setActionLoading(false)
-    }
+  const handleApprove = () => {
+    if (seller) approve.mutate({ id: seller.id, companyName: seller.companyName })
   }
 
-  const handleReject = async () => {
+  const handleReject = () => {
     if (!seller || !rejectReason.trim()) return
-    setActionLoading(true)
-    try {
-      await AdminService.rejectSellerProfile(seller.id, rejectReason.trim())
-      toast.success(`"${seller.companyName}" abgelehnt.`)
-      setShowRejectInput(false)
-      setRejectReason("")
-      load()
-    } catch {
-      toast.error("Fehler beim Ablehnen.")
-    } finally {
-      setActionLoading(false)
-    }
+    reject.mutate(
+      { id: seller.id, companyName: seller.companyName, reason: rejectReason.trim() },
+      {
+        onSuccess: () => {
+          setShowRejectInput(false)
+          setRejectReason("")
+        },
+      }
+    )
   }
 
-  const handleSaveCommission = async () => {
+  const handleSaveCommission = () => {
     if (!seller) return
     const rate = Number(commissionInput.replace(",", "."))
     if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
       toast.error("Bitte einen Prozentsatz zwischen 0 und 100 eingeben.")
       return
     }
-    setCommissionSaving(true)
-    try {
-      const updated = await AdminService.updateSellerCommission(seller.id, rate)
-      setSeller(updated)
-      setCommissionInput(String(updated.commissionRate))
-      toast.success(`Provision auf ${updated.commissionRate} % gesetzt.`)
-    } catch {
-      toast.error("Provision konnte nicht gespeichert werden.")
-    } finally {
-      setCommissionSaving(false)
-    }
+    commission.mutate({ id: seller.id, rate })
   }
 
-  const handleSuspend = async () => {
+  const handleSuspend = () => {
     if (!seller || !suspendReason.trim()) return
-    setActionLoading(true)
-    try {
-      await AdminService.suspendSellerProfile(seller.id, suspendReason.trim())
-      toast.success(`"${seller.companyName}" gesperrt.`)
-      setShowSuspendInput(false)
-      setSuspendReason("")
-      load()
-    } catch {
-      toast.error("Fehler beim Sperren.")
-    } finally {
-      setActionLoading(false)
-    }
+    suspend.mutate(
+      { id: seller.id, companyName: seller.companyName, reason: suspendReason.trim() },
+      {
+        onSuccess: () => {
+          setShowSuspendInput(false)
+          setSuspendReason("")
+        },
+      }
+    )
   }
 
   if (isLoading) {

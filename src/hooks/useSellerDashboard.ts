@@ -1,0 +1,158 @@
+"use client"
+
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
+import { SellerOrderService } from "@/src/services/seller-order.service"
+import { CertificateService } from "@/src/services/certificate.service"
+import { SellerProfileService } from "@/src/services/seller-profile.service"
+import { SellerValueProfileService } from "@/src/services/seller-value-profile.service"
+import { ApiError } from "@/src/lib/api-client"
+import type { SellerCertificateCreateDTO } from "@/src/types"
+
+// Derive the mutation input types straight from the service signatures — these
+// endpoints have no exported DTO type, and inferring avoids drift.
+type SellerProfileUpdateInput = Parameters<typeof SellerProfileService.update>[0]
+type SellerValueProfileUpsertInput = Parameters<typeof SellerValueProfileService.upsert>[0]
+
+/**
+ * TanStack-Query hooks for the seller dashboard tabs (#35). Replaces the manual
+ * useState/useEffect `fetchX()` each tab used to carry: queries give caching and
+ * background refetch, mutations invalidate the matching query so the list
+ * refreshes without hand-rolled reload calls.
+ */
+
+export const sellerKeys = {
+  orders: ["seller", "orders"] as const,
+  certificates: ["seller", "certificates"] as const,
+  settlements: ["seller", "settlements"] as const,
+  profile: ["seller", "profile"] as const,
+  valueProfile: ["seller", "value-profile"] as const,
+}
+
+const STALE = 30 * 1000
+
+// ── Orders ────────────────────────────────────────────────────────────────────
+
+export function useSellerOrders() {
+  return useQuery({
+    queryKey: sellerKeys.orders,
+    queryFn: async () => (await SellerOrderService.list({ size: 100 })).items,
+    staleTime: STALE,
+  })
+}
+
+export function useUpdateSellerOrderStatus() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ groupId, status }: { groupId: string; status: string }) =>
+      SellerOrderService.updateStatus(groupId, status),
+    onSuccess: () => {
+      toast.success("Status aktualisiert.")
+      void queryClient.invalidateQueries({ queryKey: sellerKeys.orders })
+    },
+    onError: () => toast.error("Status konnte nicht geändert werden."),
+  })
+}
+
+export function useDeliverSellerOrder() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (groupId: string) => SellerOrderService.deliver(groupId),
+    onSuccess: () => {
+      toast.success("Als geliefert markiert.")
+      void queryClient.invalidateQueries({ queryKey: sellerKeys.orders })
+    },
+    onError: () => toast.error("Fehler beim Aktualisieren."),
+  })
+}
+
+// ── Certificates ──────────────────────────────────────────────────────────────
+
+export function useSellerCertificates() {
+  return useQuery({
+    queryKey: sellerKeys.certificates,
+    queryFn: async () => {
+      const data = await CertificateService.sellerList()
+      return Array.isArray(data) ? data : []
+    },
+    staleTime: STALE,
+  })
+}
+
+export function useCreateSellerCertificate() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (dto: SellerCertificateCreateDTO) => CertificateService.sellerCreate(dto),
+    onSuccess: () => {
+      toast.success("Zertifikat erstellt und zur Prüfung eingereicht.")
+      void queryClient.invalidateQueries({ queryKey: sellerKeys.certificates })
+    },
+    onError: () => toast.error("Fehler beim Erstellen."),
+  })
+}
+
+// ── Settlements ───────────────────────────────────────────────────────────────
+
+export function useSellerSettlements() {
+  return useQuery({
+    queryKey: sellerKeys.settlements,
+    queryFn: () => SellerOrderService.listSettlements(),
+    staleTime: STALE,
+  })
+}
+
+// ── Company profile ───────────────────────────────────────────────────────────
+
+export function useSellerProfile() {
+  return useQuery({
+    queryKey: sellerKeys.profile,
+    queryFn: () => SellerProfileService.get(),
+    staleTime: STALE,
+  })
+}
+
+export function useUpdateSellerProfile() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (dto: SellerProfileUpdateInput) => SellerProfileService.update(dto),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(sellerKeys.profile, updated)
+      toast.success("Firmenprofil gespeichert.")
+    },
+    onError: () => toast.error("Firmenprofil konnte nicht gespeichert werden."),
+  })
+}
+
+// ── Sustainability value profile ──────────────────────────────────────────────
+
+/**
+ * The value profile is optional: the backend answers 404 when the seller has
+ * not created one yet. That is a normal state, not an error, so the query maps
+ * 404 → null and lets every other failure surface as an error.
+ */
+export function useSellerValueProfile() {
+  return useQuery({
+    queryKey: sellerKeys.valueProfile,
+    queryFn: async () => {
+      try {
+        return await SellerValueProfileService.get()
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 404) return null
+        throw err
+      }
+    },
+    staleTime: STALE,
+  })
+}
+
+export function useUpsertSellerValueProfile() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (dto: SellerValueProfileUpsertInput) => SellerValueProfileService.upsert(dto),
+    onSuccess: (updated) => {
+      queryClient.setQueryData(sellerKeys.valueProfile, updated)
+      toast.success("Nachhaltigkeitsprofil gespeichert.")
+    },
+    onError: () => toast.error("Nachhaltigkeitsprofil konnte nicht gespeichert werden."),
+  })
+}

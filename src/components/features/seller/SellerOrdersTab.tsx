@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useEffectEvent } from "@/src/hooks/use-effect-event"
+import { useState } from "react"
 import { Truck, BarChart3, RefreshCw, Loader2, ChevronRight, DollarSign } from "lucide-react"
-import { SellerOrderService } from "@/src/services/seller-order.service"
+import {
+  useSellerOrders,
+  useUpdateSellerOrderStatus,
+  useDeliverSellerOrder,
+} from "@/src/hooks/useSellerDashboard"
 import type { OrderGroupDetail } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
-import { toast } from "sonner"
 import { StatusBadge } from "@/src/components/shared"
 import { orderStatusLabel, orderStatusColor } from "./sellerDashboard.constants"
 import SellerKpiCard from "./SellerKpiCard"
@@ -14,49 +16,11 @@ import SellerOrderDetailDrawer from "./SellerOrderDetailDrawer"
 import SellerShipModal from "./SellerShipModal"
 
 export default function SellerOrdersTab() {
-  const [orders, setOrders] = useState<OrderGroupDetail[]>([])
-  const [ordersLoading, setOrdersLoading] = useState(false)
+  const { data: orders = [], isFetching, refetch } = useSellerOrders()
+  const updateStatus = useUpdateSellerOrderStatus()
+  const deliver = useDeliverSellerOrder()
   const [selectedOrder, setSelectedOrder] = useState<OrderGroupDetail | null>(null)
   const [shipModalGroupId, setShipModalGroupId] = useState<string | null>(null)
-
-  const fetchOrders = useCallback(async () => {
-    setOrdersLoading(true)
-    try {
-      const data = await SellerOrderService.list({ size: 100 })
-      setOrders(data.items)
-    } catch {
-      toast.error("Bestellungen konnten nicht geladen werden.")
-    } finally {
-      setOrdersLoading(false)
-    }
-  }, [])
-
-  const runOrdersEffect = useEffectEvent(() => {
-    fetchOrders()
-  })
-  useEffect(() => {
-    runOrdersEffect()
-  }, [fetchOrders])
-
-  const handleOrderStatus = async (groupId: string, status: string) => {
-    try {
-      await SellerOrderService.updateStatus(groupId, status)
-      toast.success("Status aktualisiert.")
-      fetchOrders()
-    } catch {
-      toast.error("Status konnte nicht geändert werden.")
-    }
-  }
-
-  const handleDeliver = async (groupId: string) => {
-    try {
-      await SellerOrderService.deliver(groupId)
-      toast.success("Als geliefert markiert.")
-      fetchOrders()
-    } catch {
-      toast.error("Fehler beim Aktualisieren.")
-    }
-  }
 
   const pendingCount = orders.filter(
     (o) => o.status === "CONFIRMED" || o.status === "PENDING"
@@ -94,14 +58,14 @@ export default function SellerOrdersTab() {
         <div className="flex items-center justify-between border-b border-border p-6">
           <h2 className="text-xl font-semibold text-foreground">Eingehende Bestellungen</h2>
           <button
-            onClick={fetchOrders}
+            onClick={() => void refetch()}
             className="text-muted-foreground transition-colors hover:text-foreground"
           >
-            <RefreshCw className={`h-4 w-4 ${ordersLoading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
           </button>
         </div>
 
-        {ordersLoading ? (
+        {isFetching && orders.length === 0 ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-green-600" />
           </div>
@@ -154,11 +118,11 @@ export default function SellerOrdersTab() {
           group={selectedOrder}
           onClose={() => setSelectedOrder(null)}
           onStatusChange={(groupId, status) => {
-            handleOrderStatus(groupId, status)
+            updateStatus.mutate({ groupId, status })
             setSelectedOrder(null)
           }}
           onDeliver={(groupId) => {
-            handleDeliver(groupId)
+            deliver.mutate(groupId)
             setSelectedOrder(null)
           }}
           onShip={(groupId) => {
@@ -173,7 +137,7 @@ export default function SellerOrdersTab() {
           onClose={() => setShipModalGroupId(null)}
           onDone={() => {
             setShipModalGroupId(null)
-            fetchOrders()
+            void refetch()
           }}
         />
       )}

@@ -2,9 +2,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest"
 import { CartService } from "./cart.service"
 import * as apiClient from "@/src/lib/api-client"
 
-vi.mock("@/src/lib/api-client", () => ({
-  apiRequest: vi.fn(),
-}))
+vi.mock("@/src/lib/api-client", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/src/lib/api-client")>()
+  return { ...actual, apiRequest: vi.fn() }
+})
 
 const mockApiRequest = apiClient.apiRequest as ReturnType<typeof vi.fn>
 
