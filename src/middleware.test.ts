@@ -178,9 +178,29 @@ describe("Content-Security-Policy (#33)", () => {
     expect(imgSrc).toContain("'self'")
   })
 
-  it("carries a per-request nonce in script-src", () => {
-    const policy = csp(middleware(request(`http://${BUYER_HOST}/`, BUYER_HOST)))
+  it("carries a per-request nonce in script-src on authenticated routes (#37)", () => {
+    // A protected buyer route stays dynamically rendered and nonce-based.
+    const policy = csp(
+      middleware(request(`http://${BUYER_HOST}/orders`, BUYER_HOST, { withMarker: true }))
+    )
     expect(policy).toMatch(/script-src[^;]*'nonce-[a-f0-9]+'/)
+    expect(policy).not.toContain("script-src 'self' 'unsafe-inline'")
+  })
+
+  it("serves public shop routes a nonce-free 'unsafe-inline' script-src (#37)", () => {
+    // Public routes render statically/ISR — no per-request nonce, so script-src
+    // falls back to 'unsafe-inline' (scoped relaxation; see buildCsp).
+    for (const path of ["/", "/product", "/about", "/impressum", "/cart"]) {
+      const policy = csp(middleware(request(`http://${BUYER_HOST}${path}`, BUYER_HOST)))
+      const scriptSrc = policy.split(";").find((d) => d.trim().startsWith("script-src")) ?? ""
+      expect(scriptSrc).toContain("'unsafe-inline'")
+      expect(scriptSrc).not.toContain("nonce-")
+    }
+  })
+
+  it("keeps the nonce on the admin/seller portals even at their root (#37)", () => {
+    const adminPolicy = csp(middleware(request(`http://${ADMIN_HOST}/admin`, ADMIN_HOST)))
+    expect(adminPolicy).toMatch(/script-src[^;]*'nonce-[a-f0-9]+'/)
   })
 
   it("denies framing and upgrades insecure subresources (#172)", () => {

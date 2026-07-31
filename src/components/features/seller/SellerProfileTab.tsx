@@ -1,13 +1,15 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useEffect, useState } from "react"
 import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { Loader2, Building2, Sparkles } from "lucide-react"
-import { SellerProfileService } from "@/src/services/seller-profile.service"
-import { SellerValueProfileService } from "@/src/services/seller-value-profile.service"
-import type { SellerProfile, SellerStatus, SellerValueProfileLevel } from "@/src/types"
-import { toast } from "sonner"
-import { ApiError } from "@/src/lib/api-client"
+import {
+  useSellerProfile,
+  useUpdateSellerProfile,
+  useSellerValueProfile,
+  useUpsertSellerValueProfile,
+} from "@/src/hooks/useSellerDashboard"
+import type { SellerStatus, SellerValueProfileLevel } from "@/src/types"
 
 const STATUS_LABEL: Record<SellerStatus, string> = {
   PENDING: "Ausstehend",
@@ -29,108 +31,38 @@ const LEVEL_OPTIONS: { value: SellerValueProfileLevel; label: string }[] = [
   { value: "LEVEL_3", label: "Level 3" },
 ]
 
-interface ValueProfileState {
-  level: SellerValueProfileLevel
-  payload: string
-  score: number | null
-}
-
 export default function SellerProfileTab() {
-  // ── Company profile state ──
-  const [profile, setProfile] = useState<SellerProfile | null>(null)
-  const [profileLoading, setProfileLoading] = useState(true)
-  const [profileSaving, setProfileSaving] = useState(false)
+  // ── Company profile ──
+  const { data: profile, isLoading: profileLoading } = useSellerProfile()
+  const updateProfile = useUpdateSellerProfile()
   const [companyName, setCompanyName] = useState("")
 
-  // ── Value profile state ──
-  const [valueProfile, setValueProfile] = useState<ValueProfileState>({
-    level: "STANDARD",
-    payload: "",
-    score: null,
-  })
-  const [valueProfileLoading, setValueProfileLoading] = useState(true)
-  const [valueProfileSaving, setValueProfileSaving] = useState(false)
-  const [hasValueProfile, setHasValueProfile] = useState(false)
-
-  // ── Fetch company profile ──
-  const fetchProfile = useCallback(async () => {
-    setProfileLoading(true)
-    try {
-      const data = await SellerProfileService.get()
-      setProfile(data)
-      setCompanyName(data.companyName ?? "")
-    } catch {
-      toast.error("Firmenprofil konnte nicht geladen werden.")
-    } finally {
-      setProfileLoading(false)
-    }
-  }, [])
-
-  // ── Fetch value profile ──
-  const fetchValueProfile = useCallback(async () => {
-    setValueProfileLoading(true)
-    try {
-      const data = await SellerValueProfileService.get()
-      setValueProfile({
-        level: data.level,
-        payload: (data.payload as string) ?? "",
-        score: data.score ?? null,
-      })
-      setHasValueProfile(true)
-    } catch (err: unknown) {
-      if (err instanceof ApiError && err.status === 404) {
-        setHasValueProfile(false)
-      } else {
-        toast.error("Nachhaltigkeitsprofil konnte nicht geladen werden.")
-      }
-    } finally {
-      setValueProfileLoading(false)
-    }
-  }, [])
-
-  const runProfileEffect = useEffectEvent(() => {
-    fetchProfile()
-    fetchValueProfile()
+  // Seed the editable field from the loaded profile (and any post-save refresh).
+  // Wrapped in useEffectEvent so the set-state-in-effect lint rule stays happy —
+  // same pattern the admin-list hooks use for load().
+  const seedCompany = useEffectEvent(() => {
+    if (profile) setCompanyName(profile.companyName ?? "")
   })
   useEffect(() => {
-    runProfileEffect()
-  }, [fetchProfile, fetchValueProfile])
+    seedCompany()
+  }, [profile])
 
-  // ── Save company profile ──
-  const handleProfileSave = async () => {
-    setProfileSaving(true)
-    try {
-      const updated = await SellerProfileService.update({ companyName })
-      setProfile(updated)
-      toast.success("Firmenprofil gespeichert.")
-    } catch {
-      toast.error("Firmenprofil konnte nicht gespeichert werden.")
-    } finally {
-      setProfileSaving(false)
-    }
-  }
+  // ── Sustainability value profile (404 → not created yet) ──
+  const { data: valueProfile, isLoading: valueProfileLoading } = useSellerValueProfile()
+  const upsertValueProfile = useUpsertSellerValueProfile()
+  const hasValueProfile = valueProfile != null
+  const [level, setLevel] = useState<SellerValueProfileLevel>("STANDARD")
+  const [payload, setPayload] = useState("")
 
-  // ── Save value profile ──
-  const handleValueProfileSave = async () => {
-    setValueProfileSaving(true)
-    try {
-      const updated = await SellerValueProfileService.upsert({
-        level: valueProfile.level,
-        payload: valueProfile.payload || undefined,
-      })
-      setValueProfile({
-        level: updated.level,
-        payload: (updated.payload as string) ?? "",
-        score: updated.score ?? null,
-      })
-      setHasValueProfile(true)
-      toast.success("Nachhaltigkeitsprofil gespeichert.")
-    } catch {
-      toast.error("Nachhaltigkeitsprofil konnte nicht gespeichert werden.")
-    } finally {
-      setValueProfileSaving(false)
+  const seedValueProfile = useEffectEvent(() => {
+    if (valueProfile) {
+      setLevel(valueProfile.level)
+      setPayload((valueProfile.payload as string) ?? "")
     }
-  }
+  })
+  useEffect(() => {
+    seedValueProfile()
+  }, [valueProfile])
 
   return (
     <div className="space-y-6">
@@ -198,11 +130,11 @@ export default function SellerProfileTab() {
 
             <div className="pt-2">
               <button
-                onClick={handleProfileSave}
-                disabled={profileSaving}
+                onClick={() => updateProfile.mutate({ companyName })}
+                disabled={updateProfile.isPending}
                 className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-50"
               >
-                {profileSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                {updateProfile.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                 Speichern
               </button>
             </div>
@@ -236,13 +168,8 @@ export default function SellerProfileTab() {
               </label>
               <select
                 id="level"
-                value={valueProfile.level}
-                onChange={(e) =>
-                  setValueProfile({
-                    ...valueProfile,
-                    level: e.target.value as SellerValueProfileLevel,
-                  })
-                }
+                value={level}
+                onChange={(e) => setLevel(e.target.value as SellerValueProfileLevel)}
                 className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-500"
               >
                 {LEVEL_OPTIONS.map((opt) => (
@@ -260,8 +187,8 @@ export default function SellerProfileTab() {
               </label>
               <textarea
                 id="payload"
-                value={valueProfile.payload}
-                onChange={(e) => setValueProfile({ ...valueProfile, payload: e.target.value })}
+                value={payload}
+                onChange={(e) => setPayload(e.target.value)}
                 rows={4}
                 placeholder="Optionale Angaben zu Ihrem Nachhaltigkeitskonzept ..."
                 className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-500"
@@ -272,17 +199,17 @@ export default function SellerProfileTab() {
             <div>
               <label className="mb-1 block text-sm font-medium text-foreground">Score</label>
               <p className="rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground">
-                {valueProfile.score != null ? valueProfile.score : "Noch nicht berechnet"}
+                {valueProfile?.score != null ? valueProfile.score : "Noch nicht berechnet"}
               </p>
             </div>
 
             <div className="pt-2">
               <button
-                onClick={handleValueProfileSave}
-                disabled={valueProfileSaving}
+                onClick={() => upsertValueProfile.mutate({ level, payload: payload || undefined })}
+                disabled={upsertValueProfile.isPending}
                 className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-50"
               >
-                {valueProfileSaving && <Loader2 className="h-4 w-4 animate-spin" />}
+                {upsertValueProfile.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                 Speichern
               </button>
             </div>

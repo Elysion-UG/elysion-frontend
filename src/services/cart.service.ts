@@ -1,37 +1,40 @@
+import { z } from "zod"
 import { apiRequest } from "@/src/lib/api-client"
+import { parseApiResponse } from "@/src/lib/api-schemas"
 import type { Cart, AddToCartDTO, UpdateCartItemDTO } from "@/src/types"
 
-// Raw shape returned by GET /api/v1/cart
-interface ApiCartItem {
-  id: string
-  product: {
-    id: string
-    slug: string
-    name: string
-    primaryImage: string | null
-  }
-  variant: {
-    id: string
-    sku: string
-  } | null
-  quantity: number
-  unitPrice: number
-  currency: string
-  lineTotal: number
-  createdAt: string
-  updatedAt: string
-}
+// Raw shape returned by GET /api/v1/cart. Zod mirrors the interface exactly and
+// is validated at the boundary so a drifted cart response fails loud rather than
+// rendering an incomplete cart (missing name/image/price) deep in the UI (#38).
+const apiCartItemSchema = z.object({
+  id: z.string(),
+  product: z.object({
+    id: z.string(),
+    slug: z.string(),
+    name: z.string(),
+    primaryImage: z.string().nullable(),
+  }),
+  variant: z.object({ id: z.string(), sku: z.string() }).nullable(),
+  quantity: z.number(),
+  unitPrice: z.number(),
+  currency: z.string(),
+  lineTotal: z.number(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
 
-interface ApiCart {
-  id: string
-  ownershipType: string
-  totalQuantity: number
-  subtotal: number
-  currency: string
-  items: ApiCartItem[]
-  createdAt: string
-  updatedAt: string
-}
+const apiCartSchema = z.object({
+  id: z.string(),
+  ownershipType: z.string(),
+  totalQuantity: z.number(),
+  subtotal: z.number(),
+  currency: z.string(),
+  items: z.array(apiCartItemSchema),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+type ApiCart = z.infer<typeof apiCartSchema>
 
 function normalizeApiCart(api: ApiCart): Cart {
   return {
@@ -53,8 +56,8 @@ function normalizeApiCart(api: ApiCart): Cart {
 
 export const CartService = {
   async get(): Promise<Cart> {
-    const data = await apiRequest<ApiCart>("/api/v1/cart")
-    return normalizeApiCart(data)
+    const data = await apiRequest<unknown>("/api/v1/cart")
+    return normalizeApiCart(parseApiResponse(apiCartSchema, data, "cart.get"))
   },
 
   async addItem(dto: AddToCartDTO): Promise<void> {

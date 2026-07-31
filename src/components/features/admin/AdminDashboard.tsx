@@ -1,7 +1,5 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import Link from "next/link"
 import {
   Users,
@@ -15,9 +13,7 @@ import {
   DollarSign,
   Activity,
 } from "lucide-react"
-import type { AdminDashboardData } from "@/src/types"
-import { AdminService } from "@/src/services/admin.service"
-import { toast } from "sonner"
+import { useAdminDashboard } from "@/src/hooks/useAdminDashboard"
 
 // v0-Leftover-Akzent „cyber" entfernt (#83): war wertgleich mit „emerald" (beide
 // Logo-Grün) — konsolidiert auf die markenkonforme Benennung.
@@ -94,39 +90,15 @@ const QUICK_LINKS = [
 ]
 
 export default function AdminDashboard() {
-  const [data, setData] = useState<AdminDashboardData | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { data, isLoading, isError, refetch } = useAdminDashboard()
 
-  const loadDashboard = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const result = await AdminService.getDashboard()
-      setData(result)
-    } catch {
-      const msg = "Dashboard konnte nicht geladen werden."
-      setError(msg)
-      toast.error(msg)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  const runEffect = useEffectEvent(() => {
-    loadDashboard()
-  })
-  useEffect(() => {
-    runEffect()
-  }, [loadDashboard])
-
-  if (error) {
+  if (isError) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
         <AlertCircle className="h-10 w-10 text-danger" />
-        <p className="text-sm text-muted-foreground">{error}</p>
+        <p className="text-sm text-muted-foreground">Dashboard konnte nicht geladen werden.</p>
         <button
-          onClick={loadDashboard}
+          onClick={() => void refetch()}
           className="flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-green-500"
         >
           <RefreshCw className="h-4 w-4" />

@@ -1,18 +1,15 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { useParams } from "next/navigation"
 import { Package, Truck, CheckCircle2, Clock, XCircle, RotateCcw } from "lucide-react"
-import { AdminService } from "@/src/services/admin.service"
-import type { AdminOrderDetail, AdminOrderGroup, OrderStatus } from "@/src/types"
+import { useAdminOrder } from "@/src/hooks/useAdminDetail"
+import type { AdminOrderGroup, OrderStatus } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
 import {
   ADMIN_ORDER_STATUS_LABEL as statusLabel,
   ADMIN_ORDER_GROUP_STATUS_LABEL as groupStatusLabel,
 } from "@/src/lib/constants"
 import { BackButton, LoadingFullPage, StatusBadge } from "@/src/components/shared"
-import { toast } from "sonner"
 
 // Ordered steps for the progress track (excludes terminal states CANCELLED/REFUNDED)
 const ORDER_STEPS: OrderStatus[] = [
@@ -181,27 +178,7 @@ function GroupCard({ group }: { group: AdminOrderGroup }) {
 
 export default function AdminOrderDetailView() {
   const { id } = useParams<{ id: string }>()
-  const [order, setOrder] = useState<AdminOrderDetail | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  const load = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const data = await AdminService.getOrder(id)
-      setOrder(data)
-    } catch {
-      toast.error("Bestellung konnte nicht geladen werden.")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [id])
-
-  const runEffect = useEffectEvent(() => {
-    load()
-  })
-  useEffect(() => {
-    runEffect()
-  }, [load])
+  const { data: order, isLoading } = useAdminOrder(id)
 
   if (isLoading) {
     return <LoadingFullPage />

@@ -54,11 +54,12 @@ const fontVariables = [
   fontMono.variable,
 ].join(" ")
 
-// Nonce-basierte CSP (src/middleware.ts) erfordert dynamisches Rendering:
-// Statisch vorgerenderte Seiten entstehen zur Build-Zeit ohne Request-Nonce,
-// deren Inline-Bootstrap-Scripts werden dann vom Browser blockiert und die
-// Hydration startet nie (FE#23). Datenbeschaffung ist ohnehin client-seitig.
-export const dynamic = "force-dynamic"
+// Kein globales `force-dynamic` mehr (#37): der Root-Layout zwang bisher JEDE
+// Route ins Per-Request-SSR, nur damit die nonce-basierte CSP griff. Stattdessen
+// ist die Nonce jetzt routen-abhängig (src/middleware.ts): die authentifizierten
+// Segmente (auth)/(admin)/(seller)/(buyer) setzen `force-dynamic` lokal und
+// behalten die strikte Nonce-CSP; die (public)-Routen bekommen eine nonce-freie
+// CSP und dürfen so statisch/ISR ausgeliefert werden (TTFB/SEO/CDN).
 
 const SITE_NAME = "Elysion"
 const SITE_DESCRIPTION = "Marktplatz für nachhaltig zertifizierte Produkte"
