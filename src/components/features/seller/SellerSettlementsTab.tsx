@@ -1,6 +1,6 @@
 "use client"
 
-import { DollarSign, RefreshCw, Loader2 } from "lucide-react"
+import { DollarSign, RefreshCw, Loader2, Info } from "lucide-react"
 import { useSellerSettlements } from "@/src/hooks/useSellerDashboard"
 import { formatEuro } from "@/src/lib/currency"
 import {
@@ -28,19 +28,35 @@ export default function SellerSettlementsTab() {
       <SellerPayoutAccountCard />
 
       <div className="rounded-xl border border-border bg-white">
-        <div className="flex items-center justify-between border-b border-border p-6">
+        <div className="flex items-start justify-between gap-4 border-b border-border p-6">
           <div>
-            <h2 className="text-xl font-semibold text-foreground">Abrechnungen</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="text-xl font-semibold text-foreground">Abrechnungen</h2>
+              <span className="rounded-full bg-warning-tint px-2 py-0.5 text-xs font-medium text-warning">
+                Vorläufig · unverbindlich
+              </span>
+            </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              Auszahlungen erfolgen monatlich, sobald die Bestellung als geliefert gilt.
+              Laufende Übersicht der auszahlungsfähigen Beträge.
             </p>
           </div>
           <button
             onClick={() => void refetch()}
-            className="text-muted-foreground transition-colors hover:text-foreground"
+            className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
           >
             <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
           </button>
+        </div>
+
+        {/* Verbindlichkeits-Hinweis (Management-Decision §1.7) */}
+        <div className="flex items-start gap-3 border-b border-border bg-info-tint/40 px-6 py-4 text-sm text-foreground">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-info" />
+          <p>
+            Diese Übersicht ist <strong>vorläufig und unverbindlich</strong>. Verbindlich ist
+            ausschließlich der wöchentliche Settlement-Bericht nach Ablauf der Einspruchsfrist (7
+            Tage); nachträgliche Rückbuchungen oder Korrekturen werden mit dem nächsten Settlement
+            verrechnet.
+          </p>
         </div>
 
         {isFetching && settlements.length === 0 ? (
