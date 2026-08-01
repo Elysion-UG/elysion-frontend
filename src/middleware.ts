@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { DEFAULT_BACKEND_HOST } from "@/src/lib/constants/backend-host.mjs"
+import { resolveBackendHost } from "@/src/lib/constants/backend-host.mjs"
 import { SESSION_MARKER_COOKIE } from "@/src/lib/auth/session-marker"
 import { loginPathWithRedirect } from "@/src/lib/auth/redirect-param"
 
@@ -189,7 +189,7 @@ const isDev = process.env.NODE_ENV !== "production"
 
 // Backend host for img-src / connect-src. Default lives in a single shared
 // constant (see backend-host.mjs); override via NEXT_PUBLIC_BACKEND_HOST.
-const BACKEND_HOST = process.env.NEXT_PUBLIC_BACKEND_HOST || DEFAULT_BACKEND_HOST
+const BACKEND_HOST = resolveBackendHost()
 const BACKEND_ORIGIN = `https://${BACKEND_HOST}`
 
 // script-src is nonce-based for dynamically-rendered routes (portals + auth),

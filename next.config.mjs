@@ -1,11 +1,12 @@
 /** @type {import('next').NextConfig} */
-import { DEFAULT_BACKEND_HOST } from "./src/lib/constants/backend-host.mjs"
+import { resolveBackendHost } from "./src/lib/constants/backend-host.mjs"
 
 const devHostIp = process.env.NEXT_PUBLIC_DEV_HOST_IP
 
-// Backend host for image remotePatterns. Default lives in a single shared
-// constant (see backend-host.mjs); override via NEXT_PUBLIC_BACKEND_HOST.
-const backendHost = process.env.NEXT_PUBLIC_BACKEND_HOST || DEFAULT_BACKEND_HOST
+// Backend host for image remotePatterns. Resolved via the shared helper, which
+// fails fast on a production deployment when NEXT_PUBLIC_BACKEND_HOST is unset
+// instead of silently falling back to the staging backend (F5, #145).
+const backendHost = resolveBackendHost()
 
 // Content-Security-Policy is set per-request in src/middleware.ts so it can
 // include a fresh nonce. Static, non-nonce headers remain here.
