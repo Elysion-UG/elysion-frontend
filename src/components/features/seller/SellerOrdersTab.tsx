@@ -9,6 +9,7 @@ import {
 } from "@/src/hooks/useSellerDashboard"
 import type { OrderGroupDetail } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
+import { computeShippingSla, formatSlaRemaining } from "@/src/lib/shipping-sla"
 import { StatusBadge } from "@/src/components/shared"
 import { orderStatusLabel, orderStatusColor } from "./sellerDashboard.constants"
 import SellerKpiCard from "./SellerKpiCard"
@@ -55,11 +56,17 @@ export default function SellerOrdersTab() {
         </div>
       )}
       <div className="rounded-xl border border-border bg-white">
-        <div className="flex items-center justify-between border-b border-border p-6">
-          <h2 className="text-xl font-semibold text-foreground">Eingehende Bestellungen</h2>
+        <div className="flex items-start justify-between gap-4 border-b border-border p-6">
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">Eingehende Bestellungen</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Versandfrist: binnen 48 h nach Zahlungseingang versenden. Überfällige Bestellungen
+              sind rot markiert.
+            </p>
+          </div>
           <button
             onClick={() => void refetch()}
-            className="text-muted-foreground transition-colors hover:text-foreground"
+            className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
           >
             <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
           </button>
@@ -76,39 +83,54 @@ export default function SellerOrdersTab() {
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {orders.map((group) => (
-              <button
-                key={group.orderGroupId}
-                onClick={() => setSelectedOrder(group)}
-                className="w-full p-5 text-left transition-colors hover:bg-secondary"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-mono text-xs text-muted-foreground">
-                      #{group.orderId?.slice(0, 8)}
-                    </p>
-                    <p className="mt-0.5 text-sm font-semibold text-foreground">
-                      {group.items?.length ?? 0} Artikel · {formatEuro(group.totalAmount ?? 0)}
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {new Date(group.createdAt).toLocaleDateString("de-DE", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                      })}
-                    </p>
+            {orders.map((group) => {
+              const sla = computeShippingSla(group.createdAt, group.status)
+              return (
+                <button
+                  key={group.orderGroupId}
+                  onClick={() => setSelectedOrder(group)}
+                  className="w-full p-5 text-left transition-colors hover:bg-secondary"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-mono text-xs text-muted-foreground">
+                        #{group.orderId?.slice(0, 8)}
+                      </p>
+                      <p className="mt-0.5 text-sm font-semibold text-foreground">
+                        {group.items?.length ?? 0} Artikel · {formatEuro(group.totalAmount ?? 0)}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {new Date(group.createdAt).toLocaleDateString("de-DE", {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end gap-1.5">
+                      <div className="flex items-center gap-2">
+                        <StatusBadge
+                          label={orderStatusLabel[group.status]}
+                          colorClasses={orderStatusColor[group.status]}
+                          className="px-2.5 py-1"
+                        />
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      {sla.applies && (
+                        <StatusBadge
+                          label={formatSlaRemaining(sla.remainingMs)}
+                          colorClasses={
+                            sla.isOverdue
+                              ? "bg-danger-tint text-danger"
+                              : "bg-warning-tint text-warning"
+                          }
+                        />
+                      )}
+                    </div>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <StatusBadge
-                      label={orderStatusLabel[group.status]}
-                      colorClasses={orderStatusColor[group.status]}
-                      className="px-2.5 py-1"
-                    />
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              )
+            })}
           </div>
         )}
       </div>

@@ -1,9 +1,10 @@
 "use client"
 
-import { Truck, CheckCircle2, X } from "lucide-react"
+import { Truck, CheckCircle2, Clock, AlertTriangle, X } from "lucide-react"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import type { OrderGroupDetail } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
+import { computeShippingSla } from "@/src/lib/shipping-sla"
 import { StatusBadge } from "@/src/components/shared"
 import { orderStatusLabel, orderStatusColor } from "./sellerDashboard.constants"
 
@@ -32,6 +33,10 @@ export default function SellerOrderDetailDrawer({
 
   const hasActions =
     group.status === "CONFIRMED" || group.status === "PROCESSING" || group.status === "SHIPPED"
+
+  // 48h-Versand-SLA (§1.6 Szenario 1) — client-seitig aus createdAt abgeleitet,
+  // bis Backend #143 ein explizites Frist-Feld liefert.
+  const sla = computeShippingSla(group.createdAt, group.status)
 
   const drawerRef = useFocusTrap(onClose)
 
@@ -77,6 +82,37 @@ export default function SellerOrderDetailDrawer({
 
         {/* Scrollable body */}
         <div className="flex-1 space-y-6 overflow-y-auto p-5">
+          {/* 48h-Versand-SLA */}
+          {sla.applies && (
+            <section
+              className={`flex items-start gap-3 rounded-lg px-4 py-3 ${
+                sla.isOverdue ? "bg-danger-tint text-danger" : "bg-warning-tint text-warning"
+              }`}
+            >
+              {sla.isOverdue ? (
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              ) : (
+                <Clock className="mt-0.5 h-4 w-4 shrink-0" />
+              )}
+              <div className="text-sm">
+                <p className="font-semibold">
+                  {sla.isOverdue ? "Versandfrist überschritten" : "48h-Versandfrist"}
+                </p>
+                <p className="mt-0.5">
+                  {sla.isOverdue ? "Fällig war " : "Bitte versenden bis "}
+                  {sla.deadline.toLocaleString("de-DE", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}{" "}
+                  Uhr.
+                </p>
+              </div>
+            </section>
+          )}
+
           {/* Buyer */}
           <section>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
