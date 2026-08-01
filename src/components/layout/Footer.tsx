@@ -5,6 +5,7 @@ import { Store, ShieldCheck } from "lucide-react"
 import { sellerUrl, adminUrl } from "@/src/lib/seller-url"
 import { useAuth } from "@/src/context/AuthContext"
 import { BrandLogo } from "@/src/components/shared/BrandLogo"
+import { PaymentMethodBadges } from "@/src/components/shared"
 
 export default function Footer() {
   const year = new Date().getFullYear()
@@ -19,11 +20,12 @@ export default function Footer() {
       {/* Trust-Band — Schild + Check zuerst (Guide 05) */}
       <div className="border-b border-white/10 bg-ink-900/30">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
             <div className="flex items-center gap-2 text-xs text-sand-page/60">
               <ShieldCheck className="h-3.5 w-3.5 text-green-500" />
               <span>Nur geprüfte, zertifizierte Produkte — jedes mit Nachweis</span>
             </div>
+            <PaymentMethodBadges tone="dark" />
           </div>
         </div>
       </div>

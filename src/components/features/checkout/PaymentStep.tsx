@@ -5,6 +5,7 @@ import { loadStripe } from "@stripe/stripe-js"
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js"
 import { Loader2, CreditCard, AlertCircle, RefreshCw } from "lucide-react"
 import { PaymentService } from "@/src/services/payment.service"
+import { PaymentMethodBadges } from "@/src/components/shared"
 import { formatEuro } from "@/src/lib/currency"
 import type { PaymentStatusResponse } from "@/src/types"
 import {
@@ -134,6 +135,10 @@ function PaymentForm({ paymentId, totalAmount, onSuccess }: PaymentFormProps) {
           Zahlungsinformationen
         </h2>
         <PaymentElement />
+        <div className="mt-4 border-t border-border pt-4">
+          <p className="mb-2 text-xs text-muted-foreground">Akzeptierte Zahlungsarten</p>
+          <PaymentMethodBadges />
+        </div>
       </div>
 
       {errorMessage && (

@@ -1,6 +1,7 @@
 export { default as Contact } from "./Contact"
 export { default as About } from "./About"
 export { default as StatusBadge } from "./StatusBadge"
+export { PaymentMethodBadges } from "./PaymentMethodBadges"
 export { BackButton } from "./BackButton"
 export { EmptyMessage } from "./EmptyMessage"
 export { LoadingFullPage } from "./LoadingFullPage"
