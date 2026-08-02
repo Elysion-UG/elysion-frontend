@@ -134,12 +134,12 @@ damit kein Drift entsteht.
 
 ## 6. Dokumentationspflichten
 
-| Änderung                         | Zu aktualisieren                                                  |
-| -------------------------------- | ----------------------------------------------------------------- |
-| API-Vertrag (Pfade, DTOs, Enums) | BE `docs/api/` + FE `docs/api-integration.md` — im selben PR-Paar |
-| Architektur-/Domain-Entscheidung | `CLAUDE.md` bzw. `docs/architecture/` / `MANAGEMENT_DECISIONS.md` |
-| Betrieb/Deployment               | BE `docs/backend/operations-runbook.md` / `deployment.md`         |
-| Diese Policy (Abschnitte 1–6)    | **Beide** `CONTRIBUTING.md` synchron ändern                       |
+| Änderung                         | Zu aktualisieren                                                     |
+| -------------------------------- | -------------------------------------------------------------------- |
+| API-Vertrag (Pfade, DTOs, Enums) | BE `docs/api/` + FE `docs/api-integration.md` — im selben PR-Paar    |
+| Architektur-/Domain-Entscheidung | `CLAUDE.md` bzw. `docs/architecture/` · FE `MANAGEMENT_DECISIONS.md` |
+| Betrieb/Deployment               | BE `docs/backend/operations-runbook.md` / `deployment.md`            |
+| Diese Policy (Abschnitte 1–6)    | **Beide** `CONTRIBUTING.md` synchron ändern                          |
 
 ---
 
