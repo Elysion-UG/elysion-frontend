@@ -64,6 +64,9 @@ const apiProductVariantSchema = z.object({
   sku: z.string().optional(),
   price: z.number().nullish(),
   stock: z.number().optional(),
+  // Backend #175: derived sellable flag on the public detail route. `stock` stays
+  // optional because only internal/seller routes ever expose raw stock levels.
+  inStock: z.boolean().optional(),
   available: z.boolean().optional(),
   imageUrls: z.array(z.string()).optional(),
   options: z.array(z.object({ type: z.string(), value: z.string() })).optional(),
@@ -170,6 +173,7 @@ export const ProductService = {
         sku: v.sku,
         price: v.price,
         stock: v.stock,
+        inStock: v.inStock,
         available: v.available,
         imageUrls: v.imageUrls,
         options: v.options,

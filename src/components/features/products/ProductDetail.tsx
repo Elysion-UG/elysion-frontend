@@ -84,10 +84,11 @@ export default function ProductDetail() {
       ? `${product.seller.firstName} ${product.seller.lastName}`
       : null)
 
-  // stock == null means the API returned no stock info → treat as available.
-  // Only mark unavailable when stock is explicitly 0.
+  // Prefer the backend's derived flag (#175). The stock fallback only applies to
+  // internal/seller routes, which still return raw levels; when neither is present
+  // we treat the variant as available — absence of info is not evidence of sold out.
   const inStock = selectedVariant
-    ? selectedVariant.stock == null || selectedVariant.stock > 0
+    ? (selectedVariant.inStock ?? (selectedVariant.stock == null || selectedVariant.stock > 0))
     : true
 
   return (
