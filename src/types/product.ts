@@ -15,7 +15,10 @@ export interface ProductVariant {
   size?: string
   color?: string
   material?: string
+  /** Raw stock level — internal/seller routes only, never on the public detail route. */
   stock?: number
+  /** Public detail route: whether this variant is currently sellable (stock − reserved > 0). */
+  inStock?: boolean
   price?: number | null
   imageUrls?: string[]
   options?: ProductVariantOption[]
@@ -56,7 +59,7 @@ export interface ProductDetail {
   seller?: ProductSeller
   sellerId?: string
   status?: ProductStatus | string
-  /** List API only: whether the product is currently sellable. Detail view derives stock from variants instead. */
+  /** List API: whether the product is currently sellable. The detail view uses the per-variant `inStock` instead. */
   inStock?: boolean
   variants?: ProductVariant[]
   certificates?: PublicCertificate[]

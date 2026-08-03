@@ -289,6 +289,19 @@ describe("ProductService", () => {
       const result = await ProductService.getBySlug("eco-shirt")
       expect(result.variants?.[0].stock).toBeUndefined()
     })
+
+    it("maps the derived inStock flag from variants", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...rawDetail,
+        variants: [
+          { id: "var_1", sku: "SKU-L", price: 29.99, inStock: false },
+          { id: "var_2", sku: "SKU-M", price: 29.99, inStock: true },
+        ],
+      })
+      const result = await ProductService.getBySlug("eco-shirt")
+      expect(result.variants?.[0].inStock).toBe(false)
+      expect(result.variants?.[1].inStock).toBe(true)
+    })
   })
 
   // ── getById ──────────────────────────────────────────────────────────
