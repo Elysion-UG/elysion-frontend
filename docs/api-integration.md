@@ -276,7 +276,36 @@ GET    /api/v1/admin/monitoring/errors/stats         → ErrorStats
 
 POST   /api/v1/admin/maintenance/expire-pending-orders   → { expiredCount }
 POST   /api/v1/admin/maintenance/cleanup-refresh-tokens  → { deletedCount }
+
+POST   /api/v1/admin/imports/products                → ProductImportReport
 ```
+
+**Produktimport (multipart).** `POST /api/v1/admin/imports/products` erwartet
+`multipart/form-data` mit `file` (CSV) und `sellerId`. Antwort ist ein zeilengenauer Report:
+
+```ts
+type ProductImportReport = {
+  totalRows: number
+  totalProducts: number
+  created: number
+  updated: number
+  skipped: number
+  failed: number
+  rows: Array<{
+    line: number // Zeilennummer wie im Tabellenprogramm (Kopfzeile = 1)
+    productRef: string
+    sku: string | null
+    status: "CREATED" | "UPDATED" | "SKIPPED_DUPLICATE" | "ERROR"
+    message: string | null
+  }>
+}
+```
+
+Wichtig für die UI: Der Import liefert **HTTP 200 auch dann, wenn einzelne Zeilen scheitern** —
+eine abgewiesene Zeile kippt den Lauf nicht. `failed > 0` muss also aus dem Body gelesen und
+angezeigt werden, nicht aus dem Statuscode. Importierte Produkte bleiben in `DRAFT`; Bilder und
+der Übergang nach `REVIEW` laufen weiter über das Verkäufer-Portal. Format und Regeln:
+Backend-Doku `docs/backend/product-csv-import.md`.
 
 Monitoring-Ingestion (`POST /api/v1/monitoring/errors`, public) ist backend-seitig
 offen — Spec: [`monitoring-api.md`](./monitoring-api.md).
@@ -376,7 +405,22 @@ POST /api/v1/seller/payout-account/onboarding-link
 ```
 
 Nach Abschluss des Connect-Onboardings meldet ein Stripe-Webhook (`account.updated`)
-das Konto serverseitig als `ACTIVE`.
+das Konto serverseitig als `ACTIVE`. **Backend-seitig umgesetzt** (BE #110).
+
+Was das für die UI bedeutet:
+
+- **Den Link nicht cachen.** Stripe Account Links sind kurzlebig und einmal verwendbar. Bei
+  jedem Klick auf „Konto verbinden" neu anfordern — auch wenn schon ein Konto existiert.
+- **Rücksprung landet auf `/seller-dashboard?tab=settlements&onboarding=return`** (bzw.
+  `…&onboarding=refresh`, wenn der Seller abbricht). Der Auszahlungen-Tab sollte den
+  Kontostatus beim Betreten neu laden — direkt nach dem Rücksprung kann noch `PENDING`
+  stehen, weil der Webhook Sekunden später eintrifft.
+- **`ACTIVE` kommt nie synchron.** `POST …/onboarding-link` liefert nur die URL; den Status
+  setzt ausschließlich der Webhook. Ein Polling nach dem Rücksprung ist der zuverlässige Weg.
+- **`RESTRICTED` ist kein Fehlerzustand der UI, sondern eine Aufgabe für den Seller** —
+  `requirementsDue` nennt die offenen Stripe-Anforderungen und sollte angezeigt werden. Das
+  Feld fehlt in der Antwort, wenn nichts offen ist.
+- `NOT_CONNECTED` ist der Normalzustand vor dem Onboarding, kein Fehler.
 
 ### Admin-Auszahlungs-Freigabe (monatlich, manuell)
 
