@@ -46,7 +46,7 @@ Mehrere Einträge weichen vom dokumentierten Stand ab:
 
 | Bereich                      | Befund                                                                                                                                                                                              | Konsequenz                                                 |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Vercel Prod-Env              | Nur `API_URL` + `AUTH_PROXY_SECRET` gesetzt. Es fehlen **alle sechs Portal-Domain-Vars**, `NEXT_PUBLIC_BACKEND_HOST` und `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`                                       | Prod bricht per Fail-fast (#168, #190) → P0.2              |
+| Vercel Prod-Env              | Nur `API_URL` + `AUTH_PROXY_SECRET` gesetzt. Es fehlen **alle sechs Portal-Domain-Vars**, `NEXT_PUBLIC_BACKEND_HOST` und `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`                                       | Prod bricht per Fail-fast (FE#168, FE-PR #190) → P0.2      |
 | Vercel Prod-Branch           | Steht bereits auf `main`                                                                                                                                                                            | ✅ **FE#14 faktisch erledigt**                             |
 | `NEXT_PUBLIC_API_URL` (prod) | Nicht mehr gesetzt — der tote Host `marketplace-backend-1-1w30` ist raus                                                                                                                            | ✅ **FE#145 faktisch erledigt**                            |
 | Vercel Domains               | **Keine eigene Domain**, nur `*.vercel.app`; für Prod existieren **keine** `admin.`/`seller.`-Hosts                                                                                                 | Blockiert Cookies, CORS, Mail-Links, Apple Pay → P0.1      |
@@ -56,7 +56,7 @@ Mehrere Einträge weichen vom dokumentierten Stand ab:
 | Stripe Connect               | Onboarding + Status-Webhook implementiert (BE#110, Commit `ec6452b`)                                                                                                                                | ✅ Voraussetzung für P1 steht                              |
 | Frontend Recht               | 27 × `[PLATZHALTER]` (Impressum 11, Datenschutz 9, AGB 5, Widerruf 2) + Firmendaten in `Contact.tsx`                                                                                                | FE#9 → P2.1                                                |
 | Frontend Versand             | `Cart.tsx:197` zeigt „Versand: wird berechnet", Gesamtpreis = nur Zwischensumme                                                                                                                     | PAngV-relevant → P3.1/P3.2                                 |
-| Frontend Payments            | Zahlarten-Badges (`PaymentMethodBadges.tsx`) und Settlement-Disclaimer sind seit #192 **da**                                                                                                        | FE#55/#58 nur noch Restarbeiten                            |
+| Frontend Payments            | Zahlarten-Badges (`PaymentMethodBadges.tsx`) und Settlement-Disclaimer sind seit FE-PR #192 **da**                                                                                                  | FE#55/#58 nur noch Restarbeiten                            |
 | Produktdaten                 | `taxRate` und `materials` existieren im Typmodell; **keine** GPSR-, LUCID-, DAC7- oder Faserzusammensetzungs-Pflichtfelder                                                                          | §8.4 als echte Code-Arbeit → P2                            |
 | Go-Live-Checkliste           | `go-live-checklist.md` beschreibt docker-compose + Caddy auf eigenem Host                                                                                                                           | Passt nicht zu Render/Vercel → P0.11                       |
 
@@ -106,10 +106,10 @@ Aufwand in Stunden reiner Umsetzungszeit (inkl. Tests und Doku-Sync, ohne Puffer
 
 | #     | Aufgabe                                                                                                             | Repo     | Issue              | h   | Definition of Done                                                   |
 | ----- | ------------------------------------------------------------------------------------------------------------------- | -------- | ------------------ | --- | -------------------------------------------------------------------- |
-| P0.1  | Domain kaufen, DNS, drei Vercel-Hosts (apex, `admin.`, `seller.`)                                                   | Infra    | —                  | 4   | Alle drei Hosts verified, HTTPS aktiv                                |
-| P0.2  | Vercel-Prod-Env vollständig: 6 Domain-Vars, `NEXT_PUBLIC_BACKEND_HOST`, `pk_live`, prod-eigenes `AUTH_PROXY_SECRET` | Infra    | FE#10              | 3   | Prod-Build startet ohne Fail-fast; Login auf allen drei Portalen     |
+| P0.1  | Domain kaufen, DNS, drei Vercel-Hosts (apex, `admin.`, `seller.`)                                                   | Infra    | FE#208             | 4   | Alle drei Hosts verified, HTTPS aktiv                                |
+| P0.2  | Vercel-Prod-Env vollständig: 6 Domain-Vars, `NEXT_PUBLIC_BACKEND_HOST`, `pk_live`, prod-eigenes `AUTH_PROXY_SECRET` | Infra    | FE#10, FE#209      | 3   | Prod-Build startet ohne Fail-fast; Login auf allen drei Portalen     |
 | P0.3  | Render-Prod-Service + **Paid-Tier-Entscheidung** (Free-Kaltstart kostet Erstbesucher)                               | Infra    | BE#122             | 5   | `/actuator/health` grün auf Prod-Domain, Deploy-Branch `main`        |
-| P0.4  | Neon-Prod-DB, **Plan-Wechsel weg von Free**, Backup/PITR, Restore-Drill                                             | Infra    | BE#122, O3         | 5   | Restore einmal geprobt und schriftlich dokumentiert                  |
+| P0.4  | Neon-Prod-DB, **Plan-Wechsel weg von Free**, Backup/PITR, Restore-Drill                                             | Infra    | BE#122, BE#192     | 5   | Restore einmal geprobt und schriftlich dokumentiert                  |
 | P0.5  | Prod-Secrets, SMTP, CORS, Cookie-Policy                                                                             | BE       | BE#119             | 6   | Verifikations-Mail kommt real an, Cookies `Secure` + korrekte Domain |
 | P0.6  | Stripe-Live-Keys + Prod-Webhook + Connect-Webhook                                                                   | BE       | BE#117, BE#118     | 5   | Testkauf live finalisiert Order, beide Webhooks 2xx                  |
 | P0.7  | Apple/Google Pay: `.well-known`-Auslieferung + Domain-Registrierung                                                 | FE+Infra | FE#55-Rest, BE#141 | 3   | Wallet-Button erscheint auf Gerät, keine toten Buttons am Desktop    |
@@ -145,7 +145,7 @@ Reihenfolge ist zwingend: Line-Items brauchen `commissionRate`, Payouts brauchen
 > (MwSt., Rechnungen) auf den Settlement-Line-Items aus P1.2/P1.6 aufsetzen.
 
 Die Punkte P2.3–P2.7 sind **§8.4-Betreiberpflichten** — sie treffen Elysion als Plattform,
-nicht die Seller, und existieren bisher in **keinem Issue**.
+nicht die Seller. Sie sind seit 2026-08-05 als Issues angelegt (FE#202–FE#205, BE#189).
 
 > **Prüfumfang bestätigt (2026-08-05):** Die anwaltliche Prüfung deckt **auch die
 > Betreiberpflichten** ab, nicht nur die Textbausteine. Damit werden P2.3–P2.7 aus einer
@@ -156,23 +156,23 @@ nicht die Seller, und existieren bisher in **keinem Issue**.
 > [`PRE_MORTEM.md`](./PRE_MORTEM.md) Szenario 2.
 >
 > **Checkpoint KW 34 — vor Beginn von P1:** Prüfergebnis gegen P2.3–P2.7 spiegeln,
-> Aufwände nachziehen, Issues aus [§6](#6-arbeitspakete-ohne-issue) mit den echten
+> Aufwände nachziehen, die Issues aus [§6](#6-neu-angelegte-issues) mit den echten
 > Anforderungen anlegen. Die 50 h für P2.3–P2.7 sind bis dahin eine Ingenieurschätzung;
 > verlangt die Prüfung mehr (zusätzliche Pflichtfelder, AV-Vertragsvorlagen,
 > Wording-Anpassungen an Produkttexten), geht das zuerst gegen den Puffer.
 
-| #     | Aufgabe                                                                                                             | Repo    | Issue | h   | Definition of Done                                            |
-| ----- | ------------------------------------------------------------------------------------------------------------------- | ------- | ----- | --- | ------------------------------------------------------------- |
-| P2.1  | 27 Platzhalter + Firmendaten in Footer und `Contact.tsx` ersetzen                                                   | FE      | FE#9  | 6   | `grep -r PLATZHALTER src/` → 0 Treffer                        |
-| P2.2  | Versanddaten-DSGVO: Datenschutz-Abschnitte, Seller-AVV mit Checkbox + Zeitstempel                                   | FE+BE   | BE#99 | 8   | AVV-Zustimmung persistiert, Erklärung deckt Weitergabe ab     |
-| P2.3  | **VerpackG § 9:** LUCID-Nummer als Pflichtfeld im Seller-Onboarding + Admin-Prüfschritt                             | FE+BE   | fehlt | 10  | Ohne LUCID kein aktives Listing                               |
-| P2.4  | **GPSR:** verantwortliche Person in der EU + Sicherheitsangaben je Produkt, Anzeige auf PDP                         | FE+BE   | fehlt | 14  | Pflichtfelder im Produktformular, Anzeige auf der Detailseite |
-| P2.5  | **Textilkennzeichnungs-VO:** Faserzusammensetzung vom optionalen Filter zum Pflichtfeld                             | FE+BE   | fehlt | 8   | Produkt ohne Faserangabe nicht aktivierbar                    |
-| P2.6  | **DAC7:** Seller-Steuerdaten erheben (Steuer-ID, Anschrift, Geburtsdatum) + Meldeexport                             | FE+BE   | fehlt | 12  | Exportdatei mit den meldepflichtigen Feldern                  |
-| P2.7  | **Green Claims/EmpCo:** Wording-Richtlinie + Claims-Prüfung im Produkt-Freigabeprozess                              | FE+Doku | fehlt | 6   | Richtlinie dokumentiert, Prüfschritt im Admin-Flow sichtbar   |
-| P2.8  | **MwSt. §8.1:** Steuersatz je Produkt durchziehen, USt-Ausweis auf der Provisionsabrechnung                         | FE+BE   | fehlt | 16  | Checkout und Provisionsabrechnung weisen USt korrekt aus (O4) |
-| P2.9  | **Rechnungen §8.5:** Käufer-Rechnung, Provisionsrechnung mit USt, GoBD-Archivierung                                 | FE+BE   | fehlt | 22  | Beide Rechnungstypen erzeugt und revisionssicher abgelegt     |
-| P2.10 | COMPLIANCE-Rest: M1 Datenexport, M2 Barrierefreiheitserklärung, M4 Empfehlungs-Erklärung, M6 Gewährleistungshinweis | FE+BE   | fehlt | 8   | Vier Tabellenzeilen in `COMPLIANCE.md` auf ✅                 |
+| #     | Aufgabe                                                                                                             | Repo    | Issue  | h   | Definition of Done                                            |
+| ----- | ------------------------------------------------------------------------------------------------------------------- | ------- | ------ | --- | ------------------------------------------------------------- |
+| P2.1  | 27 Platzhalter + Firmendaten in Footer und `Contact.tsx` ersetzen                                                   | FE      | FE#9   | 6   | `grep -r PLATZHALTER src/` → 0 Treffer                        |
+| P2.2  | Versanddaten-DSGVO: Datenschutz-Abschnitte, Seller-AVV mit Checkbox + Zeitstempel                                   | FE+BE   | BE#99  | 8   | AVV-Zustimmung persistiert, Erklärung deckt Weitergabe ab     |
+| P2.3  | **VerpackG § 9:** LUCID-Nummer als Pflichtfeld im Seller-Onboarding + Admin-Prüfschritt                             | FE+BE   | FE#202 | 10  | Ohne LUCID kein aktives Listing                               |
+| P2.4  | **GPSR:** verantwortliche Person in der EU + Sicherheitsangaben je Produkt, Anzeige auf PDP                         | FE+BE   | FE#203 | 14  | Pflichtfelder im Produktformular, Anzeige auf der Detailseite |
+| P2.5  | **Textilkennzeichnungs-VO:** Faserzusammensetzung vom optionalen Filter zum Pflichtfeld                             | FE+BE   | FE#204 | 8   | Produkt ohne Faserangabe nicht aktivierbar                    |
+| P2.6  | **DAC7:** Seller-Steuerdaten erheben (Steuer-ID, Anschrift, Geburtsdatum) + Meldeexport                             | FE+BE   | BE#189 | 12  | Exportdatei mit den meldepflichtigen Feldern                  |
+| P2.7  | **Green Claims/EmpCo:** Wording-Richtlinie + Claims-Prüfung im Produkt-Freigabeprozess                              | FE+Doku | FE#205 | 6   | Richtlinie dokumentiert, Prüfschritt im Admin-Flow sichtbar   |
+| P2.8  | **MwSt. §8.1:** Steuersatz je Produkt durchziehen, USt-Ausweis auf der Provisionsabrechnung                         | FE+BE   | BE#190 | 16  | Checkout und Provisionsabrechnung weisen USt korrekt aus (O4) |
+| P2.9  | **Rechnungen §8.5:** Käufer-Rechnung, Provisionsrechnung mit USt, GoBD-Archivierung                                 | FE+BE   | BE#191 | 22  | Beide Rechnungstypen erzeugt und revisionssicher abgelegt     |
+| P2.10 | COMPLIANCE-Rest: M1 Datenexport, M2 Barrierefreiheitserklärung, M4 Empfehlungs-Erklärung, M6 Gewährleistungshinweis | FE+BE   | FE#206 | 8   | Vier Tabellenzeilen in `COMPLIANCE.md` auf ✅                 |
 
 ### P3 — Versand & Retouren · 98 h · KW 45–49
 
@@ -180,7 +180,7 @@ nicht die Seller, und existieren bisher in **keinem Issue**.
 | ----- | ----------------------------------------------------------------------------------------------- | ----- | ------ | --- | ------------------------------------------------- |
 | P3.1  | Per-Brand-Versandkonfiguration + Berechnung (Stufen, Freiversand, Multi-Brand)                  | BE    | BE#139 | 16  | Preview liefert Versand je Brand-Gruppe + Gesamt  |
 | P3.2  | Warenkorb nach Brand gruppieren, Versandzeile statt „wird berechnet", `ShippingInfo` entkoppeln | FE    | FE#52  | 12  | Gesamt = Warenwert + Versand, PAngV-konform       |
-| P3.3  | **Buyer-Retouren-Antrag MVP** (Antrag → Seller-Entscheidung → Refund)                           | FE+BE | fehlt  | 22  | Käufer kann Rückgabe ohne E-Mail beantragen       |
+| P3.3  | **Buyer-Retouren-Antrag MVP** (Antrag → Seller-Entscheidung → Refund)                           | FE+BE | FE#207 | 22  | Käufer kann Rückgabe ohne E-Mail beantragen       |
 | P3.4  | Duplicate-Order-Härtung: Pre-Insert-Guard + täglicher Scan                                      | BE    | BE#146 | 10  | Doppel-Insert unter Last verhindert, Scan flaggt  |
 | P3.5  | Admin-Review-UI für geflaggte Duplikate (Storno+Refund / Freigabe)                              | FE    | FE#59  | 8   | Jeder Fall entscheidbar, Status sichtbar          |
 | P3.6  | Webhook-Lücken-Erkennung (ausbleibende Stripe-Events)                                           | BE    | BE#151 | 8   | Diskrepanz wird nachgezogen und alarmiert         |
@@ -287,25 +287,36 @@ Das ist eine Option, keine Empfehlung — die Entscheidung ist eine Risikoabwäg
 
 ---
 
-## 6. Arbeitspakete ohne Issue
+## 6. Neu angelegte Issues
 
-Diese Pakete stehen im Plan, haben aber in **keinem** Repo ein Issue. Vorschlag für die
-Anlage (noch nicht ausgeführt):
+Diese zwölf Arbeitspakete hatten bei Erstellung des Plans in **keinem** Repo ein Issue —
+zusammen ~110 h, also ein Viertel des Gesamtaufwands. Sie sind am **2026-08-05** angelegt:
 
-| Vorschlag Titel                                                                   | Repo    | Phase |
-| --------------------------------------------------------------------------------- | ------- | ----- |
-| [Compliance] VerpackG § 9 — LUCID-Pflichtfeld im Seller-Onboarding + Prüfung      | FE + BE | P2.3  |
-| [Compliance] GPSR — verantwortliche Person + Sicherheitsangaben je Produkt        | FE + BE | P2.4  |
-| [Compliance] Textilkennzeichnungs-VO — Faserzusammensetzung als Pflichtfeld       | FE + BE | P2.5  |
-| [Compliance] DAC7 — Seller-Steuerdaten erheben + Meldeexport                      | FE + BE | P2.6  |
-| [Compliance] Green Claims/EmpCo — Wording-Richtlinie + Claims-Prüfung             | FE      | P2.7  |
-| [Steuern] MwSt.-Logik §8.1 — Steuersatz je Produkt + USt auf Provisionsabrechnung | FE + BE | P2.8  |
-| [Finanzen] Rechnungsstellung §8.5 — Käufer-Rechnung, Provisionsrechnung, GoBD     | FE + BE | P2.9  |
-| [Compliance] COMPLIANCE-Rest M1/M2/M4/M6                                          | FE + BE | P2.10 |
-| [Retouren] Buyer-Rückgabe-Antrag MVP (Miro-BPMN „Retoure")                        | FE + BE | P3.3  |
-| [Infra] Eigene Domain + Portal-Subdomains für Produktion                          | FE      | P0.1  |
-| [Infra] Vercel-Prod-Env vervollständigen (Domain-Vars, Backend-Host, pk_live)     | FE      | P0.2  |
-| [Ops] Neon-Backup/PITR aus dem Free-Plan lösen + Restore-Drill                    | BE      | P0.4  |
+| Issue  | Phase | Thema                                                                   |
+| ------ | ----- | ----------------------------------------------------------------------- |
+| FE#208 | P0.1  | Eigene Domain + Portal-Subdomains für Produktion                        |
+| FE#209 | P0.2  | Vercel-Prod-Env vervollständigen (Domain-Vars, Backend-Host, `pk_live`) |
+| BE#192 | P0.4  | Prod-DB aus dem Neon-Free-Plan lösen + Restore-Drill                    |
+| FE#202 | P2.3  | VerpackG § 9 — LUCID-Nummer + Prüfpflicht                               |
+| FE#203 | P2.4  | GPSR — verantwortliche Person + Sicherheitsangaben je Produkt           |
+| FE#204 | P2.5  | Textilkennzeichnungs-VO — Faserzusammensetzung als Pflichtfeld          |
+| BE#189 | P2.6  | DAC7 / PStTG — Seller-Steuerdaten ab Tag 1 + Meldeexport                |
+| FE#205 | P2.7  | Green Claims / EmpCo — Wording-Richtlinie + Claims-Prüfung              |
+| BE#190 | P2.8  | MwSt.-Logik §8.1 — Steuersatz je Produkt + USt auf Provisionsabrechnung |
+| BE#191 | P2.9  | Rechnungsstellung §8.5 — Käufer-Rechnung, Provisionsrechnung, GoBD      |
+| FE#206 | P2.10 | COMPLIANCE-Rest M1/M2/M4/M6                                             |
+| FE#207 | P3.3  | Buyer-Rückgabe-Antrag MVP                                               |
+
+**Zur Repo-Zuordnung:** Die meisten Pakete sind Full-Stack. Angelegt ist je Thema **ein**
+Issue im führenden Repo; das Gegenstück ist im Body benannt und wird abgespalten, sobald
+der API-Vertrag steht — analog zum bestehenden Paar FE#52 / BE#139. Zwölf halbspekulative
+Gegenstück-Issues hätten die Liste verdoppelt, ohne Information hinzuzufügen.
+
+**Zum Reifegrad:** Die sieben Rechts- und Steuer-Issues tragen den Hinweis, dass ihre
+Anforderungen bis zum **Checkpoint KW 34** eine Ingenieurschätzung sind. Jedes listet die
+offenen Konstruktionsfragen explizit (blockiert eine fehlende LUCID das Listing oder nur
+die Auszahlung? Freitext oder strukturierte Faserprozente?) — damit sind sie beim
+Prüfungstermin direkt als Fragenkatalog verwendbar.
 
 ---
 
