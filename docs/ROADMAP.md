@@ -2,7 +2,9 @@
 
 Planung über die Phasen hinweg. **Was gerade offen ist, steht in den GitHub-Issues** —
 diese Datei gibt nur die grobe Richtung. Launch-Stand und Blocker mit Begründung:
-[`LAUNCH_READINESS.md`](./LAUNCH_READINESS.md).
+[`LAUNCH_READINESS.md`](./LAUNCH_READINESS.md). Der **terminierte Weg bis Production**
+(Phasen P0–P5, Aufwände, Kalender, Go-/No-Go-Gates) steht in
+[`LAUNCH_PLAN.md`](./LAUNCH_PLAN.md).
 
 ---
 

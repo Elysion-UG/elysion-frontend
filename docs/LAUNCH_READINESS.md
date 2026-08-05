@@ -5,7 +5,9 @@
 Launch-Vorbereitung — **warum** etwas offen ist.
 
 > **Was noch offen ist, steht in den GitHub-Issues** beider Repos (Label
-> `launch-blocker` = 🔴), nicht hier. Dieses Dokument liefert Kontext und
+> `launch-blocker` = 🔴), nicht hier. **Wann** es gemacht wird, steht in
+> [`LAUNCH_PLAN.md`](./LAUNCH_PLAN.md) (Phasen, Aufwände, Kalender).
+> Dieses Dokument liefert Kontext und
 > Begründungen. Mapping: B1→FE#10, B2→BE#117, B3→BE#118, B4→FE#9, B5→BE#119,
 > B6→BE#109–112, W1-FF→BE#104, W2-FF→BE#120, W4-Backend→BE#115, W5→FE#11,
 > W6→BE#121, E2E-Stripe→FE#12.
@@ -15,6 +17,10 @@ Verwandt: [`COMPLIANCE.md`](./COMPLIANCE.md) (rechtliche Details),
 Backend-Repo `docs/backend/go-live-checklist.md` (Go-Live-Schritte).
 Umgebungen und URLs: [`INDEX.md`](./INDEX.md#umgebungen). **Produktion** ist derzeit
 außer Betrieb (alte Render-DB gelöscht) — Neuaufbau vor Launch: BE#122.
+Zum Neuaufbau gehört mehr als der Service: es gibt **keine eigene Domain** (nur
+`*.vercel.app`, ohne `admin.`/`seller.`-Hosts für Prod) und die Neon-DB läuft auf dem
+**Free-Plan mit 6 h History** — für steuerpflichtige Finanzdaten keine tragfähige
+Backup-Grundlage (verifiziert 2026-08-05, LAUNCH_PLAN P0.1/P0.4).
 
 ---
 
@@ -51,6 +57,7 @@ außer Betrieb (alte Render-DB gelöscht) — Neuaufbau vor Launch: BE#122.
 
 `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` ist seit 2026-05-31 in `.env.example` und `.env.local` dokumentiert (Variable + Hinweise). **Offen:** der echte Key-Wert muss noch eingetragen werden — Test-Key (`pk_test_…`) für Dev/QA, Live-Key (`pk_live_…`) in Prod. Solange leer, ist `stripePromise = null` in `src/components/features/checkout/PaymentStep.tsx` und der Checkout zeigt „Zahlungssystem nicht konfiguriert".
 **Hinweis:** Die Stripe-Integration selbst ist vollständig (echte `@stripe/react-stripe-js`-Anbindung, `PaymentStep` in `Checkout.tsx` verdrahtet, Status-Polling, `PaymentService.getStatus()`). Es fehlt **nur** der Key-Wert in der Umgebung.
+**Verifiziert 2026-08-05:** Im Vercel-Prod-Target sind derzeit **nur** `API_URL` und `AUTH_PROXY_SECRET` gesetzt — neben dem Stripe-Key fehlen dort auch `NEXT_PUBLIC_BACKEND_HOST` und **alle sechs Portal-Domain-Variablen**. Ein Prod-Start bricht damit per Fail-fast (#168, #190) ab; die Env-Vervollständigung ist Teil desselben Schritts (LAUNCH_PLAN P0.2).
 
 ### B2 — Stripe-Live-Secrets (Backend)
 
@@ -64,6 +71,7 @@ außer Betrieb (alte Render-DB gelöscht) — Neuaufbau vor Launch: BE#122.
 
 Impressum (~15× `[PLATZHALTER]`), Datenschutz (~8×), AGB (~4×), Widerruf (~2×) sowie Kontaktdaten (`Contact.tsx`, Footer). In DE/EU **rechtlicher Blocker**: Impressumspflicht (§5 DDG/TMG), DSGVO-Datenschutzerklärung, Widerrufsbelehrung.
 **Aktion:** Echte Firmendaten einpflegen + anwaltliche Prüfung der Texte (Empfehlungen siehe [`COMPLIANCE.md`](./COMPLIANCE.md)). Die Seitengerüste und Footer-Links existieren bereits (alle KRITISCH-Tasks K1–K8 als Frontend umgesetzt).
+**Verifiziert 2026-08-05:** 27 Platzhalter im Code (Impressum 11, Datenschutz 9, AGB 5, Widerruf 2) plus Firmendaten in `Contact.tsx`. Die anwaltliche Prüfung ist wegen ihrer Lead-Zeit früh zu beauftragen und muss die Betreiberpflichten aus §8.4 mit abdecken (LAUNCH_PLAN P2.1, §3).
 
 ### B5 — Prod-Secrets & SMTP (Backend)
 

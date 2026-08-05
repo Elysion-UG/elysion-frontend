@@ -17,6 +17,7 @@ ergänzt, trägt sie hier ein.
 | [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md)                | Umsetzung des Elysion Design System v1.3, bewusste Abweichungen       |
 | [`CICD_PIPELINE.md`](./CICD_PIPELINE.md)                | GitHub-Actions-Workflows, Quality Gates, Pre-commit-Hooks, Deployment |
 | [`LAUNCH_READINESS.md`](./LAUNCH_READINESS.md)          | Konsolidierter Launch-Stand FE+BE, Blocker mit Begründung             |
+| [`LAUNCH_PLAN.md`](./LAUNCH_PLAN.md)                    | Terminierter Weg nach Production: Phasen, Aufwände, Go-/No-Go-Gates   |
 | [`COMPLIANCE.md`](./COMPLIANCE.md)                      | DE/EU-Recht: DSGVO, Impressum, AGB, BFSG, UWG                         |
 | [`PRE_MORTEM.md`](./PRE_MORTEM.md)                      | Risikoanalyse: Ausfallszenarien, Gegenmittel, Ops-Readiness-Lücken    |
 | [`ROADMAP.md`](./ROADMAP.md)                            | Phasen-Planung                                                        |
@@ -27,6 +28,7 @@ ergänzt, trägt sie hier ein.
 | Thema                               | Quelle                                                                                                         |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | Was ist noch offen?                 | **GitHub-Issues** (Label `launch-blocker` = 🔴); Hintergrund in [`LAUNCH_READINESS.md`](./LAUNCH_READINESS.md) |
+| Wann wird was gemacht?              | [`LAUNCH_PLAN.md`](./LAUNCH_PLAN.md)                                                                           |
 | Umgebungsvariablen                  | [`.env.example`](../.env.example)                                                                              |
 | Backend-URLs, Portal-Domains        | Umgebungen (unten)                                                                                             |
 | API-Endpoints, Client-Verhalten     | [`api-integration.md`](./api-integration.md)                                                                   |
