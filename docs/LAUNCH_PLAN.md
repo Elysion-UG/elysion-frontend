@@ -282,14 +282,14 @@ und dann ist das Vertrauen weg (PRE_MORTEM Szenario 1). Review-Zeit skaliert mit
 Aufmerksamkeit, nicht mit Durchsatz. In P4 (Filter, Hero, Design-Cleanup, E2E) ist die
 Hebelwirkung dagegen groß — dort sind 50–60 h statt 82 h realistisch.
 
-**Bandbreite statt Punktschätzung: 22–30 Wochen inkl. Puffer.** KW 5–6/2027 ist die
+**Bandbreite statt Punktschätzung: 21–29 Wochen inkl. Puffer.** KW 3–4/2027 ist die
 Mittellage, nicht der Best Case. Die Streuung kommt aus zwei Quellen: der
 **Review-Intensität in P1** (Geld- und Steuerlogik) und dem **Umfang, den die
 anwaltliche Prüfung für P2.3–P2.7 vorgibt**. Die zweite Quelle klärt sich in KW 33 —
 danach lässt sich die Bandbreite spürbar enger ziehen.
 
 **Untergrenze des Kalenders:** Selbst bei doppeltem Tempo im Code landet der Launch nicht
-vor **Ende November 2026** — die 80 h Handarbeit, die externen Lead-Zeiten aus
+vor **Mitte November 2026** — die 60 h Handarbeit, die externen Vorgaben aus
 [§3](#3-kritischer-pfad) und die technische Reihenfolge (P2.8/P2.9 setzen auf P1 auf)
 setzen den Boden. Tempo im Code kauft Risikopuffer, keine Kalenderwochen.
 
