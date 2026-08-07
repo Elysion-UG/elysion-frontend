@@ -144,13 +144,16 @@ Zu Pagination-Shape, `sort`-Werten und dem Unterschied `{slug}` ↔ `by-id/{id}`
 ### Kategorien
 
 ```
-GET    /api/v1/categories                    → Category[]      — flache Liste, aktiv
-GET    /api/v1/categories/tree               → CategoryNode[]  — verschachtelt, aktiv
-POST   /api/v1/categories                    → Category        — ADMIN
-PATCH  /api/v1/categories/{id}               → Category        — ADMIN
-POST   /api/v1/categories/{id}/activate      → Category        — ADMIN
-POST   /api/v1/categories/{id}/deactivate    → Category        — ADMIN
+GET    /api/v1/categories                          → Category[]      — flache Liste, aktiv
+GET    /api/v1/categories/tree                     → CategoryNode[]  — verschachtelt, aktiv
+POST   /api/v1/admin/categories                    → Category        — ADMIN
+PATCH  /api/v1/admin/categories/{id}               → Category        — ADMIN
+PATCH  /api/v1/admin/categories/{id}/activate      → Category        — ADMIN
+PATCH  /api/v1/admin/categories/{id}/deactivate    → Category        — ADMIN
 ```
+
+Schreib-Operationen liegen unter `/api/v1/admin/categories`. `/api/v1/categories` ist der
+öffentliche Lesepfad und kennt **nur `GET`** — ein `POST` dorthin endet als 405 (#178).
 
 Kategorien werden **deaktiviert, nicht gelöscht** — es gibt kein `DELETE`.
 

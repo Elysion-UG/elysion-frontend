@@ -370,10 +370,24 @@ async function safeJson(response: Response): Promise<unknown> {
   }
 }
 
+// A non-JSON error body (proxy/CDN HTML page, stack-trace dump) arrives here as
+// { message: <raw response text> } from safeJson. Rendering that verbatim in a
+// toast or an inline alert is worse than useless — a whole HTML document is not
+// an error message. Markup-shaped or implausibly long text is therefore rejected
+// in favour of the status fallback (#178).
+const MAX_MESSAGE_LENGTH = 300
+
+function isUsableMessage(value: string): boolean {
+  const trimmed = value.trim()
+  if (trimmed.length === 0 || trimmed.length > MAX_MESSAGE_LENGTH) return false
+  if (trimmed.startsWith("<")) return false
+  return true
+}
+
 function getMessage(body: unknown, fallback: string): string {
   if (typeof body === "object" && body !== null && "message" in body) {
     const m = (body as { message?: unknown }).message
-    if (typeof m === "string" && m.length > 0) return m
+    if (typeof m === "string" && isUsableMessage(m)) return m
   }
   return fallback
 }

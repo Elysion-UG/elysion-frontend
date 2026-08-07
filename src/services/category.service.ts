@@ -21,29 +21,31 @@ export const CategoryService = {
   },
 
   // ── Admin ─────────────────────────────────────────────────────────
+  // Writes live under /api/v1/admin/categories. /api/v1/categories is the
+  // public read controller (GET only) — posting there returns 405 (#178).
 
   async create(dto: CategoryCreateDTO): Promise<Category> {
-    return apiRequest("/api/v1/categories", {
+    return apiRequest("/api/v1/admin/categories", {
       method: "POST",
       body: JSON.stringify(dto),
     })
   },
 
   async update(id: string, dto: CategoryUpdateDTO): Promise<Category> {
-    return apiRequest(`/api/v1/categories/${id}`, {
+    return apiRequest(`/api/v1/admin/categories/${id}`, {
       method: "PATCH",
       body: JSON.stringify(dto),
     })
   },
 
   async activate(id: string): Promise<Category> {
-    return apiRequest(`/api/v1/categories/${id}/activate`, {
+    return apiRequest(`/api/v1/admin/categories/${id}/activate`, {
       method: "PATCH",
     })
   },
 
   async deactivate(id: string): Promise<Category> {
-    return apiRequest(`/api/v1/categories/${id}/deactivate`, {
+    return apiRequest(`/api/v1/admin/categories/${id}/deactivate`, {
       method: "PATCH",
     })
   },

@@ -13,6 +13,18 @@ import { ApiError } from "@/src/lib/api-client"
 import type { CategoryTreeNode, CategoryCreateDTO, CategoryUpdateDTO } from "@/src/types"
 import { toast } from "sonner"
 
+/**
+ * Parse the order field. `Number(x) || undefined` dropped a valid 0 — the
+ * backend then rejected the request with "order is required" (#178). Only a
+ * blank / unparseable input may become undefined; 0 must survive.
+ */
+function parseOrder(raw: string): number | undefined {
+  const trimmed = raw.trim()
+  if (trimmed === "") return undefined
+  const parsed = Number(trimmed)
+  return Number.isFinite(parsed) ? parsed : undefined
+}
+
 /** Extract the backend's error message so a failed save is diagnosable (#178). */
 function saveErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof ApiError && err.message) return err.message
@@ -129,7 +141,7 @@ export default function AdminCategories() {
       slug: form.slug.trim() || undefined,
       parentId: form.parentId || undefined,
       description: form.description.trim() || undefined,
-      order: Number(form.order) || undefined,
+      order: parseOrder(form.order),
     }
     createCategory.mutate(dto, {
       onSuccess: closeModal,
@@ -146,7 +158,7 @@ export default function AdminCategories() {
     const dto: CategoryUpdateDTO = {
       name: form.name.trim() || undefined,
       description: form.description.trim() || undefined,
-      order: Number(form.order) || undefined,
+      order: parseOrder(form.order),
     }
     updateCategory.mutate(
       { id: editingId, dto },

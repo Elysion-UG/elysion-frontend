@@ -25,11 +25,11 @@ describe("CategoryService", () => {
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/categories/tree")
   })
 
-  it("create POSTs the DTO to /api/v1/categories", async () => {
+  it("create POSTs the DTO to /api/v1/admin/categories", async () => {
     const dto: CategoryCreateDTO = { name: "Neu" } as unknown as CategoryCreateDTO
     mockApiRequest.mockResolvedValue({ id: "cat_1", name: "Neu" })
     await CategoryService.create(dto)
-    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/categories", {
+    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/categories", {
       method: "POST",
       body: JSON.stringify(dto),
     })
@@ -41,29 +41,41 @@ describe("CategoryService", () => {
     await expect(CategoryService.create(dto)).rejects.toThrow("Request failed (400)")
   })
 
-  it("update PATCHes the DTO to /api/v1/categories/{id}", async () => {
+  it("update PATCHes the DTO to /api/v1/admin/categories/{id}", async () => {
     const dto: CategoryUpdateDTO = { name: "Umbenannt" } as unknown as CategoryUpdateDTO
     mockApiRequest.mockResolvedValue({ id: "cat_1" })
     await CategoryService.update("cat_1", dto)
-    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/categories/cat_1", {
+    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/categories/cat_1", {
       method: "PATCH",
       body: JSON.stringify(dto),
     })
   })
 
-  it("activate PATCHes /api/v1/categories/{id}/activate", async () => {
+  it("activate PATCHes /api/v1/admin/categories/{id}/activate", async () => {
     mockApiRequest.mockResolvedValue({ id: "cat_1", active: true })
     await CategoryService.activate("cat_1")
-    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/categories/cat_1/activate", {
+    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/categories/cat_1/activate", {
       method: "PATCH",
     })
   })
 
-  it("deactivate PATCHes /api/v1/categories/{id}/deactivate", async () => {
+  it("deactivate PATCHes /api/v1/admin/categories/{id}/deactivate", async () => {
     mockApiRequest.mockResolvedValue({ id: "cat_1", active: false })
     await CategoryService.deactivate("cat_1")
-    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/categories/cat_1/deactivate", {
+    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/categories/cat_1/deactivate", {
       method: "PATCH",
     })
+  })
+
+  it("never targets the public read controller for writes (regression guard #178)", async () => {
+    mockApiRequest.mockResolvedValue({ id: "cat_1" })
+    await CategoryService.create({ name: "Neu" } as unknown as CategoryCreateDTO)
+    await CategoryService.update("cat_1", { name: "Neu" } as unknown as CategoryUpdateDTO)
+    await CategoryService.activate("cat_1")
+    await CategoryService.deactivate("cat_1")
+
+    for (const call of mockApiRequest.mock.calls) {
+      expect(String(call[0]).startsWith("/api/v1/admin/categories")).toBe(true)
+    }
   })
 })
