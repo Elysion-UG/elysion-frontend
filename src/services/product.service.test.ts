@@ -325,11 +325,11 @@ describe("ProductService", () => {
   describe("create", () => {
     const dto = { title: "New Shirt", price: 19.99, categoryId: "cat_1" } as any
 
-    it("POSTs to /api/v1/products with the dto body", async () => {
+    it("POSTs to /api/v1/seller/products with the dto body", async () => {
       mockApiRequest.mockResolvedValue(mockCommandResponse)
       await ProductService.create(dto)
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/v1/products",
+        "/api/v1/seller/products",
         expect.objectContaining({ method: "POST", body: JSON.stringify(dto) })
       )
     })
@@ -346,11 +346,11 @@ describe("ProductService", () => {
   describe("update", () => {
     const dto = { title: "Updated Shirt" } as any
 
-    it("PATCHes /api/v1/products/{id} with the dto body", async () => {
+    it("PATCHes /api/v1/seller/products/{id} with the dto body", async () => {
       mockApiRequest.mockResolvedValue(mockCommandResponse)
       await ProductService.update("prod_1", dto)
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/v1/products/prod_1",
+        "/api/v1/seller/products/prod_1",
         expect.objectContaining({ method: "PATCH", body: JSON.stringify(dto) })
       )
     })
@@ -361,11 +361,11 @@ describe("ProductService", () => {
   describe("updateStatus", () => {
     const dto = { status: "ACTIVE" } as any
 
-    it("PATCHes /api/v1/products/{id}/status", async () => {
+    it("PATCHes /api/v1/seller/products/{id}/status", async () => {
       mockApiRequest.mockResolvedValue(mockCommandResponse)
       await ProductService.updateStatus("prod_1", dto)
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/v1/products/prod_1/status",
+        "/api/v1/seller/products/prod_1/status",
         expect.objectContaining({ method: "PATCH", body: JSON.stringify(dto) })
       )
     })
@@ -376,11 +376,11 @@ describe("ProductService", () => {
   describe("addImage", () => {
     const dto = { url: "https://example.com/img.jpg", altText: "shirt" } as any
 
-    it("POSTs to /api/v1/products/{id}/images", async () => {
+    it("POSTs to /api/v1/seller/products/{id}/images", async () => {
       mockApiRequest.mockResolvedValue(null)
       await ProductService.addImage("prod_1", dto)
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/v1/products/prod_1/images",
+        "/api/v1/seller/products/prod_1/images",
         expect.objectContaining({ method: "POST", body: JSON.stringify(dto) })
       )
     })
@@ -389,11 +389,11 @@ describe("ProductService", () => {
   // ── deleteImage ──────────────────────────────────────────────────────
 
   describe("deleteImage", () => {
-    it("DELETEs /api/v1/products/{productId}/images/{imageId}", async () => {
+    it("DELETEs /api/v1/seller/products/{productId}/images/{imageId}", async () => {
       mockApiRequest.mockResolvedValue(null)
       await ProductService.deleteImage("prod_1", "img_1")
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/v1/products/prod_1/images/img_1",
+        "/api/v1/seller/products/prod_1/images/img_1",
         expect.objectContaining({ method: "DELETE" })
       )
     })
@@ -404,11 +404,11 @@ describe("ProductService", () => {
   describe("reorderImages", () => {
     const dto = { imageIds: ["img_2", "img_1"] } as any
 
-    it("PATCHes /api/v1/products/{id}/images/order", async () => {
+    it("PATCHes /api/v1/seller/products/{id}/images/order", async () => {
       mockApiRequest.mockResolvedValue(null)
       await ProductService.reorderImages("prod_1", dto)
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/v1/products/prod_1/images/order",
+        "/api/v1/seller/products/prod_1/images/order",
         expect.objectContaining({ method: "PATCH", body: JSON.stringify(dto) })
       )
     })
@@ -419,11 +419,11 @@ describe("ProductService", () => {
   describe("addVariant", () => {
     const dto = { sku: "SKU-001", stock: 10 } as any
 
-    it("POSTs to /api/v1/products/{productId}/variants", async () => {
+    it("POSTs to /api/v1/seller/products/{productId}/variants", async () => {
       mockApiRequest.mockResolvedValue({ id: "var_1", sku: "SKU-001" })
       await ProductService.addVariant("prod_1", dto)
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/v1/products/prod_1/variants",
+        "/api/v1/seller/products/prod_1/variants",
         expect.objectContaining({ method: "POST", body: JSON.stringify(dto) })
       )
     })
@@ -440,11 +440,11 @@ describe("ProductService", () => {
   describe("updateVariant", () => {
     const dto = { stock: 5 }
 
-    it("PATCHes /api/v1/products/{productId}/variants/{variantId}", async () => {
+    it("PATCHes /api/v1/seller/products/{productId}/variants/{variantId}", async () => {
       mockApiRequest.mockResolvedValue({ id: "var_1", sku: "SKU-001" })
       await ProductService.updateVariant("prod_1", "var_1", dto)
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/v1/products/prod_1/variants/var_1",
+        "/api/v1/seller/products/prod_1/variants/var_1",
         expect.objectContaining({ method: "PATCH", body: JSON.stringify(dto) })
       )
     })
@@ -453,13 +453,43 @@ describe("ProductService", () => {
   // ── deleteVariant ────────────────────────────────────────────────────
 
   describe("deleteVariant", () => {
-    it("DELETEs /api/v1/products/{productId}/variants/{variantId}", async () => {
+    it("DELETEs /api/v1/seller/products/{productId}/variants/{variantId}", async () => {
       mockApiRequest.mockResolvedValue(null)
       await ProductService.deleteVariant("prod_1", "var_1")
       expect(mockApiRequest).toHaveBeenCalledWith(
-        "/api/v1/products/prod_1/variants/var_1",
+        "/api/v1/seller/products/prod_1/variants/var_1",
         expect.objectContaining({ method: "DELETE" })
       )
+    })
+  })
+
+  // ── write-prefix guard (#219) ────────────────────────────────────────
+
+  describe("seller write prefix", () => {
+    it("never targets the GET-only read controllers for writes (regression guard #219)", async () => {
+      mockApiRequest.mockResolvedValue(mockCommandResponse)
+
+      await ProductService.create({ title: "T" } as any)
+      await ProductService.update("prod_1", { title: "T" } as any)
+      await ProductService.updateStatus("prod_1", { status: "ACTIVE" } as any)
+      await ProductService.addImage("prod_1", { url: "https://example.com/i.jpg" } as any)
+      await ProductService.deleteImage("prod_1", "img_1")
+      await ProductService.reorderImages("prod_1", { imageIds: ["img_1"] } as any)
+      await ProductService.addVariant("prod_1", { sku: "SKU-001" } as any)
+      await ProductService.updateVariant("prod_1", "var_1", { stock: 5 })
+      await ProductService.deleteVariant("prod_1", "var_1")
+
+      expect(mockApiRequest).toHaveBeenCalledTimes(9)
+      for (const call of mockApiRequest.mock.calls) {
+        const url = String(call[0])
+        const method = (call[1] as RequestInit | undefined)?.method
+        expect(url.startsWith("/api/v1/seller/products")).toBe(true)
+        expect(["POST", "PATCH", "DELETE"]).toContain(method)
+      }
+    })
+
+    it("exposes no delete(): the backend has no DELETE /api/v1/seller/products/{id} (#219)", () => {
+      expect("delete" in ProductService).toBe(false)
     })
   })
 

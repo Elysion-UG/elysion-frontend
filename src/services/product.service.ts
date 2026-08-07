@@ -4,6 +4,12 @@
  * List and detail are public; writes are seller-only. Endpoint catalogue:
  * docs/api-integration.md.
  *
+ * Two different path families, do not mix them up (#219):
+ *   - reads   → /api/v1/products/…        (public + internal query controllers)
+ *   - writes  → /api/v1/seller/products/… (SellerProduct*CommandController)
+ * The read controllers expose GET only; a write against /api/v1/products dies
+ * as 405 in the dispatcher.
+ *
  * The list endpoint paginates with its own shape — data.items (not content),
  * data.totalItems (not totalElements), data.page (not number). list() normalises
  * that to ProductPage, so callers must never hit the endpoint directly.
@@ -199,44 +205,48 @@ export const ProductService = {
     return apiRequest<ProductInternalDetail>(`/api/v1/products/by-id/${id}`)
   },
 
-  // ── Seller commands ───────────────────────────────────────────────
+  // ── Seller commands (/api/v1/seller/products) ─────────────────────
+  //
+  // There is deliberately no delete() here: the backend exposes no
+  // DELETE /api/v1/seller/products/{id} (see #219). Products are retired via
+  // updateStatus(id, { status: "INACTIVE" }).
 
   async create(dto: ProductCreateDTO): Promise<ProductCommandResponse> {
-    return apiRequest("/api/v1/products", {
+    return apiRequest("/api/v1/seller/products", {
       method: "POST",
       body: JSON.stringify(dto),
     })
   },
 
   async update(id: string, dto: ProductUpdateDTO): Promise<ProductCommandResponse> {
-    return apiRequest(`/api/v1/products/${id}`, {
+    return apiRequest(`/api/v1/seller/products/${id}`, {
       method: "PATCH",
       body: JSON.stringify(dto),
     })
   },
 
   async updateStatus(id: string, dto: ProductStatusUpdateDTO): Promise<ProductCommandResponse> {
-    return apiRequest(`/api/v1/products/${id}/status`, {
+    return apiRequest(`/api/v1/seller/products/${id}/status`, {
       method: "PATCH",
       body: JSON.stringify(dto),
     })
   },
 
   async addImage(id: string, dto: ProductImageCreateDTO): Promise<null> {
-    return apiRequest(`/api/v1/products/${id}/images`, {
+    return apiRequest(`/api/v1/seller/products/${id}/images`, {
       method: "POST",
       body: JSON.stringify(dto),
     })
   },
 
   async deleteImage(productId: string, imageId: string): Promise<null> {
-    return apiRequest(`/api/v1/products/${productId}/images/${imageId}`, {
+    return apiRequest(`/api/v1/seller/products/${productId}/images/${imageId}`, {
       method: "DELETE",
     })
   },
 
   async reorderImages(id: string, dto: ProductImageReorderDTO): Promise<null> {
-    return apiRequest(`/api/v1/products/${id}/images/order`, {
+    return apiRequest(`/api/v1/seller/products/${id}/images/order`, {
       method: "PATCH",
       body: JSON.stringify(dto),
     })
@@ -246,7 +256,7 @@ export const ProductService = {
     productId: string,
     dto: ProductVariantInput
   ): Promise<{ id: string; sku: string }> {
-    return apiRequest(`/api/v1/products/${productId}/variants`, {
+    return apiRequest(`/api/v1/seller/products/${productId}/variants`, {
       method: "POST",
       body: JSON.stringify(dto),
     })
@@ -257,19 +267,15 @@ export const ProductService = {
     variantId: string,
     dto: Partial<ProductVariantInput>
   ): Promise<{ id: string; sku: string }> {
-    return apiRequest(`/api/v1/products/${productId}/variants/${variantId}`, {
+    return apiRequest(`/api/v1/seller/products/${productId}/variants/${variantId}`, {
       method: "PATCH",
       body: JSON.stringify(dto),
     })
   },
 
   async deleteVariant(productId: string, variantId: string): Promise<null> {
-    return apiRequest(`/api/v1/products/${productId}/variants/${variantId}`, {
+    return apiRequest(`/api/v1/seller/products/${productId}/variants/${variantId}`, {
       method: "DELETE",
     })
-  },
-
-  async delete(id: string): Promise<void> {
-    return apiRequest(`/api/v1/products/${id}`, { method: "DELETE" })
   },
 }
