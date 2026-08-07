@@ -1,6 +1,10 @@
 import { z } from "zod"
 import { apiRequest, buildQuery } from "@/src/lib/api-client"
-import { parseApiResponse, orderGroupStatusSchema } from "@/src/lib/api-schemas"
+import {
+  parseApiResponse,
+  orderGroupStatusSchema,
+  shippingSlaStatusSchema,
+} from "@/src/lib/api-schemas"
 import { normalizePage } from "@/src/lib/normalize-page"
 import type { OrderGroupDetail, Page, Settlement, ShipOrderDTO } from "@/src/types"
 import { apiOrderProductSnapshotSchema, normalizeSnapshot } from "./_order-normalizers"
@@ -39,13 +43,27 @@ const apiOrderItemSchema = z.object({
   updatedAt: z.string().optional(),
 })
 
+/**
+ * Read-only Versandfrist (Backend #143). `nullish`, weil Bestellungen aus der
+ * Zeit vor der SLA kein Feld tragen — der Vertrag garantiert es nur für neue
+ * Reads, und ein hartes `required` würde Altbestände unlesbar machen.
+ */
+const apiShippingSlaSchema = z.object({
+  status: shippingSlaStatusSchema,
+  deadlineAt: z.string().nullish(),
+  breachedAt: z.string().nullish(),
+})
+
 const apiOrderGroupSchema = z.object({
   id: z.string(),
   orderId: z.string(),
   status: orderGroupStatusSchema,
   items: z.array(apiOrderItemSchema),
+  subtotal: z.number().optional(),
+  shipping: z.number().optional(),
   total: z.number(),
   currency: z.string().optional(),
+  shippingSla: apiShippingSlaSchema.nullish(),
   shipment: z.object({ trackingNumber: z.string(), carrier: z.string().optional() }).nullish(),
   buyer: z.object({ userId: z.string().optional(), guestEmail: z.string().nullish() }).optional(),
   /** Backend only includes this for CONFIRMED/PROCESSING/SHIPPED orders (DSGVO: purpose limitation). */
@@ -71,8 +89,17 @@ function normalizeOrderGroup(raw: ApiOrderGroup): OrderGroupDetail {
     orderId: raw.orderId,
     status: raw.status,
     totalAmount: raw.total,
+    subtotal: raw.subtotal,
+    shipping: raw.shipping,
     currency: raw.currency,
     shipment: raw.shipment,
+    shippingSla: raw.shippingSla
+      ? {
+          status: raw.shippingSla.status,
+          deadlineAt: raw.shippingSla.deadlineAt ?? null,
+          breachedAt: raw.shippingSla.breachedAt ?? null,
+        }
+      : undefined,
     buyer: raw.buyer,
     shippingAddress: raw.shippingAddress,
     createdAt: raw.createdAt,

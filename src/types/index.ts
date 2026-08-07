@@ -59,6 +59,8 @@ export type {
   OrderItem,
   OrderGroupStatus,
   OrderGroup,
+  ShippingSlaStatus,
+  ShippingSla,
   ShippingAddress,
   OrderDetail,
   OrderGroupDetail,

@@ -277,12 +277,37 @@ GET    /api/v1/orders/{id}                     → OrderDetail
 GET    /api/v1/seller/orders                   → OrderGroupsPage
 GET    /api/v1/seller/orders/{id}              → OrderGroupDetail
 PATCH  /api/v1/seller/orders/{id}/status       → OrderGroupDetail
-PATCH  /api/v1/seller/orders/{id}/ship         → OrderGroupDetail
-PATCH  /api/v1/seller/orders/{id}/deliver      → OrderGroupDetail
+POST   /api/v1/seller/orders/{id}/ship         → OrderGroupDetail
+POST   /api/v1/seller/orders/{id}/deliver      → OrderGroupDetail
 GET    /api/v1/seller/settlements              → Settlement[]
 ```
 
 Settlements liegen auf `/seller/settlements` — **nicht** unter `/seller/orders/`.
+
+#### Versandfrist (`shippingSla`) — nur Seller-Reads
+
+Alle Seller-Order-Reads liefern die Versandfrist als **reinen Lesezustand** (Backend #143).
+Es gibt **keine** Aktion dazu: eine Überschreitung löst der Verkäufer durch Versenden auf.
+
+```
+shippingSla: {
+  status:     "NOT_APPLICABLE" | "PENDING" | "BREACHED" | "MET" | "MISSED"
+  deadlineAt: ISO-Timestamp | null   // eingefrorene Frist, null vor dem Zahlungseinzug
+  breachedAt: ISO-Timestamp | null   // Zeitpunkt der Eskalation an den Verkäufer
+}
+```
+
+- `NOT_APPLICABLE` — kein Versand geschuldet (nicht captured, storniert) → **nichts anzeigen**
+- `PENDING` — Frist läuft · `BREACHED` — abgelaufen, nichts versandt
+- `MET` / `MISSED` — versandt vor bzw. nach der Frist
+- Das Zeitfenster (Default 48 h) ist Server-Konfiguration — im Frontend steht **keine**
+  48h-Konstante mehr; die Frist wird nie clientseitig berechnet.
+- Das Feld fehlt bei Bestellungen aus der Zeit vor #143; der Normalizer behandelt es als
+  „nicht vorhanden" und rendert nichts.
+- Frontend: `src/lib/shipping-sla.ts` (Formatierung), `shippingSlaLabel`/`shippingSlaColor`
+  in `sellerDashboard.constants.ts`.
+
+`OrderGroupDetail` trägt neben `total` zusätzlich `subtotal` und `shipping`.
 
 ### Zahlungen
 

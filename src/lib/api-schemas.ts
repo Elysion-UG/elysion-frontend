@@ -48,6 +48,15 @@ export const orderGroupStatusSchema = z.enum([
   "CANCELLED",
 ])
 
+/** Read-only Versandfrist-Zustand der Seller-Order-Reads (Backend #143). */
+export const shippingSlaStatusSchema = z.enum([
+  "NOT_APPLICABLE",
+  "PENDING",
+  "BREACHED",
+  "MET",
+  "MISSED",
+])
+
 // ── Object schemas ───────────────────────────────────────────────────────────
 export const sellerProfileSchema = z.object({
   id: z.string(),

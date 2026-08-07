@@ -120,6 +120,60 @@ describe("SellerOrderService", () => {
     })
   })
 
+  describe("shippingSla (#143)", () => {
+    it("carries the server SLA through the normalizer", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...rawGroup,
+        shippingSla: {
+          status: "BREACHED",
+          deadlineAt: "2026-01-03T10:00:00Z",
+          breachedAt: "2026-01-03T10:05:00Z",
+        },
+      })
+      const group = await SellerOrderService.getById("grp_1")
+      expect(group.shippingSla).toEqual({
+        status: "BREACHED",
+        deadlineAt: "2026-01-03T10:00:00Z",
+        breachedAt: "2026-01-03T10:05:00Z",
+      })
+    })
+
+    it("normalizes missing timestamps to null instead of undefined", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...rawGroup,
+        shippingSla: { status: "NOT_APPLICABLE", deadlineAt: null, breachedAt: null },
+      })
+      const group = await SellerOrderService.getById("grp_1")
+      expect(group.shippingSla).toEqual({
+        status: "NOT_APPLICABLE",
+        deadlineAt: null,
+        breachedAt: null,
+      })
+    })
+
+    it("accepts an order group without an SLA (predates #143)", async () => {
+      mockApiRequest.mockResolvedValue(rawGroup)
+      const group = await SellerOrderService.getById("grp_1")
+      expect(group.shippingSla).toBeUndefined()
+    })
+
+    it("rejects an unknown SLA status instead of casting it through", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...rawGroup,
+        shippingSla: { status: "ESCALATED", deadlineAt: null, breachedAt: null },
+      })
+      await expect(SellerOrderService.getById("grp_1")).rejects.toThrow(/Ungültige Server-Antwort/)
+    })
+  })
+
+  it("keeps subtotal and shipping alongside the total", async () => {
+    mockApiRequest.mockResolvedValue({ ...rawGroup, subtotal: 50.0, shipping: 5.0 })
+    const group = await SellerOrderService.getById("grp_1")
+    expect(group.subtotal).toBe(50.0)
+    expect(group.shipping).toBe(5.0)
+    expect(group.totalAmount).toBe(55.0)
+  })
+
   it("listSettlements GETs /api/v1/seller/settlements", async () => {
     mockApiRequest.mockResolvedValue([])
     await SellerOrderService.listSettlements()
