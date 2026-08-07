@@ -1,5 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 import { NextRequest } from "next/server"
+import { existsSync, readdirSync } from "node:fs"
+import { join } from "node:path"
 
 import { SESSION_MARKER_COOKIE } from "@/src/lib/auth/session-marker"
 
@@ -14,13 +16,15 @@ const ADMIN_HOST = "admin.localhost:3000"
 const BUYER_HOST = "localhost:3000"
 
 let middleware: (req: NextRequest) => Response
+let PUBLIC_ROUTES: readonly string[]
 
 beforeAll(async () => {
   process.env.SELLER_DOMAIN = SELLER_HOST
   process.env.ADMIN_DOMAIN = ADMIN_HOST
   process.env.BUYER_DOMAIN = BUYER_HOST
-  ;({ middleware } = (await import("./middleware")) as unknown as {
+  ;({ middleware, PUBLIC_ROUTES } = (await import("./middleware")) as unknown as {
     middleware: (req: NextRequest) => Response
+    PUBLIC_ROUTES: readonly string[]
   })
 })
 
@@ -208,6 +212,82 @@ describe("Content-Security-Policy (#33)", () => {
     // Modern counterpart to X-Frame-Options: DENY in next.config.mjs.
     expect(policy).toContain("frame-ancestors 'none'")
     expect(policy).toContain("upgrade-insecure-requests")
+  })
+})
+
+// ── PUBLIC_ROUTES ↔ src/app/(public)/ drift guard (#37) ──────────────────────
+//
+// PUBLIC_ROUTES is a hand-maintained mirror of the (public) route group, and
+// nothing enforces the mirroring. Forgetting an entry fails silently and badly:
+// the new page is statically prerendered (no root force-dynamic since #37) yet
+// the middleware hands it the nonce CSP — the build-time inline bootstrap
+// scripts carry no matching nonce, so hydration never starts (the FE#23 bug).
+// `next dev` renders everything dynamically, so this only shows up on staging.
+// Hence this test diffs the list against the filesystem in both directions.
+
+// Vitest runs from the project root (vitest.config.ts lives there), so the app
+// directory is reachable from cwd. A wrong path would make readdirSync throw
+// rather than silently report an empty route set.
+const PUBLIC_APP_DIR = join(process.cwd(), "src", "app", "(public)")
+
+/**
+ * Every route path below src/app/(public)/ that has a page.tsx, walked
+ * recursively so a nested page (e.g. /help/faq without /help/page.tsx) cannot
+ * hide from the guard. Route groups "(x)" and private folders "_x" contribute
+ * no URL segment. The group root itself maps to "/".
+ */
+function discoverPublicRoutes(dir: string = PUBLIC_APP_DIR, prefix = ""): string[] {
+  const routes: string[] = []
+  // The group root itself carries src/app/(public)/page.tsx — the shop home.
+  if (existsSync(join(dir, "page.tsx"))) routes.push(prefix || "/")
+
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    const isTransparent = entry.name.startsWith("(") || entry.name.startsWith("_")
+    const path = isTransparent ? prefix : `${prefix}/${entry.name}`
+    routes.push(...discoverPublicRoutes(join(dir, entry.name), path))
+  }
+  return routes
+}
+
+/** Mirrors the middleware's own prefix matching for a single list entry. */
+function covers(entry: string, route: string): boolean {
+  return route === entry || route.startsWith(`${entry}/`)
+}
+
+describe("PUBLIC_ROUTES mirrors src/app/(public)/ (#37)", () => {
+  const discovered = discoverPublicRoutes()
+
+  it("finds the (public) route group on disk", () => {
+    // Guards the guard: a moved/renamed directory must not silently make the
+    // two assertions below vacuous.
+    expect(discovered.length).toBeGreaterThan(5)
+    expect(discovered).toContain("/")
+  })
+
+  it("lists every page under src/app/(public)/ (missing entry → nonce CSP on a static page)", () => {
+    // "/" is the shop home; isPublicRoute() special-cases it instead of listing it.
+    const missing = discovered
+      .filter((route) => route !== "/")
+      .filter((route) => !PUBLIC_ROUTES.some((entry) => covers(entry, route)))
+
+    expect(
+      missing,
+      `Diese (public)-Seiten fehlen in PUBLIC_ROUTES (src/middleware.ts): ${missing.join(", ")}. ` +
+        "Ohne Eintrag bekommen sie die Nonce-CSP, obwohl sie statisch gerendert werden — " +
+        "die Bootstrap-Scripts tragen dann keine passende Nonce und die Hydration startet nie (FE#23)."
+    ).toEqual([])
+  })
+
+  it("has no entry without a matching directory (stale entry → dead relaxation)", () => {
+    const stale = PUBLIC_ROUTES.filter((entry) => !discovered.some((route) => covers(entry, route)))
+
+    expect(
+      stale,
+      `Diese PUBLIC_ROUTES-Einträge haben keine Seite unter src/app/(public)/ mehr: ${stale.join(", ")}. ` +
+        "Entweder ist die Seite umgezogen (dann gilt für sie die falsche CSP) oder der Eintrag ist tot " +
+        "und lockert die CSP für einen Pfad ohne Grund."
+    ).toEqual([])
   })
 })
 
