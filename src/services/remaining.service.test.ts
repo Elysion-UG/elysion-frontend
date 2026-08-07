@@ -187,7 +187,7 @@ describe("CategoryService", () => {
 
   it("create calls POST /api/v1/admin/categories", async () => {
     mockApiRequest.mockResolvedValue({ id: "c1" })
-    const dto = { name: "Kleidung" }
+    const dto = { name: "Kleidung", slug: "kleidung", order: 0 }
     await CategoryService.create(dto)
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/admin/categories",
@@ -197,7 +197,7 @@ describe("CategoryService", () => {
 
   it("update calls PATCH with category id", async () => {
     mockApiRequest.mockResolvedValue({ id: "c1" })
-    await CategoryService.update("c1", { name: "Neu" })
+    await CategoryService.update("c1", { name: "Neu", slug: "neu", order: 0 })
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/admin/categories/c1",
       expect.objectContaining({ method: "PATCH" })

@@ -13,16 +13,28 @@ import { ApiError } from "@/src/lib/api-client"
 import type { CategoryTreeNode, CategoryCreateDTO, CategoryUpdateDTO } from "@/src/types"
 import { toast } from "sonner"
 
+export const ORDER_INVALID_MESSAGE = "Sortierung muss eine ganze Zahl ≥ 0 sein."
+
 /**
- * Parse the order field. `Number(x) || undefined` dropped a valid 0 — the
- * backend then rejected the request with "order is required" (#178). Only a
- * blank / unparseable input may become undefined; 0 must survive.
+ * Parse the sort-order field (#178).
+ *
+ * The backend column is `INTEGER NOT NULL DEFAULT 0` and `requireNonNegative`
+ * rejects a missing value with "order is required" — so neither a valid `0`
+ * (the old `Number(x) || undefined` swallowed it) nor a cleared field may ever
+ * become `undefined`. A blank field means 0.
+ *
+ * Non-integer or negative input can only ever produce a 400 (`@Min(0)` for
+ * negatives, a Jackson `Integer` deserialisation failure for decimals), so it
+ * is caught here instead of being spent on a server roundtrip.
+ *
+ * @returns the order, or `null` when the input must not be submitted at all.
  */
-function parseOrder(raw: string): number | undefined {
+function parseOrder(raw: string): number | null {
   const trimmed = raw.trim()
-  if (trimmed === "") return undefined
+  if (trimmed === "") return 0
   const parsed = Number(trimmed)
-  return Number.isFinite(parsed) ? parsed : undefined
+  if (!Number.isInteger(parsed) || parsed < 0) return null
+  return parsed
 }
 
 /** Extract the backend's error message so a failed save is diagnosable (#178). */
@@ -32,7 +44,11 @@ function saveErrorMessage(err: unknown, fallback: string): string {
   return fallback
 }
 import AdminCategoryTreeNode from "./AdminCategoryTreeNode"
-import AdminCategoryFormModal, { type FormState, EMPTY_FORM } from "./AdminCategoryFormModal"
+import AdminCategoryFormModal, {
+  type FormState,
+  EMPTY_FORM,
+  slugify,
+} from "./AdminCategoryFormModal"
 
 /** Flatten tree into a list of { id, name, level } for the parent dropdown. */
 function flattenTree(
@@ -136,12 +152,20 @@ export default function AdminCategories() {
 
   const handleSubmitCreate = () => {
     setSaveError(null)
+    const order = parseOrder(form.order)
+    if (order === null) {
+      setSaveError(ORDER_INVALID_MESSAGE)
+      return
+    }
+    const name = form.name.trim()
     const dto: CategoryCreateDTO = {
-      name: form.name.trim(),
-      slug: form.slug.trim() || undefined,
+      name,
+      // slug is @NotBlank backend-side — re-derive it when the admin cleared
+      // the auto-filled field rather than sending nothing.
+      slug: form.slug.trim() || slugify(name),
       parentId: form.parentId || undefined,
       description: form.description.trim() || undefined,
-      order: parseOrder(form.order),
+      order,
     }
     createCategory.mutate(dto, {
       onSuccess: closeModal,
@@ -155,10 +179,23 @@ export default function AdminCategories() {
 
   const handleSubmitEdit = () => {
     if (!editingId) return
+    setSaveError(null)
+    const order = parseOrder(form.order)
+    if (order === null) {
+      setSaveError(ORDER_INVALID_MESSAGE)
+      return
+    }
+    const name = form.name.trim()
+    // The PATCH body is a full replacement. Sending only name/description/order
+    // failed the backend's @NotBlank on slug, and an omitted parentId makes
+    // resolveParent() fall back to root/level 1 — which would silently unnest
+    // every edited sub-category. Both must travel with every update (#178).
     const dto: CategoryUpdateDTO = {
-      name: form.name.trim() || undefined,
+      name,
+      slug: form.slug.trim() || slugify(name),
+      parentId: form.parentId || undefined,
       description: form.description.trim() || undefined,
-      order: parseOrder(form.order),
+      order,
     }
     updateCategory.mutate(
       { id: editingId, dto },

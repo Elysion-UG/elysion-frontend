@@ -67,7 +67,9 @@ describe("CategoryService", () => {
     })
   })
 
-  it("never targets the public read controller for writes (regression guard #178)", async () => {
+  // Path-only guard: it says nothing about the request *bodies*. Those are
+  // pinned in AdminCategories.test.tsx, where the DTOs are actually built.
+  it("routes every write to the admin prefix, never the public read controller (#178)", async () => {
     mockApiRequest.mockResolvedValue({ id: "cat_1" })
     await CategoryService.create({ name: "Neu" } as unknown as CategoryCreateDTO)
     await CategoryService.update("cat_1", { name: "Neu" } as unknown as CategoryUpdateDTO)
