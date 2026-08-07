@@ -3,17 +3,24 @@
 import type React from "react"
 
 import { useState } from "react"
-import { Mail, Phone, MapPin, Send, Clock, MessageCircle } from "lucide-react"
+import { Mail, Phone, MapPin, Send, Clock, MessageCircle, Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { SUPPORT_EMAIL, CONTACT_SUBJECTS, buildContactMailto, openMailto } from "@/src/lib/contact"
+import {
+  SUPPORT_EMAIL,
+  CONTACT_SUBJECTS,
+  contactSubjectLabel,
+  buildContactMailto,
+  openMailto,
+} from "@/src/lib/contact"
+import { ApiError } from "@/src/lib/api-client"
+import { ContactService } from "@/src/services/contact.service"
+
+const EMPTY_FORM = { name: "", email: "", subject: "", message: "" }
 
 export default function Contact() {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: "",
-  })
+  const [formData, setFormData] = useState(EMPTY_FORM)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [sendFailed, setSendFailed] = useState(false)
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -24,14 +31,43 @@ export default function Contact() {
     })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // No backend contact endpoint yet — open the user's mail client with the
-    // message prefilled. Honest and fully client-side until an endpoint exists.
-    openMailto(buildContactMailto(formData))
-    toast.success(
-      `Ihr E-Mail-Programm wurde geöffnet. Falls das nicht klappt, schreiben Sie an ${SUPPORT_EMAIL}.`
-    )
+    if (isSubmitting) return
+    setIsSubmitting(true)
+    try {
+      const ack = await ContactService.send({
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        // Der lesbare Betreff, nicht der Select-Wert: der Vertrag verlangt
+        // 3–150 Zeichen und im Support-Postfach steht sonst nur "order".
+        subject: contactSubjectLabel(formData.subject),
+        message: formData.message,
+      })
+      setSendFailed(false)
+      setFormData(EMPTY_FORM)
+      const reference = ack.id.slice(0, 8)
+      if (ack.forwarded) {
+        toast.success(`Nachricht eingegangen. Wir antworten per E-Mail. Referenz: ${reference}`)
+      } else {
+        // Gespeichert ist die Anfrage in jedem Fall — nur die Benachrichtigung an
+        // das Support-Postfach ging nicht raus. Ein "wir melden uns gleich" wäre
+        // hier geschönt, deshalb die ehrliche Variante samt Referenznummer.
+        toast.warning(
+          `Nachricht gespeichert (Referenz: ${reference}). Die Benachrichtigung an unser Support-Team steht noch aus — die Antwort kann daher länger dauern.`
+        )
+      }
+    } catch (err) {
+      setSendFailed(true)
+      // 429 und 400 bringen bereits eine lokalisierte Meldung mit (api-client).
+      toast.error(
+        err instanceof ApiError
+          ? err.message
+          : "Nachricht konnte nicht gesendet werden. Bitte später erneut versuchen."
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -199,15 +235,37 @@ export default function Contact() {
 
               <button
                 type="submit"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground transition-colors hover:bg-green-600"
+                disabled={isSubmitting}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground transition-colors hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                <Send className="h-4 w-4" />
-                Nachricht per E-Mail senden
+                {isSubmitting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                {isSubmitting ? "Wird gesendet …" : "Nachricht senden"}
               </button>
 
               <p className="text-center text-xs text-muted-foreground">
-                Der Button öffnet Ihr E-Mail-Programm mit der vorausgefüllten Nachricht.
+                Wir speichern Ihre Anfrage und antworten per E-Mail an die angegebene Adresse.
               </p>
+
+              {/* Fallback: schlägt der Endpoint fehl, bleibt der Kontaktweg offen. */}
+              {sendFailed && (
+                <div className="rounded-lg bg-secondary p-4 text-center text-sm text-foreground">
+                  <p>Das Senden hat nicht geklappt.</p>
+                  <button
+                    type="button"
+                    onClick={() => openMailto(buildContactMailto(formData))}
+                    className="mt-2 font-medium text-green-600 underline underline-offset-2"
+                  >
+                    Stattdessen E-Mail-Programm öffnen
+                  </button>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Oder schreiben Sie direkt an {SUPPORT_EMAIL}.
+                  </p>
+                </div>
+              )}
             </form>
           </div>
         </div>

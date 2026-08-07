@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { buildContactMailto, type ContactFormData } from "./contact"
+import { buildContactMailto, contactSubjectLabel, type ContactFormData } from "./contact"
 
 const baseData: ContactFormData = {
   name: "Max Mustermann",
@@ -8,6 +8,27 @@ const baseData: ContactFormData = {
   message: "Wo ist meine Bestellung?",
 }
 
+describe("contactSubjectLabel", () => {
+  it("maps a select value to the readable subject sent to the endpoint", () => {
+    expect(contactSubjectLabel("order")).toBe("Hilfe bei einer Bestellung")
+  })
+
+  it("falls back to 'Anfrage' for an unknown value", () => {
+    expect(contactSubjectLabel("weird")).toBe("Anfrage")
+    expect(contactSubjectLabel("")).toBe("Anfrage")
+  })
+
+  it("always satisfies the backend's 3–150 character rule", () => {
+    for (const value of ["general", "order", "product", "sustainability", "seller", "feedback"]) {
+      const label = contactSubjectLabel(value)
+      expect(label.length).toBeGreaterThanOrEqual(3)
+      expect(label.length).toBeLessThanOrEqual(150)
+    }
+  })
+})
+
+// Der mailto-Weg ist seit #120 nur noch Fallback für einen fehlgeschlagenen
+// Request — die Regeln bleiben dieselben.
 describe("buildContactMailto", () => {
   it("builds a mailto URL to the given support address", () => {
     const url = buildContactMailto(baseData, "support@test.dev")

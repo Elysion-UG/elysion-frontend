@@ -1,8 +1,11 @@
 // Contact configuration and mailto helper.
 //
-// There is no backend contact endpoint. Until one exists, the contact form
-// composes a `mailto:` link to the support address and opens the user's mail
-// client. The support address is configurable via NEXT_PUBLIC_SUPPORT_EMAIL.
+// Das Formular sendet an `POST /api/v1/contact` (ContactService, Backend #120).
+// Der `mailto:`-Weg bleibt als **Fallback**: schlägt der Request fehl — Netzfehler,
+// Rate-Limit, Server nicht erreichbar —, bietet `Contact.tsx` an, die Nachricht
+// stattdessen im Mail-Programm zu öffnen. Ohne diesen Ausweg stünde ausgerechnet
+// bei einer Störung kein Kontaktweg zur Verfügung.
+// Die Support-Adresse ist über NEXT_PUBLIC_SUPPORT_EMAIL konfigurierbar.
 
 export const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "support@elysion.de"
 
@@ -28,15 +31,25 @@ export interface ContactFormData {
 }
 
 /**
- * Builds a `mailto:` URL from the contact form data. The subject value is
- * mapped to its human-readable label; unknown values fall back to "Anfrage".
+ * Übersetzt den Select-Wert in den lesbaren Betreff. Genau dieser Text geht an
+ * den Endpoint: der Backend-Vertrag verlangt 3–150 Zeichen, und im
+ * Support-Postfach steht dann „Hilfe bei einer Bestellung" statt `order`.
+ * Unbekannte Werte fallen auf "Anfrage" zurück.
+ */
+export function contactSubjectLabel(value: string): string {
+  return CONTACT_SUBJECTS.find((s) => s.value === value)?.label ?? "Anfrage"
+}
+
+/**
+ * Builds a `mailto:` URL from the contact form data — Fallback-Weg, wenn der
+ * Endpoint nicht erreichbar ist. The subject value is mapped to its
+ * human-readable label; unknown values fall back to "Anfrage".
  */
 export function buildContactMailto(
   data: ContactFormData,
   supportEmail: string = SUPPORT_EMAIL
 ): string {
-  const subjectLabel = CONTACT_SUBJECTS.find((s) => s.value === data.subject)?.label ?? "Anfrage"
-  const subject = `[Elysion Kontakt] ${subjectLabel}`
+  const subject = `[Elysion Kontakt] ${contactSubjectLabel(data.subject)}`
   const body = `Name: ${data.name}\nE-Mail: ${data.email}\n\n${data.message}`
 
   return `mailto:${supportEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`

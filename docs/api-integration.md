@@ -58,7 +58,7 @@ haben sie nicht.
 `auth` · `user` · `address` · `buyer-value-profile` · `seller-profile` ·
 `seller-value-profile` · `admin` · `product` · `category` · `material` ·
 `certificate` · `cart` · `checkout` · `order` · `seller-order` · `seller-payout` ·
-`payment` · `file` · `recommendation` · `monitoring`
+`payment` · `file` · `recommendation` · `monitoring` · `contact`
 
 > Die Methodennamen stehen im jeweiligen Service — hier bewusst nicht gespiegelt,
 > damit sie nicht auseinanderlaufen.
@@ -333,6 +333,26 @@ DELETE /api/v1/files/{id}               → null
 ```
 GET    /api/v1/recommendations?limit=   → Recommendation[]
 ```
+
+### Kontakt
+
+```
+POST   /api/v1/contact                  → { id, receivedAt, forwarded }   — public, 202
+```
+
+Request: `{ name, email, subject, message }` — `name` 2–100, `subject` 3–150,
+`message` 10–5000 Zeichen, `email` gültig und max. 320 Zeichen. Das Frontend sendet
+den **lesbaren** Betreff (`contactSubjectLabel`), nicht den Select-Wert.
+
+- `202 Accepted`, nicht `201`: quittiert wird die Annahme, nicht die Erledigung.
+- Die Anfrage wird **immer gespeichert**. `forwarded: false` heißt nur, dass die
+  Benachrichtigung ans Support-Postfach (noch) nicht rausging — kein Fehler, kein
+  Neuversuch. Die Erfolgsmeldung im UI unterscheidet beide Fälle und nennt in
+  beiden die Referenznummer (`id`).
+- `400` bei Validierungsfehlern und bei Steuerzeichen in `email`
+  (Header-Injection-Schutz), `429` bei 5 Requests/Stunde/IP.
+- Fällt der Request aus, bietet `Contact.tsx` den `mailto:`-Fallback aus
+  `src/lib/contact.ts` an — sonst gäbe es bei einer Störung gar keinen Kontaktweg.
 
 ### Admin
 
