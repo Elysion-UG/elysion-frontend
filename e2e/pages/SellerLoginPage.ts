@@ -1,5 +1,6 @@
 import { Page } from "@playwright/test"
 import { BasePage } from "./BasePage"
+import { clearCredentialFields } from "../fixtures/credential-fields"
 
 export class SellerLoginPage extends BasePage {
   constructor(page: Page) {
@@ -18,6 +19,12 @@ export class SellerLoginPage extends BasePage {
 
   async submit() {
     await this.page.getByRole("button", { name: "Anmelden" }).click()
+    // Credentials sind mit dem Klick im Request — Felder sofort leeren, damit
+    // ein Fehler-Snapshot sie nicht im Klartext ins Artefakt schreibt (#106).
+    await clearCredentialFields(
+      this.page.getByPlaceholder("Passwort"),
+      this.page.getByPlaceholder("ihre@firma.de")
+    )
   }
 
   async loginWith(email: string, password: string) {

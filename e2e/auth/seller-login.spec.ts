@@ -8,6 +8,7 @@
  * Rate-Limit: siehe Hinweis in buyer-login.spec.ts. Diese Datei macht 3 Logins.
  */
 import { test, expect } from "@playwright/test"
+import { clearCredentialFields } from "../fixtures/credential-fields"
 import { SELLER, BUYER } from "../fixtures/credentials"
 
 const SELLER_LOGIN_URL = "http://seller.localhost:3000/login/seller"
@@ -22,9 +23,13 @@ async function fillAndSubmit(
 ) {
   await page.goto(SELLER_LOGIN_URL)
   await expect(page.getByRole("heading", { name: "Willkommen zurück" })).toBeVisible()
-  await page.getByPlaceholder("ihre@firma.de").fill(email)
-  await page.getByPlaceholder("Passwort").fill(password)
+  const emailInput = page.getByPlaceholder("ihre@firma.de")
+  const passwordInput = page.getByPlaceholder("Passwort")
+  await emailInput.fill(email)
+  await passwordInput.fill(password)
   await page.getByRole("button", { name: "Anmelden" }).click()
+  // Siehe e2e/fixtures/credential-fields.ts — Felder nach dem Submit leeren (#106).
+  await clearCredentialFields(passwordInput, emailInput)
 }
 
 test.describe.configure({ mode: "serial" })

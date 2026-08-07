@@ -9,6 +9,7 @@ import { test as setup } from "@playwright/test"
 import { fileURLToPath } from "url"
 import path from "path"
 
+import { clearCredentialFields } from "./fixtures/credential-fields"
 import { ADMIN } from "./fixtures/credentials"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -17,8 +18,10 @@ export const ADMIN_AUTH_FILE = path.join(__dirname, ".auth/admin.json")
 setup("Admin Login einmalig durchführen", async ({ page }) => {
   await page.goto("/login/admin")
 
-  await page.getByPlaceholder("admin@elysion.de").fill(ADMIN.email)
-  await page.getByPlaceholder("Passwort").fill(ADMIN.password)
+  const emailInput = page.getByPlaceholder("admin@elysion.de")
+  const passwordInput = page.getByPlaceholder("Passwort")
+  await emailInput.fill(ADMIN.email)
+  await passwordInput.fill(ADMIN.password)
 
   const refreshAfterLogin = page.waitForResponse(
     (res) =>
@@ -29,6 +32,8 @@ setup("Admin Login einmalig durchführen", async ({ page }) => {
   )
 
   await page.getByRole("button", { name: "Anmelden" }).click()
+  // Siehe e2e/fixtures/credential-fields.ts — Felder nach dem Submit leeren (#106).
+  await clearCredentialFields(passwordInput, emailInput)
   await page.waitForURL("**/admin/**", { timeout: 20_000 })
   await refreshAfterLogin
 

@@ -12,6 +12,8 @@
  */
 import { test, expect, Page } from "@playwright/test"
 
+import { clearCredentialFields, expectFieldsFilled } from "../fixtures/credential-fields"
+
 const BUYER_URL = process.env.STAGE_BUYER_URL || "https://elysion-stage.vercel.app"
 const SELLER_URL = process.env.STAGE_SELLER_URL || "https://elysion-stage-seller.vercel.app"
 const ADMIN_URL = process.env.STAGE_ADMIN_URL || "https://elysion-stage-admin.vercel.app"
@@ -110,21 +112,29 @@ async function fillLoginAndSubmit(
   const emailInput = page.getByPlaceholder(emailPlaceholder)
   const passwordInput = page.getByPlaceholder("Passwort")
   await expect(emailInput).toBeVisible({ timeout: 15_000 })
-  await expect(async () => {
-    if ((await emailInput.inputValue()) !== email) await emailInput.fill(email)
-    if ((await passwordInput.inputValue()) !== password) await passwordInput.fill(password)
-    await page.waitForTimeout(300)
-    // Beide Werte müssen GLEICHZEITIG stehen bleiben, sonst nachfüllen.
-    await expect(emailInput).toHaveValue(email, { timeout: 1_000 })
-    await expect(passwordInput).toHaveValue(password, { timeout: 1_000 })
-  }).toPass({ timeout: 20_000 })
-  await page.getByRole("button", { name: "Anmelden" }).click()
-
-  // Credentials wurden beim Klick bereits synchron in den Login-Request
-  // übernommen. Felder danach leeren, damit ein etwaiger Fehler-Snapshot
-  // (Playwrights error-context.md, nur bei Fehlschlag) das Passwort nicht im
-  // Klartext leakt (FE#106). Bei erfolgreichem Login navigiert die Seite weg
-  // → fill() wirft, was hier bewusst ignoriert wird.
-  await passwordInput.fill("").catch(() => {})
-  await emailInput.fill("").catch(() => {})
+  try {
+    await expect(async () => {
+      if ((await emailInput.inputValue()) !== email) await emailInput.fill(email)
+      if ((await passwordInput.inputValue()) !== password) await passwordInput.fill(password)
+      await page.waitForTimeout(300)
+      // Beide Werte müssen GLEICHZEITIG stehen bleiben, sonst nachfüllen.
+      // Bewusst NICHT toHaveValue(): dessen Fehlermeldung enthielte das
+      // Passwort als „Expected string" — und die Meldung landet sowohl in
+      // error-context.md als auch im öffentlichen Actions-Log (#106).
+      await expectFieldsFilled(
+        [
+          { locator: emailInput, value: email, label: "E-Mail" },
+          { locator: passwordInput, value: password, label: "Passwort" },
+        ],
+        { timeout: 1_000 }
+      )
+    }).toPass({ timeout: 20_000 })
+    await page.getByRole("button", { name: "Anmelden" }).click()
+  } finally {
+    // Immer leeren, auch wenn schon der Hydration-Block oben scheitert — sonst
+    // stünde das Passwort noch im Feld, wenn Playwright im Teardown den
+    // Fehler-Snapshot zieht (#106). Nach dem Klick sind die Werte bereits
+    // synchron im Login-Request, der Login bleibt also unberührt.
+    await clearCredentialFields(passwordInput, emailInput)
+  }
 }

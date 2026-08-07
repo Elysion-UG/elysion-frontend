@@ -15,6 +15,7 @@
  *   `APP_AUTH_RATE_LIMIT_LOGIN_IP_CAPACITY=100` im Backend setzen.
  */
 import { test, expect } from "@playwright/test"
+import { clearCredentialFields } from "../fixtures/credential-fields"
 import { BUYER, SELLER } from "../fixtures/credentials"
 
 // Credentials: e2e/fixtures/credentials.ts (Secret, sonst lokaler Seed-Default).
@@ -29,12 +30,16 @@ async function openLoginModal(page: import("@playwright/test").Page) {
 }
 
 async function submitLoginForm(page: import("@playwright/test").Page, email: string, pw: string) {
-  await page.getByPlaceholder("ihre@email.de").fill(email)
-  await page.getByPlaceholder("Passwort").fill(pw)
+  const emailInput = page.getByPlaceholder("ihre@email.de")
+  const passwordInput = page.getByPlaceholder("Passwort")
+  await emailInput.fill(email)
+  await passwordInput.fill(pw)
   // .last() = Submit-Button im Form (der erste war der Navbar-Trigger der schon
   // verarbeitet ist, aber zur Sicherheit den letzten zu nehmen ist robuster
   // falls weitere Anmelden-Buttons gemounted werden).
   await page.getByRole("button", { name: "Anmelden" }).last().click()
+  // Siehe e2e/fixtures/credential-fields.ts — Felder nach dem Submit leeren (#106).
+  await clearCredentialFields(passwordInput, emailInput)
 }
 
 test.describe.configure({ mode: "serial" })
