@@ -11,6 +11,12 @@ interface FetchProductsParams {
   search: string
   priceRange: { min: number; max: number }
   materials: string[]
+  /** Colour facet values (#49) — sent as the repeatable `color` param. */
+  colors: string[]
+  /** Size facet values (#49) — sent as the repeatable `variantSize` param. */
+  sizes: string[]
+  /** Manufacturer facet ids (#50) — sent as the repeatable `sellerId` param. */
+  sellerIds: string[]
   apiSort: string | undefined
   currentPage: number
 }
@@ -21,6 +27,9 @@ async function fetchProducts(params: FetchProductsParams) {
     minPrice: params.priceRange.min > 0 ? params.priceRange.min : undefined,
     maxPrice: params.priceRange.max < MAX_PRICE_EUR ? params.priceRange.max : undefined,
     materials: params.materials.length > 0 ? params.materials : undefined,
+    colors: params.colors.length > 0 ? params.colors : undefined,
+    sizes: params.sizes.length > 0 ? params.sizes : undefined,
+    sellerId: params.sellerIds.length > 0 ? params.sellerIds : undefined,
     sort: params.apiSort,
     page: params.currentPage,
     size: PRODUCTS_PAGE_SIZE,

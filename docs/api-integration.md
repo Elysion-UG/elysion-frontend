@@ -119,8 +119,13 @@ Das Buyer-Werteprofil liegt auf `/users/me/profile` — nicht auf `/users/me/val
 
 ```
 GET    /api/v1/products                              → ProductPage
-       Filter: search, categoryId, sellerId, minPrice, maxPrice,
-               material (wiederholbar: ?material=leinen&material=hanf), sort, page, size
+       Filter: search, categoryId, minPrice, maxPrice, sort, page, size
+               sellerId    (wiederholbar: ?sellerId=<uuid>&sellerId=<uuid>)
+               material    (wiederholbar: ?material=leinen&material=hanf)
+               color       (wiederholbar: ?color=rot&color=blau)
+               variantSize (wiederholbar: ?variantSize=m&variantSize=l)
+GET    /api/v1/products/facets                       → ProductFacets  — public
+GET    /api/v1/sellers/facets                        → SellerFacet[]  — public
 GET    /api/v1/products/{slug}                       → ProductDetail   — public
 GET    /api/v1/products/by-id/{id}                   → ProductInternalDetail — ADMIN/SELLER
 POST   /api/v1/products                              → ProductCommandResponse  (optional materialIds)
@@ -137,6 +142,30 @@ DELETE /api/v1/products/{id}/variants/{variantId}    → null
 GET    /api/v1/products/{productId}/certificates     → Certificate[]  — public
 GET    /api/v1/materials                             → Material[]     — Stammdaten für Filter + Seller-Formular
 ```
+
+**Wiederholbare Filter** kommen aus `ProductListParams` (`sellerId`, `materials`, `colors`,
+`sizes`) und werden von `buildQuery` automatisch als wiederholte Parameter serialisiert.
+Innerhalb einer Achse gilt OR, zwischen den Achsen AND.
+
+> ⚠️ Der Größen-Filter heißt in der API **`variantSize`**, nicht `size` — `size` ist bereits
+> die Seitengröße der Produktliste. Im Frontend heißt das Feld `ProductListParams.sizes`;
+> `ProductService.list()` übersetzt es.
+
+**Filter-Facetten** (beide public, beide über `ProductService` + je einen Hook mit langem
+`staleTime`):
+
+- `GET /api/v1/products/facets` → `ProductFacets` = `{ colors, sizes }`, je ein Array aus
+  `{ value, productCount }`. Werte sind normalisiert (getrimmt, kleingeschrieben) und werden
+  **wortwörtlich** als `color`/`variantSize` zurückgeschickt — Anzeige-Labels (Kapitalisierung,
+  Farb-Swatch) macht das Frontend, der Filterwert bleibt das Original.
+  Hook: `useProductFacets()`.
+- `GET /api/v1/sellers/facets` → `SellerFacet[]` = `{ id, companyName, productCount }`,
+  alphabetisch nach `companyName`, nicht paginiert. `id` ist exakt der Wert für `sellerId`.
+  Hook: `useSellerFacets()`.
+
+Beide Facetten sind **global**: Sie verengen sich nicht mit den übrigen aktiven Filtern, und
+`productCount` zählt Produkte (nicht Varianten) im Status `ACTIVE`. Die UI darf deshalb nicht
+suggerieren, die Zahlen seien auf die aktuelle Filterkombination bezogen.
 
 Zu Pagination-Shape, `sort`-Werten und dem Unterschied `{slug}` ↔ `by-id/{id}`:
 [`BACKEND_QUIRKS.md`](./BACKEND_QUIRKS.md).

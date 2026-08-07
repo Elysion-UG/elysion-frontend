@@ -96,23 +96,108 @@ export const MIDDLE_IMPORTANCE: Record<string, string> = Object.keys(sustainabil
 export const DEFAULT_PRICE_RANGE = { min: 0, max: 300 } as const
 
 /**
- * Number of *active* filters in the FilterSidebar — materials, a narrowed price
- * range, and any sustainability slider moved off its neutral middle value.
- * Drives the count on the mobile filter trigger (#78). Search is excluded: it
- * has its own search bar, not part of the sidebar.
+ * Number of *active* filters in the FilterSidebar — materials, colours, sizes,
+ * manufacturers, a narrowed price range, and any sustainability slider moved
+ * off its neutral middle value. Drives the count on the mobile filter trigger
+ * (#78). Search is excluded: it has its own search bar, not part of the sidebar.
  */
 export function countActiveFilters(args: {
   selectedMaterials: string[]
+  selectedColors: string[]
+  selectedSizes: string[]
+  selectedSellerIds: string[]
   priceRange: { min: number; max: number }
   sustainabilityImportance: Record<string, string>
 }): number {
-  const { selectedMaterials, priceRange, sustainabilityImportance } = args
+  const {
+    selectedMaterials,
+    selectedColors,
+    selectedSizes,
+    selectedSellerIds,
+    priceRange,
+    sustainabilityImportance,
+  } = args
   const priceNarrowed =
     priceRange.min > DEFAULT_PRICE_RANGE.min || priceRange.max < DEFAULT_PRICE_RANGE.max
   const movedSliders = Object.keys(sustainabilityImportance).filter(
     (key) => sustainabilityImportance[key] !== MIDDLE_IMPORTANCE[key]
   ).length
-  return selectedMaterials.length + (priceNarrowed ? 1 : 0) + movedSliders
+  return (
+    selectedMaterials.length +
+    selectedColors.length +
+    selectedSizes.length +
+    selectedSellerIds.length +
+    (priceNarrowed ? 1 : 0) +
+    movedSliders
+  )
+}
+
+// ── Colour / size facet display (#49) ──────────────────────────────────────────
+// Facet values arrive normalised (trimmed, lower case) and free-text — the
+// backend deliberately leaves the stored data untouched until canonical values
+// land. Display is therefore the frontend's business; the *filter* value always
+// stays the original facet string.
+
+/**
+ * CSS colour per known German colour name, used for the swatch dot. Values not
+ * listed here fall back to a neutral swatch — a missing entry must never hide
+ * the option, only its colour preview.
+ */
+const COLOR_SWATCHES: Record<string, string> = {
+  schwarz: "#111111",
+  weiss: "#ffffff",
+  weiß: "#ffffff",
+  grau: "#9ca3af",
+  silber: "#c0c0c0",
+  rot: "#dc2626",
+  bordeaux: "#7f1d1d",
+  rosa: "#f9a8d4",
+  pink: "#ec4899",
+  orange: "#f97316",
+  gelb: "#facc15",
+  beige: "#e8dcc4",
+  creme: "#f5f1e3",
+  natur: "#e3d9c6",
+  braun: "#8b5e34",
+  gruen: "#16a34a",
+  grün: "#16a34a",
+  oliv: "#6b7a3a",
+  tuerkis: "#14b8a6",
+  türkis: "#14b8a6",
+  blau: "#2563eb",
+  navy: "#1e3a5f",
+  lila: "#7c3aed",
+  violett: "#8b5cf6",
+  gold: "#d4af37",
+  bunt: "#9ca3af",
+}
+
+/** Neutral swatch for facet values we have no colour mapping for. */
+export const FALLBACK_SWATCH = "#d1d5db"
+
+/** CSS colour for a facet value's swatch dot; neutral grey when unknown. */
+export function colorSwatch(value: string): string {
+  return COLOR_SWATCHES[value.trim().toLowerCase()] ?? FALLBACK_SWATCH
+}
+
+/**
+ * Display label for a colour facet value — capitalised for readability.
+ * Never use the result as a filter value: the backend expects the original,
+ * normalised string.
+ */
+export function facetLabel(value: string): string {
+  if (value.length === 0) return value
+  return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
+/**
+ * Display label for a size facet value. Letter sizes (`s`, `m`, `xl`) read as
+ * upper case; anything else (numeric or worded) is merely capitalised.
+ * Display only — the filter value stays the original string.
+ */
+export function sizeLabel(value: string): string {
+  if (/^[a-z]{1,4}$/.test(value)) return value.toUpperCase()
+  return facetLabel(value)
 }
 
 // ── Sort options ───────────────────────────────────────────────────────────────

@@ -13,6 +13,8 @@ import {
 } from "@/src/components/ui/sheet"
 import { useProducts, PRODUCTS_PAGE_SIZE } from "@/src/hooks/useProducts"
 import { useMaterials } from "@/src/hooks/useMaterials"
+import { useProductFacets } from "@/src/hooks/useProductFacets"
+import { useSellerFacets } from "@/src/hooks/useSellerFacets"
 import { useAuth } from "@/src/context/AuthContext"
 import { useBuyerValueProfile } from "@/src/hooks/useBuyerValueProfile"
 import {
@@ -41,10 +43,15 @@ export default function SustainableShop() {
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const [priceRange, setPriceRange] = useState({ min: 0, max: 300 })
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([])
+  const [selectedColors, setSelectedColors] = useState<string[]>([])
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([])
+  const [selectedSellerIds, setSelectedSellerIds] = useState<string[]>([])
   const [sortBy, setSortBy] = useState("newest")
   const [currentPage, setCurrentPage] = useState(0)
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false)
   const { data: materials } = useMaterials()
+  const { data: productFacets } = useProductFacets()
+  const { data: sellerFacets } = useSellerFacets()
   const [sustainabilityImportance, setSustainabilityImportance] =
     useState<Record<string, string>>(MIDDLE_IMPORTANCE)
 
@@ -89,15 +96,23 @@ export default function SustainableShop() {
     setDebouncedSearch("")
     setPriceRange({ min: 0, max: 300 })
     setSelectedMaterials([])
+    setSelectedColors([])
+    setSelectedSizes([])
+    setSelectedSellerIds([])
     setCurrentPage(0)
   }
 
-  const handleToggleMaterial = (slug: string) => {
-    setSelectedMaterials((prev) =>
-      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
-    )
-    setCurrentPage(0)
-  }
+  /** Toggles one value of a multi-select filter axis and returns to page 1. */
+  const makeToggle =
+    (setter: React.Dispatch<React.SetStateAction<string[]>>) => (value: string) => {
+      setter((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]))
+      setCurrentPage(0)
+    }
+
+  const handleToggleMaterial = makeToggle(setSelectedMaterials)
+  const handleToggleColor = makeToggle(setSelectedColors)
+  const handleToggleSize = makeToggle(setSelectedSizes)
+  const handleToggleSeller = makeToggle(setSelectedSellerIds)
 
   // ── Data via React Query ───────────────────────────────────────────
   const apiSort = sortOptions.find((o) => o.value === sortBy)?.apiSort
@@ -105,6 +120,9 @@ export default function SustainableShop() {
     search: debouncedSearch,
     priceRange,
     materials: selectedMaterials,
+    colors: selectedColors,
+    sizes: selectedSizes,
+    sellerIds: selectedSellerIds,
     apiSort,
     currentPage,
   })
@@ -115,9 +133,16 @@ export default function SustainableShop() {
   // Count for the mobile "Filter (N)" trigger (search has its own bar → excluded).
   const activeFilterCount = countActiveFilters({
     selectedMaterials,
+    selectedColors,
+    selectedSizes,
+    selectedSellerIds,
     priceRange,
     sustainabilityImportance,
   })
+
+  // The empty state only offers "Filter zurücksetzen" when there is something
+  // to reset — search counts here even though it sits outside the sidebar.
+  const hasActiveFilters = activeFilterCount > 0 || debouncedSearch.length > 0
 
   // ── Handlers ───────────────────────────────────────────────────────
   const handleImportanceChange = (attribute: string, importance: string) => {
@@ -131,6 +156,30 @@ export default function SustainableShop() {
 
   const scrollToShop = () => {
     shopRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  // The sidebar is rendered twice (desktop column + mobile sheet). Sharing one
+  // prop object keeps both instances in sync — a new filter can't reach only one.
+  const sidebarProps: React.ComponentProps<typeof FilterSidebar> = {
+    isAuthenticated,
+    hasValueProfile: !!valueProfile?.simpleProfile,
+    sustainabilityImportance,
+    onImportanceChange: handleImportanceChange,
+    priceRange,
+    onPriceRangeChange: setPriceRange,
+    materials: materials ?? [],
+    selectedMaterials,
+    onToggleMaterial: handleToggleMaterial,
+    colorFacets: productFacets?.colors ?? [],
+    selectedColors,
+    onToggleColor: handleToggleColor,
+    sizeFacets: productFacets?.sizes ?? [],
+    selectedSizes,
+    onToggleSize: handleToggleSize,
+    sellerFacets: sellerFacets ?? [],
+    selectedSellerIds,
+    onToggleSeller: handleToggleSeller,
+    onPageReset: () => setCurrentPage(0),
   }
 
   return (
@@ -160,18 +209,7 @@ export default function SustainableShop() {
       <div className="grid gap-8 md:grid-cols-[280px_1fr]">
         {/* Desktop: Sidebar in der linken Spalte; mobil ausgeblendet (→ Sheet). */}
         <div className="hidden md:block">
-          <FilterSidebar
-            isAuthenticated={isAuthenticated}
-            hasValueProfile={!!valueProfile?.simpleProfile}
-            sustainabilityImportance={sustainabilityImportance}
-            onImportanceChange={handleImportanceChange}
-            priceRange={priceRange}
-            onPriceRangeChange={setPriceRange}
-            materials={materials ?? []}
-            selectedMaterials={selectedMaterials}
-            onToggleMaterial={handleToggleMaterial}
-            onPageReset={() => setCurrentPage(0)}
-          />
+          <FilterSidebar {...sidebarProps} />
         </div>
 
         {/* ── Products Section ─────────────────────────────────────────── */}
@@ -212,18 +250,7 @@ export default function SustainableShop() {
                   <SheetHeader className="mb-4 text-left">
                     <SheetTitle>Produkte filtern</SheetTitle>
                   </SheetHeader>
-                  <FilterSidebar
-                    isAuthenticated={isAuthenticated}
-                    hasValueProfile={!!valueProfile?.simpleProfile}
-                    sustainabilityImportance={sustainabilityImportance}
-                    onImportanceChange={handleImportanceChange}
-                    priceRange={priceRange}
-                    onPriceRangeChange={setPriceRange}
-                    materials={materials ?? []}
-                    selectedMaterials={selectedMaterials}
-                    onToggleMaterial={handleToggleMaterial}
-                    onPageReset={() => setCurrentPage(0)}
-                  />
+                  <FilterSidebar {...sidebarProps} />
                 </SheetContent>
               </Sheet>
 
@@ -285,15 +312,19 @@ export default function SustainableShop() {
               <div className="text-center">
                 <p className="font-medium text-foreground">Keine Produkte gefunden</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Versuche andere Suchbegriffe oder passe die Filter an
+                  {hasActiveFilters
+                    ? "Versuche andere Suchbegriffe oder passe die Filter an"
+                    : "Aktuell sind keine Produkte verfügbar"}
                 </p>
               </div>
-              <button
-                onClick={resetFilters}
-                className="text-sm font-medium text-green-600 hover:underline"
-              >
-                Filter zurücksetzen
-              </button>
+              {hasActiveFilters && (
+                <button
+                  onClick={resetFilters}
+                  className="text-sm font-medium text-green-600 hover:underline"
+                >
+                  Filter zurücksetzen
+                </button>
+              )}
             </div>
           )}
 

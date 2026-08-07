@@ -8,6 +8,8 @@ import React from "react"
 const mockUseAuth = vi.fn()
 const mockUseBuyerValueProfile = vi.fn()
 const mockUseProducts = vi.fn()
+const mockUseProductFacets = vi.fn(() => ({ data: { colors: [], sizes: [] } }))
+const mockUseSellerFacets = vi.fn(() => ({ data: [] }))
 
 vi.mock("@/src/context/AuthContext", () => ({ useAuth: () => mockUseAuth() }))
 vi.mock("@/src/hooks/useBuyerValueProfile", () => ({
@@ -19,6 +21,12 @@ vi.mock("@/src/hooks/useProducts", () => ({
 }))
 vi.mock("@/src/hooks/useMaterials", () => ({
   useMaterials: () => ({ data: [] }),
+}))
+vi.mock("@/src/hooks/useProductFacets", () => ({
+  useProductFacets: () => mockUseProductFacets(),
+}))
+vi.mock("@/src/hooks/useSellerFacets", () => ({
+  useSellerFacets: () => mockUseSellerFacets(),
 }))
 
 vi.mock("next/navigation", () => ({

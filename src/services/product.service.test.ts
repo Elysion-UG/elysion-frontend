@@ -77,6 +77,62 @@ describe("ProductService", () => {
       expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products?sellerId=sel_1")
     })
 
+    it("serializes a sellerId array as a repeatable sellerId param (#50)", async () => {
+      mockApiRequest.mockResolvedValue(mockApiProductPage)
+      await ProductService.list({ sellerId: ["sel_1", "sel_2"] })
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products?sellerId=sel_1&sellerId=sel_2")
+    })
+
+    it("omits the sellerId param for an empty sellerId array", async () => {
+      mockApiRequest.mockResolvedValue(mockApiProductPage)
+      await ProductService.list({ sellerId: [] })
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products")
+    })
+
+    it("serializes colors as a repeatable color param (#49)", async () => {
+      mockApiRequest.mockResolvedValue(mockApiProductPage)
+      await ProductService.list({ colors: ["rot", "blau"] })
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products?color=rot&color=blau")
+    })
+
+    it("serializes sizes as a repeatable variantSize param — never `size` (#49)", async () => {
+      mockApiRequest.mockResolvedValue(mockApiProductPage)
+      await ProductService.list({ sizes: ["m", "l"] })
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products?variantSize=m&variantSize=l")
+    })
+
+    it("keeps variantSize and the page size `size` apart", async () => {
+      mockApiRequest.mockResolvedValue(mockApiProductPage)
+      await ProductService.list({ sizes: ["m"], size: 12 })
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products?variantSize=m&size=12")
+    })
+
+    it("omits color/variantSize for empty arrays", async () => {
+      mockApiRequest.mockResolvedValue(mockApiProductPage)
+      await ProductService.list({ colors: [], sizes: [] })
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products")
+    })
+
+    it("combines colours, sizes and sellers into one query", async () => {
+      mockApiRequest.mockResolvedValue(mockApiProductPage)
+      await ProductService.list({
+        colors: ["rot"],
+        sizes: ["m", "l"],
+        sellerId: ["sel_1", "sel_2"],
+      })
+      expect(mockApiRequest).toHaveBeenCalledWith(
+        "/api/v1/products?sellerId=sel_1&sellerId=sel_2&color=rot&variantSize=m&variantSize=l"
+      )
+    })
+
+    it("passes facet values through verbatim (no re-casing)", async () => {
+      mockApiRequest.mockResolvedValue(mockApiProductPage)
+      await ProductService.list({ colors: ["dunkelgrün"] })
+      expect(mockApiRequest).toHaveBeenCalledWith(
+        `/api/v1/products?color=${encodeURIComponent("dunkelgrün")}`
+      )
+    })
+
     it("appends minPrice and maxPrice", async () => {
       mockApiRequest.mockResolvedValue(mockApiProductPage)
       await ProductService.list({ minPrice: 10, maxPrice: 100 })
@@ -225,6 +281,77 @@ describe("ProductService", () => {
       expect(result.page).toBe(2)
       expect(result.totalPages).toBe(4)
       expect(result.size).toBe(12)
+    })
+  })
+
+  // ── listFacets (#49) ─────────────────────────────────────────────────
+
+  describe("listFacets", () => {
+    const rawFacets = {
+      colors: [
+        { value: "blau", productCount: 2 },
+        { value: "rot", productCount: 5 },
+      ],
+      sizes: [{ value: "m", productCount: 3 }],
+    }
+
+    it("calls GET /api/v1/products/facets", async () => {
+      mockApiRequest.mockResolvedValue(rawFacets)
+      await ProductService.listFacets()
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products/facets")
+    })
+
+    it("returns both axes unchanged", async () => {
+      mockApiRequest.mockResolvedValue(rawFacets)
+      const result = await ProductService.listFacets()
+      expect(result).toEqual(rawFacets)
+    })
+
+    it("accepts an empty axis", async () => {
+      mockApiRequest.mockResolvedValue({ colors: [], sizes: [] })
+      const result = await ProductService.listFacets()
+      expect(result).toEqual({ colors: [], sizes: [] })
+    })
+
+    it("rejects a facet response that drifts from the contract", async () => {
+      mockApiRequest.mockResolvedValue({ colors: [{ value: "rot" }], sizes: [] })
+      await expect(ProductService.listFacets()).rejects.toThrow(/Server-Antwort/)
+    })
+
+    it("rejects a facet response missing an axis", async () => {
+      mockApiRequest.mockResolvedValue({ colors: [] })
+      await expect(ProductService.listFacets()).rejects.toThrow(/Server-Antwort/)
+    })
+  })
+
+  // ── listSellerFacets (#50) ───────────────────────────────────────────
+
+  describe("listSellerFacets", () => {
+    const rawSellerFacets = [
+      { id: "8f1c", companyName: "Alpha Manufaktur", productCount: 3 },
+      { id: "b204", companyName: "Beta Weberei", productCount: 1 },
+    ]
+
+    it("calls GET /api/v1/sellers/facets", async () => {
+      mockApiRequest.mockResolvedValue(rawSellerFacets)
+      await ProductService.listSellerFacets()
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/sellers/facets")
+    })
+
+    it("returns the facet list in backend order", async () => {
+      mockApiRequest.mockResolvedValue(rawSellerFacets)
+      const result = await ProductService.listSellerFacets()
+      expect(result).toEqual(rawSellerFacets)
+    })
+
+    it("accepts an empty facet list", async () => {
+      mockApiRequest.mockResolvedValue([])
+      await expect(ProductService.listSellerFacets()).resolves.toEqual([])
+    })
+
+    it("rejects entries without a companyName", async () => {
+      mockApiRequest.mockResolvedValue([{ id: "8f1c", productCount: 3 }])
+      await expect(ProductService.listSellerFacets()).rejects.toThrow(/Server-Antwort/)
     })
   })
 

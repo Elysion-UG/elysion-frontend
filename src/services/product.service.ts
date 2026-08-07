@@ -18,6 +18,8 @@ import { normalizePage } from "@/src/lib/normalize-page"
 import type {
   Page,
   ProductListParams,
+  ProductFacets,
+  SellerFacet,
   ProductDetail,
   ProductInternalDetail,
   ProductCreateDTO,
@@ -56,6 +58,26 @@ const apiProductPageSchema = z.object({
   totalItems: z.number(),
   totalPages: z.number(),
 })
+
+// ── Raw API schemas (filter facets) ───────────────────────────────────────────
+
+const apiFacetValueSchema = z.object({
+  value: z.string(),
+  productCount: z.number(),
+})
+
+const apiProductFacetsSchema = z.object({
+  colors: z.array(apiFacetValueSchema),
+  sizes: z.array(apiFacetValueSchema),
+})
+
+const apiSellerFacetsSchema = z.array(
+  z.object({
+    id: z.string(),
+    companyName: z.string(),
+    productCount: z.number(),
+  })
+)
 
 // ── Raw API schemas (detail endpoint) ─────────────────────────────────────────
 
@@ -126,6 +148,10 @@ export const ProductService = {
         maxPrice: params.maxPrice,
         // Backend expects the repeatable param name `material`.
         material: params.materials,
+        // Variant facets (#49): the size axis is `variantSize`, NOT `size` —
+        // `size` is already the page size below.
+        color: params.colors,
+        variantSize: params.sizes,
         sort: params.sort,
         page: params.page,
         size: params.size,
@@ -148,6 +174,35 @@ export const ProductService = {
         : undefined,
       createdAt: item.createdAt,
     }))
+  },
+
+  /**
+   * Colour/size filter facet of the product list (#49).
+   *
+   * Values come back normalised (trimmed, lower case) and are passed back
+   * verbatim as `colors` / `sizes` in {@link ProductService.list}. The facet is
+   * **global** — it does not narrow down with the other active filters.
+   */
+  async listFacets(): Promise<ProductFacets> {
+    return parseApiResponse(
+      apiProductFacetsSchema,
+      await apiRequest<unknown>("/api/v1/products/facets"),
+      "product.listFacets"
+    )
+  },
+
+  /**
+   * Manufacturer facet of the product list (#50). Lives under `/api/v1/sellers`
+   * on the backend but is purely a product-filter concern, so it sits next to
+   * the colour/size facet rather than in the (authenticated) seller-profile
+   * service. Alphabetical by `companyName`, not paginated.
+   */
+  async listSellerFacets(): Promise<SellerFacet[]> {
+    return parseApiResponse(
+      apiSellerFacetsSchema,
+      await apiRequest<unknown>("/api/v1/sellers/facets"),
+      "product.listSellerFacets"
+    )
   },
 
   async getBySlug(slug: string): Promise<ProductDetail> {
