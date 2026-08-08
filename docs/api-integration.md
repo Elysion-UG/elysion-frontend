@@ -143,6 +143,11 @@ GET    /api/v1/products/{productId}/certificates     → Certificate[]  — publ
 GET    /api/v1/materials                             → Material[]     — Stammdaten für Filter + Seller-Formular
 ```
 
+Zu Pagination-Shape, `sort`-Werten und dem Unterschied `{slug}` ↔ `by-id/{id}`:
+[`BACKEND_QUIRKS.md`](./BACKEND_QUIRKS.md).
+
+#### Filter & Facetten (#49/#50)
+
 **Wiederholbare Filter** kommen aus `ProductListParams` (`sellerId`, `materials`, `colors`,
 `sizes`) und werden von `buildQuery` automatisch als wiederholte Parameter serialisiert.
 Innerhalb einer Achse gilt OR, zwischen den Achsen AND.
@@ -167,8 +172,10 @@ Beide Facetten sind **global**: Sie verengen sich nicht mit den übrigen aktiven
 `productCount` zählt Produkte (nicht Varianten) im Status `ACTIVE`. Die UI darf deshalb nicht
 suggerieren, die Zahlen seien auf die aktuelle Filterkombination bezogen.
 
-Zu Pagination-Shape, `sort`-Werten und dem Unterschied `{slug}` ↔ `by-id/{id}`:
-[`BACKEND_QUIRKS.md`](./BACKEND_QUIRKS.md).
+Fällt eine der beiden Facetten aus (HTTP-Fehler oder Schemaverletzung), ist das Ergebnis
+dasselbe wie bei einer leeren Facette — die Sidebar-Sektion verschwindet. Die UI muss den
+Fehlerzustand deshalb explizit anzeigen (`isError` der Hooks), sonst liest der Nutzer den
+Ausfall als „Filter entfernt".
 
 ### Kategorien
 

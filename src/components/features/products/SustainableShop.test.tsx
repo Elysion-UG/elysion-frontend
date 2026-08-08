@@ -8,8 +8,10 @@ import React from "react"
 const mockUseAuth = vi.fn()
 const mockUseBuyerValueProfile = vi.fn()
 const mockUseProducts = vi.fn()
-const mockUseProductFacets = vi.fn(() => ({ data: { colors: [], sizes: [] } }))
-const mockUseSellerFacets = vi.fn(() => ({ data: [] }))
+const mockUseProductFacets = vi.fn()
+const mockUseSellerFacets = vi.fn()
+const mockRefetchProductFacets = vi.fn()
+const mockRefetchSellerFacets = vi.fn()
 
 vi.mock("@/src/context/AuthContext", () => ({ useAuth: () => mockUseAuth() }))
 vi.mock("@/src/hooks/useBuyerValueProfile", () => ({
@@ -48,6 +50,22 @@ function defaultProductsState() {
     refetch: vi.fn(),
   })
 }
+
+/** Both facet queries succeed — the state every test starts from. */
+beforeEach(() => {
+  mockUseProductFacets.mockReturnValue({
+    data: { colors: [], sizes: [] },
+    isError: false,
+    refetch: mockRefetchProductFacets,
+  })
+  mockUseSellerFacets.mockReturnValue({
+    data: [],
+    isError: false,
+    refetch: mockRefetchSellerFacets,
+  })
+  mockRefetchProductFacets.mockClear()
+  mockRefetchSellerFacets.mockClear()
+})
 
 // ── Tests ──────────────────────────────────────────────────────────────────────
 
@@ -172,6 +190,149 @@ describe("SustainableShop — mobile filter Sheet (#78)", () => {
     expect(await screen.findByText("Produkte filtern")).toBeInTheDocument()
     // Filter controls (the sustainability section) are now reachable inside the Sheet.
     expect(screen.getAllByText("Nachhaltigkeitspräferenzen").length).toBeGreaterThan(0)
+  })
+})
+
+describe("SustainableShop — Filter zurücksetzen", () => {
+  /**
+   * The failure this guards against: a logged-in buyer gets the sliders seeded
+   * from the value profile, so they are off the neutral middle and counted by
+   * countActiveFilters. Before the fix, resetFilters left them untouched — the
+   * badge kept its number and the sliders kept their position after a reset.
+   */
+  function renderWithSeededSliders() {
+    mockUseAuth.mockReturnValue({ isAuthenticated: true })
+    mockUseBuyerValueProfile.mockReturnValue({
+      data: {
+        simpleProfile: {
+          // The remaining seven axes fall back to "2" — also off the middle.
+          produktqualitaet: 100,
+        },
+      },
+    })
+    defaultProductsState()
+    return render(<SustainableShop />)
+  }
+
+  function sliderValues(container: HTMLElement) {
+    return Array.from(
+      container.querySelectorAll<HTMLInputElement>('input[type="range"][max="5"]')
+    ).map((slider) => slider.value)
+  }
+
+  it("counts the seeded sliders in the mobile filter badge", () => {
+    const { container } = renderWithSeededSliders()
+
+    expect(sliderValues(container)).toEqual(["5", "2", "2", "2", "2", "2", "2", "2"])
+    expect(screen.getByRole("button", { name: /Filter\s*8/ })).toBeInTheDocument()
+  })
+
+  it("resets the sustainability sliders together with the other axes", async () => {
+    const user = userEvent.setup()
+    const { container } = renderWithSeededSliders()
+
+    await user.click(screen.getByRole("button", { name: "Filter zurücksetzen" }))
+
+    expect(sliderValues(container)).toEqual(["3", "3", "3", "3", "3", "3", "3", "3"])
+  })
+
+  it("clears the badge and the reset offer once nothing is active any more", async () => {
+    const user = userEvent.setup()
+    renderWithSeededSliders()
+
+    await user.click(screen.getByRole("button", { name: "Filter zurücksetzen" }))
+
+    expect(screen.getByRole("button", { name: "Filter" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Filter\s*\d/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Filter zurücksetzen" })).not.toBeInTheDocument()
+    expect(screen.getByText("Aktuell sind keine Produkte verfügbar")).toBeInTheDocument()
+  })
+
+  it("keeps the chosen sort order — it is not a filter and is not counted", async () => {
+    const user = userEvent.setup()
+    renderWithSeededSliders()
+
+    await user.click(screen.getByRole("button", { name: "Neueste" }))
+    await user.click(screen.getByRole("button", { name: "Preis: Niedrig → Hoch" }))
+    await user.click(screen.getByRole("button", { name: "Filter zurücksetzen" }))
+
+    expect(screen.getByRole("button", { name: "Preis: Niedrig → Hoch" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Neueste" })).not.toBeInTheDocument()
+  })
+})
+
+describe("SustainableShop — Facetten-Ausfall", () => {
+  beforeEach(() => {
+    defaultProductsState()
+    mockUseAuth.mockReturnValue({ isAuthenticated: false })
+    mockUseBuyerValueProfile.mockReturnValue({ data: undefined })
+  })
+
+  it("stays silent while both facet queries are fine", () => {
+    render(<SustainableShop />)
+    expect(screen.queryByText(/konnten nicht geladen werden/)).not.toBeInTheDocument()
+  })
+
+  it("names colour and size when the product facet endpoint fails", () => {
+    mockUseProductFacets.mockReturnValue({
+      data: undefined,
+      isError: true,
+      refetch: mockRefetchProductFacets,
+    })
+
+    render(<SustainableShop />)
+
+    expect(
+      screen.getByText("Filter für Farbe und Größe konnten nicht geladen werden.")
+    ).toBeInTheDocument()
+  })
+
+  it("names the manufacturer axis when the seller facet endpoint fails", () => {
+    mockUseSellerFacets.mockReturnValue({
+      data: undefined,
+      isError: true,
+      refetch: mockRefetchSellerFacets,
+    })
+
+    render(<SustainableShop />)
+
+    expect(
+      screen.getByText("Filter für Hersteller konnten nicht geladen werden.")
+    ).toBeInTheDocument()
+  })
+
+  it("lists all three axes when both endpoints fail", () => {
+    mockUseProductFacets.mockReturnValue({
+      data: undefined,
+      isError: true,
+      refetch: mockRefetchProductFacets,
+    })
+    mockUseSellerFacets.mockReturnValue({
+      data: undefined,
+      isError: true,
+      refetch: mockRefetchSellerFacets,
+    })
+
+    render(<SustainableShop />)
+
+    expect(
+      screen.getByText("Filter für Farbe, Größe und Hersteller konnten nicht geladen werden.")
+    ).toBeInTheDocument()
+  })
+
+  it("refetches only the failed facet query on retry", async () => {
+    const user = userEvent.setup()
+    mockUseSellerFacets.mockReturnValue({
+      data: undefined,
+      isError: true,
+      refetch: mockRefetchSellerFacets,
+    })
+
+    render(<SustainableShop />)
+    await user.click(screen.getByRole("button", { name: "Erneut versuchen" }))
+
+    expect(mockRefetchSellerFacets).toHaveBeenCalledTimes(1)
+    expect(mockRefetchProductFacets).not.toHaveBeenCalled()
   })
 })
 

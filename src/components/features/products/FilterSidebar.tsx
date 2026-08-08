@@ -11,6 +11,7 @@ import {
   Palette,
   Ruler,
   Factory,
+  AlertCircle,
 } from "lucide-react"
 import { formatEuro } from "@/src/lib/currency"
 import type { Material, ProductFacetValue, SellerFacet } from "@/src/types"
@@ -32,6 +33,16 @@ const GLOBAL_FACET_HINT = "Anzahl im gesamten Sortiment — unabhängig von den 
  */
 function facetInputId(instanceId: string, axis: string, value: string): string {
   return `${instanceId}-${axis}-${value.replace(/[^\p{L}\p{N}]+/gu, "_")}`
+}
+
+/**
+ * DOM-id of a section heading. The checkbox list of each axis references it via
+ * `role="group"` + `aria-labelledby`, so a screen reader announces "Größe" as
+ * the group before "M, 3 Produkte" — without it the option name carries no
+ * indication of which axis it belongs to.
+ */
+function facetGroupLabelId(instanceId: string, axis: string): string {
+  return `${instanceId}-${axis}-label`
 }
 
 interface FilterSidebarProps {
@@ -56,6 +67,13 @@ interface FilterSidebarProps {
   sellerFacets: SellerFacet[]
   selectedSellerIds: string[]
   onToggleSeller: (id: string) => void
+  /**
+   * Labels of the filter axes whose facet could not be loaded. Empty when all
+   * facets are fine. Without this the sections would just be missing — an
+   * empty facet and a failed request look identical from here.
+   */
+  unavailableFacets: string[]
+  onRetryFacets: () => void
   onPageReset: () => void
 }
 
@@ -78,6 +96,8 @@ export default function FilterSidebar({
   sellerFacets,
   selectedSellerIds,
   onToggleSeller,
+  unavailableFacets,
+  onRetryFacets,
   onPageReset,
 }: FilterSidebarProps) {
   // The sidebar is rendered twice (desktop column + mobile sheet), so the
@@ -273,7 +293,12 @@ export default function FilterSidebar({
           >
             <div className="flex items-center gap-2">
               <Shirt className="h-3.5 w-3.5 text-green-600" />
-              <span className="text-sm font-medium text-foreground">Material</span>
+              <span
+                id={facetGroupLabelId(instanceId, "materials")}
+                className="text-sm font-medium text-foreground"
+              >
+                Material
+              </span>
               {selectedMaterials.length > 0 && (
                 <span className="rounded-full bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-600">
                   {selectedMaterials.length}
@@ -287,7 +312,11 @@ export default function FilterSidebar({
             )}
           </button>
           {expandedFilterSections.materials && (
-            <ul className="space-y-1 px-4 pb-4">
+            <ul
+              role="group"
+              aria-labelledby={facetGroupLabelId(instanceId, "materials")}
+              className="space-y-1 px-4 pb-4"
+            >
               {materials.map((material) => (
                 <li key={material.id}>
                   <label className="flex cursor-pointer items-center gap-2.5 py-1 text-sm text-foreground">
@@ -312,6 +341,7 @@ export default function FilterSidebar({
           <FacetSectionHeader
             icon={Palette}
             label="Farbe"
+            labelId={facetGroupLabelId(instanceId, "color")}
             selectedCount={selectedColors.length}
             expanded={expandedFilterSections.colors}
             onToggle={() =>
@@ -320,7 +350,11 @@ export default function FilterSidebar({
           />
           {expandedFilterSections.colors && (
             <div className="px-4 pb-4">
-              <ul className="flex flex-wrap gap-2">
+              <ul
+                role="group"
+                aria-labelledby={facetGroupLabelId(instanceId, "color")}
+                className="flex flex-wrap gap-2"
+              >
                 {colorFacets.map((facet) => {
                   const inputId = facetInputId(instanceId, "color", facet.value)
                   const checked = selectedColors.includes(facet.value)
@@ -367,13 +401,18 @@ export default function FilterSidebar({
           <FacetSectionHeader
             icon={Ruler}
             label="Größe"
+            labelId={facetGroupLabelId(instanceId, "size")}
             selectedCount={selectedSizes.length}
             expanded={expandedFilterSections.sizes}
             onToggle={() => setExpandedFilterSections((prev) => ({ ...prev, sizes: !prev.sizes }))}
           />
           {expandedFilterSections.sizes && (
             <div className="px-4 pb-4">
-              <ul className="flex flex-wrap gap-2">
+              <ul
+                role="group"
+                aria-labelledby={facetGroupLabelId(instanceId, "size")}
+                className="flex flex-wrap gap-2"
+              >
                 {sizeFacets.map((facet) => {
                   const inputId = facetInputId(instanceId, "size", facet.value)
                   const checked = selectedSizes.includes(facet.value)
@@ -413,6 +452,7 @@ export default function FilterSidebar({
           <FacetSectionHeader
             icon={Factory}
             label="Hersteller"
+            labelId={facetGroupLabelId(instanceId, "seller")}
             selectedCount={selectedSellerIds.length}
             expanded={expandedFilterSections.sellers}
             onToggle={() =>
@@ -421,7 +461,11 @@ export default function FilterSidebar({
           />
           {expandedFilterSections.sellers && (
             <div className="px-4 pb-4">
-              <ul className="space-y-1">
+              <ul
+                role="group"
+                aria-labelledby={facetGroupLabelId(instanceId, "seller")}
+                className="space-y-1"
+              >
                 {sellerFacets.map((seller) => (
                   <li key={seller.id}>
                     <label className="flex cursor-pointer items-center gap-2.5 py-1 text-sm text-foreground">
@@ -448,8 +492,34 @@ export default function FilterSidebar({
           )}
         </div>
       )}
+
+      {/* Facetten-Fehler — sonst wäre der Ausfall unsichtbar (leere Facette und
+          fehlgeschlagener Request sehen in der Sidebar gleich aus). */}
+      {unavailableFacets.length > 0 && (
+        <div className="border-t border-border px-4 py-3.5" role="status">
+          <p className="flex items-start gap-2 text-xs text-muted-foreground">
+            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-danger" />
+            <span>
+              Filter für {formatFacetList(unavailableFacets)} konnten nicht geladen werden.
+            </span>
+          </p>
+          <button
+            type="button"
+            onClick={onRetryFacets}
+            className="mt-1.5 pl-[1.375rem] text-xs font-medium text-green-600 hover:underline"
+          >
+            Erneut versuchen
+          </button>
+        </div>
+      )}
     </div>
   )
+}
+
+/** "Farbe, Größe und Hersteller" — German enumeration for the error notice. */
+function formatFacetList(labels: string[]): string {
+  if (labels.length < 2) return labels.join("")
+  return `${labels.slice(0, -1).join(", ")} und ${labels[labels.length - 1]}`
 }
 
 // ── Section header shared by the facet sections ────────────────────────────────
@@ -457,12 +527,15 @@ export default function FilterSidebar({
 function FacetSectionHeader({
   icon: Icon,
   label,
+  labelId,
   selectedCount,
   expanded,
   onToggle,
 }: {
   icon: typeof Star
   label: string
+  /** Referenced by the checkbox group of this section via `aria-labelledby`. */
+  labelId: string
   selectedCount: number
   expanded: boolean
   onToggle: () => void
@@ -476,7 +549,9 @@ function FacetSectionHeader({
     >
       <div className="flex items-center gap-2">
         <Icon className="h-3.5 w-3.5 text-green-600" />
-        <span className="text-sm font-medium text-foreground">{label}</span>
+        <span id={labelId} className="text-sm font-medium text-foreground">
+          {label}
+        </span>
         {selectedCount > 0 && (
           <span className="rounded-full bg-green-50 px-1.5 py-0.5 text-xs font-medium text-green-600">
             {selectedCount}

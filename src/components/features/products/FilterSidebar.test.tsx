@@ -44,6 +44,8 @@ function renderSidebar(overrides: Partial<React.ComponentProps<typeof FilterSide
     sellerFacets,
     selectedSellerIds: [],
     onToggleSeller: vi.fn(),
+    unavailableFacets: [],
+    onRetryFacets: vi.fn(),
     onPageReset: vi.fn(),
     ...overrides,
   }
@@ -179,5 +181,60 @@ describe("FilterSidebar – Hersteller (#50)", () => {
   it("does not render the manufacturer section without facet values", () => {
     renderSidebar({ sellerFacets: [] })
     expect(screen.queryByRole("button", { name: /Hersteller/ })).not.toBeInTheDocument()
+  })
+})
+
+describe("FilterSidebar – Facetten-Fehler", () => {
+  it("renders no notice while every facet loaded", () => {
+    renderSidebar()
+    expect(screen.queryByRole("status")).not.toBeInTheDocument()
+  })
+
+  it("names the affected axes when the product facet failed", () => {
+    // Sections are gone (empty facet), so the notice is the only remaining hint.
+    renderSidebar({ colorFacets: [], sizeFacets: [], unavailableFacets: ["Farbe", "Größe"] })
+    expect(
+      screen.getByText("Filter für Farbe und Größe konnten nicht geladen werden.")
+    ).toBeInTheDocument()
+  })
+
+  it("names only the manufacturer axis when just that facet failed", () => {
+    renderSidebar({ sellerFacets: [], unavailableFacets: ["Hersteller"] })
+    expect(
+      screen.getByText("Filter für Hersteller konnten nicht geladen werden.")
+    ).toBeInTheDocument()
+    // The colour/size sections still work — the notice must not claim otherwise.
+    expect(screen.getByRole("checkbox", { name: "Rot, 5 Produkte" })).toBeInTheDocument()
+  })
+
+  it("enumerates all three axes when both facet calls failed", () => {
+    renderSidebar({
+      colorFacets: [],
+      sizeFacets: [],
+      sellerFacets: [],
+      unavailableFacets: ["Farbe", "Größe", "Hersteller"],
+    })
+    expect(
+      screen.getByText("Filter für Farbe, Größe und Hersteller konnten nicht geladen werden.")
+    ).toBeInTheDocument()
+  })
+
+  it("retries on demand", () => {
+    const props = renderSidebar({ sellerFacets: [], unavailableFacets: ["Hersteller"] })
+    fireEvent.click(screen.getByRole("button", { name: "Erneut versuchen" }))
+    expect(props.onRetryFacets).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe("FilterSidebar – Gruppen-Labels (a11y)", () => {
+  it.each([
+    ["Material", "Leinen"],
+    ["Farbe", "Blau, 2 Produkte"],
+    ["Größe", "M, 3 Produkte"],
+    ["Hersteller", "Alpha Manufaktur, 3 Produkte"],
+  ])("labels the %s checkbox group with its section heading", (heading, checkboxName) => {
+    renderSidebar()
+    const group = screen.getByRole("group", { name: heading })
+    expect(group).toContainElement(screen.getByRole("checkbox", { name: checkboxName }))
   })
 })

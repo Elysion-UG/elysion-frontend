@@ -21,6 +21,7 @@ import {
   sustainabilityFilters,
   profileWeightToSlider,
   MIDDLE_IMPORTANCE,
+  DEFAULT_PRICE_RANGE,
   sortOptions,
   countActiveFilters,
 } from "./shop-constants"
@@ -41,7 +42,7 @@ export default function SustainableShop() {
   // ── Filter state ───────────────────────────────────────────────────
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 300 })
+  const [priceRange, setPriceRange] = useState<{ min: number; max: number }>(DEFAULT_PRICE_RANGE)
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([])
   const [selectedColors, setSelectedColors] = useState<string[]>([])
   const [selectedSizes, setSelectedSizes] = useState<string[]>([])
@@ -50,8 +51,10 @@ export default function SustainableShop() {
   const [currentPage, setCurrentPage] = useState(0)
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false)
   const { data: materials } = useMaterials()
-  const { data: productFacets } = useProductFacets()
-  const { data: sellerFacets } = useSellerFacets()
+  const productFacetsQuery = useProductFacets()
+  const sellerFacetsQuery = useSellerFacets()
+  const productFacets = productFacetsQuery.data
+  const sellerFacets = sellerFacetsQuery.data
   const [sustainabilityImportance, setSustainabilityImportance] =
     useState<Record<string, string>>(MIDDLE_IMPORTANCE)
 
@@ -91,14 +94,29 @@ export default function SustainableShop() {
     shopRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
+  /**
+   * Clears every axis that `countActiveFilters` counts, plus the search term.
+   * That invariant matters: the empty state only offers this action when the
+   * count is > 0, so anything counted but not cleared would leave the badge
+   * standing after a reset — which is exactly what happened to the
+   * sustainability sliders before (#49/#50 review). A logged-in buyer gets the
+   * sliders seeded from the value profile, so they are almost always off the
+   * neutral middle and thus almost always part of the count.
+   *
+   * `sortBy` is deliberately *not* reset: it is not a filter, it does not
+   * narrow the result set, it is not part of the count, and it stays visible in
+   * its own control — silently flipping it back to "Neueste" would change
+   * something the user never asked to reset.
+   */
   const resetFilters = () => {
     setSearch("")
     setDebouncedSearch("")
-    setPriceRange({ min: 0, max: 300 })
+    setPriceRange(DEFAULT_PRICE_RANGE)
     setSelectedMaterials([])
     setSelectedColors([])
     setSelectedSizes([])
     setSelectedSellerIds([])
+    setSustainabilityImportance(MIDDLE_IMPORTANCE)
     setCurrentPage(0)
   }
 
@@ -144,6 +162,19 @@ export default function SustainableShop() {
   // to reset — search counts here even though it sits outside the sidebar.
   const hasActiveFilters = activeFilterCount > 0 || debouncedSearch.length > 0
 
+  // A failing facet endpoint (HTTP error or schema violation) would otherwise be
+  // invisible: the `?? []` fallbacks below make the sections disappear exactly
+  // like an empty facet does, and the user reads that as "filter removed".
+  // Naming the affected axes keeps the notice honest when only one call fails.
+  const unavailableFacets = [
+    ...(productFacetsQuery.isError ? ["Farbe", "Größe"] : []),
+    ...(sellerFacetsQuery.isError ? ["Hersteller"] : []),
+  ]
+  const retryFacets = () => {
+    if (productFacetsQuery.isError) void productFacetsQuery.refetch()
+    if (sellerFacetsQuery.isError) void sellerFacetsQuery.refetch()
+  }
+
   // ── Handlers ───────────────────────────────────────────────────────
   const handleImportanceChange = (attribute: string, importance: string) => {
     setSustainabilityImportance((prev) => ({ ...prev, [attribute]: importance }))
@@ -179,6 +210,8 @@ export default function SustainableShop() {
     sellerFacets: sellerFacets ?? [],
     selectedSellerIds,
     onToggleSeller: handleToggleSeller,
+    unavailableFacets,
+    onRetryFacets: retryFacets,
     onPageReset: () => setCurrentPage(0),
   }
 
