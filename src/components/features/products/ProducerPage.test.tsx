@@ -227,6 +227,9 @@ describe("ProducerPage — ?id= fallback for existing links", () => {
     expect(screen.queryByText(/Produkte?$/)).not.toBeInTheDocument()
   })
 
+  // Ohne Profil trägt die Seite bei einem Listenfehler nichts Echtes — hier ist
+  // der Vollbild-Fehler richtig. Und er muss von den Produkten sprechen: auf
+  // diesem Pfad wurde nie ein Produzent geladen.
   it("shows only the error state without a placeholder header when the product load fails", () => {
     searchParams({ id: "s1" })
     mockUseSellerProducts.mockReturnValue({
@@ -237,8 +240,49 @@ describe("ProducerPage — ?id= fallback for existing links", () => {
 
     render(<ProducerPage />)
 
-    expect(screen.getByText("Produzent konnte nicht geladen werden")).toBeInTheDocument()
+    expect(screen.getByText("Produkte konnten nicht geladen werden")).toBeInTheDocument()
+    expect(screen.queryByText("Produzent konnte nicht geladen werden")).not.toBeInTheDocument()
     expect(screen.queryByRole("heading", { name: "Verkäufer" })).not.toBeInTheDocument()
     expect(screen.queryByText(/Produkte?$/)).not.toBeInTheDocument()
+  })
+})
+
+describe("ProducerPage — die beiden Fehlerquellen bleiben getrennt", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    profileIdle()
+    productsLoaded()
+  })
+
+  it("keeps the loaded profile when only the product list fails", () => {
+    searchParams({ slug: "greenthread" })
+    mockUsePublicSellerProfile.mockReturnValue({ data: PROFILE, isLoading: false, error: null })
+    mockUseSellerProducts.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new Error("boom"),
+    })
+
+    render(<ProducerPage />)
+
+    // Profil steht weiterhin …
+    expect(screen.getByRole("heading", { name: "GreenThread" })).toBeInTheDocument()
+    expect(screen.getByText("Wir weben seit 1998 in Ostwestfalen.")).toBeInTheDocument()
+    // … der Ausfall wird nur im Inhaltsbereich gemeldet …
+    expect(screen.getByText("Produkte konnten nicht geladen werden")).toBeInTheDocument()
+    expect(screen.queryByText("Produzent konnte nicht geladen werden")).not.toBeInTheDocument()
+    // … und die Produktzahl wird nicht als "0 Produkte" erfunden.
+    expect(screen.queryByText(/^0 Produkte$/)).not.toBeInTheDocument()
+  })
+
+  it("renders the certificate expiry without a timezone shift", () => {
+    searchParams({ slug: "greenthread" })
+    mockUsePublicSellerProfile.mockReturnValue({ data: PROFILE, isLoading: false, error: null })
+
+    render(<ProducerPage />)
+
+    // `new Date("2027-01-01")` wäre UTC-Mitternacht und zeigte westlich von
+    // Greenwich den 31.12.2026.
+    expect(screen.getByText(/gültig bis 01\.01\.2027/)).toBeInTheDocument()
   })
 })

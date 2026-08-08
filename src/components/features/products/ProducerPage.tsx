@@ -33,10 +33,13 @@ export default function ProducerPage() {
   const sellerId = slug ? (profile?.id ?? null) : legacySellerId
   const productsQuery = useSellerProducts(sellerId)
 
+  // Die beiden Fehlerquellen bleiben getrennt: nur ein Profilfehler nimmt der
+  // Seite die Grundlage. Kippt bloß die Produktliste, steht das geladene Profil
+  // weiterhin — und auf dem `?id=`-Pfad wurde nie ein Profil geladen, dort wäre
+  // „Produzent konnte nicht geladen werden" schlicht die falsche Aussage.
   const notFound = (!slug && !legacySellerId) || isSellerNotFound(profileQuery.error)
-  const failed =
-    Boolean(productsQuery.error) ||
-    (Boolean(profileQuery.error) && !isSellerNotFound(profileQuery.error))
+  const profileFailed = Boolean(profileQuery.error) && !isSellerNotFound(profileQuery.error)
+  const productsFailed = Boolean(productsQuery.error)
 
   const products = productsQuery.data?.products ?? []
   const companyName = profile?.companyName ?? productsQuery.data?.companyName ?? "Verkäufer"
@@ -47,7 +50,11 @@ export default function ProducerPage() {
 
   // Not-found / error: render only the error state — no placeholder header card
   // with fabricated "Verkäufer / 0 Produkte" data (mirrors the product detail page).
-  if (notFound || failed) {
+  //
+  // Ein Produktlisten-Fehler landet hier nur, wenn **kein** Profil vorliegt (der
+  // `?id=`-Pfad): dann trägt die Seite sonst nichts Echtes. Mit geladenem Profil
+  // bleibt die Seite stehen und meldet den Ausfall unten im Inhaltsbereich.
+  if (notFound || profileFailed || (productsFailed && !profile)) {
     return (
       <div className="min-h-screen bg-secondary">
         <BackBanner onBack={() => router.back()} />
@@ -57,9 +64,14 @@ export default function ProducerPage() {
               title="Verkäufer nicht gefunden"
               message="Diese Produzenten-Seite gibt es nicht (mehr)."
             />
-          ) : (
+          ) : profileFailed ? (
             <EmptyState
               title="Produzent konnte nicht geladen werden"
+              message="Bitte versuche es später erneut."
+            />
+          ) : (
+            <EmptyState
+              title="Produkte konnten nicht geladen werden"
               message="Bitte versuche es später erneut."
             />
           )}
@@ -82,7 +94,8 @@ export default function ProducerPage() {
             <div>
               <h1 className="text-2xl font-normal text-foreground md:text-3xl">{companyName}</h1>
               <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                {!isLoading && (
+                {/* Bei gescheiterter Produktliste keine erfundene „0 Produkte". */}
+                {!isLoading && !productsFailed && (
                   <span className="flex items-center gap-1.5">
                     <Store className="h-4 w-4" />
                     {productCount} {productCount === 1 ? "Produkt" : "Produkte"}
@@ -157,6 +170,12 @@ export default function ProducerPage() {
               />
             ))}
           </div>
+        ) : productsFailed ? (
+          // Das Profil steht — nur die Liste fehlt. Kein Grund, die Seite zu räumen.
+          <EmptyState
+            title="Produkte konnten nicht geladen werden"
+            message="Bitte versuche es später erneut."
+          />
         ) : products.length === 0 ? (
           <EmptyState
             title="Keine Produkte"
@@ -181,12 +200,25 @@ export default function ProducerPage() {
   )
 }
 
+/**
+ * `expiryDate` ist ein reines Kalenderdatum (`YYYY-MM-DD`). `new Date(...)`
+ * läse das als UTC-Mitternacht; `toLocaleDateString` zeigte in Zeitzonen mit
+ * negativem Offset dann den Vortag. Deshalb wird direkt aus den Bestandteilen
+ * formatiert, ganz ohne Zeitzonen-Umrechnung.
+ */
+function formatCalendarDate(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
+  if (!match) return value
+  const [, year, month, day] = match
+  return `${day}.${month}.${year}`
+}
+
 /** Aussteller und Gültigkeit — nur das, was der Endpoint tatsächlich liefert. */
 function certificateMeta(cert: PublicSellerCertificate): string {
   const parts: string[] = []
   if (cert.issuerName) parts.push(cert.issuerName)
   if (cert.expiryDate) {
-    parts.push(`gültig bis ${new Date(cert.expiryDate).toLocaleDateString("de-DE")}`)
+    parts.push(`gültig bis ${formatCalendarDate(cert.expiryDate)}`)
   }
   return parts.join(" · ")
 }

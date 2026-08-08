@@ -44,9 +44,12 @@ const apiOrderItemSchema = z.object({
 })
 
 /**
- * Read-only Versandfrist (Backend #143). `nullish`, weil Bestellungen aus der
- * Zeit vor der SLA kein Feld tragen — der Vertrag garantiert es nur für neue
- * Reads, und ein hartes `required` würde Altbestände unlesbar machen.
+ * Read-only Versandfrist (Backend #143). Der Vertrag sagt „always present":
+ * das Record wird bedingungslos konstruiert, und ohne Frist liefert
+ * `OrderGroupShippingSlaStatus.evaluate` genau `NOT_APPLICABLE`. Das `nullish`
+ * ist deshalb reine Defensive — ein hartes `required` würde eine ganze
+ * Bestellliste an einem einzelnen fehlenden Feld scheitern lassen, und das
+ * Anzeigeverhalten ist ohnehin dasselbe wie bei `NOT_APPLICABLE`.
  */
 const apiShippingSlaSchema = z.object({
   status: shippingSlaStatusSchema,

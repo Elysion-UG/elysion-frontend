@@ -196,6 +196,7 @@ Fällt eine der beiden Facetten aus (HTTP-Fehler oder Schemaverletzung), ist das
 dasselbe wie bei einer leeren Facette — die Sidebar-Sektion verschwindet. Die UI muss den
 Fehlerzustand deshalb explizit anzeigen (`isError` der Hooks), sonst liest der Nutzer den
 Ausfall als „Filter entfernt".
+
 ### Verkäufer (öffentlich)
 
 ```
@@ -331,8 +332,11 @@ shippingSla: {
 - `MET` / `MISSED` — versandt vor bzw. nach der Frist
 - Das Zeitfenster (Default 48 h) ist Server-Konfiguration — im Frontend steht **keine**
   48h-Konstante mehr; die Frist wird nie clientseitig berechnet.
-- Das Feld fehlt bei Bestellungen aus der Zeit vor #143; der Normalizer behandelt es als
-  „nicht vorhanden" und rendert nichts.
+- Laut Backend-Vertrag ist `shippingSla` **immer vorhanden** (`docs/api/orders.md`: „always
+  present and read-only"); bei Altbestellungen ohne Frist ist `deadlineAt` `null` und `status`
+  entsprechend `NOT_APPLICABLE`. Dass das Feld im Zod-Schema trotzdem optional/nullable steht,
+  ist reine Defensive gegen einen fehlenden Wert — **keine** Vertragsaussage. Fehlendes Feld und
+  `NOT_APPLICABLE` rendern beide nichts.
 - Frontend: `src/lib/shipping-sla.ts` (Formatierung), `shippingSlaLabel`/`shippingSlaColor`
   in `sellerDashboard.constants.ts`.
 
@@ -376,10 +380,18 @@ den **lesbaren** Betreff (`contactSubjectLabel`), nicht den Select-Wert.
 - `202 Accepted`, nicht `201`: quittiert wird die Annahme, nicht die Erledigung.
 - Die Anfrage wird **immer gespeichert**. `forwarded: false` heißt nur, dass die
   Benachrichtigung ans Support-Postfach (noch) nicht rausging — kein Fehler, kein
-  Neuversuch. Die Erfolgsmeldung im UI unterscheidet beide Fälle und nennt in
-  beiden die Referenznummer (`id`).
+  Neuversuch. Das UI unterscheidet beide Fälle und zeigt in beiden die
+  **vollständige** Referenznummer (`id`) in einer bleibenden Quittung auf der Seite,
+  nicht nur in einem Toast: bei `forwarded: false` ist sie der einzige Beleg, dass
+  die Nachricht gespeichert wurde, und der Support sucht darauf per Gleichheit.
 - `400` bei Validierungsfehlern und bei Steuerzeichen in `email`
   (Header-Injection-Schutz), `429` bei 5 Requests/Stunde/IP.
+- **Validiert wird vorher im Client** (`validateContactForm`, `src/lib/contact.ts`)
+  gegen dieselben Grenzen. Grund: der `GlobalExceptionHandler` antwortet mit dem
+  wörtlichen `"Validation failed"`, und der api-client reicht die Server-Meldung bei
+  `400` unverändert durch — lokalisiert wird dort nur der `429`-Fall
+  (`buildRateLimitError`). Ohne Vorprüfung sähe der Besucher also eine englische
+  Meldung ohne Feldbezug.
 - Fällt der Request aus, bietet `Contact.tsx` den `mailto:`-Fallback aus
   `src/lib/contact.ts` an — sonst gäbe es bei einer Störung gar keinen Kontaktweg.
 

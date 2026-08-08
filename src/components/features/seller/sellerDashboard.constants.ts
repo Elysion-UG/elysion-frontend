@@ -52,9 +52,14 @@ export const orderStatusColor: Record<OrderGroupStatus, string> = {
 // keine eigene Farbe; der Eintrag existiert nur, damit der Record vollständig ist.
 export const shippingSlaLabel: Record<ShippingSlaStatus, string> = SHIPPING_SLA_STATUS_LABEL
 
+// Eine laufende Frist ist kein Missstand, sondern der Normalfall — deshalb
+// `info` und nicht `warning`. Damit bleibt Amber dem einen Zustand vorbehalten,
+// der tatsächlich schiefging und nicht mehr zu retten ist: `MISSED`
+// („Verspätet versandt"). `BREACHED` ist die einzige Lage, die der Verkäufer
+// noch abwenden kann, und deshalb als einzige rot.
 export const shippingSlaColor: Record<ShippingSlaStatus, string> = {
   NOT_APPLICABLE: "bg-secondary text-muted-foreground",
-  PENDING: "bg-warning-tint text-warning",
+  PENDING: "bg-info-tint text-info",
   BREACHED: "bg-danger-tint text-danger",
   MET: "bg-green-50 text-green-700",
   MISSED: "bg-warning-tint text-warning",

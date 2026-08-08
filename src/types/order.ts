@@ -139,8 +139,9 @@ export interface OrderGroupDetail {
   currency?: string
   shipment?: { trackingNumber: string; carrier?: string } | null
   /**
-   * Read-only Versandfrist des Servers. Fehlt bei Bestellungen aus der Zeit vor
-   * #143 — dann wird gar nichts angezeigt (wie bei `NOT_APPLICABLE`).
+   * Read-only Versandfrist des Servers. Laut Vertrag immer vorhanden; ohne
+   * Frist ist `deadlineAt` `null` und `status` `NOT_APPLICABLE`. Optional nur
+   * als Defensive — fehlendes Feld zeigt genauso nichts an.
    */
   shippingSla?: ShippingSla
   buyer?: { userId?: string; guestEmail?: string | null }

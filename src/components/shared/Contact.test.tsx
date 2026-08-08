@@ -85,8 +85,11 @@ describe("Contact — POST /api/v1/contact (#120)", () => {
     submit()
 
     await waitFor(() => expect(mockToastSuccess).toHaveBeenCalledTimes(1))
-    expect(mockToastSuccess.mock.calls[0][0]).toContain("11111111")
     expect(screen.getByLabelText("Nachricht *")).toHaveValue("")
+    // Die Referenz steht vollständig und bleibend auf der Seite — ein Toast ist
+    // nach Sekunden weg, und abgeschnitten kann der Support nicht danach suchen.
+    const confirmation = await screen.findByRole("status")
+    expect(confirmation).toHaveTextContent(ack.id)
   })
 
   it("does not claim a notification went out when forwarded=false", async () => {
@@ -97,9 +100,60 @@ describe("Contact — POST /api/v1/contact (#120)", () => {
 
     await waitFor(() => expect(mockToastWarning).toHaveBeenCalledTimes(1))
     expect(mockToastSuccess).not.toHaveBeenCalled()
-    // Die Nachricht ist trotzdem gespeichert — die Referenz muss genannt werden.
-    expect(mockToastWarning.mock.calls[0][0]).toContain("11111111")
-    expect(mockToastWarning.mock.calls[0][0]).toMatch(/steht noch aus/)
+    // Gespeichert ist die Anfrage trotzdem — und genau hier ist die vollständige
+    // Referenz der einzige Beleg dafür.
+    const confirmation = await screen.findByRole("status")
+    expect(confirmation).toHaveTextContent(ack.id)
+    expect(confirmation).toHaveTextContent(/steht noch aus/)
+    expect(confirmation).toHaveTextContent(/geht nicht verloren/)
+  })
+
+  it("keeps the confirmation on screen instead of only in a toast", async () => {
+    render(<Contact />)
+    expect(screen.queryByRole("status")).not.toBeInTheDocument()
+    fillForm()
+    submit()
+    // Kein Timer, kein Auto-Dismiss: die Quittung bleibt einfach stehen.
+    await screen.findByRole("status")
+    expect(screen.getByRole("status")).toHaveTextContent(ack.id)
+  })
+
+  // Der Vertrag verlangt name 2–100, subject 3–150, message 10–5000, email ≤320.
+  // Ohne clientseitige Prüfung käme das englische "Validation failed" zurück.
+  it("blocks a too-short message before the request and names the field", async () => {
+    render(<Contact />)
+    fillForm()
+    fireEvent.change(screen.getByLabelText("Nachricht *"), { target: { value: "Hilfe!" } })
+    submit()
+
+    await waitFor(() => expect(mockToastError).toHaveBeenCalledTimes(1))
+    expect(mockSend).not.toHaveBeenCalled()
+    expect(screen.getByRole("alert")).toHaveTextContent(/mindestens 10 Zeichen/)
+    expect(screen.getByLabelText("Nachricht *")).toHaveAttribute("aria-invalid", "true")
+  })
+
+  it("clears a field error as soon as the field is edited", async () => {
+    render(<Contact />)
+    fillForm()
+    fireEvent.change(screen.getByLabelText("Nachricht *"), { target: { value: "kurz" } })
+    submit()
+    await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument())
+
+    fireEvent.change(screen.getByLabelText("Nachricht *"), {
+      target: { value: "Jetzt ausführlich genug." },
+    })
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+  })
+
+  it("never shows the server's raw English 'Validation failed' on a 400", async () => {
+    mockSend.mockRejectedValue(new ApiError(400, "Validation failed"))
+    render(<Contact />)
+    fillForm()
+    submit()
+
+    await waitFor(() => expect(mockToastError).toHaveBeenCalledTimes(1))
+    expect(mockToastError.mock.calls[0][0]).not.toContain("Validation failed")
+    expect(mockToastError.mock.calls[0][0]).toMatch(/konnte nicht gesendet werden/)
   })
 
   it("surfaces the localised rate-limit message on 429", async () => {

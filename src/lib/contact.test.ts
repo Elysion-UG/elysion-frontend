@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest"
-import { buildContactMailto, contactSubjectLabel, type ContactFormData } from "./contact"
+import {
+  buildContactMailto,
+  contactSubjectLabel,
+  validateContactForm,
+  CONTACT_SUBJECTS,
+  CONTACT_LIMITS,
+  type ContactFormData,
+} from "./contact"
 
 const baseData: ContactFormData = {
   name: "Max Mustermann",
@@ -18,12 +25,68 @@ describe("contactSubjectLabel", () => {
     expect(contactSubjectLabel("")).toBe("Anfrage")
   })
 
+  // Diese Zusicherung ersetzt eine Laufzeitprüfung in validateContactForm: die
+  // Auswahl ist eine feste Liste, also gehört die Garantie hierher.
   it("always satisfies the backend's 3–150 character rule", () => {
-    for (const value of ["general", "order", "product", "sustainability", "seller", "feedback"]) {
-      const label = contactSubjectLabel(value)
-      expect(label.length).toBeGreaterThanOrEqual(3)
-      expect(label.length).toBeLessThanOrEqual(150)
+    for (const subject of CONTACT_SUBJECTS) {
+      const label = contactSubjectLabel(subject.value)
+      expect(label.length).toBeGreaterThanOrEqual(CONTACT_LIMITS.subject.min)
+      expect(label.length).toBeLessThanOrEqual(CONTACT_LIMITS.subject.max)
     }
+    expect(contactSubjectLabel("weird").length).toBeGreaterThanOrEqual(CONTACT_LIMITS.subject.min)
+  })
+})
+
+// Ohne diese Prüfung antwortet der Endpoint mit dem englischen „Validation
+// failed" ohne Feldbezug — der api-client lokalisiert nur den 429-Fall.
+describe("validateContactForm", () => {
+  it("accepts valid input", () => {
+    expect(validateContactForm(baseData)).toEqual({})
+  })
+
+  it("rejects a message shorter than the contract's 10 characters", () => {
+    const errors = validateContactForm({ ...baseData, message: "Hilfe!" })
+    expect(errors.message).toMatch(/mindestens 10 Zeichen/)
+  })
+
+  it("rejects a message longer than 5000 characters", () => {
+    const errors = validateContactForm({ ...baseData, message: "a".repeat(5001) })
+    expect(errors.message).toMatch(/höchstens 5000/)
+  })
+
+  it("measures the trimmed value — the endpoint rejects btrim-empty fields", () => {
+    expect(
+      validateContactForm({ ...baseData, message: `   ${"a".repeat(9)}   ` }).message
+    ).toBeDefined()
+    expect(validateContactForm({ ...baseData, name: "  M  " }).name).toBeDefined()
+  })
+
+  it("rejects a name outside 2–100 characters", () => {
+    expect(validateContactForm({ ...baseData, name: "M" }).name).toMatch(/mindestens 2 Zeichen/)
+    expect(validateContactForm({ ...baseData, name: "M".repeat(101) }).name).toMatch(
+      /höchstens 100/
+    )
+  })
+
+  it("rejects a malformed or missing email", () => {
+    expect(validateContactForm({ ...baseData, email: "" }).email).toBeDefined()
+    expect(validateContactForm({ ...baseData, email: "not-an-email" }).email).toMatch(/gültige/)
+    expect(validateContactForm({ ...baseData, email: `a@b.de${"x".repeat(320)}` }).email).toMatch(
+      /höchstens 320/
+    )
+  })
+
+  it("rejects a CRLF in the email — the endpoint treats it as header injection", () => {
+    expect(validateContactForm({ ...baseData, email: "a@b.de\r\nBcc: x@y.de" }).email).toBeDefined()
+  })
+
+  it("requires a chosen subject", () => {
+    expect(validateContactForm({ ...baseData, subject: "" }).subject).toMatch(/Betreff/)
+  })
+
+  it("reports every offending field at once, not just the first", () => {
+    const errors = validateContactForm({ name: "", email: "nope", subject: "", message: "hi" })
+    expect(Object.keys(errors).sort()).toEqual(["email", "message", "name", "subject"])
   })
 })
 
