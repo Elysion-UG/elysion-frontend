@@ -208,8 +208,12 @@ export const ProductService = {
   // ── Seller commands (/api/v1/seller/products) ─────────────────────
   //
   // There is deliberately no delete() here: the backend exposes no
-  // DELETE /api/v1/seller/products/{id} (see #219). Products are retired via
-  // updateStatus(id, { status: "INACTIVE" }).
+  // DELETE /api/v1/seller/products/{id} (see #219).
+  //
+  // updateStatus(id, { status: "INACTIVE" }) is not a substitute. The backend
+  // state machine only allows DRAFT → REVIEW, REVIEW → ACTIVE|REJECTED and
+  // ACTIVE ⇄ INACTIVE, so retiring a product works only from ACTIVE; a DRAFT,
+  // REVIEW or REJECTED product currently cannot be removed or hidden at all.
 
   async create(dto: ProductCreateDTO): Promise<ProductCommandResponse> {
     return apiRequest("/api/v1/seller/products", {

@@ -123,7 +123,6 @@ GET    /api/v1/products                              → ProductPage
                material (wiederholbar: ?material=leinen&material=hanf), sort, page, size
 GET    /api/v1/products/{slug}                       → ProductDetail   — public
 GET    /api/v1/products/by-id/{id}                   → ProductInternalDetail — ADMIN/SELLER
-GET    /api/v1/products/facets                       → ProductFacets   — public
 GET    /api/v1/products/{productId}/certificates     → Certificate[]  — public
 GET    /api/v1/materials                             → Material[]     — Stammdaten für Filter + Seller-Formular
 ```
@@ -146,9 +145,18 @@ PATCH  /api/v1/seller/products/{productId}/variants/{variantId} → ProductComma
 DELETE /api/v1/seller/products/{productId}/variants/{variantId} → null
 ```
 
-Es gibt **kein** `DELETE /api/v1/seller/products/{id}` — Produkte werden über
-`PATCH .../status` auf `INACTIVE` gesetzt, nicht gelöscht. `ProductService` bietet
-deshalb bewusst keine `delete()`-Methode an.
+Es gibt **kein** `DELETE /api/v1/seller/products/{id}`; `ProductService` bietet deshalb
+bewusst keine `delete()`-Methode an.
+
+`PATCH .../status` ist **kein vollwertiger Ersatz**. Die State Machine des Backends
+(BE `../../elysion-marketplace-backend/docs/domain/product-lifecycle.md`)
+erlaubt nur `DRAFT → REVIEW`, `REVIEW → ACTIVE`, `REVIEW → REJECTED` und `ACTIVE ⇄ INACTIVE`
+— alles andere wird abgelehnt. Stilllegen per `INACTIVE` funktioniert also **nur aus
+`ACTIVE`**; für ein Produkt in `DRAFT`, `REVIEW` oder `REJECTED` gibt es derzeit **keinen**
+Weg, es zu löschen oder auszublenden. Genau `DRAFT` war der Zustand des entfernten
+Papierkorb-Buttons — ein Ersatz braucht eine Backend-Entscheidung (`DELETE` oder ein
+zusätzlicher Übergang), keinen Frontend-Workaround. Öffentlich sichtbar sind ohnehin nur
+`ACTIVE`-Produkte.
 
 Zu Pagination-Shape, `sort`-Werten und dem Unterschied `{slug}` ↔ `by-id/{id}`:
 [`BACKEND_QUIRKS.md`](./BACKEND_QUIRKS.md).
