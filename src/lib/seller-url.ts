@@ -35,8 +35,9 @@ export function buyerUrl(path: string = "/"): string {
  * entsteht (ProductCard, ProductDetail, SustainableShop ziehen darüber mit).
  *
  * Bevorzugt wird `?slug=`: nur damit lässt sich das öffentliche Profil
- * (`GET /api/v1/sellers/{slug}`, #104) laden. Die öffentlichen Produkt-Reads
- * liefern den Slug inzwischen mit, sodass hier im Regelfall `?slug=` entsteht.
+ * (`GET /api/v1/sellers/{slug}`, Elysion-UG/elysion-marketplace-backend#104)
+ * laden. Die öffentlichen Produkt-Reads liefern den Slug inzwischen mit, sodass
+ * hier im Regelfall `?slug=` entsteht.
  *
  * `slug` ist jedoch `null`, sobald der Verkäufer nicht `APPROVED` ist — das
  * Profil antwortet für solche Verkäufer mit 404, ihre `ACTIVE`-Produkte sind

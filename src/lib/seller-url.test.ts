@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest"
 import { sellerUrl, buyerUrl, adminUrl, producerHref } from "./seller-url"
 
 describe("producerHref", () => {
-  it("prefers the slug — only it can load the public profile (#104)", () => {
+  it("prefers the slug — only it can load the public profile (Elysion-UG/elysion-marketplace-backend#104)", () => {
     expect(producerHref({ slug: "alpha-manufaktur", userId: "u1" })).toBe(
       "/producer?slug=alpha-manufaktur"
     )
@@ -12,7 +12,7 @@ describe("producerHref", () => {
     expect(producerHref({ userId: "8f1c2b7e" })).toBe("/producer?id=8f1c2b7e")
   })
 
-  it("falls back to ?id= for a null slug — the seller is not APPROVED (#104)", () => {
+  it("falls back to ?id= for a null slug — the seller is not APPROVED (Elysion-UG/elysion-marketplace-backend#104)", () => {
     // The profile answers 404 for such a seller, so ?slug= would be a dead link.
     expect(producerHref({ slug: null, userId: "8f1c2b7e" })).toBe("/producer?id=8f1c2b7e")
   })

@@ -217,7 +217,7 @@ describe("ProductService", () => {
       totalItems: 1,
     })
 
-    it("maps seller.id to seller.userId and keeps the slug (#104)", async () => {
+    it("maps seller.id to seller.userId and keeps the slug (Elysion-UG/elysion-marketplace-backend#104)", async () => {
       mockApiRequest.mockResolvedValue(
         listItemWithSeller({
           id: "seller-uuid",
@@ -233,7 +233,7 @@ describe("ProductService", () => {
       })
     })
 
-    it("keeps seller.slug null for a seller that is not APPROVED (#104)", async () => {
+    it("keeps seller.slug null for a seller that is not APPROVED (Elysion-UG/elysion-marketplace-backend#104)", async () => {
       mockApiRequest.mockResolvedValue(
         listItemWithSeller({ id: "seller-uuid", slug: null, companyName: "Eco Store" })
       )
@@ -371,7 +371,7 @@ describe("ProductService", () => {
   describe("listSellerFacets", () => {
     const rawSellerFacets = [
       { id: "8f1c", slug: "alpha-manufaktur", companyName: "Alpha Manufaktur", productCount: 3 },
-      // Not APPROVED: filterable, but not linkable (#104).
+      // Not APPROVED: filterable, but not linkable (Elysion-UG/elysion-marketplace-backend#104).
       { id: "b204", slug: null, companyName: "Beta Weberei", productCount: 1 },
     ]
 
@@ -397,7 +397,7 @@ describe("ProductService", () => {
       await expect(ProductService.listSellerFacets()).rejects.toThrow(/Server-Antwort/)
     })
 
-    it("keeps the slug of an approved seller and null for a non-approved one (#104)", async () => {
+    it("keeps the slug of an approved seller and null for a non-approved one (Elysion-UG/elysion-marketplace-backend#104)", async () => {
       mockApiRequest.mockResolvedValue(rawSellerFacets)
       const result = await ProductService.listSellerFacets()
       expect(result[0].slug).toBe("alpha-manufaktur")
@@ -445,7 +445,7 @@ describe("ProductService", () => {
       expect(result.shortDesc).toBe("A great shirt")
     })
 
-    it("maps seller.id to seller.userId and keeps the slug (#104)", async () => {
+    it("maps seller.id to seller.userId and keeps the slug (Elysion-UG/elysion-marketplace-backend#104)", async () => {
       mockApiRequest.mockResolvedValue(rawDetail)
       const result = await ProductService.getBySlug("eco-shirt")
       expect(result.seller).toEqual({
@@ -457,7 +457,7 @@ describe("ProductService", () => {
       })
     })
 
-    it("keeps seller.slug null for a seller that is not APPROVED (#104)", async () => {
+    it("keeps seller.slug null for a seller that is not APPROVED (Elysion-UG/elysion-marketplace-backend#104)", async () => {
       mockApiRequest.mockResolvedValue({
         ...rawDetail,
         seller: { id: "seller-uuid", slug: null, companyName: "Eco Store" },
@@ -511,7 +511,8 @@ describe("ProductService", () => {
     })
   })
 
-  // ── Produzenten-Link end to end (#104) ───────────────────────────────
+  // ── Produzenten-Link end to end ──────────────────────────────────────
+  // (Elysion-UG/elysion-marketplace-backend#104)
   //
   // The whole point of carrying `slug` through the service: what the list and
   // the detail hand to producerHref() must come out as ?slug=, not ?id=.

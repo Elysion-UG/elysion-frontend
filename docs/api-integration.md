@@ -227,9 +227,15 @@ und werden im Service zu `undefined` normalisiert.
 #### Seller-Kurzfassung (`seller`) in den öffentlichen Produkt-Reads
 
 Alle **öffentlichen** Produkt-Reads — Produktliste, Storefront-Detail `/{slug}`,
-`by-id/{id}` und die Empfehlungen — tragen dasselbe kompakte Seller-Objekt
-`{ id, slug, companyName }`. Die Seller-Portal-Liste (`GET /api/v1/seller/products`)
-und die Admin-Reads nutzen eigene DTOs und sind davon **nicht** erfasst.
+`by-id/{id}` und die Empfehlungen — tragen im Backend-Vertrag dasselbe kompakte
+Seller-Objekt `{ id, slug, companyName }`. Die Seller-Portal-Liste
+(`GET /api/v1/seller/products`) und die Admin-Reads nutzen eigene DTOs und sind davon
+**nicht** erfasst.
+
+Im Frontend ausmodelliert ist das Objekt allerdings nur in `ProductService.list()` und
+`getBySlug()`: `Recommendation` kennt gar kein `seller`-Feld (die Empfehlungskacheln zeigen
+keinen Hersteller), und `getById()` mappt nicht — siehe den Warnhinweis unten. Wer den
+Verkäufer aus einer Empfehlung braucht, erweitert erst den Typ.
 
 `ProductService` benennt `id` beim Mappen in `ProductSeller.userId` um; der rohe
 API-Name verlässt den Service nicht.
@@ -255,15 +261,24 @@ API-Name verlässt den Service nicht.
 
 Im Zod-Schema ist `slug` `nullish()` und nicht `nullable()`: Ein Backend, das das Feld noch
 gar nicht kennt, darf nicht die komplette Produktliste als Schemaverletzung killen — es
-landet dann im selben `?id=`-Rückfallweg. `ProductService` normalisiert ein fehlendes Feld
-beim Mappen zu `null`.
+landet dann im selben `?id=`-Rückfallweg. In den **Produkt-Reads** (`list`, `getBySlug`)
+normalisiert `ProductService` ein fehlendes Feld beim Mappen zu `null`.
 
-> ⚠️ **Ausnahme `by-id/{id}`:** `ProductService.getById()` reicht die Antwort ungeprüft und
-> ungemappt durch (kein Zod-Schema, kein Rename). Der Rückgabetyp verspricht
-> `seller.userId`, tatsächlich steht dort das rohe `seller.id`. Heute folgenlos — die
-> beiden Aufrufer (`ProductForm`, `ProductImageManager`) lesen `seller` überhaupt nicht,
-> und `producerHref()` wird aus dieser Route nie gefüttert. Wer die Route künftig für eine
-> Produzenten-Verlinkung nutzt, braucht vorher Schema + Mapper wie bei `getBySlug()`.
+`listSellerFacets()` hat dagegen **keinen** Mapper — es reicht das geparste Schema direkt
+durch. `SellerFacet.slug` ist deshalb dreiwertig: `string` (verlinkbar), `null` (Verkäufer
+nicht `APPROVED`) oder `undefined` (Backend ohne das Feld). Folgenlos, solange die Sidebar
+nicht verlinkt; wer den Slug dort nutzt, behandelt `null` und `undefined` gleich — genau das
+tut `producerHref()` ohnehin.
+
+> ⚠️ **Ausnahme `by-id/{id}`** (→ Elysion-UG/elysion-frontend#232):
+> `ProductService.getById()` reicht die Antwort ungeprüft und ungemappt durch (kein
+> Zod-Schema, kein Rename). Der Rückgabetyp verspricht `seller.userId`, tatsächlich steht
+> dort das rohe `seller.id`; dieselbe fehlende Mapping-Schicht trifft `images`, wo die Route
+> `order` liefert und `ProductImage` `position` erwartet. Beides heute folgenlos — die zwei
+> Aufrufer (`ProductForm`, `ProductImageManager`) lesen `seller` gar nicht und die
+> Bild-Anzeige nutzt die Array-Reihenfolge statt `position`. Wer die Route künftig für eine
+> Produzenten-Verlinkung oder eine echte Sortierung nutzt, braucht vorher Schema + Mapper
+> wie bei `getBySlug()`.
 
 ### Kategorien
 
