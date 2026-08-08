@@ -90,14 +90,62 @@ export interface ProductListItem {
 export interface ProductListParams {
   search?: string
   categoryId?: string
-  sellerId?: string
+  /**
+   * Seller UUID(s). Repeatable manufacturer filter — a product matches when it
+   * belongs to *any* of the supplied sellers (OR within the axis, AND with the
+   * other filters). A single string keeps the pre-#50 behaviour.
+   */
+  sellerId?: string | string[]
   minPrice?: number
   maxPrice?: number
   /** Material slugs; a product matches when linked to any of them. */
   materials?: string[]
+  /**
+   * Variant colour values, taken verbatim from `GET /api/v1/products/facets`.
+   * Serialised as the repeatable `color` param. OR within the axis.
+   */
+  colors?: string[]
+  /**
+   * Variant size values, taken verbatim from `GET /api/v1/products/facets`.
+   * Serialised as the repeatable **`variantSize`** param — *not* `size`, which
+   * is already the page size of the list endpoint. OR within the axis;
+   * `colors` and `sizes` combine with AND.
+   */
+  sizes?: string[]
   sort?: string
   page?: number
   size?: number
+}
+
+// ── Filter facets ────────────────────────────────────────────────────────────
+
+/** One selectable value of a product filter axis plus the products behind it. */
+export interface ProductFacetValue {
+  /** Normalised (trimmed, lower case) — pass back verbatim as a filter value. */
+  value: string
+  /** Number of ACTIVE *products* (not variants) carrying this value. */
+  productCount: number
+}
+
+/**
+ * `GET /api/v1/products/facets` — selectable colours and sizes.
+ *
+ * The facet is **global**: it does not narrow down with the other filters that
+ * are currently applied, so the UI must not suggest otherwise. Both axes are
+ * always present; an axis without values is an empty array.
+ */
+export interface ProductFacets {
+  colors: ProductFacetValue[]
+  sizes: ProductFacetValue[]
+}
+
+/** One entry of `GET /api/v1/sellers/facets` — a manufacturer filter option. */
+export interface SellerFacet {
+  /** Seller UUID — exactly the value for `GET /api/v1/products?sellerId=<id>`. */
+  id: string
+  companyName: string
+  /** Number of ACTIVE products of this manufacturer. */
+  productCount: number
 }
 
 export interface ProductCreateDTO {
