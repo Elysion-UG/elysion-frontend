@@ -184,9 +184,12 @@ Innerhalb einer Achse gilt OR, zwischen den Achsen AND.
   **wortwörtlich** als `color`/`variantSize` zurückgeschickt — Anzeige-Labels (Kapitalisierung,
   Farb-Swatch) macht das Frontend, der Filterwert bleibt das Original.
   Hook: `useProductFacets()`.
-- `GET /api/v1/sellers/facets` → `SellerFacet[]` = `{ id, companyName, productCount }`,
+- `GET /api/v1/sellers/facets` → `SellerFacet[]` = `{ id, slug, companyName, productCount }`,
   alphabetisch nach `companyName`, nicht paginiert. `id` ist exakt der Wert für `sellerId`.
-  Hook: `useSellerFacets()`.
+  `slug` folgt derselben Null-Regel wie die Seller-Kurzfassung der Produktlisten (siehe
+  „Verkäufer (öffentlich)"). Die Sidebar nutzt ihn bewusst **nicht** als Link: die
+  Hersteller-Sektion besteht aus Filter-Checkboxen, ein Link darin wäre ein zweites
+  Interaktionsziel in derselben Zeile. Hook: `useSellerFacets()`.
 
 Beide Facetten sind **global**: Sie verengen sich nicht mit den übrigen aktiven Filtern, und
 `productCount` zählt Produkte (nicht Varianten) im Status `ACTIVE`. Die UI darf deshalb nicht
@@ -221,11 +224,61 @@ und werden im Service zu `undefined` normalisiert.
 - Produzenten-Links entstehen ausschließlich über `producerHref()` in
   `src/lib/seller-url.ts`.
 
-> **Lücke:** Die Produktlisten liefern in `seller` nur `id`/`companyName`, **keinen**
-> `slug`. Aus einer Produktkarte heraus entsteht deshalb weiterhin `?id=<uuid>` und die
-> Produzenten-Seite zeigt nur den aus der Produktliste abgeleiteten Namen. Sobald
-> `ProductSellerSummaryResponse` einen `slug` trägt, greift `producerHref()` ohne
-> weitere Änderung auf `?slug=` um.
+#### Seller-Kurzfassung (`seller`) in den öffentlichen Produkt-Reads
+
+Alle **öffentlichen** Produkt-Reads — Produktliste, Storefront-Detail `/{slug}`,
+`by-id/{id}` und die Empfehlungen — tragen im Backend-Vertrag dasselbe kompakte
+Seller-Objekt `{ id, slug, companyName }`. Die Seller-Portal-Liste
+(`GET /api/v1/seller/products`) und die Admin-Reads nutzen eigene DTOs und sind davon
+**nicht** erfasst.
+
+Im Frontend ausmodelliert ist das Objekt allerdings nur in `ProductService.list()` und
+`getBySlug()`: `Recommendation` kennt gar kein `seller`-Feld (die Empfehlungskacheln zeigen
+keinen Hersteller), und `getById()` mappt nicht — siehe den Warnhinweis unten. Wer den
+Verkäufer aus einer Empfehlung braucht, erweitert erst den Typ.
+
+`ProductService` benennt `id` beim Mappen in `ProductSeller.userId` um; der rohe
+API-Name verlässt den Service nicht.
+
+| API                  | Frontend             | Bedeutung                                                 |
+| -------------------- | -------------------- | --------------------------------------------------------- |
+| `seller.id`          | `seller.userId`      | Seller-UUID, zugleich der Wert für `?sellerId=`           |
+| `seller.slug`        | `seller.slug`        | Slug der Produzenten-Seite — **oder `null`**, siehe unten |
+| `seller.companyName` | `seller.companyName` | Anzeigename des Herstellers                               |
+
+> **Null-Regel:** `slug` ist `null`, sobald der Verkäufer **nicht `APPROVED`** ist.
+> `GET /api/v1/sellers/{slug}` antwortet für jeden anderen Verkäufer-Status mit `404`,
+> nicht unterscheidbar von einem unbekannten Slug — und der Produkt-Status hängt nicht am
+> Verkäufer-Status, ein `ACTIVE`-Produkt eines `PENDING`-Verkäufers ist also öffentlich
+> gelistet. Ein Link aus dessen Slug wäre garantiert tot, deshalb hält das Backend ihn
+> zurück. `producerHref()` fällt dann auf `?id=<uuid>` zurück: eingeschränkte Darstellung,
+> aber ein funktionierender Link.
+>
+> `companyName` bleibt in diesem Fall gesetzt — zurückgehalten wird nur der Link, nicht
+> der Anzeigename. Ein `seller` ohne `companyName` **und** ohne `slug` hieße, dass gar kein
+> Verkäuferprofil existiert; das schließt das Backend per Fremdschlüssel aus, die
+> Nullability im Frontend-Typ ist rein defensiv.
+
+Im Zod-Schema ist `slug` `nullish()` und nicht `nullable()`: Ein Backend, das das Feld noch
+gar nicht kennt, darf nicht die komplette Produktliste als Schemaverletzung killen — es
+landet dann im selben `?id=`-Rückfallweg. In den **Produkt-Reads** (`list`, `getBySlug`)
+normalisiert `ProductService` ein fehlendes Feld beim Mappen zu `null`.
+
+`listSellerFacets()` hat dagegen **keinen** Mapper — es reicht das geparste Schema direkt
+durch. `SellerFacet.slug` ist deshalb dreiwertig: `string` (verlinkbar), `null` (Verkäufer
+nicht `APPROVED`) oder `undefined` (Backend ohne das Feld). Folgenlos, solange die Sidebar
+nicht verlinkt; wer den Slug dort nutzt, behandelt `null` und `undefined` gleich — genau das
+tut `producerHref()` ohnehin.
+
+> ⚠️ **Ausnahme `by-id/{id}`** (→ Elysion-UG/elysion-frontend#232):
+> `ProductService.getById()` reicht die Antwort ungeprüft und ungemappt durch (kein
+> Zod-Schema, kein Rename). Der Rückgabetyp verspricht `seller.userId`, tatsächlich steht
+> dort das rohe `seller.id`; dieselbe fehlende Mapping-Schicht trifft `images`, wo die Route
+> `order` liefert und `ProductImage` `position` erwartet. Beides heute folgenlos — die zwei
+> Aufrufer (`ProductForm`, `ProductImageManager`) lesen `seller` gar nicht und die
+> Bild-Anzeige nutzt die Array-Reihenfolge statt `position`. Wer die Route künftig für eine
+> Produzenten-Verlinkung oder eine echte Sortierung nutzt, braucht vorher Schema + Mapper
+> wie bei `getBySlug()`.
 
 ### Kategorien
 

@@ -50,7 +50,12 @@ const apiProductListItemSchema = z.object({
   price: z.number(),
   currency: z.string(),
   primaryImage: z.string().nullable(),
-  seller: z.object({ id: z.string(), companyName: z.string() }).nullable(),
+  // `slug` is nullish, not required: the backend always sends the key but sends
+  // `null` for every seller that is not APPROVED (see the mapper below), and an
+  // API that predates the field must not take the whole list down.
+  seller: z
+    .object({ id: z.string(), slug: z.string().nullish(), companyName: z.string() })
+    .nullable(),
   createdAt: z.string(),
   matchScore: z.number().nullable(),
   status: z.string().optional(),
@@ -80,6 +85,8 @@ const apiProductFacetsSchema = z.object({
 const apiSellerFacetsSchema = z.array(
   z.object({
     id: z.string(),
+    // Same null-means-not-APPROVED rule as the product-list seller summary.
+    slug: z.string().nullish(),
     companyName: z.string(),
     productCount: z.number(),
   })
@@ -129,6 +136,7 @@ const apiProductDetailSchema = z.object({
   seller: z
     .object({
       id: z.string(),
+      slug: z.string().nullish(),
       companyName: z.string().optional(),
       firstName: z.string().optional(),
       lastName: z.string().optional(),
@@ -175,8 +183,15 @@ export const ProductService = {
       // Backend reports availability per list item; absent (older API) → assume available.
       inStock: item.inStock ?? true,
       imageUrls: item.primaryImage ? [item.primaryImage] : undefined,
+      // `slug` is normalised to an explicit null: "the backend withheld the link
+      // because the seller is not APPROVED" is a state producerHref() acts on,
+      // not an absent field. companyName stays set either way.
       seller: item.seller?.id
-        ? { userId: item.seller.id, companyName: item.seller.companyName }
+        ? {
+            userId: item.seller.id,
+            slug: item.seller.slug ?? null,
+            companyName: item.seller.companyName,
+          }
         : undefined,
       createdAt: item.createdAt,
     }))
@@ -245,6 +260,7 @@ export const ProductService = {
       seller: raw.seller
         ? {
             userId: raw.seller.id,
+            slug: raw.seller.slug ?? null,
             companyName: raw.seller.companyName,
             firstName: raw.seller.firstName,
             lastName: raw.seller.lastName,

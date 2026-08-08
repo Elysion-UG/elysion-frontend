@@ -90,7 +90,11 @@ export function ProductDetailView({
           </div>
 
           {sellerName && (
-            <SellerCard sellerName={sellerName} sellerUserId={product.seller?.userId} />
+            <SellerCard
+              sellerName={sellerName}
+              sellerUserId={product.seller?.userId}
+              sellerSlug={product.seller?.slug}
+            />
           )}
 
           <PriceWithStock price={price} inStock={inStock} />

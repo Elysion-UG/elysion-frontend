@@ -35,10 +35,15 @@ export function buyerUrl(path: string = "/"): string {
  * entsteht (ProductCard, ProductDetail, SustainableShop ziehen darüber mit).
  *
  * Bevorzugt wird `?slug=`: nur damit lässt sich das öffentliche Profil
- * (`GET /api/v1/sellers/{slug}`, #104) laden. Die Produktlisten liefern heute
- * allerdings nur `seller.userId` — solange das so ist, entsteht `?id=<uuid>`,
- * und die Seite fällt auf die aus der Produktliste abgeleitete Darstellung
- * zurück. Bereits geteilte `?id=`-Links bleiben damit gültig.
+ * (`GET /api/v1/sellers/{slug}`, Elysion-UG/elysion-marketplace-backend#104)
+ * laden. Die öffentlichen Produkt-Reads liefern den Slug inzwischen mit, sodass
+ * hier im Regelfall `?slug=` entsteht.
+ *
+ * `slug` ist jedoch `null`, sobald der Verkäufer nicht `APPROVED` ist — das
+ * Profil antwortet für solche Verkäufer mit 404, ihre `ACTIVE`-Produkte sind
+ * aber trotzdem öffentlich gelistet. Für diesen Fall (und für bereits geteilte
+ * Links) bleibt `?id=<uuid>` der Rückfallweg: die Seite zeigt dann nur die aus
+ * der Produktliste abgeleitete Darstellung — eingeschränkt, aber nicht tot.
  *
  * Die Route bleibt `/producer`; eine SEO-URL `/produzenten/{slug}` ist eine
  * eigene Entscheidung und bewusst nicht Teil dieser Funktion.
