@@ -18,7 +18,7 @@
  *    Version verlor in dem Szenario stillschweigend die Session.
  */
 import { test, expect } from "@playwright/test"
-import { clearCredentialFields } from "../fixtures/credential-fields"
+import { clearCredentialFields, fillCredentialField } from "../fixtures/credential-fields"
 import { ADMIN, BUYER } from "../fixtures/credentials"
 
 const ADMIN_LOGIN_URL = "http://admin.localhost:3000/login/admin"
@@ -35,13 +35,17 @@ async function fillAndSubmit(
   await expect(page.getByRole("heading", { name: "Administrator-Anmeldung" })).toBeVisible()
   const emailInput = page.getByPlaceholder("admin@elysion.de")
   const passwordInput = page.getByPlaceholder("Passwort")
-  await emailInput.fill(email)
-  await passwordInput.fill(password)
-  // Button-Label im Markup: "ANMELDEN" (uppercase). getByRole name matcht
-  // case-insensitiv per Substring.
-  await page.getByRole("button", { name: "Anmelden" }).click()
-  // Siehe e2e/fixtures/credential-fields.ts — Felder nach dem Submit leeren (#106).
-  await clearCredentialFields(passwordInput, emailInput)
+  // Siehe e2e/fixtures/credential-fields.ts — Felder im `finally` leeren, damit
+  // auch ein Timeout im Klick sie nicht im Snapshot stehen lässt (#106).
+  try {
+    await fillCredentialField(emailInput, email)
+    await fillCredentialField(passwordInput, password)
+    // Button-Label im Markup: "ANMELDEN" (uppercase). getByRole name matcht
+    // case-insensitiv per Substring.
+    await page.getByRole("button", { name: "Anmelden" }).click()
+  } finally {
+    await clearCredentialFields(passwordInput, emailInput)
+  }
 }
 
 test.describe.configure({ mode: "serial" })

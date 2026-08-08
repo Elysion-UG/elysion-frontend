@@ -12,7 +12,11 @@
  */
 import { test, expect, Page } from "@playwright/test"
 
-import { clearCredentialFields, expectFieldsFilled } from "../fixtures/credential-fields"
+import {
+  clearCredentialFields,
+  expectFieldsFilled,
+  fillCredentialField,
+} from "../fixtures/credential-fields"
 
 const BUYER_URL = process.env.STAGE_BUYER_URL || "https://elysion-stage.vercel.app"
 const SELLER_URL = process.env.STAGE_SELLER_URL || "https://elysion-stage-seller.vercel.app"
@@ -114,8 +118,12 @@ async function fillLoginAndSubmit(
   await expect(emailInput).toBeVisible({ timeout: 15_000 })
   try {
     await expect(async () => {
-      if ((await emailInput.inputValue()) !== email) await emailInput.fill(email)
-      if ((await passwordInput.inputValue()) !== password) await passwordInput.fill(password)
+      // fillCredentialField statt fill(): Der Wert steht sonst im Call-Log der
+      // Aktion und damit in der Fehlermeldung, sobald das Feld zwar existiert,
+      // aber nicht bedienbar ist (#106, Weg 3).
+      if ((await emailInput.inputValue()) !== email) await fillCredentialField(emailInput, email)
+      if ((await passwordInput.inputValue()) !== password)
+        await fillCredentialField(passwordInput, password)
       await page.waitForTimeout(300)
       // Beide Werte müssen GLEICHZEITIG stehen bleiben, sonst nachfüllen.
       // Bewusst NICHT toHaveValue(): dessen Fehlermeldung enthielte das

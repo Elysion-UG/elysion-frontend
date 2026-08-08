@@ -1,28 +1,29 @@
 import { describe, it, expect } from "vitest"
 
-import { describeMismatchedFields } from "@/e2e/credential-redaction"
+import {
+  REDACTED,
+  describeMismatchedFields,
+  redactSecrets,
+  redactSecretsInError,
+} from "@/e2e/credential-redaction"
 
 /**
  * Regression für #106.
  *
- * Der Vorgänger-Code prüfte die Formularwerte mit
- * `expect(feld).toHaveValue(passwort)`. Scheitert diese Assertion — und genau
- * das ist der Hydration-Fehlerfall, für den der Helper überhaupt existiert —,
- * schreibt Playwright das Passwort als „Expected string" in `error.message`.
- * Die Meldung landet wörtlich in `error-context.md` UND über den list-Reporter
- * im Actions-Log; der Log ist bei einem öffentlichen Repo dauerhaft einsehbar
- * und wird von `retention-days` nicht erfasst.
- *
- * `describeMismatchedFields()` meldet deshalb nur Feld-Labels. Diese Tests
- * fixieren genau diese Eigenschaft.
- *
- * Der Test liegt hier statt in e2e/, weil `e2e/fixtures/credential-fields.ts`
+ * Der Test liegt hier statt in `e2e/`, weil `e2e/fixtures/credential-fields.ts`
  * `@playwright/test` mitzieht — dieselbe Trennung wie bei der Trace-Policy.
+ *
+ * REICHWEITE, ehrlich: Diese Datei prüft nur die beiden Funktionen mit echter
+ * Laufzeitlogik (`redactSecrets`/`redactSecretsInError`). Die Verwendung dieser
+ * Helper in den Specs — also der eigentliche Regress „jemand ruft wieder
+ * `fill()`/`toHaveValue()` direkt auf" — liegt außerhalb des Vitest-Scopes und
+ * wird von der `no-restricted-syntax`-Regel in `eslint.config.mjs` abgedeckt.
  */
-describe("Credential-Redaktion (#106)", () => {
-  // Synthetisches Sentinel — NIE ein echter oder echt aussehender Wert.
-  const SECRET = "NOT-A-REAL-PASSWORD"
 
+describe("describeMismatchedFields (#106)", () => {
+  // Hinweis: Die Redaktion ist hier durch die SIGNATUR erzwungen — die Funktion
+  // bekommt nur `{ label, matches }`, nie einen Wert. Diese Tests fixieren
+  // deshalb das Ausgabeformat, nicht die Redaktion selbst.
   it("meldet nichts, wenn alle Felder ihren Sollwert tragen", () => {
     expect(
       describeMismatchedFields([
@@ -49,13 +50,99 @@ describe("Credential-Redaktion (#106)", () => {
       ])
     ).toBe("E-Mail, Passwort")
   })
+})
 
-  it("gibt unter keinen Umständen einen Wert preis — nur Labels", () => {
-    // Die Signatur nimmt bewusst kein `expected`/`actual` entgegen: Der
-    // Vergleich passiert beim Aufrufer, hier kommt nur noch ein Boolean an.
-    const report = describeMismatchedFields([{ label: "Passwort", matches: false }])
+describe("redactSecrets (#106)", () => {
+  // Synthetisches Sentinel — NIE ein echter oder echt aussehender Wert.
+  const SECRET = "NOT-A-REAL-PASSWORD"
 
-    expect(report).not.toContain(SECRET)
-    expect(report).toBe("Passwort")
+  /**
+   * Nachbau einer echten Playwright-Fehlermeldung: `ElementHandle._fill()`
+   * loggt `  fill("<wert>")` VOR der Actionability-Prüfung, und
+   * `Connection.dispatch()` hängt den Call-Log an `error.message`.
+   */
+  const CALL_LOG_MESSAGE = [
+    "locator.fill: Timeout 30000ms exceeded.",
+    "Call log:",
+    '  - waiting for getByPlaceholder("Passwort")',
+    "  -   locator resolved to <input type=\"password\" placeholder='Passwort'/>",
+    `  -   fill("${SECRET}")`,
+    "  -   waiting for element to be visible, enabled and editable",
+  ].join("\n")
+
+  it("entfernt den Wert aus dem Call-Log und lässt die Diagnose stehen", () => {
+    const redacted = redactSecrets(CALL_LOG_MESSAGE, [SECRET])
+
+    expect(redacted).not.toContain(SECRET)
+    expect(redacted).toContain(`fill("${REDACTED}")`)
+    // Genau die Zeile, für die man das Artefakt aufhebt, muss erhalten bleiben.
+    expect(redacted).toContain("waiting for element to be visible, enabled and editable")
+    expect(redacted).toContain("locator.fill: Timeout 30000ms exceeded.")
+  })
+
+  it("entfernt jedes Vorkommen, nicht nur das erste", () => {
+    const redacted = redactSecrets(`${SECRET} ... ${SECRET}`, [SECRET])
+
+    expect(redacted).not.toContain(SECRET)
+    expect(redacted).toBe(`${REDACTED} ... ${REDACTED}`)
+  })
+
+  it("entfernt mehrere Geheimnisse — E-Mail ist ebenfalls ein Secret", () => {
+    const email = "not-a-real-account@example.invalid"
+    const redacted = redactSecrets(`fill("${email}") / fill("${SECRET}")`, [email, SECRET])
+
+    expect(redacted).not.toContain(email)
+    expect(redacted).not.toContain(SECRET)
+  })
+
+  it("ignoriert den leeren String — sonst zerlegte split('') den ganzen Text", () => {
+    // clearCredentialFields() füllt bewusst "". Ohne Guard würde jede
+    // Zeichengrenze ersetzt und die Meldung wäre unlesbar.
+    expect(redactSecrets("Timeout 30000ms exceeded.", [""])).toBe("Timeout 30000ms exceeded.")
+  })
+})
+
+describe("redactSecretsInError (#106)", () => {
+  const SECRET = "NOT-A-REAL-PASSWORD"
+
+  it("redigiert Meldung UND Stack", () => {
+    // rewriteErrorMessage() baut den Stack als `${name}: ${message}\n at ...`
+    // neu auf — die Meldung steht dort ein zweites Mal.
+    const error = new Error(`locator.fill failed\n  fill("${SECRET}")`)
+    error.stack = `Error: locator.fill failed\n  fill("${SECRET}")\n    at Object.<anonymous>`
+
+    const redacted = redactSecretsInError(error, [SECRET])
+
+    expect(redacted).toBe(error) // dasselbe Objekt — Zusatzfelder bleiben erhalten
+    expect(error.message).not.toContain(SECRET)
+    expect(error.stack).not.toContain(SECRET)
+    expect(error.stack).toContain("at Object.<anonymous>")
+  })
+
+  it("erhält Zusatzfelder des Fehlerobjekts (errorContext, matcherResult)", () => {
+    const error = Object.assign(new Error(`fill("${SECRET}")`), { matcherResult: { pass: false } })
+
+    redactSecretsInError(error, [SECRET])
+
+    expect(error.matcherResult).toEqual({ pass: false })
+  })
+
+  it("verkraftet einen geworfenen String", () => {
+    expect(redactSecretsInError(`fill("${SECRET}")`, [SECRET])).toBe(`fill("${REDACTED}")`)
+  })
+
+  it("reicht Nicht-Fehler unverändert durch", () => {
+    const thrown = { irgendwas: true }
+
+    expect(redactSecretsInError(thrown, [SECRET])).toBe(thrown)
+  })
+
+  it("kommt mit einem Fehler ohne Stack klar", () => {
+    const error = new Error(`fill("${SECRET}")`)
+    delete error.stack
+
+    redactSecretsInError(error, [SECRET])
+
+    expect(error.message).not.toContain(SECRET)
   })
 })

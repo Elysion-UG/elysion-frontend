@@ -35,3 +35,55 @@ export function describeMismatchedFields(checks: readonly FieldCheck[]): string 
     .map((check) => check.label)
     .join(", ")
 }
+
+/** Ersatztext für einen entfernten Geheimwert. Muss als solcher erkennbar sein. */
+export const REDACTED = "[redigiert #106]"
+
+/**
+ * Entfernt bekannte Geheimwerte aus einem Text — wörtliche Vorkommen, kein
+ * Muster-Raten.
+ *
+ * Gedacht für Playwright-Fehlermeldungen: `ElementHandle._fill()` schreibt
+ * `  fill("<wert>")` in den Call-Log, BEVOR die Actionability-Prüfung läuft
+ * (`coreBundle.js`, `_fill` → `progress.log(...)` vor `_retryAction`).
+ * Scheitert der Aufruf danach, hängt `Connection.dispatch()` den Call-Log per
+ * `rewriteErrorMessage(err, err.message + formatCallLog(...))` an die Meldung —
+ * und die geht in `error-context.md` UND in den öffentlichen Actions-Log.
+ *
+ * Wir kürzen bewusst NICHT den ganzen Call-Log weg: die übrigen Zeilen
+ * („waiting for element to be visible, enabled and editable") sind genau die
+ * Diagnose, für die man das Artefakt aufhebt.
+ *
+ * @param secrets Werte, die verschwinden müssen. Leere Strings werden
+ *   übersprungen — `"".split("")` zerlegte den Text sonst in Einzelzeichen
+ *   (`clearCredentialFields()` füllt bewusst `""`). Kurze Werte werden NICHT
+ *   ausgenommen: Unlesbarkeit ist harmloser als ein Leak.
+ */
+export function redactSecrets(text: string, secrets: readonly string[]): string {
+  let result = text
+  for (const secret of secrets) {
+    if (!secret) continue
+    result = result.split(secret).join(REDACTED)
+  }
+  return result
+}
+
+/**
+ * Redigiert Meldung UND Stack eines Fehlers in place und gibt ihn zurück —
+ * zum direkten Weiterwerfen gedacht.
+ *
+ * Der Stack muss mit: `rewriteErrorMessage()` baut ihn als
+ * `${name}: ${message}\n    at ...` neu auf, die Meldung steht dort also ein
+ * zweites Mal. Playwrights Fehler-Serialisierung nimmt beides.
+ *
+ * In place statt Kopie, damit Zusatzfelder (`errorContext`, `matcherResult`)
+ * erhalten bleiben — eine Neu-Konstruktion verlöre sie.
+ */
+export function redactSecretsInError(error: unknown, secrets: readonly string[]): unknown {
+  if (typeof error === "string") return redactSecrets(error, secrets)
+  if (!(error instanceof Error)) return error
+
+  error.message = redactSecrets(error.message, secrets)
+  if (typeof error.stack === "string") error.stack = redactSecrets(error.stack, secrets)
+  return error
+}

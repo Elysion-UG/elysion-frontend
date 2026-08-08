@@ -11,7 +11,7 @@ import { test as setup } from "@playwright/test"
 import { fileURLToPath } from "url"
 import path from "path"
 
-import { clearCredentialFields } from "./fixtures/credential-fields"
+import { clearCredentialFields, fillCredentialField } from "./fixtures/credential-fields"
 import { BUYER_WITH_CART } from "./fixtures/credentials"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -28,8 +28,6 @@ setup("Buyer Login einmalig durchführen", async ({ page }) => {
   // ideal für Checkout- und Cart-Tests ohne Vor-Setup pro Lauf.
   const emailInput = page.getByPlaceholder("ihre@email.de")
   const passwordInput = page.getByPlaceholder("Passwort")
-  await emailInput.fill(BUYER_WITH_CART.email)
-  await passwordInput.fill(BUYER_WITH_CART.password)
 
   const refreshAfterLogin = page.waitForResponse(
     (res) =>
@@ -38,13 +36,23 @@ setup("Buyer Login einmalig durchführen", async ({ page }) => {
       res.status() === 200,
     { timeout: 20_000 }
   )
+  // Siehe auth.setup.ts — Handler gegen unhandled rejection, falls der Login
+  // vor dem `await` unten scheitert.
+  void refreshAfterLogin.catch(() => {})
 
-  // Nach Klick schließt sich der Modal. Wir warten auf den Refresh-Call statt
-  // auf einen URL-Wechsel — Buyer bleibt auf / nach dem Login.
-  await page.getByRole("button", { name: "Anmelden" }).last().click()
-  // Siehe e2e/fixtures/credential-fields.ts — Felder nach dem Submit leeren (#106).
-  // Schließt der Modal bereits, wirft fill() und wird verschluckt.
-  await clearCredentialFields(passwordInput, emailInput)
+  // Siehe e2e/fixtures/credential-fields.ts — Felder im `finally` leeren, damit
+  // auch ein Timeout im Klick sie nicht im Snapshot stehen lässt (#106).
+  // Ist der Modal beim Leeren schon zu, findet fill("") das Feld nicht mehr und
+  // läuft in den kurzen Clear-Timeout; der Fehler wird verschluckt.
+  try {
+    await fillCredentialField(emailInput, BUYER_WITH_CART.email)
+    await fillCredentialField(passwordInput, BUYER_WITH_CART.password)
+    // Nach Klick schließt sich der Modal. Wir warten auf den Refresh-Call statt
+    // auf einen URL-Wechsel — Buyer bleibt auf / nach dem Login.
+    await page.getByRole("button", { name: "Anmelden" }).last().click()
+  } finally {
+    await clearCredentialFields(passwordInput, emailInput)
+  }
   await refreshAfterLogin
 
   await page.context().storageState({ path: BUYER_AUTH_FILE })

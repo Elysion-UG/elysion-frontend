@@ -9,7 +9,7 @@ import { test as setup } from "@playwright/test"
 import { fileURLToPath } from "url"
 import path from "path"
 
-import { clearCredentialFields } from "./fixtures/credential-fields"
+import { clearCredentialFields, fillCredentialField } from "./fixtures/credential-fields"
 import { ADMIN } from "./fixtures/credentials"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -20,8 +20,6 @@ setup("Admin Login einmalig durchführen", async ({ page }) => {
 
   const emailInput = page.getByPlaceholder("admin@elysion.de")
   const passwordInput = page.getByPlaceholder("Passwort")
-  await emailInput.fill(ADMIN.email)
-  await passwordInput.fill(ADMIN.password)
 
   const refreshAfterLogin = page.waitForResponse(
     (res) =>
@@ -30,10 +28,19 @@ setup("Admin Login einmalig durchführen", async ({ page }) => {
       res.status() === 200,
     { timeout: 20_000 }
   )
+  // Siehe auth.setup.ts — Handler gegen unhandled rejection, falls der Login
+  // vor dem `await` unten scheitert.
+  void refreshAfterLogin.catch(() => {})
 
-  await page.getByRole("button", { name: "Anmelden" }).click()
-  // Siehe e2e/fixtures/credential-fields.ts — Felder nach dem Submit leeren (#106).
-  await clearCredentialFields(passwordInput, emailInput)
+  // Siehe e2e/fixtures/credential-fields.ts — Felder im `finally` leeren, damit
+  // auch ein Timeout im Klick sie nicht im Snapshot stehen lässt (#106).
+  try {
+    await fillCredentialField(emailInput, ADMIN.email)
+    await fillCredentialField(passwordInput, ADMIN.password)
+    await page.getByRole("button", { name: "Anmelden" }).click()
+  } finally {
+    await clearCredentialFields(passwordInput, emailInput)
+  }
   await page.waitForURL("**/admin/**", { timeout: 20_000 })
   await refreshAfterLogin
 
