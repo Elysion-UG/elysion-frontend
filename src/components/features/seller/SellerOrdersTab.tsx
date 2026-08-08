@@ -9,9 +9,9 @@ import {
 } from "@/src/hooks/useSellerDashboard"
 import type { OrderGroupDetail } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
-import { computeShippingSla, formatSlaRemaining } from "@/src/lib/shipping-sla"
+import { hasShippingSla, shippingSlaBadgeLabel } from "@/src/lib/shipping-sla"
 import { StatusBadge } from "@/src/components/shared"
-import { orderStatusLabel, orderStatusColor } from "./sellerDashboard.constants"
+import { orderStatusLabel, orderStatusColor, shippingSlaColor } from "./sellerDashboard.constants"
 import SellerKpiCard from "./SellerKpiCard"
 import SellerOrderDetailDrawer from "./SellerOrderDetailDrawer"
 import SellerShipModal from "./SellerShipModal"
@@ -60,8 +60,8 @@ export default function SellerOrdersTab() {
           <div>
             <h2 className="text-xl font-semibold text-foreground">Eingehende Bestellungen</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Versandfrist: binnen 48 h nach Zahlungseingang versenden. Überfällige Bestellungen
-              sind rot markiert.
+              Die Versandfrist läuft ab Zahlungseingang und wird vom Server vorgegeben. Überfällige
+              Bestellungen sind rot markiert.
             </p>
           </div>
           <button
@@ -84,7 +84,7 @@ export default function SellerOrdersTab() {
         ) : (
           <div className="divide-y divide-border">
             {orders.map((group) => {
-              const sla = computeShippingSla(group.createdAt, group.status)
+              const sla = group.shippingSla
               return (
                 <button
                   key={group.orderGroupId}
@@ -116,14 +116,10 @@ export default function SellerOrdersTab() {
                         />
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </div>
-                      {sla.applies && (
+                      {hasShippingSla(sla) && (
                         <StatusBadge
-                          label={formatSlaRemaining(sla.remainingMs)}
-                          colorClasses={
-                            sla.isOverdue
-                              ? "bg-danger-tint text-danger"
-                              : "bg-warning-tint text-warning"
-                          }
+                          label={shippingSlaBadgeLabel(sla)}
+                          colorClasses={shippingSlaColor[sla.status]}
                         />
                       )}
                     </div>

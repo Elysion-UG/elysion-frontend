@@ -27,6 +27,8 @@ export type {
   SellerValueProfileLevel,
   SellerValueProfile,
   SellerProductListItem,
+  PublicSellerCertificate,
+  PublicSellerProfile,
   BuyerValueProfile,
   BuyerValueProfileUpsertDTO,
 } from "./seller"
@@ -59,6 +61,8 @@ export type {
   OrderItem,
   OrderGroupStatus,
   OrderGroup,
+  ShippingSlaStatus,
+  ShippingSla,
   ShippingAddress,
   OrderDetail,
   OrderGroupDetail,

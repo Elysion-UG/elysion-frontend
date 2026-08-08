@@ -3,6 +3,7 @@
 import { ArrowLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { ProductDetail, ProductVariant, PublicCertificate } from "@/src/types"
+import { producerHref } from "@/src/lib/seller-url"
 import { AddToCartButton } from "./AddToCartButton"
 import { PriceWithStock } from "./PriceWithStock"
 import { ProductGallery } from "./ProductGallery"
@@ -70,9 +71,10 @@ export function ProductDetailView({
 
             {sellerName && (
               <button
-                onClick={() =>
-                  product.seller?.userId && router.push(`/producer?id=${product.seller.userId}`)
-                }
+                onClick={() => {
+                  const href = producerHref(product.seller)
+                  if (href) router.push(href)
+                }}
                 className="mb-2 text-xs font-semibold uppercase tracking-wider text-green-600 transition-colors hover:text-green-600 hover:underline"
               >
                 {sellerName}

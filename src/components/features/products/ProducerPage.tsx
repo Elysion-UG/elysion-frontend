@@ -1,33 +1,73 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowLeft, PackageOpen, Store } from "lucide-react"
+import { ArrowLeft, Award, CalendarDays, Leaf, MapPin, PackageOpen, Store } from "lucide-react"
 import { useSellerProducts } from "@/src/hooks/useSellerProducts"
+import { usePublicSellerProfile, isSellerNotFound } from "@/src/hooks/usePublicSellerProfile"
+import type { PublicSellerCertificate } from "@/src/types"
 import ProductCard from "./ProductCard"
 
+/**
+ * Produzenten-Seite.
+ *
+ * `?slug=` lädt das öffentliche Profil (`GET /api/v1/sellers/{slug}`, #104) mit
+ * Beschreibung, Standort, Gründungsjahr, Nachhaltigkeits-Score und verifizierten
+ * Zertifikaten. `?id=<uuid>` bleibt als Fallback für bereits geteilte Links
+ * funktionsfähig — dafür gibt es keinen Profil-Lookup, die Seite zeigt dann nur
+ * den aus der Produktliste abgeleiteten Namen.
+ *
+ * Die Produkte hängen nie am Profil: sie kommen über
+ * `GET /api/v1/products?sellerId=<id>`.
+ */
 export default function ProducerPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const sellerId = searchParams.get("id")
+  const slug = searchParams.get("slug")
+  const legacySellerId = searchParams.get("id")
 
-  const { data, isLoading, error } = useSellerProducts(sellerId)
+  const profileQuery = usePublicSellerProfile(slug)
+  const profile = profileQuery.data
 
-  const products = data?.products ?? []
-  const companyName = data?.companyName ?? "Verkäufer"
+  // Mit Slug wartet die Produktliste auf die Id aus dem Profil; ohne Slug zählt
+  // die Id aus dem Altlink.
+  const sellerId = slug ? (profile?.id ?? null) : legacySellerId
+  const productsQuery = useSellerProducts(sellerId)
+
+  // Die beiden Fehlerquellen bleiben getrennt: nur ein Profilfehler nimmt der
+  // Seite die Grundlage. Kippt bloß die Produktliste, steht das geladene Profil
+  // weiterhin — und auf dem `?id=`-Pfad wurde nie ein Profil geladen, dort wäre
+  // „Produzent konnte nicht geladen werden" schlicht die falsche Aussage.
+  const notFound = (!slug && !legacySellerId) || isSellerNotFound(profileQuery.error)
+  const profileFailed = Boolean(profileQuery.error) && !isSellerNotFound(profileQuery.error)
+  const productsFailed = Boolean(productsQuery.error)
+
+  const products = productsQuery.data?.products ?? []
+  const companyName = profile?.companyName ?? productsQuery.data?.companyName ?? "Verkäufer"
   const logoInitial = companyName.charAt(0).toUpperCase() || "?"
-  const productCount = data?.totalElements ?? 0
+  const productCount = productsQuery.data?.totalElements ?? 0
+  const isLoading = profileQuery.isLoading || productsQuery.isLoading
+  const certificates = profile?.certifications ?? []
 
   // Not-found / error: render only the error state — no placeholder header card
   // with fabricated "Verkäufer / 0 Produkte" data (mirrors the product detail page).
-  if (!sellerId || error) {
+  //
+  // Ein Produktlisten-Fehler landet hier nur, wenn **kein** Profil vorliegt (der
+  // `?id=`-Pfad): dann trägt die Seite sonst nichts Echtes. Mit geladenem Profil
+  // bleibt die Seite stehen und meldet den Ausfall unten im Inhaltsbereich.
+  if (notFound || profileFailed || (productsFailed && !profile)) {
     return (
       <div className="min-h-screen bg-secondary">
         <BackBanner onBack={() => router.back()} />
         <div className="container mx-auto px-4">
-          {!sellerId ? (
+          {notFound ? (
             <EmptyState
               title="Verkäufer nicht gefunden"
-              message="Es wurde kein Verkäufer angegeben."
+              message="Diese Produzenten-Seite gibt es nicht (mehr)."
+            />
+          ) : profileFailed ? (
+            <EmptyState
+              title="Produzent konnte nicht geladen werden"
+              message="Bitte versuche es später erneut."
             />
           ) : (
             <EmptyState
@@ -53,14 +93,71 @@ export default function ProducerPage() {
             </div>
             <div>
               <h1 className="text-2xl font-normal text-foreground md:text-3xl">{companyName}</h1>
-              {!isLoading && (
-                <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <Store className="h-4 w-4" />
-                  {productCount} {productCount === 1 ? "Produkt" : "Produkte"}
-                </p>
-              )}
+              <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                {/* Bei gescheiterter Produktliste keine erfundene „0 Produkte". */}
+                {!isLoading && !productsFailed && (
+                  <span className="flex items-center gap-1.5">
+                    <Store className="h-4 w-4" />
+                    {productCount} {productCount === 1 ? "Produkt" : "Produkte"}
+                  </span>
+                )}
+                {profile?.location && (
+                  <span className="flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4" />
+                    {profile.location}
+                  </span>
+                )}
+                {profile?.foundedYear != null && (
+                  <span className="flex items-center gap-1.5">
+                    <CalendarDays className="h-4 w-4" />
+                    gegründet {profile.foundedYear}
+                  </span>
+                )}
+              </div>
             </div>
+            {profile?.sustainabilityScore != null && (
+              <div className="flex items-center gap-2 rounded-lg bg-green-50 px-4 py-2 sm:ml-auto">
+                <Leaf className="h-5 w-5 text-green-600" />
+                <div className="leading-tight">
+                  <p className="text-lg font-semibold text-green-700">
+                    {profile.sustainabilityScore}
+                    <span className="text-sm font-normal text-green-600">/100</span>
+                  </p>
+                  <p className="text-xs text-green-600">Nachhaltigkeit</p>
+                </div>
+              </div>
+            )}
           </div>
+
+          {profile?.description && (
+            <p className="mt-6 max-w-3xl text-sm leading-relaxed text-foreground">
+              {profile.description}
+            </p>
+          )}
+
+          {certificates.length > 0 && (
+            <section className="mt-6">
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Verifizierte Zertifikate
+              </h2>
+              <ul className="flex flex-wrap gap-2">
+                {certificates.map((cert) => (
+                  <li
+                    key={cert.certificateId}
+                    className="flex items-start gap-2 rounded-lg border border-border bg-secondary px-3 py-2 text-sm"
+                  >
+                    <Award className="mt-0.5 h-4 w-4 shrink-0 text-green-600" />
+                    <span>
+                      <span className="font-medium text-foreground">{cert.title}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {certificateMeta(cert)}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
         </div>
 
         {/* Content states */}
@@ -73,6 +170,12 @@ export default function ProducerPage() {
               />
             ))}
           </div>
+        ) : productsFailed ? (
+          // Das Profil steht — nur die Liste fehlt. Kein Grund, die Seite zu räumen.
+          <EmptyState
+            title="Produkte konnten nicht geladen werden"
+            message="Bitte versuche es später erneut."
+          />
         ) : products.length === 0 ? (
           <EmptyState
             title="Keine Produkte"
@@ -95,6 +198,29 @@ export default function ProducerPage() {
       </div>
     </div>
   )
+}
+
+/**
+ * `expiryDate` ist ein reines Kalenderdatum (`YYYY-MM-DD`). `new Date(...)`
+ * läse das als UTC-Mitternacht; `toLocaleDateString` zeigte in Zeitzonen mit
+ * negativem Offset dann den Vortag. Deshalb wird direkt aus den Bestandteilen
+ * formatiert, ganz ohne Zeitzonen-Umrechnung.
+ */
+function formatCalendarDate(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value)
+  if (!match) return value
+  const [, year, month, day] = match
+  return `${day}.${month}.${year}`
+}
+
+/** Aussteller und Gültigkeit — nur das, was der Endpoint tatsächlich liefert. */
+function certificateMeta(cert: PublicSellerCertificate): string {
+  const parts: string[] = []
+  if (cert.issuerName) parts.push(cert.issuerName)
+  if (cert.expiryDate) {
+    parts.push(`gültig bis ${formatCalendarDate(cert.expiryDate)}`)
+  }
+  return parts.join(" · ")
 }
 
 interface BackBannerProps {

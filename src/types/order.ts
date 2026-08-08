@@ -63,6 +63,28 @@ export interface OrderGroup {
   items: OrderItem[]
 }
 
+// ── Versand-SLA (read-only, Backend #143) ────────────────────────────
+/**
+ * Vom Server abgeleiteter Zustand der Versandfrist. Es gibt **keine** API-Aktion
+ * dazu — der Verkäufer löst eine Überschreitung durch Versenden, nicht durch
+ * Bestätigen.
+ *
+ * - `NOT_APPLICABLE` — keine Frist geschuldet (nicht captured, Altbestellung, storniert)
+ * - `PENDING` — Frist läuft, nichts versandt
+ * - `BREACHED` — Frist abgelaufen, nichts versandt
+ * - `MET` — rechtzeitig versandt
+ * - `MISSED` — versandt, aber nach der Frist
+ */
+export type ShippingSlaStatus = "NOT_APPLICABLE" | "PENDING" | "BREACHED" | "MET" | "MISSED"
+
+export interface ShippingSla {
+  status: ShippingSlaStatus
+  /** Eingefrorene Versandfrist; `null` vor dem Zahlungseinzug. */
+  deadlineAt: string | null
+  /** Zeitpunkt der Eskalation an den Verkäufer; `null`, solange keine erfolgt ist. */
+  breachedAt: string | null
+}
+
 /** Shipping address — only included by the backend for CONFIRMED/PROCESSING/SHIPPED orders. */
 export interface ShippingAddress {
   firstName: string
@@ -116,6 +138,12 @@ export interface OrderGroupDetail {
   shipping?: number
   currency?: string
   shipment?: { trackingNumber: string; carrier?: string } | null
+  /**
+   * Read-only Versandfrist des Servers. Laut Vertrag immer vorhanden; ohne
+   * Frist ist `deadlineAt` `null` und `status` `NOT_APPLICABLE`. Optional nur
+   * als Defensive — fehlendes Feld zeigt genauso nichts an.
+   */
+  shippingSla?: ShippingSla
   buyer?: { userId?: string; guestEmail?: string | null }
   /** Provided by backend only for shippable order states. DSGVO: use only for shipping, not marketing. */
   shippingAddress?: ShippingAddress

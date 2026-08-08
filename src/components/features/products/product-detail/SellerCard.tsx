@@ -2,6 +2,7 @@
 
 import { MapPin } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { producerHref } from "@/src/lib/seller-url"
 
 interface SellerCardProps {
   sellerName: string
@@ -11,7 +12,8 @@ interface SellerCardProps {
 export function SellerCard({ sellerName, sellerUserId }: SellerCardProps) {
   const router = useRouter()
   const handleClick = () => {
-    if (sellerUserId) router.push(`/producer?id=${sellerUserId}`)
+    const href = producerHref({ userId: sellerUserId })
+    if (href) router.push(href)
   }
 
   return (

@@ -2,9 +2,10 @@ import { useQuery } from "@tanstack/react-query"
 import { ProductService } from "@/src/services/product.service"
 import type { ProductDetail } from "@/src/types"
 
-// Until a dedicated public seller-profile endpoint exists, the producer page is
-// built purely from the seller's public product listing. The company name is
-// derived from the products' embedded seller info — no fabricated profile data.
+// Produktliste der Produzenten-Seite. Das Profil selbst kommt seit #104 aus
+// `GET /api/v1/sellers/{slug}` (usePublicSellerProfile) — der hier abgeleitete
+// Firmenname bleibt der Fallback für Altlinks mit `?id=<uuid>`, für die es
+// keinen Profil-Lookup gibt. Kein erfundenes Profil, nur was die Produkte tragen.
 const SELLER_PRODUCTS_PAGE_SIZE = 60
 
 export interface SellerProductsResult {

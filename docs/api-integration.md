@@ -58,7 +58,7 @@ haben sie nicht.
 `auth` · `user` · `address` · `buyer-value-profile` · `seller-profile` ·
 `seller-value-profile` · `admin` · `product` · `category` · `material` ·
 `certificate` · `cart` · `checkout` · `order` · `seller-order` · `seller-payout` ·
-`payment` · `file` · `recommendation` · `monitoring`
+`payment` · `file` · `recommendation` · `monitoring` · `contact` · `seller`
 
 > Die Methodennamen stehen im jeweiligen Service — hier bewusst nicht gespiegelt,
 > damit sie nicht auseinanderlaufen.
@@ -197,6 +197,36 @@ dasselbe wie bei einer leeren Facette — die Sidebar-Sektion verschwindet. Die 
 Fehlerzustand deshalb explizit anzeigen (`isError` der Hooks), sonst liest der Nutzer den
 Ausfall als „Filter entfernt".
 
+### Verkäufer (öffentlich)
+
+```
+GET    /api/v1/sellers/{slug}    → PublicSellerProfile    — public
+```
+
+`data`: `{ id, slug, companyName, description, location, foundedYear,
+sustainabilityScore, certifications[] }`. Die optionalen Felder kommen als `null`
+und werden im Service zu `undefined` normalisiert.
+
+- `id` ist die Seller-UUID — exakt der Wert für `GET /api/v1/products?sellerId=<id>`.
+  Die Produkte stehen **nicht** im Profil.
+- `slug` ist der stabile öffentliche Identifikator; er wird einmalig aus dem Firmennamen
+  abgeleitet und folgt einer Umbenennung **nicht**. Lookup case-insensitiv.
+- `certifications` enthält ausschließlich Zertifikate im Status `VERIFIED`, neueste
+  zuerst, mit `certificateId` (nicht `id`).
+- `404` für unbekannte Slugs **und** für Verkäufer, die nicht `APPROVED` sind — beide
+  Fälle sind absichtlich nicht unterscheidbar.
+- Frontend: `SellerService.getPublicProfile` · `usePublicSellerProfile` ·
+  Seite `/producer?slug=<slug>`; `?id=<uuid>` bleibt als Fallback für bereits geteilte
+  Links (ohne Profil-Lookup — es gibt keinen Read über die Seller-Id).
+- Produzenten-Links entstehen ausschließlich über `producerHref()` in
+  `src/lib/seller-url.ts`.
+
+> **Lücke:** Die Produktlisten liefern in `seller` nur `id`/`companyName`, **keinen**
+> `slug`. Aus einer Produktkarte heraus entsteht deshalb weiterhin `?id=<uuid>` und die
+> Produzenten-Seite zeigt nur den aus der Produktliste abgeleiteten Namen. Sobald
+> `ProductSellerSummaryResponse` einen `slug` trägt, greift `producerHref()` ohne
+> weitere Änderung auf `?slug=` um.
+
 ### Kategorien
 
 ```
@@ -277,12 +307,40 @@ GET    /api/v1/orders/{id}                     → OrderDetail
 GET    /api/v1/seller/orders                   → OrderGroupsPage
 GET    /api/v1/seller/orders/{id}              → OrderGroupDetail
 PATCH  /api/v1/seller/orders/{id}/status       → OrderGroupDetail
-PATCH  /api/v1/seller/orders/{id}/ship         → OrderGroupDetail
-PATCH  /api/v1/seller/orders/{id}/deliver      → OrderGroupDetail
+POST   /api/v1/seller/orders/{id}/ship         → OrderGroupDetail
+POST   /api/v1/seller/orders/{id}/deliver      → OrderGroupDetail
 GET    /api/v1/seller/settlements              → Settlement[]
 ```
 
 Settlements liegen auf `/seller/settlements` — **nicht** unter `/seller/orders/`.
+
+#### Versandfrist (`shippingSla`) — nur Seller-Reads
+
+Alle Seller-Order-Reads liefern die Versandfrist als **reinen Lesezustand** (Backend #143).
+Es gibt **keine** Aktion dazu: eine Überschreitung löst der Verkäufer durch Versenden auf.
+
+```
+shippingSla: {
+  status:     "NOT_APPLICABLE" | "PENDING" | "BREACHED" | "MET" | "MISSED"
+  deadlineAt: ISO-Timestamp | null   // eingefrorene Frist, null vor dem Zahlungseinzug
+  breachedAt: ISO-Timestamp | null   // Zeitpunkt der Eskalation an den Verkäufer
+}
+```
+
+- `NOT_APPLICABLE` — kein Versand geschuldet (nicht captured, storniert) → **nichts anzeigen**
+- `PENDING` — Frist läuft · `BREACHED` — abgelaufen, nichts versandt
+- `MET` / `MISSED` — versandt vor bzw. nach der Frist
+- Das Zeitfenster (Default 48 h) ist Server-Konfiguration — im Frontend steht **keine**
+  48h-Konstante mehr; die Frist wird nie clientseitig berechnet.
+- Laut Backend-Vertrag ist `shippingSla` **immer vorhanden** (`docs/api/orders.md`: „always
+  present and read-only"); bei Altbestellungen ohne Frist ist `deadlineAt` `null` und `status`
+  entsprechend `NOT_APPLICABLE`. Dass das Feld im Zod-Schema trotzdem optional/nullable steht,
+  ist reine Defensive gegen einen fehlenden Wert — **keine** Vertragsaussage. Fehlendes Feld und
+  `NOT_APPLICABLE` rendern beide nichts.
+- Frontend: `src/lib/shipping-sla.ts` (Formatierung), `shippingSlaLabel`/`shippingSlaColor`
+  in `sellerDashboard.constants.ts`.
+
+`OrderGroupDetail` trägt neben `total` zusätzlich `subtotal` und `shipping`.
 
 ### Zahlungen
 
@@ -308,6 +366,34 @@ DELETE /api/v1/files/{id}               → null
 ```
 GET    /api/v1/recommendations?limit=   → Recommendation[]
 ```
+
+### Kontakt
+
+```
+POST   /api/v1/contact                  → { id, receivedAt, forwarded }   — public, 202
+```
+
+Request: `{ name, email, subject, message }` — `name` 2–100, `subject` 3–150,
+`message` 10–5000 Zeichen, `email` gültig und max. 320 Zeichen. Das Frontend sendet
+den **lesbaren** Betreff (`contactSubjectLabel`), nicht den Select-Wert.
+
+- `202 Accepted`, nicht `201`: quittiert wird die Annahme, nicht die Erledigung.
+- Die Anfrage wird **immer gespeichert**. `forwarded: false` heißt nur, dass die
+  Benachrichtigung ans Support-Postfach (noch) nicht rausging — kein Fehler, kein
+  Neuversuch. Das UI unterscheidet beide Fälle und zeigt in beiden die
+  **vollständige** Referenznummer (`id`) in einer bleibenden Quittung auf der Seite,
+  nicht nur in einem Toast: bei `forwarded: false` ist sie der einzige Beleg, dass
+  die Nachricht gespeichert wurde, und der Support sucht darauf per Gleichheit.
+- `400` bei Validierungsfehlern und bei Steuerzeichen in `email`
+  (Header-Injection-Schutz), `429` bei 5 Requests/Stunde/IP.
+- **Validiert wird vorher im Client** (`validateContactForm`, `src/lib/contact.ts`)
+  gegen dieselben Grenzen. Grund: der `GlobalExceptionHandler` antwortet mit dem
+  wörtlichen `"Validation failed"`, und der api-client reicht die Server-Meldung bei
+  `400` unverändert durch — lokalisiert wird dort nur der `429`-Fall
+  (`buildRateLimitError`). Ohne Vorprüfung sähe der Besucher also eine englische
+  Meldung ohne Feldbezug.
+- Fällt der Request aus, bietet `Contact.tsx` den `mailto:`-Fallback aus
+  `src/lib/contact.ts` an — sonst gäbe es bei einer Störung gar keinen Kontaktweg.
 
 ### Admin
 

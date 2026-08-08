@@ -4,9 +4,14 @@ import { Truck, CheckCircle2, Clock, AlertTriangle, X } from "lucide-react"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import type { OrderGroupDetail } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
-import { computeShippingSla } from "@/src/lib/shipping-sla"
+import { hasShippingSla, formatSlaDeadline } from "@/src/lib/shipping-sla"
 import { StatusBadge } from "@/src/components/shared"
-import { orderStatusLabel, orderStatusColor } from "./sellerDashboard.constants"
+import {
+  orderStatusLabel,
+  orderStatusColor,
+  shippingSlaLabel,
+  shippingSlaColor,
+} from "./sellerDashboard.constants"
 
 export interface SellerOrderDetailDrawerProps {
   group: OrderGroupDetail
@@ -34,9 +39,11 @@ export default function SellerOrderDetailDrawer({
   const hasActions =
     group.status === "CONFIRMED" || group.status === "PROCESSING" || group.status === "SHIPPED"
 
-  // 48h-Versand-SLA (§1.6 Szenario 1) — client-seitig aus createdAt abgeleitet,
-  // bis Backend #143 ein explizites Frist-Feld liefert.
-  const sla = computeShippingSla(group.createdAt, group.status)
+  // Versand-SLA (§1.6 Szenario 1) — reiner Lesezustand vom Server (#143).
+  // Es gibt keine Aktion dazu: eine Überschreitung löst man durch Versenden.
+  const sla = group.shippingSla
+  const slaShipped = sla?.status === "MET" || sla?.status === "MISSED"
+  const slaOverdue = sla?.status === "BREACHED" || sla?.status === "MISSED"
 
   const drawerRef = useFocusTrap(onClose)
 
@@ -82,33 +89,35 @@ export default function SellerOrderDetailDrawer({
 
         {/* Scrollable body */}
         <div className="flex-1 space-y-6 overflow-y-auto p-5">
-          {/* 48h-Versand-SLA */}
-          {sla.applies && (
+          {/* Versand-SLA — Server-Zustand, keine Aktion */}
+          {hasShippingSla(sla) && (
             <section
-              className={`flex items-start gap-3 rounded-lg px-4 py-3 ${
-                sla.isOverdue ? "bg-danger-tint text-danger" : "bg-warning-tint text-warning"
-              }`}
+              className={`flex items-start gap-3 rounded-lg px-4 py-3 ${shippingSlaColor[sla.status]}`}
             >
-              {sla.isOverdue ? (
+              {slaOverdue ? (
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              ) : slaShipped ? (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
               ) : (
                 <Clock className="mt-0.5 h-4 w-4 shrink-0" />
               )}
               <div className="text-sm">
-                <p className="font-semibold">
-                  {sla.isOverdue ? "Versandfrist überschritten" : "48h-Versandfrist"}
-                </p>
-                <p className="mt-0.5">
-                  {sla.isOverdue ? "Fällig war " : "Bitte versenden bis "}
-                  {sla.deadline.toLocaleString("de-DE", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}{" "}
-                  Uhr.
-                </p>
+                <p className="font-semibold">{shippingSlaLabel[sla.status]}</p>
+                {sla.deadlineAt && (
+                  <p className="mt-0.5">
+                    {slaShipped
+                      ? "Frist war "
+                      : slaOverdue
+                        ? "Fällig war "
+                        : "Bitte versenden bis "}
+                    {formatSlaDeadline(sla.deadlineAt)} Uhr.
+                  </p>
+                )}
+                {sla.breachedAt && (
+                  <p className="mt-0.5">
+                    Eskalation an Sie am {formatSlaDeadline(sla.breachedAt)} Uhr.
+                  </p>
+                )}
               </div>
             </section>
           )}
