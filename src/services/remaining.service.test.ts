@@ -185,21 +185,21 @@ describe("CategoryService", () => {
     expect(tree).toEqual(nested)
   })
 
-  it("create calls POST /api/v1/categories", async () => {
+  it("create calls POST /api/v1/admin/categories", async () => {
     mockApiRequest.mockResolvedValue({ id: "c1" })
-    const dto = { name: "Kleidung" }
+    const dto = { name: "Kleidung", slug: "kleidung", order: 0 }
     await CategoryService.create(dto)
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/categories",
+      "/api/v1/admin/categories",
       expect.objectContaining({ method: "POST", body: JSON.stringify(dto) })
     )
   })
 
   it("update calls PATCH with category id", async () => {
     mockApiRequest.mockResolvedValue({ id: "c1" })
-    await CategoryService.update("c1", { name: "Neu" })
+    await CategoryService.update("c1", { name: "Neu", slug: "neu", order: 0 })
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/categories/c1",
+      "/api/v1/admin/categories/c1",
       expect.objectContaining({ method: "PATCH" })
     )
   })
@@ -208,7 +208,7 @@ describe("CategoryService", () => {
     mockApiRequest.mockResolvedValue({ id: "c1" })
     await CategoryService.activate("c1")
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/categories/c1/activate",
+      "/api/v1/admin/categories/c1/activate",
       expect.objectContaining({ method: "PATCH" })
     )
   })
@@ -217,7 +217,7 @@ describe("CategoryService", () => {
     mockApiRequest.mockResolvedValue({ id: "c1" })
     await CategoryService.deactivate("c1")
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/categories/c1/deactivate",
+      "/api/v1/admin/categories/c1/deactivate",
       expect.objectContaining({ method: "PATCH" })
     )
   })

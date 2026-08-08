@@ -144,13 +144,27 @@ Zu Pagination-Shape, `sort`-Werten und dem Unterschied `{slug}` ↔ `by-id/{id}`
 ### Kategorien
 
 ```
-GET    /api/v1/categories                    → Category[]      — flache Liste, aktiv
-GET    /api/v1/categories/tree               → CategoryNode[]  — verschachtelt, aktiv
-POST   /api/v1/categories                    → Category        — ADMIN
-PATCH  /api/v1/categories/{id}               → Category        — ADMIN
-POST   /api/v1/categories/{id}/activate      → Category        — ADMIN
-POST   /api/v1/categories/{id}/deactivate    → Category        — ADMIN
+GET    /api/v1/categories                          → Category[]      — flache Liste, aktiv
+GET    /api/v1/categories/tree                     → CategoryNode[]  — verschachtelt, aktiv
+POST   /api/v1/admin/categories                    → Category        — ADMIN
+PATCH  /api/v1/admin/categories/{id}               → Category        — ADMIN
+PATCH  /api/v1/admin/categories/{id}/activate      → Category        — ADMIN
+PATCH  /api/v1/admin/categories/{id}/deactivate    → Category        — ADMIN
 ```
+
+Schreib-Operationen liegen unter `/api/v1/admin/categories`. `/api/v1/categories` ist der
+öffentliche Lesepfad und kennt **nur `GET`** — ein `POST` dorthin endet als 405 (#178).
+
+**Pflichtfelder bei `POST` und `PATCH`:** `name`, `slug` und `order` sind bei **beiden**
+Operationen zwingend. `order` ist `INTEGER NOT NULL DEFAULT 0` — ein fehlendes Feld ergibt
+kein Default, sondern `400 "order is required"`; zulässig ist nur eine **ganze Zahl ≥ 0**
+(`@Min(0)`, Jackson `Integer`).
+
+**`PATCH` ist ein Voll-Ersatz, kein Sparse-Patch.** Das Backend leitet `level` bei jedem
+Update neu aus `parentId` ab: fehlt `parentId`, landet die Kategorie stillschweigend auf
+Root/Ebene 1. Der aktuelle Parent muss also bei jedem Update mitgeschickt werden.
+`isActive` darf im `PATCH`-Body **nicht** vorkommen — Lifecycle-Wechsel laufen
+ausschließlich über `activate`/`deactivate`.
 
 Kategorien werden **deaktiviert, nicht gelöscht** — es gibt kein `DELETE`.
 

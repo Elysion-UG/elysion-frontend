@@ -20,7 +20,8 @@ export const EMPTY_FORM: FormState = {
   order: "0",
 }
 
-function slugify(text: string): string {
+/** Exported so the submit handlers can re-derive a slug when the field is blank. */
+export function slugify(text: string): string {
   return text
     .toLowerCase()
     .replace(/[äÄ]/g, "ae")
@@ -191,6 +192,7 @@ export default function AdminCategoryFormModal({
               onChange={(e) => onChange({ ...form, order: e.target.value })}
               className="w-full rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
               min={0}
+              step={1}
             />
           </div>
         </div>
