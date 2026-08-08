@@ -12,6 +12,19 @@ describe("producerHref", () => {
     expect(producerHref({ userId: "8f1c2b7e" })).toBe("/producer?id=8f1c2b7e")
   })
 
+  it("falls back to ?id= for a null slug — the seller is not APPROVED (#104)", () => {
+    // The profile answers 404 for such a seller, so ?slug= would be a dead link.
+    expect(producerHref({ slug: null, userId: "8f1c2b7e" })).toBe("/producer?id=8f1c2b7e")
+  })
+
+  it("encodes a slug that needs escaping", () => {
+    expect(producerHref({ slug: "a b&c", userId: "u1" })).toBe("/producer?slug=a%20b%26c")
+  })
+
+  it("treats an empty slug like a missing one", () => {
+    expect(producerHref({ slug: "", userId: "8f1c2b7e" })).toBe("/producer?id=8f1c2b7e")
+  })
+
   it("stays on the /producer route — no /produzenten/{slug}", () => {
     expect(producerHref({ slug: "alpha" })?.startsWith("/producer?")).toBe(true)
   })

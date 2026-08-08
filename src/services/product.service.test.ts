@@ -1,5 +1,6 @@
 import { vi, describe, it, expect, beforeEach } from "vitest"
 import { apiRequest } from "@/src/lib/api-client"
+import { producerHref } from "@/src/lib/seller-url"
 import { ProductService } from "./product.service"
 
 vi.mock("@/src/lib/api-client", async (importOriginal) => {
@@ -198,29 +199,70 @@ describe("ProductService", () => {
       expect(result.items[0].imageUrls).toEqual(["https://example.com/img.jpg"])
     })
 
-    it("maps seller.id to seller.userId", async () => {
-      mockApiRequest.mockResolvedValue({
-        ...mockApiProductPage,
-        items: [
-          {
-            id: "p1",
-            slug: "eco-shirt",
-            name: "Eco Shirt",
-            price: 29.9,
-            currency: "EUR",
-            primaryImage: null,
-            seller: { id: "seller-uuid", companyName: "Eco Store" },
-            createdAt: "2026-01-01T00:00:00Z",
-            matchScore: null,
-          },
-        ],
-        totalItems: 1,
-      })
+    const listItemWithSeller = (seller: unknown) => ({
+      ...mockApiProductPage,
+      items: [
+        {
+          id: "p1",
+          slug: "eco-shirt",
+          name: "Eco Shirt",
+          price: 29.9,
+          currency: "EUR",
+          primaryImage: null,
+          seller,
+          createdAt: "2026-01-01T00:00:00Z",
+          matchScore: null,
+        },
+      ],
+      totalItems: 1,
+    })
+
+    it("maps seller.id to seller.userId and keeps the slug (#104)", async () => {
+      mockApiRequest.mockResolvedValue(
+        listItemWithSeller({
+          id: "seller-uuid",
+          slug: "alpha-manufaktur",
+          companyName: "Eco Store",
+        })
+      )
       const result = await ProductService.list()
       expect(result.items[0].seller).toEqual({
         userId: "seller-uuid",
+        slug: "alpha-manufaktur",
         companyName: "Eco Store",
       })
+    })
+
+    it("keeps seller.slug null for a seller that is not APPROVED (#104)", async () => {
+      mockApiRequest.mockResolvedValue(
+        listItemWithSeller({ id: "seller-uuid", slug: null, companyName: "Eco Store" })
+      )
+      const result = await ProductService.list()
+      // The link is withheld, the display name is not.
+      expect(result.items[0].seller).toEqual({
+        userId: "seller-uuid",
+        slug: null,
+        companyName: "Eco Store",
+      })
+    })
+
+    it("falls back to a null slug when the API omits the field entirely", async () => {
+      mockApiRequest.mockResolvedValue(
+        listItemWithSeller({ id: "seller-uuid", companyName: "Eco Store" })
+      )
+      const result = await ProductService.list()
+      expect(result.items[0].seller).toEqual({
+        userId: "seller-uuid",
+        slug: null,
+        companyName: "Eco Store",
+      })
+    })
+
+    it("rejects a non-string seller.slug", async () => {
+      mockApiRequest.mockResolvedValue(
+        listItemWithSeller({ id: "seller-uuid", slug: 42, companyName: "Eco Store" })
+      )
+      await expect(ProductService.list()).rejects.toThrow(/Server-Antwort/)
     })
 
     it("maps inStock from the API item", async () => {
@@ -328,8 +370,9 @@ describe("ProductService", () => {
 
   describe("listSellerFacets", () => {
     const rawSellerFacets = [
-      { id: "8f1c", companyName: "Alpha Manufaktur", productCount: 3 },
-      { id: "b204", companyName: "Beta Weberei", productCount: 1 },
+      { id: "8f1c", slug: "alpha-manufaktur", companyName: "Alpha Manufaktur", productCount: 3 },
+      // Not APPROVED: filterable, but not linkable (#104).
+      { id: "b204", slug: null, companyName: "Beta Weberei", productCount: 1 },
     ]
 
     it("calls GET /api/v1/sellers/facets", async () => {
@@ -353,6 +396,19 @@ describe("ProductService", () => {
       mockApiRequest.mockResolvedValue([{ id: "8f1c", productCount: 3 }])
       await expect(ProductService.listSellerFacets()).rejects.toThrow(/Server-Antwort/)
     })
+
+    it("keeps the slug of an approved seller and null for a non-approved one (#104)", async () => {
+      mockApiRequest.mockResolvedValue(rawSellerFacets)
+      const result = await ProductService.listSellerFacets()
+      expect(result[0].slug).toBe("alpha-manufaktur")
+      expect(result[1].slug).toBeNull()
+    })
+
+    it("accepts facet entries from an API that omits the slug", async () => {
+      mockApiRequest.mockResolvedValue([{ id: "8f1c", companyName: "Alpha", productCount: 3 }])
+      const result = await ProductService.listSellerFacets()
+      expect(result[0].slug).toBeUndefined()
+    })
   })
 
   // ── getBySlug ────────────────────────────────────────────────────────
@@ -373,7 +429,7 @@ describe("ProductService", () => {
           options: [{ type: "Größe", value: "L" }],
         },
       ],
-      seller: { id: "seller-uuid", companyName: "Eco Store" },
+      seller: { id: "seller-uuid", slug: "alpha-manufaktur", companyName: "Eco Store" },
       category: { id: "cat_1", name: "Clothing", slug: "clothing" },
     }
 
@@ -389,11 +445,35 @@ describe("ProductService", () => {
       expect(result.shortDesc).toBe("A great shirt")
     })
 
-    it("maps seller.id to seller.userId", async () => {
+    it("maps seller.id to seller.userId and keeps the slug (#104)", async () => {
       mockApiRequest.mockResolvedValue(rawDetail)
       const result = await ProductService.getBySlug("eco-shirt")
-      expect(result.seller?.userId).toBe("seller-uuid")
+      expect(result.seller).toEqual({
+        userId: "seller-uuid",
+        slug: "alpha-manufaktur",
+        companyName: "Eco Store",
+        firstName: undefined,
+        lastName: undefined,
+      })
+    })
+
+    it("keeps seller.slug null for a seller that is not APPROVED (#104)", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...rawDetail,
+        seller: { id: "seller-uuid", slug: null, companyName: "Eco Store" },
+      })
+      const result = await ProductService.getBySlug("eco-shirt")
+      expect(result.seller?.slug).toBeNull()
       expect(result.seller?.companyName).toBe("Eco Store")
+    })
+
+    it("falls back to a null slug when the API omits the field entirely", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...rawDetail,
+        seller: { id: "seller-uuid", companyName: "Eco Store" },
+      })
+      const result = await ProductService.getBySlug("eco-shirt")
+      expect(result.seller?.slug).toBeNull()
     })
 
     it("maps images[].order to images[].position", async () => {
@@ -428,6 +508,46 @@ describe("ProductService", () => {
       const result = await ProductService.getBySlug("eco-shirt")
       expect(result.variants?.[0].inStock).toBe(false)
       expect(result.variants?.[1].inStock).toBe(true)
+    })
+  })
+
+  // ── Produzenten-Link end to end (#104) ───────────────────────────────
+  //
+  // The whole point of carrying `slug` through the service: what the list and
+  // the detail hand to producerHref() must come out as ?slug=, not ?id=.
+
+  describe("producer link built from a service result", () => {
+    it("yields ?slug= for an approved seller in the list", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...mockApiProductPage,
+        items: [
+          {
+            id: "p1",
+            slug: "eco-shirt",
+            name: "Eco Shirt",
+            price: 29.9,
+            currency: "EUR",
+            primaryImage: null,
+            seller: { id: "seller-uuid", slug: "alpha-manufaktur", companyName: "Eco Store" },
+            createdAt: "2026-01-01T00:00:00Z",
+            matchScore: null,
+          },
+        ],
+        totalItems: 1,
+      })
+      const result = await ProductService.list()
+      expect(producerHref(result.items[0].seller)).toBe("/producer?slug=alpha-manufaktur")
+    })
+
+    it("yields ?id= for a non-approved seller in the detail", async () => {
+      mockApiRequest.mockResolvedValue({
+        id: "prod_1",
+        name: "Eco Shirt",
+        slug: "eco-shirt",
+        seller: { id: "seller-uuid", slug: null, companyName: "Eco Store" },
+      })
+      const result = await ProductService.getBySlug("eco-shirt")
+      expect(producerHref(result.seller)).toBe("/producer?id=seller-uuid")
     })
   })
 

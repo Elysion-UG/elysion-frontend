@@ -31,8 +31,28 @@ export interface ProductImage {
   position?: number
 }
 
+/**
+ * Compact seller object of the **public** product reads (list, storefront detail
+ * `{slug}`, recommendations). The seller-portal and admin reads use their own
+ * shapes and are not covered by this.
+ *
+ * `userId` carries the backend's `seller.id` — the services rename it while
+ * mapping, so the raw API name never leaks past `product.service.ts`.
+ */
 export interface ProductSeller {
   userId?: string
+  /**
+   * Public seller slug — the routing identifier of `GET /api/v1/sellers/{slug}`,
+   * derived once at registration and stable across a company rename.
+   *
+   * **`null` whenever the seller is not `APPROVED`.** The producer page answers
+   * 404 for every other seller status, and an `ACTIVE` product of a `PENDING`
+   * seller *is* publicly listed — so a link built from a slug that the backend
+   * withheld would be a guaranteed dead end. `producerHref()` falls back to the
+   * id-based route in that case; `companyName` stays populated either way, only
+   * the link is withheld.
+   */
+  slug?: string | null
   companyName?: string
   firstName?: string
   lastName?: string
@@ -143,6 +163,12 @@ export interface ProductFacets {
 export interface SellerFacet {
   /** Seller UUID — exactly the value for `GET /api/v1/products?sellerId=<id>`. */
   id: string
+  /**
+   * Public seller slug, or `null` when the seller is not `APPROVED` — same rule
+   * and same meaning as {@link ProductSeller.slug}. A non-approved manufacturer
+   * stays filterable but is not linkable.
+   */
+  slug?: string | null
   companyName: string
   /** Number of ACTIVE products of this manufacturer. */
   productCount: number

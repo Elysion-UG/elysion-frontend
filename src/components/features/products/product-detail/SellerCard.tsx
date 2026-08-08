@@ -7,12 +7,16 @@ import { producerHref } from "@/src/lib/seller-url"
 interface SellerCardProps {
   sellerName: string
   sellerUserId?: string | null
+  /** Public seller slug; `null` for a seller that is not APPROVED. */
+  sellerSlug?: string | null
 }
 
-export function SellerCard({ sellerName, sellerUserId }: SellerCardProps) {
+export function SellerCard({ sellerName, sellerUserId, sellerSlug }: SellerCardProps) {
   const router = useRouter()
   const handleClick = () => {
-    const href = producerHref({ userId: sellerUserId })
+    // Without the slug this card would keep producing `?id=` while the seller
+    // name right above it already links to `?slug=` — same target, two routes.
+    const href = producerHref({ slug: sellerSlug, userId: sellerUserId })
     if (href) router.push(href)
   }
 
