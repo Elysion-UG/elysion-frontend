@@ -123,20 +123,40 @@ GET    /api/v1/products                              → ProductPage
                material (wiederholbar: ?material=leinen&material=hanf), sort, page, size
 GET    /api/v1/products/{slug}                       → ProductDetail   — public
 GET    /api/v1/products/by-id/{id}                   → ProductInternalDetail — ADMIN/SELLER
-POST   /api/v1/products                              → ProductCommandResponse  (optional materialIds)
-PATCH  /api/v1/products/{id}                         → ProductCommandResponse  (materialIds: null=unverändert, []=leeren)
-PATCH  /api/v1/products/{id}/status                  → ProductCommandResponse
-DELETE /api/v1/products/{id}                         → null
-POST   /api/v1/products/{id}/images                  → ProductCommandResponse
-DELETE /api/v1/products/{id}/images/{imageId}        → null
-PATCH  /api/v1/products/{id}/images/order            → ProductCommandResponse
-POST   /api/v1/products/{id}/variants                → ProductCommandResponse
-PATCH  /api/v1/products/{id}/variants/{variantId}    → ProductCommandResponse
-DELETE /api/v1/products/{id}/variants/{variantId}    → null
-
 GET    /api/v1/products/{productId}/certificates     → Certificate[]  — public
 GET    /api/v1/materials                             → Material[]     — Stammdaten für Filter + Seller-Formular
 ```
+
+**Schreibrouten liegen unter `/api/v1/seller/products`** — `/api/v1/products/**` ist
+GET-only (`ProductQueryController`, `ProductIdQueryController`,
+`ProductFacetQueryController`, `ProductCertificatePublicController`). Ein Schreibzugriff
+auf das Lese-Präfix stirbt als **405** (#219).
+
+```
+GET    /api/v1/seller/products                                  → PagedResponse<SellerProductListItem> — SELLER, alle Status (FE nutzt es noch nicht)
+POST   /api/v1/seller/products                                  → ProductCommandResponse  (optional materialIds)
+PATCH  /api/v1/seller/products/{id}                             → ProductCommandResponse  (materialIds: null=unverändert, []=leeren)
+PATCH  /api/v1/seller/products/{id}/status                      → ProductCommandResponse
+POST   /api/v1/seller/products/{productId}/images               → ProductCommandResponse
+DELETE /api/v1/seller/products/{productId}/images/{imageId}     → null
+PATCH  /api/v1/seller/products/{productId}/images/order         → ProductCommandResponse
+POST   /api/v1/seller/products/{productId}/variants             → ProductCommandResponse
+PATCH  /api/v1/seller/products/{productId}/variants/{variantId} → ProductCommandResponse
+DELETE /api/v1/seller/products/{productId}/variants/{variantId} → null
+```
+
+Es gibt **kein** `DELETE /api/v1/seller/products/{id}`; `ProductService` bietet deshalb
+bewusst keine `delete()`-Methode an.
+
+`PATCH .../status` ist **kein vollwertiger Ersatz**. Die State Machine des Backends
+(BE `../../elysion-marketplace-backend/docs/domain/product-lifecycle.md`)
+erlaubt nur `DRAFT → REVIEW`, `REVIEW → ACTIVE`, `REVIEW → REJECTED` und `ACTIVE ⇄ INACTIVE`
+— alles andere wird abgelehnt. Stilllegen per `INACTIVE` funktioniert also **nur aus
+`ACTIVE`**; für ein Produkt in `DRAFT`, `REVIEW` oder `REJECTED` gibt es derzeit **keinen**
+Weg, es zu löschen oder auszublenden. Genau `DRAFT` war der Zustand des entfernten
+Papierkorb-Buttons — ein Ersatz braucht eine Backend-Entscheidung (`DELETE` oder ein
+zusätzlicher Übergang), keinen Frontend-Workaround. Öffentlich sichtbar sind ohnehin nur
+`ACTIVE`-Produkte.
 
 Zu Pagination-Shape, `sort`-Werten und dem Unterschied `{slug}` ↔ `by-id/{id}`:
 [`BACKEND_QUIRKS.md`](./BACKEND_QUIRKS.md).

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useEffectEvent } from "@/src/hooks/use-effect-event"
-import { Plus, Edit, Package, RefreshCw, Loader2, CheckCircle2, Clock, Trash2 } from "lucide-react"
+import { Plus, Edit, Package, RefreshCw, Loader2, CheckCircle2, Clock } from "lucide-react"
 import { ProductService } from "@/src/services/product.service"
 import ProductForm from "@/src/components/features/products/ProductForm"
 import type { ProductListItem, ProductStatus } from "@/src/types"
@@ -24,16 +24,6 @@ import {
   SELLER_TABLE_CELL_CLASS,
 } from "./sellerDashboard.constants"
 import SellerKpiCard from "./SellerKpiCard"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/src/components/ui/alert-dialog"
 
 interface SellerProductsTabProps {
   isApproved: boolean
@@ -45,7 +35,6 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
   const [productsLoading, setProductsLoading] = useState(false)
   const [showProductForm, setShowProductForm] = useState(false)
   const [editProduct, setEditProduct] = useState<ProductListItem | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<ProductListItem | null>(null)
 
   const fetchProducts = useCallback(async () => {
     if (!userId || !isApproved) return
@@ -77,19 +66,10 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
     }
   }
 
-  const confirmDelete = async () => {
-    const target = deleteTarget
-    if (!target) return
-    setDeleteTarget(null)
-    try {
-      await ProductService.delete(target.id)
-      toast.success("Produkt gelöscht.")
-      void fetchProducts()
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Produkt konnte nicht gelöscht werden."
-      toast.error(msg)
-    }
-  }
+  // Kein Löschen-Flow: das Backend hat kein DELETE /api/v1/seller/products/{id}
+  // (#219). Der frühere Button schickte ein DELETE an den GET-only-Lese-
+  // controller und lief immer in einen 405. Entwürfe bleiben bis zu einem
+  // Backend-Gegenstück bestehen.
 
   const activeCount = products.filter((p) => p.status === "ACTIVE").length
   const draftCount = products.filter((p) => p.status === "DRAFT").length
@@ -228,15 +208,6 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                             Aktivieren
                           </button>
                         )}
-                        {status === "DRAFT" && (
-                          <button
-                            onClick={() => setDeleteTarget(product)}
-                            className="text-danger transition-colors hover:text-danger"
-                            title="Produkt löschen"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -265,27 +236,6 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
           }}
         />
       )}
-
-      <AlertDialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null)
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Produkt löschen?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Möchten Sie „{deleteTarget?.title ?? "dieses Produkt"}“ wirklich löschen? Diese Aktion
-              kann nicht rückgängig gemacht werden.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void confirmDelete()}>Löschen</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   )
 }
