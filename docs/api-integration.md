@@ -58,7 +58,7 @@ haben sie nicht.
 `auth` · `user` · `address` · `buyer-value-profile` · `seller-profile` ·
 `seller-value-profile` · `admin` · `product` · `category` · `material` ·
 `certificate` · `cart` · `checkout` · `order` · `seller-order` · `seller-payout` ·
-`payment` · `file` · `recommendation` · `monitoring` · `contact`
+`payment` · `file` · `recommendation` · `monitoring` · `contact` · `seller`
 
 > Die Methodennamen stehen im jeweiligen Service — hier bewusst nicht gespiegelt,
 > damit sie nicht auseinanderlaufen.
@@ -196,6 +196,35 @@ Fällt eine der beiden Facetten aus (HTTP-Fehler oder Schemaverletzung), ist das
 dasselbe wie bei einer leeren Facette — die Sidebar-Sektion verschwindet. Die UI muss den
 Fehlerzustand deshalb explizit anzeigen (`isError` der Hooks), sonst liest der Nutzer den
 Ausfall als „Filter entfernt".
+### Verkäufer (öffentlich)
+
+```
+GET    /api/v1/sellers/{slug}    → PublicSellerProfile    — public
+```
+
+`data`: `{ id, slug, companyName, description, location, foundedYear,
+sustainabilityScore, certifications[] }`. Die optionalen Felder kommen als `null`
+und werden im Service zu `undefined` normalisiert.
+
+- `id` ist die Seller-UUID — exakt der Wert für `GET /api/v1/products?sellerId=<id>`.
+  Die Produkte stehen **nicht** im Profil.
+- `slug` ist der stabile öffentliche Identifikator; er wird einmalig aus dem Firmennamen
+  abgeleitet und folgt einer Umbenennung **nicht**. Lookup case-insensitiv.
+- `certifications` enthält ausschließlich Zertifikate im Status `VERIFIED`, neueste
+  zuerst, mit `certificateId` (nicht `id`).
+- `404` für unbekannte Slugs **und** für Verkäufer, die nicht `APPROVED` sind — beide
+  Fälle sind absichtlich nicht unterscheidbar.
+- Frontend: `SellerService.getPublicProfile` · `usePublicSellerProfile` ·
+  Seite `/producer?slug=<slug>`; `?id=<uuid>` bleibt als Fallback für bereits geteilte
+  Links (ohne Profil-Lookup — es gibt keinen Read über die Seller-Id).
+- Produzenten-Links entstehen ausschließlich über `producerHref()` in
+  `src/lib/seller-url.ts`.
+
+> **Lücke:** Die Produktlisten liefern in `seller` nur `id`/`companyName`, **keinen**
+> `slug`. Aus einer Produktkarte heraus entsteht deshalb weiterhin `?id=<uuid>` und die
+> Produzenten-Seite zeigt nur den aus der Produktliste abgeleiteten Namen. Sobald
+> `ProductSellerSummaryResponse` einen `slug` trägt, greift `producerHref()` ohne
+> weitere Änderung auf `?slug=` um.
 
 ### Kategorien
 

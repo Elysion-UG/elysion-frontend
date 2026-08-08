@@ -1,16 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from "vitest"
 import { render, screen } from "@testing-library/react"
-import type { ProductDetail } from "@/src/types"
+import type { ProductDetail, PublicSellerProfile } from "@/src/types"
+import { ApiError } from "@/src/lib/api-client"
 
 // ── Mocks ──────────────────────────────────────────────────────────────────────
 
 const mockUseSellerProducts = vi.fn()
+const mockUsePublicSellerProfile = vi.fn()
 const mockPush = vi.fn()
 const mockGet = vi.fn()
 
 vi.mock("@/src/hooks/useSellerProducts", () => ({
   useSellerProducts: (sellerId: string | null) => mockUseSellerProducts(sellerId),
 }))
+
+vi.mock("@/src/hooks/usePublicSellerProfile", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/src/hooks/usePublicSellerProfile")>()
+  return {
+    ...actual,
+    usePublicSellerProfile: (slug: string | null) => mockUsePublicSellerProfile(slug),
+  }
+})
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: mockPush, back: vi.fn() }),
@@ -41,34 +51,137 @@ const PRODUCTS: ProductDetail[] = [
   } as ProductDetail,
 ]
 
-describe("ProducerPage — real seller data", () => {
+const PROFILE: PublicSellerProfile = {
+  id: "s1",
+  slug: "greenthread",
+  companyName: "GreenThread",
+  description: "Wir weben seit 1998 in Ostwestfalen.",
+  location: "Bielefeld, DE",
+  foundedYear: 1998,
+  sustainabilityScore: 87,
+  certifications: [
+    {
+      certificateId: "c1",
+      certificateType: "ORGANIC",
+      title: "EU Organic Certificate",
+      issuerName: "Control Union",
+      expiryDate: "2027-01-01",
+      status: "VERIFIED",
+    },
+  ],
+}
+
+/** searchParams.get() — nur die tatsächlich gesetzten Parameter. */
+function searchParams(params: { slug?: string; id?: string }) {
+  mockGet.mockImplementation((key: string) => params[key as "slug" | "id"] ?? null)
+}
+
+function productsLoaded() {
+  mockUseSellerProducts.mockReturnValue({
+    data: { products: PRODUCTS, companyName: "GreenThread", totalElements: 2 },
+    isLoading: false,
+    error: null,
+  })
+}
+
+function profileIdle() {
+  mockUsePublicSellerProfile.mockReturnValue({ data: undefined, isLoading: false, error: null })
+}
+
+describe("ProducerPage — public seller profile (#104)", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockGet.mockReturnValue("s1")
+    profileIdle()
+    productsLoaded()
   })
 
-  it("renders the seller company name, product count and real products", () => {
-    mockUseSellerProducts.mockReturnValue({
-      data: { products: PRODUCTS, companyName: "GreenThread", totalElements: 2 },
+  it("loads the profile by slug and the products by the id it returns", () => {
+    searchParams({ slug: "greenthread" })
+    mockUsePublicSellerProfile.mockReturnValue({
+      data: PROFILE,
       isLoading: false,
       error: null,
     })
 
     render(<ProducerPage />)
 
+    expect(mockUsePublicSellerProfile).toHaveBeenCalledWith("greenthread")
+    expect(mockUseSellerProducts).toHaveBeenCalledWith("s1")
+  })
+
+  it("renders description, location, founded year, score and verified certificates", () => {
+    searchParams({ slug: "greenthread" })
+    mockUsePublicSellerProfile.mockReturnValue({ data: PROFILE, isLoading: false, error: null })
+
+    render(<ProducerPage />)
+
+    expect(screen.getByRole("heading", { name: "GreenThread" })).toBeInTheDocument()
+    expect(screen.getByText("Wir weben seit 1998 in Ostwestfalen.")).toBeInTheDocument()
+    expect(screen.getByText("Bielefeld, DE")).toBeInTheDocument()
+    expect(screen.getByText("gegründet 1998")).toBeInTheDocument()
+    expect(screen.getByText("87")).toBeInTheDocument()
+    expect(screen.getByText("Verifizierte Zertifikate")).toBeInTheDocument()
+    expect(screen.getByText("EU Organic Certificate")).toBeInTheDocument()
+    expect(screen.getByText(/Control Union/)).toBeInTheDocument()
+  })
+
+  it("waits for the profile id before loading products", () => {
+    searchParams({ slug: "greenthread" })
+    mockUsePublicSellerProfile.mockReturnValue({ data: undefined, isLoading: true, error: null })
+
+    render(<ProducerPage />)
+
+    expect(mockUseSellerProducts).toHaveBeenCalledWith(null)
+  })
+
+  it("treats a 404 as 'not found' — unknown slug and unapproved seller look the same", () => {
+    searchParams({ slug: "ghost" })
+    mockUsePublicSellerProfile.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new ApiError(404, "Seller profile not found"),
+    })
+
+    render(<ProducerPage />)
+
+    expect(screen.getByText("Verkäufer nicht gefunden")).toBeInTheDocument()
+    expect(screen.queryByRole("heading", { name: "GreenThread" })).not.toBeInTheDocument()
+  })
+
+  it("shows the error state for a non-404 profile failure", () => {
+    searchParams({ slug: "greenthread" })
+    mockUsePublicSellerProfile.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new ApiError(500, "boom"),
+    })
+
+    render(<ProducerPage />)
+
+    expect(screen.getByText("Produzent konnte nicht geladen werden")).toBeInTheDocument()
+  })
+})
+
+describe("ProducerPage — ?id= fallback for existing links", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    profileIdle()
+    productsLoaded()
+  })
+
+  it("keeps working without a slug and does not query the profile endpoint", () => {
+    searchParams({ id: "s1" })
+
+    render(<ProducerPage />)
+
+    expect(mockUsePublicSellerProfile).toHaveBeenCalledWith(null)
     expect(mockUseSellerProducts).toHaveBeenCalledWith("s1")
     expect(screen.getByRole("heading", { name: "GreenThread" })).toBeInTheDocument()
     expect(screen.getByText("2 Produkte")).toBeInTheDocument()
-    expect(screen.getByText("Bio-Baumwoll T-Shirt")).toBeInTheDocument()
-    expect(screen.getByText("Leinen Sommerkleid")).toBeInTheDocument()
   })
 
   it("links to the product detail by slug", () => {
-    mockUseSellerProducts.mockReturnValue({
-      data: { products: PRODUCTS, companyName: "GreenThread", totalElements: 2 },
-      isLoading: false,
-      error: null,
-    })
+    searchParams({ id: "s1" })
 
     render(<ProducerPage />)
 
@@ -79,6 +192,7 @@ describe("ProducerPage — real seller data", () => {
   })
 
   it("shows an empty state when the seller has no products", () => {
+    searchParams({ id: "s1" })
     mockUseSellerProducts.mockReturnValue({
       data: { products: [], companyName: null, totalElements: 0 },
       isLoading: false,
@@ -92,6 +206,7 @@ describe("ProducerPage — real seller data", () => {
   })
 
   it("does not render the product count while loading", () => {
+    searchParams({ id: "s1" })
     mockUseSellerProducts.mockReturnValue({ data: undefined, isLoading: true, error: null })
 
     render(<ProducerPage />)
@@ -100,8 +215,8 @@ describe("ProducerPage — real seller data", () => {
     expect(screen.queryByText("Bio-Baumwoll T-Shirt")).not.toBeInTheDocument()
   })
 
-  it("shows only the 'not found' state without a placeholder header when no seller id is provided", () => {
-    mockGet.mockReturnValue(null)
+  it("shows only the 'not found' state without a placeholder header when neither slug nor id is given", () => {
+    searchParams({})
     mockUseSellerProducts.mockReturnValue({ data: undefined, isLoading: false, error: null })
 
     render(<ProducerPage />)
@@ -112,8 +227,8 @@ describe("ProducerPage — real seller data", () => {
     expect(screen.queryByText(/Produkte?$/)).not.toBeInTheDocument()
   })
 
-  it("shows only the error state without a placeholder header when loading fails", () => {
-    mockGet.mockReturnValue("s1")
+  it("shows only the error state without a placeholder header when the product load fails", () => {
+    searchParams({ id: "s1" })
     mockUseSellerProducts.mockReturnValue({
       data: undefined,
       isLoading: false,
@@ -122,7 +237,7 @@ describe("ProducerPage — real seller data", () => {
 
     render(<ProducerPage />)
 
-    expect(screen.getByText("Produkte konnten nicht geladen werden")).toBeInTheDocument()
+    expect(screen.getByText("Produzent konnte nicht geladen werden")).toBeInTheDocument()
     expect(screen.queryByRole("heading", { name: "Verkäufer" })).not.toBeInTheDocument()
     expect(screen.queryByText(/Produkte?$/)).not.toBeInTheDocument()
   })

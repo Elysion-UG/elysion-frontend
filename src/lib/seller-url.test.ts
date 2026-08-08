@@ -1,5 +1,32 @@
 import { describe, it, expect, beforeEach } from "vitest"
-import { sellerUrl, buyerUrl, adminUrl } from "./seller-url"
+import { sellerUrl, buyerUrl, adminUrl, producerHref } from "./seller-url"
+
+describe("producerHref", () => {
+  it("prefers the slug — only it can load the public profile (#104)", () => {
+    expect(producerHref({ slug: "alpha-manufaktur", userId: "u1" })).toBe(
+      "/producer?slug=alpha-manufaktur"
+    )
+  })
+
+  it("keeps existing ?id= links working when no slug is known", () => {
+    expect(producerHref({ userId: "8f1c2b7e" })).toBe("/producer?id=8f1c2b7e")
+  })
+
+  it("stays on the /producer route — no /produzenten/{slug}", () => {
+    expect(producerHref({ slug: "alpha" })?.startsWith("/producer?")).toBe(true)
+  })
+
+  it("encodes the query value", () => {
+    expect(producerHref({ userId: "a b&c" })).toBe("/producer?id=a%20b%26c")
+  })
+
+  it("returns null when neither slug nor seller id is known", () => {
+    expect(producerHref(null)).toBeNull()
+    expect(producerHref(undefined)).toBeNull()
+    expect(producerHref({})).toBeNull()
+    expect(producerHref({ slug: null, userId: null })).toBeNull()
+  })
+})
 
 describe("sellerUrl", () => {
   beforeEach(() => {

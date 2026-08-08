@@ -27,6 +27,8 @@ export type {
   SellerValueProfileLevel,
   SellerValueProfile,
   SellerProductListItem,
+  PublicSellerCertificate,
+  PublicSellerProfile,
   BuyerValueProfile,
   BuyerValueProfileUpsertDTO,
 } from "./seller"

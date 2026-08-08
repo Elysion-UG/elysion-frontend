@@ -15,6 +15,7 @@ import { useProducts, PRODUCTS_PAGE_SIZE } from "@/src/hooks/useProducts"
 import { useMaterials } from "@/src/hooks/useMaterials"
 import { useProductFacets } from "@/src/hooks/useProductFacets"
 import { useSellerFacets } from "@/src/hooks/useSellerFacets"
+import { producerHref } from "@/src/lib/seller-url"
 import { useAuth } from "@/src/context/AuthContext"
 import { useBuyerValueProfile } from "@/src/hooks/useBuyerValueProfile"
 import {
@@ -373,9 +374,7 @@ export default function SustainableShop() {
                   productHref={
                     product.slug ? `/product?slug=${product.slug}` : `/product?id=${product.id}`
                   }
-                  sellerHref={
-                    product.seller?.userId ? `/producer?id=${product.seller.userId}` : null
-                  }
+                  sellerHref={producerHref(product.seller)}
                 />
               ))}
             </div>
