@@ -246,7 +246,16 @@ function generateNonce(): string {
 // Routes in the (public) group — statically/ISR-rendered, no per-request nonce
 // (#37). Kept in sync with src/app/(public)/. "/" is the shop home. The check
 // only matters on the buyer/main domain; seller/admin domains never serve these.
-const PUBLIC_ROUTES = [
+//
+// This list mirrors the filesystem by hand, and drifting from it is silent AND
+// severe: a new (public) page missing here is prerendered statically (there is
+// no root force-dynamic anymore) but served the nonce CSP — Next's build-time
+// inline bootstrap scripts then carry no matching nonce and hydration never
+// starts. That is the FE#23 bug, invisible in `next dev` (everything renders
+// dynamically there) and first visible on staging. Exported solely so
+// middleware.test.ts can diff it against src/app/(public)/ in both directions;
+// nothing else should import it.
+export const PUBLIC_ROUTES = [
   "/about",
   "/agb",
   "/cart",
