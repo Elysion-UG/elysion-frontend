@@ -215,7 +215,7 @@ describe("Content-Security-Policy (#33)", () => {
   })
 })
 
-// ── PUBLIC_ROUTES ↔ src/app/(public)/ drift guard (#37) ──────────────────────
+// ── PUBLIC_ROUTES ↔ src/app/(public)/ drift guard (#225, aus #37) ────────────
 //
 // PUBLIC_ROUTES is a hand-maintained mirror of the (public) route group, and
 // nothing enforces the mirroring. Forgetting an entry fails silently and badly:
@@ -226,28 +226,69 @@ describe("Content-Security-Policy (#33)", () => {
 // Hence this test diffs the list against the filesystem in both directions.
 
 // Vitest runs from the project root (vitest.config.ts lives there), so the app
-// directory is reachable from cwd. A wrong path would make readdirSync throw
-// rather than silently report an empty route set.
+// directory is reachable from cwd.
 const PUBLIC_APP_DIR = join(process.cwd(), "src", "app", "(public)")
 
+// Next resolves a route from any of these without extra configuration, so the
+// walk must not key on page.tsx alone — a page.js would slip past the guard.
+const PAGE_FILES = ["page.tsx", "page.ts", "page.jsx", "page.js"]
+
+type PublicRouteScan = {
+  /** URL paths that are actually reachable, "/" for the group root. */
+  routes: string[]
+  /** Dynamic segments directly below (public) — see the note in scanPublicRoutes. */
+  unexpressible: string[]
+}
+
 /**
- * Every route path below src/app/(public)/ that has a page.tsx, walked
- * recursively so a nested page (e.g. /help/faq without /help/page.tsx) cannot
- * hide from the guard. Route groups "(x)" and private folders "_x" contribute
- * no URL segment. The group root itself maps to "/".
+ * Walks src/app/(public)/ and maps every page file to the URL path Next would
+ * actually serve. Segment kinds are handled the way the router handles them —
+ * a walk that merely approximates them would sign off on the very bug this
+ * guard exists to catch:
+ *
+ *   • "(x)" route groups and "@x" parallel slots contribute NO URL segment.
+ *     Appending "@modal" would demand the entry "/@modal/photo" while the real
+ *     URL /photo stays unlisted — statically rendered, nonce CSP, FE#23.
+ *   • "_x" folders are not routable at all; everything below them is skipped
+ *     rather than passed through, which would invent a non-existent route.
+ *   • "[x]" directly below (public) has no static ancestor that PUBLIC_ROUTES
+ *     could name: a literal "/[slug]" entry never matches in isPublicRoute()
+ *     (plain equality / startsWith), so real URLs like /bio-hof-mueller would
+ *     get the nonce CSP while the guard reports green. Those are collected as
+ *     `unexpressible` and reported as a distinct failure. Nested dynamics such
+ *     as /producer/[handle] are fine — the listed "/producer" prefix covers them.
  */
-function discoverPublicRoutes(dir: string = PUBLIC_APP_DIR, prefix = ""): string[] {
+function scanPublicRoutes(dir: string = PUBLIC_APP_DIR, prefix = ""): PublicRouteScan {
   const routes: string[] = []
+  const unexpressible: string[] = []
+
   // The group root itself carries src/app/(public)/page.tsx — the shop home.
-  if (existsSync(join(dir, "page.tsx"))) routes.push(prefix || "/")
+  if (PAGE_FILES.some((file) => existsSync(join(dir, file)))) routes.push(prefix || "/")
 
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue
-    const isTransparent = entry.name.startsWith("(") || entry.name.startsWith("_")
-    const path = isTransparent ? prefix : `${prefix}/${entry.name}`
-    routes.push(...discoverPublicRoutes(join(dir, entry.name), path))
+    const name = entry.name
+
+    // "_x" is not routable in Next — nothing below it becomes a URL.
+    if (name.startsWith("_")) continue
+
+    // "(x)" and "@x" contribute no URL segment; the prefix passes through.
+    const isTransparent = name.startsWith("(") || name.startsWith("@")
+
+    // A dynamic segment with no static ancestor inside (public): the resulting
+    // URL has no literal prefix PUBLIC_ROUTES could carry. Reported separately
+    // instead of being passed through as "/[slug]".
+    if (name.startsWith("[") && prefix === "") {
+      unexpressible.push(`/${name}`)
+      continue
+    }
+
+    const child = scanPublicRoutes(join(dir, name), isTransparent ? prefix : `${prefix}/${name}`)
+    routes.push(...child.routes)
+    unexpressible.push(...child.unexpressible)
   }
-  return routes
+
+  return { routes, unexpressible }
 }
 
 /** Mirrors the middleware's own prefix matching for a single list entry. */
@@ -255,14 +296,53 @@ function covers(entry: string, route: string): boolean {
   return route === entry || route.startsWith(`${entry}/`)
 }
 
-describe("PUBLIC_ROUTES mirrors src/app/(public)/ (#37)", () => {
-  const discovered = discoverPublicRoutes()
+describe("PUBLIC_ROUTES mirrors src/app/(public)/ (#225)", () => {
+  // Checked before walking: a renamed/moved directory would otherwise throw
+  // ENOENT at collection time and take all of middleware.test.ts down with a
+  // raw fs error instead of one explanatory failure.
+  const publicDirExists = existsSync(PUBLIC_APP_DIR)
+  const { routes: discovered, unexpressible } = publicDirExists
+    ? scanPublicRoutes()
+    : { routes: [], unexpressible: [] }
 
   it("finds the (public) route group on disk", () => {
-    // Guards the guard: a moved/renamed directory must not silently make the
-    // two assertions below vacuous.
-    expect(discovered.length).toBeGreaterThan(5)
+    expect(
+      publicDirExists,
+      `src/app/(public)/ nicht gefunden (${PUBLIC_APP_DIR}). Wurde die Route-Gruppe umbenannt ` +
+        "oder verschoben? Dann geht dieser Guard ins Leere — Pfad hier und PUBLIC_ROUTES in " +
+        "src/middleware.ts anpassen."
+    ).toBe(true)
+
+    // Guards the guard: without a floor near the real count, pages could vanish
+    // (or the walk could stop finding them) and the diff below would still pass.
+    expect(discovered.length).toBeGreaterThanOrEqual(10)
     expect(discovered).toContain("/")
+  })
+
+  it("has no dynamic segment directly below (public) — PUBLIC_ROUTES cannot express those", () => {
+    expect(
+      unexpressible,
+      `Dynamische Segmente direkt unter src/app/(public)/: ${unexpressible.join(", ")}. ` +
+        "PUBLIC_ROUTES kann sie nicht ausdrücken — isPublicRoute() vergleicht Strings, ein " +
+        'Literal-Eintrag wie "/[slug]" matcht nie. Die echten URLs (z. B. /bio-hof-mueller) ' +
+        "bekämen die Nonce-CSP auf statischem HTML (FE#23). Entweder die Seite unter ein " +
+        'statisches Segment hängen (z. B. /producer/[handle], vom Eintrag "/producer" gedeckt) ' +
+        "oder isPublicRoute() auf Pattern-Matching umstellen."
+    ).toEqual([])
+  })
+
+  it("has no bracketed PUBLIC_ROUTES entry (a literal pattern never matches a real URL)", () => {
+    // Closes the escape hatch of the two diff tests below: adding "/[slug]" or
+    // "/producer/[handle]" to the list would silence them while isPublicRoute()
+    // — plain equality / startsWith — never matches the actual request path.
+    const literalPatterns = PUBLIC_ROUTES.filter((entry) => entry.includes("["))
+
+    expect(
+      literalPatterns,
+      `Diese PUBLIC_ROUTES-Einträge sehen aus wie Route-Patterns: ${literalPatterns.join(", ")}. ` +
+        "isPublicRoute() vergleicht Strings, sie matchen also keine einzige echte URL — der " +
+        "Eintrag beruhigt nur diesen Test. Stattdessen das statische Elternsegment eintragen."
+    ).toEqual([])
   })
 
   it("lists every page under src/app/(public)/ (missing entry → nonce CSP on a static page)", () => {
@@ -279,14 +359,16 @@ describe("PUBLIC_ROUTES mirrors src/app/(public)/ (#37)", () => {
     ).toEqual([])
   })
 
-  it("has no entry without a matching directory (stale entry → dead relaxation)", () => {
+  it("has no entry without a matching directory (stale entry → 'unsafe-inline' on a moved page)", () => {
     const stale = PUBLIC_ROUTES.filter((entry) => !discovered.some((route) => covers(entry, route)))
 
     expect(
       stale,
       `Diese PUBLIC_ROUTES-Einträge haben keine Seite unter src/app/(public)/ mehr: ${stale.join(", ")}. ` +
-        "Entweder ist die Seite umgezogen (dann gilt für sie die falsche CSP) oder der Eintrag ist tot " +
-        "und lockert die CSP für einen Pfad ohne Grund."
+        "Der teure Fall ist der Umzug: Wandert (public)/x nach (buyer)/x, bleibt /x eine gültige — " +
+        "jetzt authentifizierte und dynamisch gerenderte — URL, die durch den zurückgebliebenen " +
+        "Eintrag weiterhin script-src 'unsafe-inline' statt der strikten Nonce-Policy bekommt. " +
+        "Das ist eine echte Sicherheitsregression, kein toter Eintrag."
     ).toEqual([])
   })
 })
