@@ -6,9 +6,13 @@ import {
   useSellerOrders,
   useUpdateSellerOrderStatus,
   useDeliverSellerOrder,
+  useSellerRefund,
+  useSellerSettlements,
 } from "@/src/hooks/useSellerDashboard"
 import type { OrderGroupDetail } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
+import { remainingRefundable } from "@/src/lib/refund"
+import { RefundDialog } from "@/src/components/shared/RefundDialog"
 import { hasShippingSla, shippingSlaBadgeLabel } from "@/src/lib/shipping-sla"
 import { StatusBadge } from "@/src/components/shared"
 import { orderStatusLabel, orderStatusColor, shippingSlaColor } from "./sellerDashboard.constants"
@@ -22,6 +26,24 @@ export default function SellerOrdersTab() {
   const deliver = useDeliverSellerOrder()
   const [selectedOrder, setSelectedOrder] = useState<OrderGroupDetail | null>(null)
   const [shipModalGroupId, setShipModalGroupId] = useState<string | null>(null)
+  const [refundGroupId, setRefundGroupId] = useState<string | null>(null)
+
+  // Der erstattbare Restbetrag steht auf der Abrechnungszeile, nicht auf der
+  // Bestellung — `GET /api/v1/seller/settlements` ist die einzige Sicht, die
+  // `refundedAmount` je OrderGroup führt.
+  const { data: settlements = [] } = useSellerSettlements()
+  const refund = useSellerRefund()
+
+  const refundStateFor = (orderGroupId: string) => {
+    const settlement = settlements.find((s) => s.orderGroupId === orderGroupId)
+    if (!settlement) return undefined
+    return {
+      alreadyRefunded: settlement.refundedAmount ?? 0,
+      remaining: remainingRefundable(settlement),
+    }
+  }
+
+  const refundState = refundGroupId ? refundStateFor(refundGroupId) : undefined
 
   const pendingCount = orders.filter(
     (o) => o.status === "CONFIRMED" || o.status === "PENDING"
@@ -146,6 +168,23 @@ export default function SellerOrdersTab() {
           onShip={(groupId) => {
             setShipModalGroupId(groupId)
           }}
+          refund={refundStateFor(selectedOrder.orderGroupId)}
+          onRefund={(groupId) => {
+            setRefundGroupId(groupId)
+            setSelectedOrder(null)
+          }}
+        />
+      )}
+
+      {refundGroupId && (
+        <RefundDialog
+          title="Erstattung auslösen"
+          description="Die Erstattung bezieht sich auf diese Bestellung und wird sofort beim Zahlungsdienstleister gebucht."
+          orderGroupId={refundGroupId}
+          alreadyRefunded={refundState?.alreadyRefunded ?? null}
+          remaining={refundState?.remaining ?? null}
+          onSubmit={(dto) => refund.mutateAsync(dto)}
+          onClose={() => setRefundGroupId(null)}
         />
       )}
 

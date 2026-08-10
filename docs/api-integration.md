@@ -363,9 +363,12 @@ PATCH  /api/v1/seller/orders/{id}/status       → OrderGroupDetail
 POST   /api/v1/seller/orders/{id}/ship         → OrderGroupDetail
 POST   /api/v1/seller/orders/{id}/deliver      → OrderGroupDetail
 GET    /api/v1/seller/settlements              → Settlement[]
+POST   /api/v1/seller/refunds                  → RefundResult
 ```
 
 Settlements liegen auf `/seller/settlements` — **nicht** unter `/seller/orders/`.
+Erstattungen ebenso auf `/seller/refunds`; Vertrag siehe
+[Erstattungen](#erstattungen-refunds).
 
 #### Versandfrist (`shippingSla`) — nur Seller-Reads
 
@@ -477,6 +480,7 @@ POST   /api/v1/admin/products/{id}/deactivate        → { id, status }
 
 GET    /api/v1/admin/payments                        → PagedResponse<AdminPaymentItem>
 GET    /api/v1/admin/refunds                         → PagedResponse<AdminRefundItem>
+POST   /api/v1/admin/refunds                         → RefundResult          # Eskalation, siehe unten
 GET    /api/v1/admin/settlements                     → PagedResponse<Settlement>
 GET    /api/v1/admin/payouts                         → PagedResponse<AdminPayoutItem>
 
@@ -649,3 +653,99 @@ POST /api/v1/admin/payouts/run
 Setzt `payoutAccountStatus === "ACTIVE"` voraus. Settlement-Auslöser bleibt
 `DELIVERED`. Bei Freigabe geht eine gebrandete Payout-Mail an den Seller.
 Backend-seitig muss `createPayout()` das bestehende `ConflictException`-Stub ersetzen.
+
+---
+
+## Erstattungen (Refunds)
+
+Rollen laut `MANAGEMENT_DECISIONS.md` §1.4: Der **Seller erstattet eigenständig**, ohne
+Freigabe von Elysion. Der **Admin** erstattet nur als **Eskalation** (Seller reagiert nicht,
+Dispute, Betrug). Der **Buyer** löst **nie** direkt eine Erstattung aus — dafür ist der
+Rückgabe-Antrag vorgesehen, ein eigener Flow in einem eigenen Issue. Im Käufer-Portal darf
+deshalb kein Erstattungs-Button existieren.
+
+Vollständiger Vertrag: Backend `docs/api/refunds.md`.
+
+```http
+POST /api/v1/seller/refunds     # eigene OrderGroup, Ownership serverseitig
+POST /api/v1/admin/refunds      # beliebige OrderGroup, keine Ownership-Schranke
+     Body: {
+       "orderGroupId": string,   # Pflicht
+       "amount"?: number,        # EUR, max. 2 Nachkommastellen — WEGLASSEN = Vollerstattung
+       "reason"?: string         # max. 500 Zeichen
+     }
+     → RefundResult
+```
+
+`GET /api/v1/admin/refunds` bleibt die Leseliste — **gleicher Pfad, andere Methode**.
+
+### Bezugsgröße und Betrag
+
+- Eine Erstattung bezieht sich immer auf **genau eine OrderGroup** — nie auf eine Order und
+  nie auf eine einzelne Position. `paymentId` und `sellerId` schickt der Client **nicht**;
+  beides löst der Server aus der Abrechnungszeile bzw. dem SecurityContext auf.
+- Beträge sind **Decimal EUR** auf der Leitung (die DB führt Cent), wie bei Settlements und
+  Payouts.
+- **`amount` weglassen** erstattet den kompletten Restbetrag. Das Frontend setzt bei einer
+  Vollerstattung bewusst **keinen** selbst berechneten Wert ein — sonst kippt eine
+  zwischenzeitliche Teilerstattung den Request in eine `400`.
+- Obergrenze ist der Restbetrag der Abrechnungszeile (`grossAmount − refundedAmount`). Beide
+  Felder stehen in `GET /api/v1/seller/settlements` bzw. `GET /api/v1/admin/settlements` —
+  das ist die einzige Quelle für „noch erstattbar". Frontend: `remainingRefundable()` und
+  `validateRefundAmount()` in `src/lib/refund.ts`, gerechnet in Cent.
+
+### `RefundResult`
+
+```ts
+type RefundResult = {
+  refundId: string
+  paymentId: string
+  orderId: string
+  orderGroupId: string
+  sellerId: string
+  amount: number // erstattet, EUR
+  currency: string
+  status: "PENDING" | "SUCCEEDED" | "FAILED"
+  providerRefundId: string | null // Stripe-Refund-ID
+  initiatedBy: "SELLER" | "ADMIN"
+  reason: string | null
+  // Wirkung auf die Abrechnungszeile — vom Server geliefert, NIE nachgerechnet:
+  settlementRefundedAmount: number
+  settlementRemainingRefundableAmount: number
+  settlementPlatformFeeAmount: number // Provision NACH anteiliger Rückgabe
+  settlementRefundFeeAmount: number // Ist-Gebührenanteil ohne Gegenumsatz
+  settlementNetAmount: number // darf negativ sein
+  settlementAdjustmentRequired: boolean // Zeile von der Auszahlung ausgenommen
+}
+```
+
+Die Gegenbuchung passiert in derselben Transaktion: Die Provision wird anteilig
+zurückgegeben, der auf den erstatteten Anteil entfallende Teil der Stripe-Gebühr bleibt beim
+Seller, und die Zeile verliert ihre Auszahlungsberechtigung. Nach einer Vollerstattung ist
+`settlementNetAmount` negativ (in Höhe der Ist-Gebühr) und wird mit der nächsten Auszahlung
+verrechnet.
+
+### Fehlerfälle
+
+| Status        | Fall                                                                               | Instanz / Konsequenz                      |
+| ------------- | ---------------------------------------------------------------------------------- | ----------------------------------------- |
+| `400`         | `orderGroupId` fehlt, `amount` ≤ 0, > 2 Nachkommastellen, oder über dem Restbetrag | `CUSTOMER` / `FIX_INPUT_AND_RETRY`        |
+| `403`         | fremde OrderGroup, falsche Rolle bzw. falsches Portal                              | `CUSTOMER` / `ACCESS_DENIED`              |
+| `404`         | keine Abrechnungszeile zur OrderGroup                                              | `CUSTOMER` / `RESOURCE_UNAVAILABLE`       |
+| `409`         | bereits vollständig erstattet, oder Zahlung nicht erstattbar                       | `CUSTOMER` / `REVIEW_AND_RETRY`           |
+| `502` / `503` | Stripe antwortet nicht bzw. lehnt ab                                               | `PSP` / `PAYMENT_NOT_CHARGED_RETRY_LATER` |
+
+Es gibt **keinen Pfad, der zweimal beim PSP bucht**: Die Obergrenze ist immer der Restbetrag,
+eine zweite Vollerstattung findet nichts Offenes mehr (`409`), ein zu hoher Teilbetrag wird
+mit `400` abgewiesen. Die Meldungen mappt `refundErrorMessage()` in `src/lib/refund.ts` nach
+§1.9 (Instanz + Konsequenz) — ausgewertet wird der Statuscode, nie der Message-String.
+
+### Was der Vertrag **nicht** hergibt
+
+- **Positionsweise Erstattung.** Der Endpoint kennt nur einen Betrag auf der OrderGroup,
+  keine `orderItemId`. Eine Auswahl einzelner Positionen wäre reine Frontend-Fiktion.
+- **Grund und Auslöser in der Leseliste.** `GET /api/v1/admin/refunds` liefert weder `reason`
+  noch `initiatedBy` — beides steht nur in der Antwort auf die Auslösung und im
+  Prüfprotokoll (`admin_audit_log`).
+- **Durchsetzung des 14-Tage-Widerrufsfensters.** Organisatorisch geregelt, im Code nicht
+  erzwungen — kein Frontend-Gate.

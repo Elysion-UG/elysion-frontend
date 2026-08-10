@@ -3,12 +3,16 @@
 import React, { useState } from "react"
 import { DollarSign, CreditCard, ArrowDownLeft, Banknote, Wrench, HandCoins } from "lucide-react"
 import { PageHeader, RefreshButton, LoadingFullPage } from "@/src/components/shared"
+import { RefundDialog } from "@/src/components/shared/RefundDialog"
+import { remainingRefundable } from "@/src/lib/refund"
+import type { Settlement } from "@/src/types"
 import {
   useAdminPayments,
   useAdminRefunds,
   useAdminSettlements,
   useDuePayouts,
   useAdminPayouts,
+  useAdminRefund,
   useReleasePayout,
   useRunMaintenance,
 } from "@/src/hooks/useAdminFinance"
@@ -34,6 +38,23 @@ export default function AdminFinance() {
 
   const releasePayout = useReleasePayout()
   const maintenance = useRunMaintenance()
+  const refund = useAdminRefund()
+
+  // Ziel der Eskalations-Erstattung. Aus der Abrechnungszeile heraus sind
+  // OrderGroup und Restbetrag bekannt; aus der Erstattungsliste heraus wird die
+  // Bestell-ID erfasst und die Obergrenze bleibt allein beim Server.
+  const [refundTarget, setRefundTarget] = useState<{
+    orderGroupId?: string
+    alreadyRefunded: number | null
+    remaining: number | null
+  } | null>(null)
+
+  const openRefundForSettlement = (settlement: Settlement) =>
+    setRefundTarget({
+      orderGroupId: settlement.orderGroupId,
+      alreadyRefunded: settlement.refundedAmount ?? 0,
+      remaining: remainingRefundable(settlement),
+    })
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "payments", label: "Zahlungen", icon: <CreditCard className="h-4 w-4" /> },
@@ -88,7 +109,15 @@ export default function AdminFinance() {
 
         <div className="p-6">
           {activeQuery && (
-            <div className="mb-4 flex justify-end">
+            <div className="mb-4 flex items-center justify-end gap-3">
+              {tab === "refunds" && (
+                <button
+                  onClick={() => setRefundTarget({ alreadyRefunded: null, remaining: null })}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-ink-900/30 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <ArrowDownLeft className="h-3.5 w-3.5" /> Erstattung auslösen
+                </button>
+              )}
               <RefreshButton
                 onClick={() => void activeQuery.refetch()}
                 isLoading={activeQuery.isFetching}
@@ -112,7 +141,12 @@ export default function AdminFinance() {
             <>
               {tab === "payments" && <PaymentsTable items={payments.data ?? []} />}
               {tab === "refunds" && <RefundsTable items={refunds.data ?? []} />}
-              {tab === "settlements" && <SettlementsTable items={settlements.data ?? []} />}
+              {tab === "settlements" && (
+                <SettlementsTable
+                  items={settlements.data ?? []}
+                  onRefund={openRefundForSettlement}
+                />
+              )}
               {tab === "due" && (
                 <DuePayoutsTable
                   items={due.data ?? []}
@@ -133,6 +167,19 @@ export default function AdminFinance() {
           )}
         </div>
       </div>
+
+      {refundTarget && (
+        <RefundDialog
+          variant="dark"
+          title="Erstattung auslösen (Eskalation)"
+          description="Eskalationspfad: greift, wenn der Verkäufer nicht reagiert, bei Disputes und bei Betrug. Der Vorgang wird im Prüfprotokoll festgehalten."
+          orderGroupId={refundTarget.orderGroupId}
+          alreadyRefunded={refundTarget.alreadyRefunded}
+          remaining={refundTarget.remaining}
+          onSubmit={(dto) => refund.mutateAsync(dto)}
+          onClose={() => setRefundTarget(null)}
+        />
+      )}
     </div>
   )
 }

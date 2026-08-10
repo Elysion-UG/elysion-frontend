@@ -6,8 +6,16 @@ import {
   shippingSlaStatusSchema,
 } from "@/src/lib/api-schemas"
 import { normalizePage } from "@/src/lib/normalize-page"
-import type { OrderGroupDetail, Page, Settlement, ShipOrderDTO } from "@/src/types"
+import type {
+  OrderGroupDetail,
+  Page,
+  RefundRequestDTO,
+  RefundResult,
+  Settlement,
+  ShipOrderDTO,
+} from "@/src/types"
 import { apiOrderProductSnapshotSchema, normalizeSnapshot } from "./_order-normalizers"
+import { apiRefundResultSchema, buildRefundBody, normalizeRefundResult } from "./_refund-schemas"
 
 export interface SellerOrderListParams {
   page?: number
@@ -160,5 +168,21 @@ export const SellerOrderService = {
 
   async listSettlements(): Promise<Settlement[]> {
     return apiRequest<Settlement[]>("/api/v1/seller/settlements")
+  },
+
+  /**
+   * Voll- oder Teilerstattung auf einer **eigenen** OrderGroup — ohne Freigabe
+   * von Elysion (Management-Decision §1.4). Der Seller kommt aus dem
+   * SecurityContext, nie aus dem Body; `amount` weglassen erstattet den
+   * gesamten Restbetrag.
+   */
+  async refund(dto: RefundRequestDTO): Promise<RefundResult> {
+    const raw = await apiRequest<unknown>("/api/v1/seller/refunds", {
+      method: "POST",
+      body: buildRefundBody(dto),
+    })
+    return normalizeRefundResult(
+      parseApiResponse(apiRefundResultSchema, raw, "seller-order.refund")
+    )
   },
 }

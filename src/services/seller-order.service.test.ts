@@ -179,4 +179,98 @@ describe("SellerOrderService", () => {
     await SellerOrderService.listSettlements()
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/seller/settlements")
   })
+
+  describe("refund", () => {
+    const rawRefund = {
+      refundId: "ref_1",
+      paymentId: "pay_1",
+      orderId: "ord_1",
+      orderGroupId: "grp_1",
+      sellerId: "seller_1",
+      amount: 24.9,
+      currency: "EUR",
+      status: "SUCCEEDED",
+      providerRefundId: "re_stripe_1",
+      initiatedBy: "SELLER",
+      reason: "Retoure",
+      settlementRefundedAmount: 24.9,
+      settlementRemainingRefundableAmount: 30.1,
+      settlementPlatformFeeAmount: 2.5,
+      settlementRefundFeeAmount: 0.4,
+      settlementNetAmount: 27.2,
+      settlementAdjustmentRequired: true,
+    }
+
+    it("POSTs /api/v1/seller/refunds and maps the settlement effect", async () => {
+      mockApiRequest.mockResolvedValue(rawRefund)
+
+      const result = await SellerOrderService.refund({
+        orderGroupId: "grp_1",
+        amount: 24.9,
+        reason: "Retoure",
+      })
+
+      expect(mockApiRequest).toHaveBeenCalledWith(
+        "/api/v1/seller/refunds",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ orderGroupId: "grp_1", amount: 24.9, reason: "Retoure" }),
+        })
+      )
+      expect(result.amount).toBe(24.9)
+      expect(result.initiatedBy).toBe("SELLER")
+      expect(result.settlementRemainingRefundableAmount).toBe(30.1)
+      expect(result.settlementAdjustmentRequired).toBe(true)
+    })
+
+    it("omits amount entirely for a full refund", async () => {
+      mockApiRequest.mockResolvedValue(rawRefund)
+
+      await SellerOrderService.refund({ orderGroupId: "grp_1" })
+
+      const body = mockApiRequest.mock.calls[0][1]?.body as string
+      expect(JSON.parse(body)).toEqual({ orderGroupId: "grp_1" })
+    })
+
+    it("drops a blank reason instead of sending an empty string", async () => {
+      mockApiRequest.mockResolvedValue(rawRefund)
+
+      await SellerOrderService.refund({ orderGroupId: "grp_1", reason: "   " })
+
+      const body = mockApiRequest.mock.calls[0][1]?.body as string
+      expect(JSON.parse(body)).toEqual({ orderGroupId: "grp_1" })
+    })
+
+    it("normalises a missing providerRefundId and reason to null", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...rawRefund,
+        providerRefundId: null,
+        reason: null,
+        status: "PENDING",
+      })
+
+      const result = await SellerOrderService.refund({ orderGroupId: "grp_1" })
+
+      expect(result.providerRefundId).toBeNull()
+      expect(result.reason).toBeNull()
+      expect(result.status).toBe("PENDING")
+    })
+
+    it("rejects an unknown refund status instead of casting it through", async () => {
+      mockApiRequest.mockResolvedValue({ ...rawRefund, status: "REVERSED" })
+
+      await expect(SellerOrderService.refund({ orderGroupId: "grp_1" })).rejects.toThrow(
+        /Ungültige Server-Antwort/
+      )
+    })
+
+    it("rejects a response missing the settlement effect", async () => {
+      const { settlementNetAmount: _omitted, ...withoutNet } = rawRefund
+      mockApiRequest.mockResolvedValue(withoutNet)
+
+      await expect(SellerOrderService.refund({ orderGroupId: "grp_1" })).rejects.toThrow(
+        /Ungültige Server-Antwort/
+      )
+    })
+  })
 })
