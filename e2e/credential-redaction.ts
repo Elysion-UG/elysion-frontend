@@ -43,12 +43,15 @@ export const REDACTED = "[redigiert #106]"
  * Entfernt bekannte Geheimwerte aus einem Text — wörtliche Vorkommen, kein
  * Muster-Raten.
  *
- * Gedacht für Playwright-Fehlermeldungen: `ElementHandle._fill()` schreibt
- * `  fill("<wert>")` in den Call-Log, BEVOR die Actionability-Prüfung läuft
- * (`coreBundle.js`, `_fill` → `progress.log(...)` vor `_retryAction`).
- * Scheitert der Aufruf danach, hängt `Connection.dispatch()` den Call-Log per
+ * Gedacht für Playwright-Fehlermeldungen: Scheitert ein Aufruf, hängt
+ * `Connection.dispatch()` den kompletten Call-Log per
  * `rewriteErrorMessage(err, err.message + formatCallLog(...))` an die Meldung —
  * und die geht in `error-context.md` UND in den öffentlichen Actions-Log.
+ * Klassischer Fall war `ElementHandle._fill()`: Es schrieb `  fill("<wert>")`
+ * in den Call-Log, BEVOR die Actionability-Prüfung lief (`coreBundle.js`,
+ * `_fill` → `progress.log(...)` vor `_retryAction`). Seit
+ * `fillCredentialField()` den Wert per `evaluate()` setzt, kennt kein Call-Log
+ * den Wert mehr; die Redaktion bleibt als zweite Linie.
  *
  * Wir kürzen bewusst NICHT den ganzen Call-Log weg: die übrigen Zeilen
  * („waiting for element to be visible, enabled and editable") sind genau die

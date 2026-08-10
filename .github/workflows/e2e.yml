@@ -121,9 +121,11 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
-          # Kurze Retention: Dieser Workflow läuft mit denselben E2E_*-Secrets wie
-          # stage-smoke, Fehler-Snapshots können sensible Felder enthalten (#106).
-          retention-days: 3
+          # Minimale Retention wie im stage-smoke (#106): Dieser Workflow läuft
+          # mit denselben E2E_*-Secrets, das Repo ist öffentlich. Er startet
+          # ausschließlich per `workflow_dispatch` — der Report wird direkt nach
+          # dem Lauf angesehen oder gar nicht.
+          retention-days: 1
 
       - name: Upload test videos/screenshots on failure
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -132,4 +134,4 @@ jobs:
           name: playwright-artifacts
           path: test-results/
           # test-results/ enthält die error-context.md je Fehlschlag (#106).
-          retention-days: 3
+          retention-days: 1

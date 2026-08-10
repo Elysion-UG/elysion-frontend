@@ -5,7 +5,7 @@
  * Alle Aussagen unten sind am Quelltext von `playwright-core` 1.60
  * (`lib/coreBundle.js`) verifiziert, nicht aus der Doku abgeleitet.
  *
- * Vier Leak-Wege sind abgedeckt, ein fünfter ist offen (siehe unten):
+ * Fünf Leak-Wege sind abgedeckt:
  *
  * 1. **ARIA-Snapshot** („Page snapshot" in `error-context.md`).
  *    Playwrights `toAriaNode()` schreibt für JEDES `<input>` außer
@@ -25,36 +25,40 @@
  *    → {@link expectFieldsFilled} statt `toHaveValue()`
  *    (eine ESLint-Regel verbietet `toHaveValue` in den Login-Pfaden)
  *
- * 3. **Call-Log der `fill()`-Aktion** — derselbe Kanal wie 2, aber ohne
- *    Assertion. `ElementHandle._fill()` loggt
- *    `progress.log(\`  fill("${value}")\`)` VOR dem `_retryAction`, also vor
- *    der Actionability-Prüfung. Scheitert der Aufruf danach, hängt
- *    `Connection.dispatch()` den kompletten Call-Log per
+ * 3. **Call-Log einer fehlgeschlagenen Aktion** — derselbe Kanal wie 2, aber
+ *    ohne Assertion. Scheitert ein Aufruf, hängt `Connection.dispatch()` den
+ *    kompletten Call-Log per
  *    `rewriteErrorMessage(err, err.message + formatCallLog(...))` an die
- *    Meldung. Das trifft genau den Fall, für den dieses Modul existiert: Der
- *    Locator löst auf (Element attached), aber das Feld ist unsichtbar,
- *    disabled oder readonly — der Hydration-/Remount-Fall aus #107. Ist das
- *    Element NIE attached, scheitert schon der Selector-Schritt davor und der
- *    Wert taucht nicht auf; der Leak ist also nicht universell, aber real.
+ *    Meldung, und die geht in `error-context.md` UND in den Actions-Log.
+ *    `ElementHandle._fill()` schrieb dort `  fill("${value}")` hinein, VOR der
+ *    Actionability-Prüfung — genau der Hydration-/Remount-Fall aus #107.
+ *    Seit Weg 5 füllen wir nicht mehr über `fill()`; die Redaktion bleibt als
+ *    zweite Linie, weil auch andere Aufrufe Call-Log-Zeilen anhängen.
  *    → {@link fillCredentialField} statt `locator.fill()`
  *
  * 4. **Trace** (Request-Body des Logins) — in CI abgeschaltet,
  *    siehe `e2e/trace-policy.ts`.
  *
- * OFFEN — **Step-Titel im HTML-Report**: Die Protokoll-Metainfo für
- * `Frame.fill` lautet `title: 'Fill "{value}"'`. `onApiCallBegin` in
- * `playwright/lib/index.js` legt daraus für JEDEN `fill()`-Aufruf einen
- * `pw:api`-Step an, und der HTML-Reporter serialisiert Steps ohne
- * Kategorie-Filter (`dedupeSteps` in `runner/index.js`). Der Wert steht damit
- * im Step-Baum des `playwright-report`-Artefakts — auch bei GRÜNEM Lauf.
- * Kein `try/catch` erreicht das; `fill()` müsste durch einen
- * `locator.evaluate()`-Setter ersetzt werden (Metainfo dort: `title:
- * "Evaluate"`, ohne Parameter). Das ist ein eigener Umbau mit
- * React-Controlled-Input-Risiko und gehört in ein Folge-Issue. Screenshots und
- * Videos sind aus demselben Grund offen: das E-Mail-Feld rendert unmaskiert.
+ * 5. **Step-Titel im HTML-Report** — der einzige Weg, der auch bei GRÜNEM Lauf
+ *    leckt und den weder `retention-days`-Kürzung noch Feld-Leeren erreicht.
+ *    Die Protokoll-Metainfo für `Frame.fill` lautet `title: 'Fill "{value}"'`;
+ *    `onApiCallBegin` (`playwright/lib/index.js`) legt daraus für jeden Aufruf
+ *    einen `pw:api`-Step an, und `_createTestStep` (`runner/index.js`)
+ *    serialisiert `step.title` ungefiltert in den `playwright-report`.
+ *    Tastatur-Wege lecken genauso (`Insert "{text}"`, `Type "{text}"`).
+ *    Wertfrei ist nur `evaluate` (`title: "Evaluate"`, keine Platzhalter; das
+ *    Argument reist in `channel.params`, das der Reporter nicht schreibt).
+ *    → {@link fillCredentialField} setzt den Wert über
+ *    `locator.evaluate(setCredentialFieldValue, …)`, siehe
+ *    `e2e/credential-field-dom.ts`.
+ *
+ * Screenshot und Video bleiben unkritisch: Das Passwortfeld rendert als Punkte
+ * (`type="password"`), und beide entstehen nur bei Fehlschlag — zu dem
+ * Zeitpunkt sind die Felder über {@link clearCredentialFields} geleert.
  */
 import { expect, type Locator } from "@playwright/test"
 
+import { setCredentialFieldValue, type SetCredentialFieldResult } from "../credential-field-dom"
 import {
   describeMismatchedFields,
   redactSecretsInError,
@@ -72,7 +76,7 @@ export type CredentialField = {
 /**
  * Obergrenze fürs Leeren. `playwright.config.ts` setzt kein
  * `use.actionTimeout`, und der Default `0` heißt in `raceAgainstDeadline`
- * KEIN Timer: Ist das Feld beim Aufruf schon weg, liefe `fill("")` in den
+ * KEIN Timer: Ist das Feld beim Aufruf schon weg, liefe das Leeren in den
  * 30-s-Test-Timeout statt in `.catch()`. Im `finally` ersetzte dann
  * „Test timeout exceeded" den echten Fehler — genau die Diagnose, für die man
  * das Artefakt aufhebt.
@@ -80,14 +84,36 @@ export type CredentialField = {
 const CLEAR_TIMEOUT_MS = 2_000
 
 /**
- * Füllt ein Credential-Feld und hält den Wert aus einer möglichen
- * Fehlermeldung heraus.
+ * Wertfreie Diagnose zu den Fehlercodes aus `setCredentialFieldValue()`.
+ * Bewusst hier statt im Browser-Modul: Was in eine Fehlermeldung geht, gehört
+ * an die Stelle, die die Meldung baut.
+ */
+const SET_FAILURE_REASONS: Record<Exclude<SetCredentialFieldResult, "ok">, string> = {
+  "no-window": "Das Dokument des Feldes hat kein window (Frame schon entladen?).",
+  "not-an-input": "Der Locator zeigt nicht auf ein <input> oder <textarea>.",
+  disabled: "Das Feld ist disabled.",
+  readonly: "Das Feld ist readonly.",
+  "no-native-setter": "Kein nativer value-Setter am Element-Prototyp gefunden.",
+  "value-rejected":
+    "Das Feld trug den gesetzten Wert nach dem input-Event nicht mehr — " +
+    "Controlled Input hat ihn verworfen oder die Hydration hat neu gerendert.",
+}
+
+/**
+ * Füllt ein Credential-Feld, ohne den Wert in Playwrights Artefakten zu
+ * hinterlassen.
  *
- * `locator.fill()` schreibt den Wert in den Call-Log, bevor geprüft wird, ob
- * das Feld überhaupt bedienbar ist (Weg 3 im Modul-Kopf). Wir fangen den
- * Fehler, redigieren Meldung und Stack und werfen dasselbe Fehlerobjekt
- * weiter — Diagnosezeilen und Zusatzfelder bleiben erhalten, nur der Wert
- * verschwindet.
+ * Der Wert wird über `locator.evaluate()` gesetzt statt über `fill()`: Nur
+ * `evaluate` hat einen Step-Titel ohne Wert-Platzhalter (Weg 5 im Modul-Kopf).
+ * Die Actionability-Prüfung, die `fill()` mitbrachte, holen wir hier nach —
+ * `evaluate` wartet nur auf „attached":
+ *   - sichtbar: `waitFor({ state: "visible" })` (dessen Fehlermeldung nennt nur
+ *     den Locator, nie einen Wert),
+ *   - bedienbar: `disabled`/`readOnly` prüft der Setter im Seitenkontext.
+ *
+ * Schlägt trotzdem etwas fehl, redigieren wir Meldung und Stack und werfen
+ * dasselbe Fehlerobjekt weiter — Diagnosezeilen und Zusatzfelder bleiben
+ * erhalten, nur der Wert verschwindet.
  */
 export async function fillCredentialField(
   field: Locator,
@@ -95,7 +121,15 @@ export async function fillCredentialField(
   options?: { timeout?: number }
 ): Promise<void> {
   try {
-    await field.fill(value, options)
+    await field.waitFor({ state: "visible", timeout: options?.timeout })
+    const result = await field.evaluate(setCredentialFieldValue, value, {
+      timeout: options?.timeout,
+    })
+    if (result !== "ok") {
+      throw new Error(
+        `Credential-Feld konnte nicht gesetzt werden (Wert redigiert, #106): ${SET_FAILURE_REASONS[result]}`
+      )
+    }
   } catch (error) {
     throw redactSecretsInError(error, [value])
   }
@@ -111,12 +145,17 @@ export async function fillCredentialField(
  * Login bleibt also unberührt.
  *
  * Fehler werden bewusst verschluckt: Bei Erfolg navigiert die Seite weg bzw.
- * das Login-Modal schließt, dann findet `fill("")` das Feld nicht mehr und
+ * das Login-Modal schließt, dann findet der Locator das Feld nicht mehr und
  * läuft in {@link CLEAR_TIMEOUT_MS}. Das ist der Normalfall, kein Problem.
+ *
+ * Auch hier `evaluate` statt `fill("")`: Ein leerer Wert wäre im Step-Titel
+ * zwar harmlos, aber ein einziger `fill`-Aufruf in dieser Datei lädt dazu ein,
+ * den nächsten mit echtem Wert daneben zu setzen. Eine ESLint-Regel verbietet
+ * `fill` in den Credential-Pfaden deshalb komplett.
  */
 export async function clearCredentialFields(...fields: Locator[]): Promise<void> {
   for (const field of fields) {
-    await field.fill("", { timeout: CLEAR_TIMEOUT_MS }).catch(() => {})
+    await field.evaluate(setCredentialFieldValue, "", { timeout: CLEAR_TIMEOUT_MS }).catch(() => {})
   }
 }
 
