@@ -27,6 +27,12 @@ export const accountStatusSchema = z.enum([
 
 export const sellerStatusSchema = z.enum(["PENDING", "APPROVED", "REJECTED", "SUSPENDED"])
 
+/**
+ * Interner Produktstatus. Öffentliche Reads liefern ausnahmslos `ACTIVE`; die
+ * volle Bandbreite taucht nur in den Seller- und Admin-Reads auf (#227).
+ */
+export const productStatusSchema = z.enum(["DRAFT", "REVIEW", "ACTIVE", "INACTIVE", "REJECTED"])
+
 export const orderStatusSchema = z.enum([
   "PENDING_PAYMENT",
   "PAID",

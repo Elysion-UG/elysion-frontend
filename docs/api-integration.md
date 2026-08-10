@@ -56,9 +56,10 @@ kapseln ausschließlich die Endpoints unten; eigene Fetch- oder Fehlerbehandlung
 haben sie nicht.
 
 `auth` · `user` · `address` · `buyer-value-profile` · `seller-profile` ·
-`seller-value-profile` · `admin` · `product` · `category` · `material` ·
-`certificate` · `cart` · `checkout` · `order` · `seller-order` · `seller-payout` ·
-`payment` · `file` · `recommendation` · `monitoring` · `contact` · `seller`
+`seller-value-profile` · `admin` · `product` · `seller-product` · `category` ·
+`material` · `certificate` · `cart` · `checkout` · `order` · `seller-order` ·
+`seller-payout` · `payment` · `file` · `recommendation` · `monitoring` ·
+`contact` · `seller`
 
 > Die Methodennamen stehen im jeweiligen Service — hier bewusst nicht gespiegelt,
 > damit sie nicht auseinanderlaufen.
@@ -138,7 +139,8 @@ GET-only (`ProductQueryController`, `ProductIdQueryController`,
 auf das Lese-Präfix stirbt als **405** (#219).
 
 ```
-GET    /api/v1/seller/products                                  → PagedResponse<SellerProductListItem> — SELLER, alle Status (FE nutzt es noch nicht)
+GET    /api/v1/seller/products                                  → Page<SellerProductListItem> — SELLER, alle Status
+       Filter: status (DRAFT|REVIEW|ACTIVE|INACTIVE|REJECTED), page, size (Default 20, hart auf 100 geklemmt)
 POST   /api/v1/seller/products                                  → ProductCommandResponse  (optional materialIds)
 PATCH  /api/v1/seller/products/{id}                             → ProductCommandResponse  (materialIds: null=unverändert, []=leeren)
 PATCH  /api/v1/seller/products/{id}/status                      → ProductCommandResponse
@@ -165,6 +167,53 @@ zusätzlicher Übergang), keinen Frontend-Workaround. Öffentlich sichtbar sind 
 
 Zu Pagination-Shape, `sort`-Werten und dem Unterschied `{slug}` ↔ `by-id/{id}`:
 [`BACKEND_QUIRKS.md`](./BACKEND_QUIRKS.md).
+
+#### Produktverwaltung des Verkäufers (`GET /api/v1/seller/products`, #227)
+
+`SellerProductService` (`src/services/seller-product.service.ts`) ist die **einzige**
+Leseoperation, über die ein Verkäufer seine eigenen Produkte vollständig sieht.
+`ProductService.list()` ist dafür untauglich: der öffentliche Katalog ist backendseitig
+hart auf `ACTIVE` gefiltert, `POST /api/v1/seller/products` legt aber in `DRAFT` an — über
+den Katalog gelesen war jedes frisch angelegte Produkt unsichtbar.
+
+Der Verkäufer kommt ausschließlich aus dem Token. Der Endpoint kennt **keinen**
+`sellerId`-Parameter, und der Service reicht auch keinen durch.
+
+> ⚠️ **Eigenes DTO, nicht das des Katalogs.** Was beim Abschreiben regelmäßig danebengeht:
+>
+> | Katalog (`GET /api/v1/products`)    | Seller-Liste                   | Anmerkung                        |
+> | ----------------------------------- | ------------------------------ | -------------------------------- |
+> | `name` + gemapptes `title`          | `name`                         | kein `title`                     |
+> | `seller: { id, slug, companyName }` | —                              | **kein** `seller`-Objekt         |
+> | `shortDescription` (nur Detail)     | —                              | **keine** `shortDescription`     |
+> | `primaryImage: string \| null`      | `primaryImage: string \| null` | einzelne URL, kein `images[]`    |
+> | immer `ACTIVE`                      | alle fünf internen Status      | `status` ist hier aussagekräftig |
+
+**Pagination:** `size` wird serverseitig still auf `100` geklemmt — ein „alles laden"
+über `size=100` verliert ab dem 101. Produkt Einträge, ohne dass es jemand merkt. Die
+Produktverwaltung paginiert deshalb echt (`SELLER_PRODUCTS_PAGE_SIZE = 20`, der Default
+des Backends). Sortierung ist fest auf `createdAt desc, id desc`; ein neu angelegter
+Entwurf steht damit immer auf Seite 1.
+
+**Statuszahlen der KPI-Kacheln** kommen aus `SellerProductService.countByStatus()`: je
+Status eine Anfrage mit `size=1`, ausgewertet wird nur `totalItems`. Über die sichtbare
+Seite zu zählen wäre falsch, sobald ein Verkäufer mehr Produkte hat, als auf eine Seite
+passen. Einen Aggregat-Endpoint gibt es nicht.
+
+**Statuswechsel in der Oberfläche** entscheidet `src/lib/seller-product-transitions.ts`.
+Angeboten werden nur `DRAFT → REVIEW`, `ACTIVE → INACTIVE` und `INACTIVE → ACTIVE`.
+Nicht angeboten werden:
+
+- `REVIEW → REJECTED` — Admin-only, das Backend weist einen Verkäufer ab.
+- `REVIEW → ACTIVE` — verlangt `verifiedCertificateCount >= 1`. Dieser Zähler steigt
+  ausschließlich beim **Verifizieren** eines Zertifikats, und genau dabei hebt das Backend
+  verknüpfte `REVIEW`-Produkte bereits selbsttätig auf `ACTIVE`. Ein Knopf dafür wäre
+  entweder überflüssig oder ein garantierter `400`; `REVIEW` ist im Portal ein
+  Wartezustand.
+
+Die Bedingungen für `DRAFT → REVIEW` (Beschreibung, Kategorie Level 3, mindestens ein
+Bild …) prüft nur der Server. Scheitert es, trägt die Meldung des `400` den Grund — die
+Oberfläche reicht sie deshalb im Fehler-Toast durch statt sie zu verschlucken.
 
 #### Filter & Facetten (#49/#50)
 
