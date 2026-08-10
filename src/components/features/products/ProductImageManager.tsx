@@ -7,6 +7,7 @@ import { ProductService } from "@/src/services/product.service"
 import { FileService } from "@/src/services/file.service"
 import type { ProductImage } from "@/src/types"
 import { toast } from "sonner"
+import { Button } from "@/src/components/ui/button"
 
 interface ProductImageManagerProps {
   productId: string
@@ -150,33 +151,42 @@ export default function ProductImageManager({
                 />
                 {imageId && (
                   <div className="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button
+                    <Button
+                      variant="destructive"
+                      size="icon"
                       onClick={() => handleDelete(imageId)}
-                      className="rounded-full bg-destructive p-1 text-white shadow hover:bg-destructive"
+                      className="h-6 w-6 rounded-full [&_svg]:size-3.5"
                       title="Bild entfernen"
+                      aria-label="Bild entfernen"
                     >
                       <X className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 )}
                 <div className="absolute bottom-1 left-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                   {index > 0 && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleMove(index, "up")}
-                      className="rounded-full bg-white/90 p-1 text-foreground shadow hover:bg-white"
+                      className="h-6 w-6 rounded-full bg-white/90 text-foreground hover:bg-white hover:text-foreground [&_svg]:size-3.5"
                       title="Nach vorne"
+                      aria-label="Nach vorne"
                     >
                       <ArrowUp className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   )}
                   {index < images.length - 1 && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleMove(index, "down")}
-                      className="rounded-full bg-white/90 p-1 text-foreground shadow hover:bg-white"
+                      className="h-6 w-6 rounded-full bg-white/90 text-foreground hover:bg-white hover:text-foreground [&_svg]:size-3.5"
                       title="Nach hinten"
+                      aria-label="Nach hinten"
                     >
                       <ArrowDown className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   )}
                 </div>
                 <div className="absolute left-1 top-1 rounded-full bg-ink-900/60 px-2 py-0.5 text-[10px] font-medium text-sand-page">
@@ -197,10 +207,10 @@ export default function ProductImageManager({
           className="hidden"
           id={`image-upload-${productId}`}
         />
-        <button
+        <Button
+          variant="outline"
           onClick={() => fileInputRef.current?.click()}
           disabled={isUploading}
-          className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary disabled:opacity-60"
         >
           {isUploading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -208,7 +218,7 @@ export default function ProductImageManager({
             <Upload className="h-4 w-4" />
           )}
           {isUploading ? "Wird hochgeladen..." : "Bild hinzufuegen"}
-        </button>
+        </Button>
       </div>
     </div>
   )

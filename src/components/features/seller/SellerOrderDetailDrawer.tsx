@@ -5,6 +5,7 @@ import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import type { OrderGroupDetail } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
 import { hasShippingSla, formatSlaDeadline } from "@/src/lib/shipping-sla"
+import { Button } from "@/src/components/ui/button"
 import { StatusBadge } from "@/src/components/shared"
 import {
   orderStatusLabel,
@@ -77,13 +78,15 @@ export default function SellerOrderDetailDrawer({
               colorClasses={orderStatusColor[group.status]}
               className="px-3 py-1"
             />
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={onClose}
               aria-label="Schliessen"
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+              className="text-muted-foreground"
             >
-              <X className="h-5 w-5" />
-            </button>
+              <X />
+            </Button>
           </div>
         </div>
 
@@ -235,37 +238,40 @@ export default function SellerOrderDetailDrawer({
           <div className="border-t border-border p-5">
             <div className="flex flex-wrap gap-2">
               {group.status === "CONFIRMED" && (
-                <button
+                <Button
+                  variant="secondary"
                   onClick={() => {
                     onStatusChange(group.orderGroupId, "PROCESSING")
                     onClose()
                   }}
-                  className="flex-1 rounded-lg bg-warning-tint px-4 py-2.5 text-sm font-medium text-warning hover:bg-warning-tint"
+                  className="flex-1 bg-warning-tint text-warning hover:bg-warning-tint"
                 >
                   In Bearbeitung setzen
-                </button>
+                </Button>
               )}
               {group.status === "PROCESSING" && (
-                <button
+                <Button
+                  variant="secondary"
                   onClick={() => {
                     onShip(group.orderGroupId)
                     onClose()
                   }}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary"
+                  className="flex-1"
                 >
                   <Truck className="h-4 w-4" /> Versenden
-                </button>
+                </Button>
               )}
               {group.status === "SHIPPED" && (
-                <button
+                <Button
+                  variant="secondary"
                   onClick={() => {
                     onDeliver(group.orderGroupId)
                     onClose()
                   }}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-50 px-4 py-2.5 text-sm font-medium text-green-700 hover:bg-green-50"
+                  className="flex-1 bg-green-50 text-green-700 hover:bg-green-50"
                 >
                   <CheckCircle2 className="h-4 w-4" /> Als geliefert markieren
-                </button>
+                </Button>
               )}
             </div>
           </div>

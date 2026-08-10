@@ -1,6 +1,7 @@
 "use client"
 
 import { Shield, Loader2 } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
 import { SectionHeader } from "./SectionHeader"
 
 interface SecuritySectionProps {
@@ -34,13 +35,14 @@ export function SecuritySection({
               <p className="font-medium text-foreground">Passwort</p>
               <p className="text-sm text-muted-foreground">Zuletzt geändert vor 3 Monaten</p>
             </div>
-            <button
+            <Button
+              variant="outline"
               onClick={onPasswordReset}
               disabled={isSendingPasswordReset}
-              className="flex items-center gap-2 rounded-lg border border-green-600 px-4 py-2 text-sm text-green-600 transition-colors hover:bg-green-50 disabled:opacity-50"
+              className="border-green-600 text-green-600 hover:bg-green-50"
             >
               {isSendingPasswordReset ? <Loader2 className="h-4 w-4 animate-spin" /> : "Ändern"}
-            </button>
+            </Button>
           </div>
 
           <div className="rounded-lg border border-danger bg-danger-tint p-4">
@@ -51,12 +53,13 @@ export function SecuritySection({
                   Diese Aktion kann nicht rückgängig gemacht werden
                 </p>
               </div>
-              <button
+              <Button
+                variant="outline"
                 onClick={onRequestDelete}
-                className="rounded-lg border border-danger px-4 py-2 text-sm text-danger transition-colors hover:bg-danger-tint"
+                className="border-danger text-danger hover:bg-danger-tint"
               >
                 Löschen
-              </button>
+              </Button>
             </div>
           </div>
         </div>

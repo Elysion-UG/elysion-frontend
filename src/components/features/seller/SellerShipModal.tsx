@@ -11,6 +11,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/src/components/ui/dialog"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
 import { toast } from "sonner"
 
 export interface SellerShipModalProps {
@@ -55,11 +57,11 @@ export default function SellerShipModal({ groupId, onClose, onDone }: SellerShip
             <label className="mb-1 block text-sm font-medium text-foreground">
               Trackingnummer *
             </label>
-            <input
+            <Input
               type="text"
               value={trackingNumber}
               onChange={(e) => setTrackingNumber(e.target.value)}
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="text-sm"
               placeholder="z.B. 1Z999AA10123456784"
             />
           </div>
@@ -67,29 +69,22 @@ export default function SellerShipModal({ groupId, onClose, onDone }: SellerShip
             <label className="mb-1 block text-sm font-medium text-foreground">
               Versanddienstleister
             </label>
-            <input
+            <Input
               type="text"
               value={carrier}
               onChange={(e) => setCarrier(e.target.value)}
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="text-sm"
               placeholder="z.B. DHL, UPS, DPD"
             />
           </div>
         </div>
         <DialogFooter className="mt-6 flex gap-3 sm:flex-row">
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-lg border border-border py-2 text-sm font-medium text-foreground hover:bg-secondary"
-          >
+          <Button variant="outline" onClick={onClose} className="flex-1">
             Abbrechen
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSaving}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-500 py-2 text-sm font-medium text-ink-900 hover:bg-green-700 disabled:opacity-60"
-          >
+          </Button>
+          <Button onClick={handleSubmit} disabled={isSaving} className="flex-1">
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Versandt"}
-          </button>
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

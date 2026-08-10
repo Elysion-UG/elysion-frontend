@@ -3,7 +3,9 @@
 import { useEffect } from "react"
 import Link from "next/link"
 import { AlertTriangle, Home, RefreshCw } from "lucide-react"
+import { Button, buttonVariants } from "@/src/components/ui/button"
 import { errorStore } from "@/src/lib/error-store"
+import { cn } from "@/src/lib/utils"
 import type { ErrorEventMetadata } from "@/src/types/error"
 
 export type RouteErrorTheme = "light" | "dark"
@@ -43,7 +45,6 @@ export function RouteErrorFallback({
           icon: "text-danger",
           heading: "text-muted-foreground",
           body: "text-muted-foreground",
-          primaryBtn: "bg-green-500 hover:bg-green-700",
           secondaryBtn: "border-border bg-ink-900 text-muted-foreground hover:bg-muted",
         }
       : {
@@ -51,7 +52,6 @@ export function RouteErrorFallback({
           icon: "text-danger",
           heading: "text-foreground",
           body: "text-muted-foreground",
-          primaryBtn: "bg-green-500 hover:bg-green-700",
           secondaryBtn: "border-border bg-white text-foreground hover:bg-secondary",
         }
 
@@ -65,16 +65,13 @@ export function RouteErrorFallback({
         Beim Laden dieser Seite ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.
       </p>
       <div className="flex gap-3">
-        <button
-          onClick={reset}
-          className={`inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm ${t.primaryBtn}`}
-        >
+        <Button onClick={reset}>
           <RefreshCw className="h-4 w-4" />
           Erneut versuchen
-        </button>
+        </Button>
         <Link
           href={homeHref}
-          className={`inline-flex items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium shadow-sm ${t.secondaryBtn}`}
+          className={cn(buttonVariants({ variant: "outline" }), t.secondaryBtn)}
         >
           <Home className="h-4 w-4" />
           {homeLabel}

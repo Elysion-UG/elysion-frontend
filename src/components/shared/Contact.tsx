@@ -26,20 +26,30 @@ import {
 } from "@/src/lib/contact"
 import { ApiError } from "@/src/lib/api-client"
 import { ContactService, type ContactAcknowledgement } from "@/src/services/contact.service"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
+import { Textarea } from "@/src/components/ui/textarea"
 
 const EMPTY_FORM = { name: "", email: "", subject: "", message: "" }
 
+// Für <select> gibt es kein Primitive — die Feld-Optik von <Input> steht hier
+// deshalb von Hand (Guide 03: Radius 12, Hairline, 3-px-Grün-Fokusring).
 const FIELD_BASE =
-  "w-full rounded-lg border px-4 py-3 transition-colors focus:border-green-600 focus:ring-2 focus:ring-green-500"
+  "h-11 w-full rounded-xl border-[1.5px] bg-card px-4 py-2 text-base transition-[color,border-color,box-shadow] duration-200 ease-brand focus-visible:border-green-500 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-green-500/40 md:text-sm"
 
 function fieldClass(hasError: boolean): string {
-  return `${FIELD_BASE} ${hasError ? "border-red-500" : "border-border"}`
+  return `${FIELD_BASE} ${hasError ? "border-danger" : "border-input"}`
+}
+
+/** Fehlerkontur für <Input>/<Textarea> — sonst gilt die Kontur des Primitives. */
+function errorBorder(hasError: boolean): string | undefined {
+  return hasError ? "border-danger" : undefined
 }
 
 function FieldError({ id, message }: { id: string; message?: string }) {
   if (!message) return null
   return (
-    <p id={id} role="alert" className="mt-1.5 text-sm text-red-600">
+    <p id={id} role="alert" className="mt-1.5 text-sm text-danger">
       {message}
     </p>
   )
@@ -217,7 +227,7 @@ export default function Contact() {
                   <label htmlFor="name" className="mb-2 block text-sm font-medium text-foreground">
                     Vollständiger Name *
                   </label>
-                  <input
+                  <Input
                     type="text"
                     id="name"
                     name="name"
@@ -228,7 +238,7 @@ export default function Contact() {
                     maxLength={CONTACT_LIMITS.name.max}
                     aria-invalid={Boolean(fieldErrors.name)}
                     aria-describedby={fieldErrors.name ? "name-error" : undefined}
-                    className={fieldClass(Boolean(fieldErrors.name))}
+                    className={errorBorder(Boolean(fieldErrors.name))}
                     placeholder="Ihr vollständiger Name"
                   />
                   <FieldError id="name-error" message={fieldErrors.name} />
@@ -237,7 +247,7 @@ export default function Contact() {
                   <label htmlFor="email" className="mb-2 block text-sm font-medium text-foreground">
                     E-Mail-Adresse *
                   </label>
-                  <input
+                  <Input
                     type="email"
                     id="email"
                     name="email"
@@ -247,7 +257,7 @@ export default function Contact() {
                     maxLength={CONTACT_LIMITS.email.max}
                     aria-invalid={Boolean(fieldErrors.email)}
                     aria-describedby={fieldErrors.email ? "email-error" : undefined}
-                    className={fieldClass(Boolean(fieldErrors.email))}
+                    className={errorBorder(Boolean(fieldErrors.email))}
                     placeholder="ihre@email.de"
                   />
                   <FieldError id="email-error" message={fieldErrors.email} />
@@ -282,7 +292,7 @@ export default function Contact() {
                 <label htmlFor="message" className="mb-2 block text-sm font-medium text-foreground">
                   Nachricht *
                 </label>
-                <textarea
+                <Textarea
                   id="message"
                   name="message"
                   value={formData.message}
@@ -293,24 +303,20 @@ export default function Contact() {
                   rows={6}
                   aria-invalid={Boolean(fieldErrors.message)}
                   aria-describedby={fieldErrors.message ? "message-error" : undefined}
-                  className={`resize-vertical ${fieldClass(Boolean(fieldErrors.message))}`}
+                  className={`resize-vertical ${errorBorder(Boolean(fieldErrors.message)) ?? ""}`}
                   placeholder="Wie können wir Ihnen helfen?"
                 />
                 <FieldError id="message-error" message={fieldErrors.message} />
               </div>
 
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3 font-bold text-primary-foreground transition-colors hover:bg-green-600 disabled:cursor-not-allowed disabled:opacity-60"
-              >
+              <Button type="submit" size="lg" disabled={isSubmitting} className="w-full">
                 {isSubmitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <Send className="h-4 w-4" />
                 )}
                 {isSubmitting ? "Wird gesendet …" : "Nachricht senden"}
-              </button>
+              </Button>
 
               <p className="text-center text-xs text-muted-foreground">
                 Wir speichern Ihre Anfrage und antworten per E-Mail an die angegebene Adresse.
@@ -329,7 +335,7 @@ export default function Contact() {
                   className={`rounded-lg p-4 text-sm ${
                     acknowledgement.forwarded
                       ? "bg-green-50 text-foreground"
-                      : "bg-amber-50 text-foreground"
+                      : "bg-warning-tint text-foreground"
                   }`}
                 >
                   <p className="flex items-center gap-2 font-medium">
@@ -357,13 +363,14 @@ export default function Contact() {
               {sendFailed && (
                 <div className="rounded-lg bg-secondary p-4 text-center text-sm text-foreground">
                   <p>Das Senden hat nicht geklappt.</p>
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
                     onClick={() => openMailto(buildContactMailto(formData))}
-                    className="mt-2 font-medium text-green-600 underline underline-offset-2"
+                    className="mt-2 h-auto px-0 text-green-600 underline underline-offset-2"
                   >
                     Stattdessen E-Mail-Programm öffnen
-                  </button>
+                  </Button>
                   <p className="mt-2 text-xs text-muted-foreground">
                     Oder schreiben Sie direkt an {SUPPORT_EMAIL}.
                   </p>

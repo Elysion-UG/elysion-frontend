@@ -14,6 +14,8 @@ import {
   ADMIN_PRODUCT_STATUS_COLOR as statusColor,
 } from "@/src/lib/constants"
 import { BackButton, LoadingFullPage, StatusBadge } from "@/src/components/shared"
+import { Button, buttonVariants } from "@/src/components/ui/button"
+import { cn } from "@/src/lib/utils"
 
 export default function AdminProductDetailView() {
   const { id } = useParams<{ id: string }>()
@@ -104,27 +106,32 @@ export default function AdminProductDetailView() {
           {actionLoading ? (
             <Loader2 className="h-5 w-5 animate-spin text-green-500" />
           ) : product.status === "ACTIVE" ? (
-            <button
+            <Button
+              variant="outline"
               onClick={handleDeactivate}
-              className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-ink-900/60 px-4 py-2 text-sm text-muted-foreground hover:text-muted-foreground"
+              className="border-border/60 bg-ink-900/60 text-muted-foreground"
             >
               <ToggleLeft className="h-4 w-4" /> Deaktivieren
-            </button>
+            </Button>
           ) : product.status === "REVIEW" || product.status === "INACTIVE" ? (
-            <button
+            <Button
+              variant="outline"
               onClick={handleActivate}
               disabled={product.verifiedCertificateCount === 0}
-              className="flex items-center gap-1.5 rounded-lg border border-green-600/60 bg-green-700/30 px-4 py-2 text-sm text-green-500 hover:text-green-500 disabled:cursor-not-allowed disabled:opacity-40"
+              className="border-green-600/60 bg-green-700/30 text-green-500 disabled:opacity-40"
             >
               <ToggleRight className="h-4 w-4" /> Aktivieren
-            </button>
+            </Button>
           ) : null}
 
           <a
             href={`/product?slug=${product.slug}`}
             target="_blank"
             rel="noreferrer"
-            className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-ink-900/60 px-4 py-2 text-sm text-muted-foreground hover:text-muted-foreground"
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "border-border/60 bg-ink-900/60 text-muted-foreground"
+            )}
           >
             <ExternalLink className="h-4 w-4" /> Im Shop ansehen
           </a>

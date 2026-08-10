@@ -7,6 +7,9 @@ import { useSellerCertificates, useCreateSellerCertificate } from "@/src/hooks/u
 import { isSafeHttpUrl, safeHttpUrl } from "@/src/lib/safe-url"
 import type { CertificateType } from "@/src/types"
 import { toast } from "sonner"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
+import { Textarea } from "@/src/components/ui/textarea"
 import { StatusBadge } from "@/src/components/shared"
 import { certStatusLabel, certStatusColor, CERT_TYPES } from "./sellerDashboard.constants"
 
@@ -87,46 +90,46 @@ function CertForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-foreground">Titel *</label>
-            <input
+            <Input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="z.B. EU Bio-Siegel"
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="text-sm"
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-foreground">Aussteller *</label>
-              <input
+              <Input
                 type="text"
                 value={issuerName}
                 onChange={(e) => setIssuerName(e.target.value)}
                 placeholder="z.B. DE-ÖKO-001"
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="text-sm"
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-foreground">
                 Zertifikatnr.
               </label>
-              <input
+              <Input
                 type="text"
                 value={certNumber}
                 onChange={(e) => setCertNumber(e.target.value)}
                 placeholder="Nr."
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="text-sm"
               />
             </div>
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-foreground">Dokument-URL *</label>
-            <input
+            <Input
               type="url"
               value={documentUrl}
               onChange={(e) => setDocumentUrl(e.target.value)}
               placeholder="https://example.com/zertifikat.pdf"
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="text-sm"
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -134,47 +137,40 @@ function CertForm({ onClose, onSaved }: { onClose: () => void; onSaved: () => vo
               <label className="mb-1 block text-xs font-medium text-foreground">
                 Ausstellungsdatum
               </label>
-              <input
+              <Input
                 type="date"
                 value={issueDate}
                 onChange={(e) => setIssueDate(e.target.value)}
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="text-sm"
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-foreground">Ablaufdatum</label>
-              <input
+              <Input
                 type="date"
                 value={expiryDate}
                 onChange={(e) => setExpiryDate(e.target.value)}
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="text-sm"
               />
             </div>
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-foreground">Notizen</label>
-            <textarea
+            <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              className="w-full resize-none rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="resize-none text-sm"
             />
           </div>
         </div>
         <div className="mt-4 flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-lg border border-border py-2 text-sm font-medium text-foreground hover:bg-secondary"
-          >
+          <Button variant="outline" onClick={onClose} className="flex-1">
             Abbrechen
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={createCert.isPending}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-500 py-2 text-sm font-medium text-ink-900 hover:bg-green-700 disabled:opacity-60"
-          >
+          </Button>
+          <Button onClick={handleSubmit} disabled={createCert.isPending} className="flex-1">
             {createCert.isPending && <Loader2 className="h-3 w-3 animate-spin" />} Erstellen
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -205,12 +201,9 @@ export default function SellerCertificatesTab() {
             >
               <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
             </button>
-            <button
-              onClick={() => setShowCertForm(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-green-700"
-            >
+            <Button onClick={() => setShowCertForm(true)}>
               <Plus className="h-4 w-4" /> Zertifikat hinzufügen
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -225,12 +218,7 @@ export default function SellerCertificatesTab() {
             <p className="mb-4 text-muted-foreground">
               Fügen Sie Nachhaltigkeitszertifikate hinzu, um Ihre Produkte zu qualifizieren.
             </p>
-            <button
-              onClick={() => setShowCertForm(true)}
-              className="rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-ink-900 hover:bg-green-700"
-            >
-              Erstes Zertifikat hinzufügen
-            </button>
+            <Button onClick={() => setShowCertForm(true)}>Erstes Zertifikat hinzufügen</Button>
           </div>
         ) : (
           <div className="divide-y divide-border">

@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
 import { cn } from "@/src/lib/utils"
 
 interface AdminTablePaginationProps {
@@ -27,20 +28,26 @@ export function AdminTablePagination({
         Seite {page} von {totalPages}
       </span>
       <div className="flex gap-2">
-        <button
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="Vorherige Seite"
           onClick={() => onPageChange(Math.max(1, page - 1))}
           disabled={page <= 1}
-          className="rounded-lg border border-border/60 bg-ink-900/60 p-1.5 text-muted-foreground hover:bg-muted/60 disabled:opacity-40"
+          className="h-8 w-8 border border-border/60 bg-ink-900/60 text-muted-foreground hover:bg-muted/60 disabled:opacity-40"
         >
           <ChevronLeft className="h-4 w-4" />
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label="Nächste Seite"
           onClick={() => onPageChange(Math.min(totalPages, page + 1))}
           disabled={page >= totalPages}
-          className="rounded-lg border border-border/60 bg-ink-900/60 p-1.5 text-muted-foreground hover:bg-muted/60 disabled:opacity-40"
+          className="h-8 w-8 border border-border/60 bg-ink-900/60 text-muted-foreground hover:bg-muted/60 disabled:opacity-40"
         >
           <ChevronRight className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
     </div>
   )

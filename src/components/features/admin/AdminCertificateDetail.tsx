@@ -26,6 +26,8 @@ import {
   ADMIN_CERTIFICATE_STATUS_COLOR as statusColor,
 } from "@/src/lib/constants"
 import { GenericRejectModal } from "@/src/components/shared"
+import { Button, buttonVariants } from "@/src/components/ui/button"
+import { cn } from "@/src/lib/utils"
 
 const typeLabel: Record<string, string> = {
   ORGANIC: "Bio / Organic",
@@ -103,12 +105,13 @@ export default function AdminCertificateDetail() {
         <p className="text-muted-foreground">
           {isError ? "Zertifikat konnte nicht geladen werden." : "Zertifikat nicht gefunden."}
         </p>
-        <button
+        <Button
+          variant="link"
           onClick={() => router.push("/admin/certificates")}
-          className="mt-4 text-sm text-green-500 hover:text-green-500"
+          className="mt-4 h-auto px-0 text-green-500"
         >
           ← Zurück zur Übersicht
-        </button>
+        </Button>
       </div>
     )
   }
@@ -119,13 +122,15 @@ export default function AdminCertificateDetail() {
     <div className="animate-fade-up">
       {/* Header */}
       <div className="mb-6 flex items-center gap-4">
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => router.push("/admin/certificates")}
-          className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-ink-900 hover:text-muted-foreground"
+          className="h-9 w-9 text-muted-foreground hover:bg-ink-900 hover:text-muted-foreground [&_svg]:size-5"
           title="Zurück"
         >
           <ArrowLeft className="h-5 w-5" />
-        </button>
+        </Button>
         <div className="min-w-0 flex-1">
           <h1 className="font-mono text-2xl font-normal tracking-wide text-muted-foreground">
             {cert.title}
@@ -255,7 +260,10 @@ export default function AdminCertificateDetail() {
               href={safeDocumentUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg border border-green-600/60 bg-green-700/40 px-4 py-2.5 text-sm font-medium text-green-500 transition-colors hover:bg-green-700/40 hover:text-green-500"
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "border-green-600/60 bg-green-700/40 text-green-500"
+              )}
             >
               <ExternalLink className="h-4 w-4" />
               Dokument öffnen
@@ -276,20 +284,14 @@ export default function AdminCertificateDetail() {
       {/* Actions */}
       {cert.status === "PENDING" && (
         <div className="mt-6 flex gap-3">
-          <button
-            onClick={handleVerify}
-            className="flex items-center gap-2 rounded-lg bg-green-700 px-5 py-2.5 text-sm font-medium text-ink-900 transition-colors hover:bg-green-500"
-          >
+          <Button onClick={handleVerify} className="px-5">
             <CheckCircle2 className="h-4 w-4" />
             Verifizieren
-          </button>
-          <button
-            onClick={() => setRejectOpen(true)}
-            className="flex items-center gap-2 rounded-lg bg-destructive px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-destructive"
-          >
+          </Button>
+          <Button variant="destructive" onClick={() => setRejectOpen(true)} className="px-5">
             <XCircle className="h-4 w-4" />
             Ablehnen
-          </button>
+          </Button>
         </div>
       )}
 

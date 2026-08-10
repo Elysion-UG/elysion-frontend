@@ -20,6 +20,8 @@ import {
   ADMIN_PRODUCT_STATUS_COLOR as productStatusColor,
 } from "@/src/lib/constants"
 import { BackButton, LoadingFullPage, StatusBadge } from "@/src/components/shared"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
 import { toast } from "sonner"
 
 export default function AdminSellerDetailView() {
@@ -141,71 +143,76 @@ export default function AdminSellerDetailView() {
             <div className="flex flex-wrap gap-3">
               {seller.status === "PENDING" && (
                 <>
-                  <button
+                  <Button
+                    variant="outline"
                     onClick={handleApprove}
-                    className="flex items-center gap-1.5 rounded-lg border border-green-600/60 bg-green-700/30 px-4 py-2 text-sm text-green-500 hover:text-green-500"
+                    className="border-green-600/60 bg-green-700/30 text-green-500"
                   >
                     <CheckCircle2 className="h-4 w-4" /> Genehmigen
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="outline"
                     onClick={() => {
                       setShowRejectInput((v) => !v)
                       setShowSuspendInput(false)
                     }}
-                    className="flex items-center gap-1.5 rounded-lg border border-danger/60 bg-destructive/30 px-4 py-2 text-sm text-danger hover:text-danger"
+                    className="border-danger/60 bg-destructive/30 text-danger"
                   >
                     <XCircle className="h-4 w-4" /> Ablehnen
-                  </button>
+                  </Button>
                 </>
               )}
               {seller.status === "APPROVED" && (
-                <button
+                <Button
+                  variant="outline"
                   onClick={() => {
                     setShowSuspendInput((v) => !v)
                     setShowRejectInput(false)
                   }}
-                  className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-ink-900/60 px-4 py-2 text-sm text-muted-foreground hover:text-muted-foreground"
+                  className="border-border/60 bg-ink-900/60 text-muted-foreground"
                 >
                   <Ban className="h-4 w-4" /> Sperren
-                </button>
+                </Button>
               )}
             </div>
 
             {showRejectInput && (
               <div className="flex gap-2">
-                <input
+                <Input
                   type="text"
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
                   placeholder="Ablehnungsgrund (erforderlich)"
-                  className="flex-1 rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-danger/20"
+                  className="flex-1 border-border/60 bg-ink-900/60 text-sm text-muted-foreground"
                 />
-                <button
+                <Button
+                  variant="outline"
                   onClick={handleReject}
                   disabled={!rejectReason.trim()}
-                  className="rounded-lg border border-danger/60 bg-destructive/30 px-4 py-2 text-sm text-danger hover:text-danger disabled:opacity-40"
+                  className="border-danger/60 bg-destructive/30 text-danger disabled:opacity-40"
                 >
                   Bestätigen
-                </button>
+                </Button>
               </div>
             )}
 
             {showSuspendInput && (
               <div className="flex gap-2">
-                <input
+                <Input
                   type="text"
                   value={suspendReason}
                   onChange={(e) => setSuspendReason(e.target.value)}
                   placeholder="Sperrgrund (erforderlich)"
-                  className="flex-1 rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-border/20"
+                  className="flex-1 border-border/60 bg-ink-900/60 text-sm text-muted-foreground"
                 />
-                <button
+                <Button
+                  variant="outline"
                   onClick={handleSuspend}
                   disabled={!suspendReason.trim()}
-                  className="rounded-lg border border-border/60 bg-ink-900/60 px-4 py-2 text-sm text-muted-foreground hover:text-muted-foreground disabled:opacity-40"
+                  className="border-border/60 bg-ink-900/60 text-muted-foreground disabled:opacity-40"
                 >
                   Bestätigen
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -226,7 +233,7 @@ export default function AdminSellerDetailView() {
         </p>
         <div className="flex items-center gap-2">
           <div className="relative">
-            <input
+            <Input
               type="number"
               min={0}
               max={100}
@@ -234,20 +241,21 @@ export default function AdminSellerDetailView() {
               value={commissionInput}
               onChange={(e) => setCommissionInput(e.target.value)}
               aria-label="Provision in Prozent"
-              className="w-32 rounded-lg border border-border/60 bg-ink-900/60 py-2 pl-3 pr-8 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
+              className="w-32 border-border/60 bg-ink-900/60 pr-8 text-sm text-muted-foreground"
             />
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
               %
             </span>
           </div>
-          <button
+          <Button
+            variant="outline"
             onClick={handleSaveCommission}
             disabled={commissionSaving || commissionInput.trim() === ""}
-            className="flex items-center gap-1.5 rounded-lg border border-green-600/60 bg-green-700/30 px-4 py-2 text-sm text-green-500 hover:text-green-500 disabled:opacity-40"
+            className="border-green-600/60 bg-green-700/30 text-green-500 disabled:opacity-40"
           >
             {commissionSaving && <Loader2 className="h-4 w-4 animate-spin" />}
             Speichern
-          </button>
+          </Button>
         </div>
       </div>
 

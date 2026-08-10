@@ -1,5 +1,6 @@
 import { Loader2, Wrench } from "lucide-react"
 import type { MaintenanceAction } from "@/src/hooks/useAdminFinance"
+import { Button } from "@/src/components/ui/button"
 
 interface MaintenancePanelProps {
   onRun: (action: MaintenanceAction) => void
@@ -31,10 +32,11 @@ export default function MaintenancePanel({ onRun, loadingAction }: MaintenancePa
           <div key={job.action} className="rounded-lg border border-border/60 bg-ink-900/30 p-5">
             <h3 className="mb-1 font-mono font-semibold text-muted-foreground">{job.title}</h3>
             <p className="mb-3 text-sm text-muted-foreground">{job.description}</p>
-            <button
+            <Button
+              variant="outline"
               onClick={() => onRun(job.action)}
               disabled={loadingAction === job.action}
-              className="flex items-center gap-2 rounded-lg border border-border/60 bg-ink-900/60 px-4 py-2 text-sm font-medium text-muted-foreground hover:border-green-600/60 hover:text-green-500 disabled:opacity-60"
+              className="border-border/60 bg-ink-900/60 text-muted-foreground hover:border-green-600/60 hover:text-green-500 disabled:opacity-60"
             >
               {loadingAction === job.action ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -42,7 +44,7 @@ export default function MaintenancePanel({ onRun, loadingAction }: MaintenancePa
                 <Wrench className="h-4 w-4" />
               )}
               Ausführen
-            </button>
+            </Button>
           </div>
         ))}
       </div>

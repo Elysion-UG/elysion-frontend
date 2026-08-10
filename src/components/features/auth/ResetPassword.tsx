@@ -7,6 +7,9 @@ import Link from "next/link"
 import { Lock, Eye, EyeOff, CheckCircle2, XCircle, Loader2, AlertTriangle } from "lucide-react"
 import { AuthService } from "@/src/services/auth.service"
 import { validatePassword } from "@/src/lib/validation"
+import { Button, buttonVariants } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
+import { cn } from "@/src/lib/utils"
 import { toast } from "sonner"
 
 type ResetStatus = "validating" | "form" | "success" | "invalid-token"
@@ -88,10 +91,7 @@ export default function ResetPassword() {
             <p className="mb-6 text-foreground">
               Dieser Link zum Zurücksetzen des Passworts ist ungültig oder abgelaufen.
             </p>
-            <Link
-              href="/"
-              className="inline-block rounded-xl bg-green-500 px-6 py-2.5 font-semibold text-ink-900 transition-colors hover:bg-green-700"
-            >
+            <Link href="/" className={cn(buttonVariants(), "px-6")}>
               Zur Startseite
             </Link>
           </div>
@@ -106,10 +106,7 @@ export default function ResetPassword() {
             <p className="mb-6 text-foreground">
               Sie können sich jetzt mit Ihrem neuen Passwort anmelden.
             </p>
-            <Link
-              href="/"
-              className="inline-block rounded-xl bg-green-500 px-6 py-2.5 font-semibold text-ink-900 transition-colors hover:bg-green-700"
-            >
+            <Link href="/" className={cn(buttonVariants(), "px-6")}>
               Zur Anmeldung
             </Link>
           </div>
@@ -139,13 +136,13 @@ export default function ResetPassword() {
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <input
+                  <Input
                     id="new-pw"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-border py-2.5 pl-10 pr-10 text-foreground focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                    className="pl-10 pr-10"
                   />
                   <button
                     type="button"
@@ -183,13 +180,13 @@ export default function ResetPassword() {
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <input
+                  <Input
                     id="confirm-pw"
                     type={showPassword ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full rounded-xl border border-border py-2.5 pl-10 pr-4 text-foreground focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                    className="pl-10"
                   />
                 </div>
                 {confirmPassword.length > 0 && password !== confirmPassword && (
@@ -199,11 +196,7 @@ export default function ResetPassword() {
                 )}
               </div>
 
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-500 py-2.5 font-semibold text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-50"
-              >
+              <Button type="submit" disabled={isSubmitting} className="w-full">
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" /> Wird gespeichert...
@@ -211,7 +204,7 @@ export default function ResetPassword() {
                 ) : (
                   "Passwort zurücksetzen"
                 )}
-              </button>
+              </Button>
             </form>
           </>
         )}
