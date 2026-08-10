@@ -642,6 +642,59 @@ Umsetzung, beide beim Aufarbeiten des Klartext-Leaks in CI-Artefakten entdeckt:
 
 ---
 
+### 5.6 CSP-Nonce: Klassifikation invertiert (FE#221)
+
+**Status:** ENTSCHIEDEN & UMGESETZT (2026-08-10) — Option „Nonce als Opt-in"
+
+Die Content-Security-Policy wird pro Request in `src/middleware.ts` gesetzt. Bisher
+bekam **jede** Route die strikte Nonce-Policy; nur eine handgepflegte Liste
+öffentlicher Routen (`PUBLIC_ROUTES`) war davon ausgenommen. Eine Nonce auf einer
+statisch vorgerenderten Seite ist aber tödlich: Next stempelt in die zur Bauzeit
+erzeugten Bootstrap-Scripts keine passende Nonce, der Browser blockt sie, die
+Hydration startet nie — die Seite ist tot. In `next dev` ist das unsichtbar (dort
+rendert alles dynamisch) und fällt erst auf Staging auf.
+
+**Belegter Anlass:** `npm run build` gegen `dev` zeigt `/_not-found` als statisch
+vorgerendert (`○`). Die Route fiel durch die Ausnahmeliste und bekam die
+Nonce-Policy — jeder unbekannte Pfad lieferte damit totes HTML: Header und
+Warenkorb auf der 404-Seite funktionslos.
+
+**Entscheidung:** Die Klassifikation wird invertiert. Die Nonce gilt nur noch für
+die authentifizierten, dynamisch gerenderten Flächen (Seller-, Admin-, Auth- und
+geschützte Buyer-Routen — genau die vier Route-Gruppen mit `force-dynamic`).
+Alles andere, inklusive `/_not-found` und jedem unbekannten Pfad, bekommt die
+nonce-freie Policy.
+
+Maßgeblich ist die **Fehlerrichtung**, nicht die Fehlerzahl:
+
+| Fehlerfall                        | vorher             | invertiert                        |
+| --------------------------------- | ------------------ | --------------------------------- |
+| vergessene öffentliche Seite      | Seite **tot**      | läuft                             |
+| unbekannter Pfad / `/_not-found`  | Seite **tot**      | läuft                             |
+| vergessene authentifizierte Route | läuft, strikte CSP | läuft, **CSP eine Stufe lascher** |
+
+Vorher stand im Fehlerfall ein **Totalausfall**, invertiert der Verlust **einer
+Härtungsschicht**: die betroffene Route bekäme `script-src 'unsafe-inline'` statt
+der Nonce. Der eigentliche Zugriffsschutz — Session-Gate in der Middleware,
+clientseitige Guards, Backend-Autorisierung — bleibt unberührt, und der Rest der
+Policy (`connect-src`/`img-src` nur self + Backend-Origin, `object-src 'none'`,
+`frame-ancestors 'none'`) begrenzt die Relaxation.
+
+**Restpreis, bewusst offen:** Eine vergessene authentifizierte Route verliert die
+Nonce **still** — kein Test schlägt an. Der Drift-Guard aus FE#218 prüft bislang
+nur die öffentliche Seite. Ein Gegenstück über die authentifizierten Listen wurde
+zurückgestellt und als eigenes Issue nachgezogen (FE#235). Ebenfalls unverändert:
+ein Tippfehler unterhalb eines authentifizierten Prefixes (z. B.
+`/admin/tippfehler`) rendert weiter das statische `/_not-found` mit Nonce — die
+Middleware kennt die Route-Tabelle nicht.
+
+**Nebenbefund (offen, gehört zu FE#37):** `/producer` und `/product` werden
+weiterhin dynamisch (`ƒ`) gerendert. Das Akzeptanzkriterium aus FE#37
+(„(public)-Routen statisch/ISR") ist damit ausgerechnet für die beiden
+SEO-relevanten Shop-Routen nicht erfüllt.
+
+---
+
 ## VI. Checkout & Warenkorb
 
 ### 6.1 Guest-Checkout
