@@ -28,10 +28,23 @@ const mockProductPage = {
   totalPages: 0,
 }
 
-const mockProductInternalDetail = {
+// Raw shape of GET /api/v1/products/by-id/{id} (backend ProductDetailDto):
+// leaner than the public detail — no `title`, no `category`, no `variants`, but
+// `materials`, `status` and the timestamps. The seller comes as `seller.id`.
+const rawInternalDetail = {
   id: "prod_1",
-  title: "Eco Shirt",
+  slug: "eco-shirt",
+  name: "Eco Shirt",
+  description: "Made from linen",
+  shortDescription: "A great shirt",
   price: 29.99,
+  currency: "EUR",
+  status: "ACTIVE",
+  materials: [{ id: "mat_1", slug: "leinen", name: "Leinen" }],
+  seller: { id: "seller-uuid", slug: "alpha-manufaktur", companyName: "Eco Store" },
+  createdAt: "2026-01-01T00:00:00Z",
+  updatedAt: "2026-01-02T00:00:00Z",
+  matchScore: null,
 }
 
 const mockCommandResponse = { id: "prod_1", slug: "eco-shirt" }
@@ -556,15 +569,92 @@ describe("ProductService", () => {
 
   describe("getById", () => {
     it("calls /api/v1/products/by-id/{id}", async () => {
-      mockApiRequest.mockResolvedValue(mockProductInternalDetail)
+      mockApiRequest.mockResolvedValue(rawInternalDetail)
       await ProductService.getById("prod_1")
       expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/products/by-id/prod_1")
     })
 
-    it("returns the internal product detail", async () => {
-      mockApiRequest.mockResolvedValue(mockProductInternalDetail)
+    it("maps seller.id to seller.userId and keeps the slug (#232)", async () => {
+      mockApiRequest.mockResolvedValue(rawInternalDetail)
       const result = await ProductService.getById("prod_1")
-      expect(result).toEqual(mockProductInternalDetail)
+      expect(result.seller).toEqual({
+        userId: "seller-uuid",
+        slug: "alpha-manufaktur",
+        companyName: "Eco Store",
+      })
+      // The raw API name must not survive the service boundary.
+      expect(result.seller).not.toHaveProperty("id")
+    })
+
+    it("yields a working producer link from the mapped seller (#232)", async () => {
+      mockApiRequest.mockResolvedValue(rawInternalDetail)
+      const result = await ProductService.getById("prod_1")
+      expect(producerHref(result.seller)).toBe("/producer?slug=alpha-manufaktur")
+    })
+
+    it("keeps seller.slug null for a seller that is not APPROVED", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...rawInternalDetail,
+        seller: { id: "seller-uuid", slug: null, companyName: "Eco Store" },
+      })
+      const result = await ProductService.getById("prod_1")
+      expect(result.seller?.slug).toBeNull()
+      expect(producerHref(result.seller)).toBe("/producer?id=seller-uuid")
+    })
+
+    it("falls back to a null slug when the API omits the field entirely", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...rawInternalDetail,
+        seller: { id: "seller-uuid", companyName: "Eco Store" },
+      })
+      const result = await ProductService.getById("prod_1")
+      expect(result.seller?.slug).toBeNull()
+    })
+
+    it("maps shortDescription to shortDesc and derives title from name", async () => {
+      mockApiRequest.mockResolvedValue(rawInternalDetail)
+      const result = await ProductService.getById("prod_1")
+      expect(result.shortDesc).toBe("A great shirt")
+      expect(result.title).toBe("Eco Shirt")
+    })
+
+    it("passes the materials through unchanged — ProductForm reads them", async () => {
+      mockApiRequest.mockResolvedValue(rawInternalDetail)
+      const result = await ProductService.getById("prod_1")
+      expect(result.materials).toEqual([{ id: "mat_1", slug: "leinen", name: "Leinen" }])
+    })
+
+    it("reports the single price as both price and basePrice", async () => {
+      mockApiRequest.mockResolvedValue(rawInternalDetail)
+      const result = await ProductService.getById("prod_1")
+      expect(result.price).toBe(29.99)
+      expect(result.basePrice).toBe(29.99)
+    })
+
+    // The route carries no images today; the mapping is defensive and must do
+    // the same order → position rename as getBySlug() if they ever appear.
+    it("maps images[].order to images[].position when present", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...rawInternalDetail,
+        images: [{ id: "img_1", url: "https://example.com/img.jpg", order: 2 }],
+      })
+      const result = await ProductService.getById("prod_1")
+      expect(result.images?.[0]).toEqual({
+        id: "img_1",
+        url: "https://example.com/img.jpg",
+        position: 2,
+      })
+    })
+
+    it("leaves images undefined when the route omits them", async () => {
+      mockApiRequest.mockResolvedValue(rawInternalDetail)
+      const result = await ProductService.getById("prod_1")
+      expect(result.images).toBeUndefined()
+    })
+
+    it("rejects a response missing required identity fields", async () => {
+      mockApiRequest.mockResolvedValue({ id: "prod_1", name: "Eco Shirt" }) // slug missing
+      await expect(ProductService.getById("prod_1")).rejects.toThrow(/Server-Antwort/)
     })
   })
 

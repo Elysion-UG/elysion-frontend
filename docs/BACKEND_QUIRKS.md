@@ -51,12 +51,18 @@ Der `sort`-Parameter erwartet Enum-Werte, **nicht** Springs `field,direction`:
 
 ---
 
-## Produktdetail — zwei Endpoints, zwei Feldnamen
+## Produktdetail — zwei Endpoints, zwei DTOs
 
 | Endpoint                          | Wrapper       | Namensfeld | Auth                   | Verwendung                |
 | --------------------------------- | ------------- | ---------- | ---------------------- | ------------------------- |
 | `GET /api/v1/products/{slug}`     | `ApiResponse` | `name`     | nein                   | öffentliche Produktseiten |
-| `GET /api/v1/products/by-id/{id}` | `ApiResponse` | `title`    | ADMIN, SELLER (eigene) | Seller-/Admin-Ansichten   |
+| `GET /api/v1/products/by-id/{id}` | `ApiResponse` | `name`     | ADMIN, SELLER (eigene) | Seller-/Admin-Ansichten   |
+
+> Der interne Read hieß hier lange „Namensfeld `title`" — das stimmt nicht: `ProductDetailDto`
+> kennt gar kein `title`. `ProductService.getById()` leitet es aus `name` ab. Der DTO ist
+> außerdem deutlich schlanker als das Storefront-Detail (kein `category`, `taxRate`,
+> `variants`, `images`) — Feldliste in [`api-integration.md`](./api-integration.md),
+> Abschnitt „`by-id/{id}` — eigener, schlankerer DTO".
 
 **Navigationsregel:** Für Storefront-Links immer den `slug` verwenden —
 `ProductListItemDto` enthält ihn. UUID-basierte öffentliche Navigation wird nicht
