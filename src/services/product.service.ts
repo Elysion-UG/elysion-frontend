@@ -14,8 +14,9 @@
  * data.totalItems (not totalElements), data.page (not number). list() normalises
  * that to ProductPage, so callers must never hit the endpoint directly.
  *
- * Public detail is addressed by {slug} and returns `name`; the internal
- * by-id/{id} route returns `title` and requires ADMIN or the owning SELLER.
+ * Public detail is addressed by {slug}; the internal by-id/{id} route requires
+ * ADMIN or the owning SELLER. Both name the product field `name` — by-id has
+ * never carried a `title`, the internal type derives it (see getById()).
  */
 import { z } from "zod"
 import { apiRequest, buildQuery } from "@/src/lib/api-client"
@@ -149,6 +150,55 @@ const apiProductDetailSchema = z.object({
   matchBreakdown: z.unknown().optional(),
 })
 
+// ── Raw API schemas (internal by-id detail) ───────────────────────────────────
+// Deliberately its own schema and not a reuse of apiProductDetailSchema: the
+// internal route answers with a *different*, leaner DTO (backend
+// `ProductDetailDto`) — no `title`, no `category`, no `taxRate`, no `variants`,
+// but `materials`, `status` and the timestamps that the public detail omits.
+// Sharing one schema would have to make every one of those optional and would
+// stop catching drift on either route (#232).
+
+const apiProductInternalDetailSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  name: z.string(),
+  description: z.string().nullish(),
+  // Same rename as the public detail: API `shortDescription` → internal `shortDesc`.
+  shortDescription: z.string().nullish(),
+  // Major units; this is the product's base price (`basePriceCents / 100`).
+  price: z.number().nullish(),
+  currency: z.string().nullish(),
+  status: z.string().nullish(),
+  materials: z.array(z.object({ id: z.string(), slug: z.string(), name: z.string() })).nullish(),
+  // The route does not carry images today — the mapping is defensive so the
+  // `order` → `position` rename lives next to its sibling in getBySlug() and
+  // ProductImageManager keeps working should the DTO ever gain them.
+  images: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        url: z.string(),
+        altText: z.string().nullish(),
+        order: z.number().nullish(),
+      })
+    )
+    .optional(),
+  // Same seller summary as the public reads, same `slug`-is-null-unless-APPROVED
+  // rule. `companyName` is declared nullable by the backend purely defensively
+  // (a product without a seller profile is excluded by the foreign key).
+  seller: z
+    .object({
+      id: z.string(),
+      slug: z.string().nullish(),
+      companyName: z.string().nullish(),
+    })
+    .nullish(),
+  createdAt: z.string().nullish(),
+  updatedAt: z.string().nullish(),
+  matchScore: z.number().nullish(),
+  matchBreakdown: z.unknown().optional(),
+})
+
 export const ProductService = {
   // ── Public ────────────────────────────────────────────────────────
 
@@ -272,8 +322,54 @@ export const ProductService = {
 
   // ── Authenticated ─────────────────────────────────────────────────
 
+  /**
+   * Internal UUID read (`ADMIN` or the owning `SELLER`).
+   *
+   * Parses and maps like its public siblings instead of casting the raw
+   * response (#232): the API says `seller.id`, the frontend type says
+   * `seller.userId` — a cast let that mismatch through without a compiler or
+   * schema complaint, and anyone reading `seller.userId` got `undefined`.
+   *
+   * `title` is derived from `name`: the route carries no separate title, and
+   * `ProductInternalDetail` requires one — same fallback as list().
+   */
   async getById(id: string): Promise<ProductInternalDetail> {
-    return apiRequest<ProductInternalDetail>(`/api/v1/products/by-id/${id}`)
+    const raw = parseApiResponse(
+      apiProductInternalDetailSchema,
+      await apiRequest<unknown>(`/api/v1/products/by-id/${id}`),
+      "product.getById"
+    )
+    return {
+      id: raw.id,
+      slug: raw.slug,
+      name: raw.name,
+      title: raw.name,
+      description: raw.description ?? undefined,
+      shortDesc: raw.shortDescription ?? undefined,
+      // The route reports exactly one price and it is the base price, so both
+      // fields are fed from it — the seller form edits `basePrice`.
+      price: raw.price ?? undefined,
+      basePrice: raw.price ?? undefined,
+      currency: raw.currency ?? undefined,
+      status: raw.status ?? undefined,
+      materials: raw.materials ?? undefined,
+      images: raw.images?.map((img) => ({
+        id: img.id,
+        url: img.url,
+        position: img.order ?? undefined,
+      })),
+      // `slug` normalised to an explicit null exactly like list()/getBySlug():
+      // "the backend withheld the link because the seller is not APPROVED".
+      seller: raw.seller
+        ? {
+            userId: raw.seller.id,
+            slug: raw.seller.slug ?? null,
+            companyName: raw.seller.companyName ?? undefined,
+          }
+        : undefined,
+      createdAt: raw.createdAt ?? undefined,
+      updatedAt: raw.updatedAt ?? undefined,
+    }
   },
 
   // ── Seller commands (/api/v1/seller/products) ─────────────────────

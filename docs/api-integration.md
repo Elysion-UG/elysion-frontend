@@ -232,10 +232,10 @@ Seller-Objekt `{ id, slug, companyName }`. Die Seller-Portal-Liste
 (`GET /api/v1/seller/products`) und die Admin-Reads nutzen eigene DTOs und sind davon
 **nicht** erfasst.
 
-Im Frontend ausmodelliert ist das Objekt allerdings nur in `ProductService.list()` und
-`getBySlug()`: `Recommendation` kennt gar kein `seller`-Feld (die Empfehlungskacheln zeigen
-keinen Hersteller), und `getById()` mappt nicht — siehe den Warnhinweis unten. Wer den
-Verkäufer aus einer Empfehlung braucht, erweitert erst den Typ.
+Im Frontend ausmodelliert ist das Objekt in `ProductService.list()`, `getBySlug()` und
+— seit #232 — `getById()`. Nicht ausmodelliert ist es allein bei den Empfehlungen:
+`Recommendation` kennt gar kein `seller`-Feld (die Empfehlungskacheln zeigen keinen
+Hersteller). Wer den Verkäufer aus einer Empfehlung braucht, erweitert erst den Typ.
 
 `ProductService` benennt `id` beim Mappen in `ProductSeller.userId` um; der rohe
 API-Name verlässt den Service nicht.
@@ -270,15 +270,28 @@ nicht `APPROVED`) oder `undefined` (Backend ohne das Feld). Folgenlos, solange d
 nicht verlinkt; wer den Slug dort nutzt, behandelt `null` und `undefined` gleich — genau das
 tut `producerHref()` ohnehin.
 
-> ⚠️ **Ausnahme `by-id/{id}`** (→ Elysion-UG/elysion-frontend#232):
-> `ProductService.getById()` reicht die Antwort ungeprüft und ungemappt durch (kein
-> Zod-Schema, kein Rename). Der Rückgabetyp verspricht `seller.userId`, tatsächlich steht
-> dort das rohe `seller.id`; dieselbe fehlende Mapping-Schicht trifft `images`, wo die Route
-> `order` liefert und `ProductImage` `position` erwartet. Beides heute folgenlos — die zwei
-> Aufrufer (`ProductForm`, `ProductImageManager`) lesen `seller` gar nicht und die
-> Bild-Anzeige nutzt die Array-Reihenfolge statt `position`. Wer die Route künftig für eine
-> Produzenten-Verlinkung oder eine echte Sortierung nutzt, braucht vorher Schema + Mapper
-> wie bei `getBySlug()`.
+#### `by-id/{id}` — eigener, schlankerer DTO
+
+`GET /api/v1/products/by-id/{id}` ist **nicht** das Storefront-Detail unter anderer Adresse.
+Das Backend antwortet mit `ProductDetailDto`:
+
+```
+id, slug, name, description, shortDescription, price, currency,
+seller { id, slug, companyName }, status, materials[], createdAt, updatedAt,
+matchScore, matchBreakdown
+```
+
+Nicht enthalten sind **`title`, `category`, `taxRate`, `variants` und `images`** — alles
+Felder, die `ProductDetail` als optional kennt und die aus dieser Route deshalb dauerhaft
+`undefined` sind. `price` ist der Basispreis; `ProductService.getById()` füllt daraus
+`price` **und** `basePrice`, und leitet das vom Typ `ProductInternalDetail` geforderte
+`title` aus `name` ab.
+
+Seit #232 hat die Route ein eigenes Zod-Schema plus Mapper (vorher: roher, ungeprüfter Cast
+— der Rückgabetyp versprach `seller.userId`, geliefert wurde `seller.id`). Der `order` →
+`position`-Umbau der Bilder ist im Mapper vorhanden, greift aber nur, falls die Route jemals
+`images` liefert. `ProductImageManager` lädt das Produkt nach und fällt deshalb immer auf
+seine `initialImages` zurück.
 
 ### Kategorien
 
