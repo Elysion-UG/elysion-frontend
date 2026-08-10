@@ -7,7 +7,8 @@ import { CertificateService } from "@/src/services/certificate.service"
 import { SellerProfileService } from "@/src/services/seller-profile.service"
 import { SellerValueProfileService } from "@/src/services/seller-value-profile.service"
 import { ApiError } from "@/src/lib/api-client"
-import type { SellerCertificateCreateDTO } from "@/src/types"
+import { formatEuro } from "@/src/lib/currency"
+import type { RefundRequestDTO, SellerCertificateCreateDTO } from "@/src/types"
 
 // Derive the mutation input types straight from the service signatures — these
 // endpoints have no exported DTO type, and inferring avoids drift.
@@ -63,6 +64,26 @@ export function useDeliverSellerOrder() {
       void queryClient.invalidateQueries({ queryKey: sellerKeys.orders })
     },
     onError: () => toast.error("Fehler beim Aktualisieren."),
+  })
+}
+
+/**
+ * Erstattung auf einer eigenen OrderGroup (#56). Der Fehlerfall wird bewusst
+ * **nicht** hier abgefangen: das Modal zeigt ihn instanz- und konsequenzgenau
+ * inline an (§1.9), ein zusätzlicher Toast würde dieselbe Aussage doppeln.
+ *
+ * Nach Erfolg werden Bestellungen **und** Abrechnungen invalidiert — die
+ * Gegenbuchung verändert beide Sichten in derselben Transaktion.
+ */
+export function useSellerRefund() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (dto: RefundRequestDTO) => SellerOrderService.refund(dto),
+    onSuccess: (result) => {
+      toast.success(`${formatEuro(result.amount)} erstattet.`)
+      void queryClient.invalidateQueries({ queryKey: sellerKeys.orders })
+      void queryClient.invalidateQueries({ queryKey: sellerKeys.settlements })
+    },
   })
 }
 

@@ -8,6 +8,8 @@
  * either service works.
  */
 import { apiRequest, buildQuery } from "@/src/lib/api-client"
+import { parseApiResponse } from "@/src/lib/api-schemas"
+import { apiRefundResultSchema, buildRefundBody, normalizeRefundResult } from "./_refund-schemas"
 import type {
   AdminDashboardData,
   AdminUserListItem,
@@ -23,6 +25,8 @@ import type {
   AdminRefundItem,
   AdminPayoutItem,
   PayoutDueItem,
+  RefundRequestDTO,
+  RefundResult,
   Settlement,
   Page,
   OrderStatus,
@@ -178,6 +182,20 @@ export const AdminService = {
     return apiRequest(
       `/api/v1/admin/refunds${buildQuery({ page: params.page, size: params.size })}`
     )
+  },
+
+  /**
+   * Erstattung als **Eskalation** — gleicher Pfad wie die Leseliste, andere
+   * Methode. Ohne Ownership-Schranke: greift, wenn der Seller nicht reagiert,
+   * bei Disputes und Betrug (Management-Decision §1.4). `amount` weglassen
+   * erstattet den kompletten Restbetrag der OrderGroup.
+   */
+  async createRefund(dto: RefundRequestDTO): Promise<RefundResult> {
+    const raw = await apiRequest<unknown>("/api/v1/admin/refunds", {
+      method: "POST",
+      body: buildRefundBody(dto),
+    })
+    return normalizeRefundResult(parseApiResponse(apiRefundResultSchema, raw, "admin.createRefund"))
   },
 
   async listSettlements(params: { page?: number; size?: number } = {}): Promise<Page<Settlement>> {

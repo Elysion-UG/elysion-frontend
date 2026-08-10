@@ -145,6 +145,8 @@ export type { SellerPayoutAccountStatus, SellerPayoutAccount, PayoutOnboardingLi
 
 export type { Recommendation } from "./recommendations"
 
+export type { RefundStatus, RefundInitiator, RefundRequestDTO, RefundResult } from "./refund"
+
 export type {
   ErrorSeverity,
   ErrorCategory,

@@ -381,4 +381,75 @@ describe("AdminService", () => {
       expect.objectContaining({ method: "POST", body: JSON.stringify({ sellerId: "s1" }) })
     )
   })
+
+  // ── Refund escalation (#56) ──────────────────────────────────────────
+
+  describe("createRefund", () => {
+    const rawRefund = {
+      refundId: "ref_1",
+      paymentId: "pay_1",
+      orderId: "ord_1",
+      orderGroupId: "grp_1",
+      sellerId: "seller_1",
+      amount: 55,
+      currency: "EUR",
+      status: "SUCCEEDED",
+      providerRefundId: "re_stripe_1",
+      initiatedBy: "ADMIN",
+      reason: "Eskalation: Seller reagiert nicht",
+      settlementRefundedAmount: 55,
+      settlementRemainingRefundableAmount: 0,
+      settlementPlatformFeeAmount: 0,
+      settlementRefundFeeAmount: 1.25,
+      settlementNetAmount: -1.25,
+      settlementAdjustmentRequired: true,
+    }
+
+    it("POSTs /api/v1/admin/refunds — same path as the read list, other method", async () => {
+      mockApiRequest.mockResolvedValue(rawRefund)
+
+      const result = await AdminService.createRefund({
+        orderGroupId: "grp_1",
+        reason: "Eskalation: Seller reagiert nicht",
+      })
+
+      expect(mockApiRequest).toHaveBeenCalledWith(
+        "/api/v1/admin/refunds",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            orderGroupId: "grp_1",
+            reason: "Eskalation: Seller reagiert nicht",
+          }),
+        })
+      )
+      expect(result.initiatedBy).toBe("ADMIN")
+    })
+
+    it("keeps a negative settlement net amount after a full refund", async () => {
+      mockApiRequest.mockResolvedValue(rawRefund)
+
+      const result = await AdminService.createRefund({ orderGroupId: "grp_1" })
+
+      expect(result.settlementNetAmount).toBe(-1.25)
+      expect(result.settlementRemainingRefundableAmount).toBe(0)
+    })
+
+    it("sends a partial amount as decimal EUR", async () => {
+      mockApiRequest.mockResolvedValue({ ...rawRefund, amount: 10.5 })
+
+      await AdminService.createRefund({ orderGroupId: "grp_1", amount: 10.5 })
+
+      const body = mockApiRequest.mock.calls[0][1]?.body as string
+      expect(JSON.parse(body)).toEqual({ orderGroupId: "grp_1", amount: 10.5 })
+    })
+
+    it("rejects an unknown initiator instead of casting it through", async () => {
+      mockApiRequest.mockResolvedValue({ ...rawRefund, initiatedBy: "BUYER" })
+
+      await expect(AdminService.createRefund({ orderGroupId: "grp_1" })).rejects.toThrow(
+        /Ungültige Server-Antwort/
+      )
+    })
+  })
 })

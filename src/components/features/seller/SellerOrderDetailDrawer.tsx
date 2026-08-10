@@ -1,6 +1,6 @@
 "use client"
 
-import { Truck, CheckCircle2, Clock, AlertTriangle, X } from "lucide-react"
+import { Truck, CheckCircle2, Clock, AlertTriangle, X, Undo2 } from "lucide-react"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import type { OrderGroupDetail } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
@@ -19,6 +19,13 @@ export interface SellerOrderDetailDrawerProps {
   onStatusChange: (groupId: string, status: string) => void
   onDeliver: (groupId: string) => void
   onShip: (groupId: string) => void
+  /**
+   * Erstattungsstand aus der Abrechnungszeile (`GET /api/v1/seller/settlements`).
+   * `undefined`, solange die Zeile noch lädt oder es keine gibt — dann bietet
+   * der Drawer keine Erstattung an, statt einen Restbetrag zu erfinden.
+   */
+  refund?: { alreadyRefunded: number; remaining: number }
+  onRefund?: (groupId: string) => void
 }
 
 export default function SellerOrderDetailDrawer({
@@ -27,6 +34,8 @@ export default function SellerOrderDetailDrawer({
   onStatusChange,
   onDeliver,
   onShip,
+  refund,
+  onRefund,
 }: SellerOrderDetailDrawerProps) {
   const formattedDate = new Date(group.createdAt).toLocaleDateString("de-DE", {
     day: "2-digit",
@@ -36,8 +45,16 @@ export default function SellerOrderDetailDrawer({
     minute: "2-digit",
   })
 
+  // Erstattung hängt nicht am Bestellstatus, sondern allein am offenen
+  // Restbetrag der Abrechnungszeile (§1.4): auch eine gelieferte Bestellung ist
+  // erstattbar, eine vollständig erstattete dagegen nicht mehr.
+  const canRefund = refund !== undefined && refund.remaining > 0 && onRefund !== undefined
+
   const hasActions =
-    group.status === "CONFIRMED" || group.status === "PROCESSING" || group.status === "SHIPPED"
+    group.status === "CONFIRMED" ||
+    group.status === "PROCESSING" ||
+    group.status === "SHIPPED" ||
+    canRefund
 
   // Versand-SLA (§1.6 Szenario 1) — reiner Lesezustand vom Server (#143).
   // Es gibt keine Aktion dazu: eine Überschreitung löst man durch Versenden.
@@ -209,6 +226,27 @@ export default function SellerOrderDetailDrawer({
             </div>
           </section>
 
+          {/* Erstattungen — Stand aus der Abrechnungszeile, nicht nachgerechnet */}
+          {refund && refund.alreadyRefunded > 0 && (
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Erstattungen
+              </h3>
+              <dl className="rounded-lg bg-secondary px-4 py-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">Bereits erstattet</dt>
+                  <dd className="font-mono text-foreground">
+                    {formatEuro(refund.alreadyRefunded)}
+                  </dd>
+                </div>
+                <div className="mt-1 flex items-center justify-between">
+                  <dt className="text-muted-foreground">Noch erstattbar</dt>
+                  <dd className="font-mono text-foreground">{formatEuro(refund.remaining)}</dd>
+                </div>
+              </dl>
+            </section>
+          )}
+
           {/* Shipment */}
           <section>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -267,7 +305,22 @@ export default function SellerOrderDetailDrawer({
                   <CheckCircle2 className="h-4 w-4" /> Als geliefert markieren
                 </button>
               )}
+              {canRefund && (
+                <button
+                  onClick={() => onRefund?.(group.orderGroupId)}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-danger hover:bg-danger-tint"
+                >
+                  <Undo2 className="h-4 w-4" /> Erstatten
+                </button>
+              )}
             </div>
+            {canRefund && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Erstattungen lösen Sie eigenständig aus — eine Freigabe von Elysion ist nicht nötig.
+                Die Provision wird anteilig zurückgegeben; die Abrechnungszeile wird bis zur
+                Korrektur von der Auszahlung ausgenommen.
+              </p>
+            )}
           </div>
         )}
       </div>
