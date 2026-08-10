@@ -176,7 +176,18 @@ describe("CategoryService", () => {
         slug: "root",
         level: 1,
         order: 1,
-        children: [{ id: "child", name: "Child", slug: "child", level: 2, order: 1, children: [] }],
+        isActive: true,
+        children: [
+          {
+            id: "child",
+            name: "Child",
+            slug: "child",
+            level: 2,
+            order: 1,
+            isActive: true,
+            children: [],
+          },
+        ],
       },
     ]
     mockApiRequest.mockResolvedValue(nested)
@@ -185,8 +196,20 @@ describe("CategoryService", () => {
     expect(tree).toEqual(nested)
   })
 
+  it("adminList calls GET /api/v1/admin/categories", async () => {
+    mockApiRequest.mockResolvedValue([])
+    await CategoryService.adminList()
+    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/categories")
+  })
+
+  it("adminTree calls GET /api/v1/admin/categories/tree", async () => {
+    mockApiRequest.mockResolvedValue([])
+    await CategoryService.adminTree()
+    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/categories/tree")
+  })
+
   it("create calls POST /api/v1/admin/categories", async () => {
-    mockApiRequest.mockResolvedValue({ id: "c1" })
+    mockApiRequest.mockResolvedValue({ id: "c1", slug: "kleidung", level: 1, isActive: true })
     const dto = { name: "Kleidung", slug: "kleidung", order: 0 }
     await CategoryService.create(dto)
     expect(mockApiRequest).toHaveBeenCalledWith(
@@ -196,7 +219,7 @@ describe("CategoryService", () => {
   })
 
   it("update calls PATCH with category id", async () => {
-    mockApiRequest.mockResolvedValue({ id: "c1" })
+    mockApiRequest.mockResolvedValue({ id: "c1", slug: "neu", level: 1, isActive: true })
     await CategoryService.update("c1", { name: "Neu", slug: "neu", order: 0 })
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/admin/categories/c1",
@@ -205,7 +228,7 @@ describe("CategoryService", () => {
   })
 
   it("activate calls PATCH on activate endpoint", async () => {
-    mockApiRequest.mockResolvedValue({ id: "c1" })
+    mockApiRequest.mockResolvedValue(null)
     await CategoryService.activate("c1")
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/admin/categories/c1/activate",
@@ -214,7 +237,7 @@ describe("CategoryService", () => {
   })
 
   it("deactivate calls PATCH on deactivate endpoint", async () => {
-    mockApiRequest.mockResolvedValue({ id: "c1" })
+    mockApiRequest.mockResolvedValue(null)
     await CategoryService.deactivate("c1")
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/admin/categories/c1/deactivate",
