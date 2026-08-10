@@ -4,6 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { CreditCard, FileText, Loader2, MapPin, ShoppingBag } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
 import type { CheckoutStartResponse } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
 
@@ -145,17 +146,17 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
         </label>
       </div>
 
+      {/* Zwei lg-Buttons nebeneinander: auf schmalen Viewports muss das lange
+          Label umbrechen dürfen, sonst läuft es über (Primitive: whitespace-nowrap). */}
       <div className="flex gap-3">
-        <button
-          onClick={onBack}
-          className="flex-1 rounded-lg border border-border py-3 font-medium text-foreground transition-colors hover:bg-secondary"
-        >
+        <Button variant="outline" size="lg" onClick={onBack} className="flex-1 px-4 sm:px-8">
           Zurück
-        </button>
-        <button
+        </Button>
+        <Button
+          size="lg"
           onClick={onComplete}
           disabled={isLoading || !agbAccepted}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-500 py-3 font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="h-auto min-h-12 flex-1 whitespace-normal px-4 py-2 sm:px-8"
         >
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -165,7 +166,7 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
               Zahlungspflichtig bestellen
             </>
           )}
-        </button>
+        </Button>
       </div>
     </div>
   )

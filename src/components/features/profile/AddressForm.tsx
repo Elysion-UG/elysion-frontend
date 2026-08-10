@@ -7,6 +7,8 @@ import { X, Loader2 } from "lucide-react"
 import type { Address, AddressDTO, AddressType } from "@/src/types"
 import { toCountryCode, toCountryName } from "@/src/lib/country"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
 
 interface AddressFormProps {
   isOpen: boolean
@@ -80,8 +82,6 @@ export default function AddressForm({ isOpen, onClose, onSave, address }: Addres
 
   if (!isOpen) return null
 
-  const inputClass =
-    "w-full px-3 py-2.5 border border-border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-600 text-foreground text-sm outline-none"
   const labelClass = "block text-sm font-medium text-foreground mb-1"
 
   return (
@@ -133,26 +133,26 @@ export default function AddressForm({ isOpen, onClose, onSave, address }: Addres
                 <label htmlFor="addr-fn" className={labelClass}>
                   Vorname
                 </label>
-                <input
+                <Input
                   id="addr-fn"
                   type="text"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   required
-                  className={inputClass}
+                  className="text-sm"
                 />
               </div>
               <div>
                 <label htmlFor="addr-ln" className={labelClass}>
                   Nachname
                 </label>
-                <input
+                <Input
                   id="addr-ln"
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   required
-                  className={inputClass}
+                  className="text-sm"
                 />
               </div>
             </div>
@@ -162,26 +162,26 @@ export default function AddressForm({ isOpen, onClose, onSave, address }: Addres
                 <label htmlFor="addr-street" className={labelClass}>
                   Strasse
                 </label>
-                <input
+                <Input
                   id="addr-street"
                   type="text"
                   value={street}
                   onChange={(e) => setStreet(e.target.value)}
                   required
-                  className={inputClass}
+                  className="text-sm"
                 />
               </div>
               <div>
                 <label htmlFor="addr-hn" className={labelClass}>
                   Hausnr.
                 </label>
-                <input
+                <Input
                   id="addr-hn"
                   type="text"
                   value={houseNumber}
                   onChange={(e) => setHouseNumber(e.target.value)}
                   required
-                  className={inputClass}
+                  className="text-sm"
                 />
               </div>
             </div>
@@ -191,26 +191,26 @@ export default function AddressForm({ isOpen, onClose, onSave, address }: Addres
                 <label htmlFor="addr-plz" className={labelClass}>
                   PLZ
                 </label>
-                <input
+                <Input
                   id="addr-plz"
                   type="text"
                   value={postalCode}
                   onChange={(e) => setPostalCode(e.target.value)}
                   required
-                  className={inputClass}
+                  className="text-sm"
                 />
               </div>
               <div>
                 <label htmlFor="addr-city" className={labelClass}>
                   Stadt
                 </label>
-                <input
+                <Input
                   id="addr-city"
                   type="text"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   required
-                  className={inputClass}
+                  className="text-sm"
                 />
               </div>
             </div>
@@ -219,13 +219,13 @@ export default function AddressForm({ isOpen, onClose, onSave, address }: Addres
               <label htmlFor="addr-country" className={labelClass}>
                 Land
               </label>
-              <input
+              <Input
                 id="addr-country"
                 type="text"
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
                 required
-                className={inputClass}
+                className="text-sm"
               />
             </div>
 
@@ -240,18 +240,10 @@ export default function AddressForm({ isOpen, onClose, onSave, address }: Addres
             </label>
 
             <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
-              >
+              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
                 Abbrechen
-              </button>
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-500 py-2.5 text-sm font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-50"
-              >
+              </Button>
+              <Button type="submit" disabled={isSaving} className="flex-1">
                 {isSaving ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" /> Speichern...
@@ -259,7 +251,7 @@ export default function AddressForm({ isOpen, onClose, onSave, address }: Addres
                 ) : (
                   "Speichern"
                 )}
-              </button>
+              </Button>
             </div>
           </form>
         </div>

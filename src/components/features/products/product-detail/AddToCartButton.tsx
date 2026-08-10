@@ -1,6 +1,8 @@
 "use client"
 
 import { Check, Loader2, ShoppingCart } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
+import { cn } from "@/src/lib/utils"
 
 interface AddToCartButtonProps {
   inStock: boolean
@@ -19,12 +21,13 @@ export function AddToCartButton({ inStock, isAdding, justAdded, onClick }: AddTo
         : "Nicht verfügbar"
 
   return (
-    <button
+    // Radius, Fokus, Press-Scale und Disabled-Bild kommen aus dem Button-Primitive.
+    // Nur die Bestätigungsfläche (justAdded) und die 20-px-Icons bleiben eigen.
+    <Button
+      size="lg"
       onClick={onClick}
       disabled={!inStock || isAdding}
-      className={`flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-bold text-ink-900 shadow-sm transition-all duration-150 active:scale-95 disabled:cursor-not-allowed disabled:bg-muted ${
-        justAdded ? "bg-green-600 hover:bg-green-700" : "bg-green-500 hover:bg-green-700"
-      }`}
+      className={cn("w-full [&_svg]:size-5", justAdded && "bg-green-600")}
     >
       {isAdding ? (
         <Loader2 className="h-5 w-5 animate-spin" />
@@ -34,6 +37,6 @@ export function AddToCartButton({ inStock, isAdding, justAdded, onClick }: AddTo
         <ShoppingCart className="h-5 w-5" />
       )}
       {label}
-    </button>
+    </Button>
   )
 }

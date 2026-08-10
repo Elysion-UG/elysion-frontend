@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { Package, TrendingUp, Award, DollarSign, User, LogOut, X, Menu } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
 import { BrandLogo } from "@/src/components/shared/BrandLogo"
+import { Button } from "@/src/components/ui/button"
 
 type Tab = "products" | "orders" | "certificates" | "settlements" | "profile"
 
@@ -87,13 +88,15 @@ function SidebarContent({
             </p>
             <p className="truncate text-xs text-sand-page/50">{user?.email}</p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onLogout}
             title="Abmelden"
-            className="shrink-0 rounded-md p-1.5 text-sand-page/50 transition-colors hover:bg-white/5 hover:text-sand-page"
+            className="h-7 w-7 shrink-0 text-sand-page/50 hover:bg-white/5 hover:text-sand-page"
           >
             <LogOut className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -151,12 +154,14 @@ export default function SellerSidebar({ mobileOpen, onMobileClose }: SellerSideb
 
 export function SellerMobileMenuButton({ onClick }: { onClick: () => void }) {
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="icon"
       onClick={onClick}
-      className="rounded-md p-2 text-foreground hover:bg-secondary lg:hidden"
+      className="h-9 w-9 text-foreground hover:bg-secondary lg:hidden [&_svg]:size-5"
       aria-label="Menü öffnen"
     >
       <Menu className="h-5 w-5" />
-    </button>
+    </Button>
   )
 }

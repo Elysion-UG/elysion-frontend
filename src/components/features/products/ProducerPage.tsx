@@ -1,7 +1,8 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation"
-import { ArrowLeft, Award, CalendarDays, Leaf, MapPin, PackageOpen, Store } from "lucide-react"
+import { ArrowLeft, Award, CalendarDays, MapPin, PackageOpen, Sparkles, Store } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
 import { useSellerProducts } from "@/src/hooks/useSellerProducts"
 import { usePublicSellerProfile, isSellerNotFound } from "@/src/hooks/usePublicSellerProfile"
 import type { PublicSellerCertificate } from "@/src/types"
@@ -117,7 +118,7 @@ export default function ProducerPage() {
             </div>
             {profile?.sustainabilityScore != null && (
               <div className="flex items-center gap-2 rounded-lg bg-green-50 px-4 py-2 sm:ml-auto">
-                <Leaf className="h-5 w-5 text-green-600" />
+                <Sparkles className="h-5 w-5 text-green-600" />
                 <div className="leading-tight">
                   <p className="text-lg font-semibold text-green-700">
                     {profile.sustainabilityScore}
@@ -231,13 +232,15 @@ interface BackBannerProps {
 function BackBanner({ onBack }: BackBannerProps) {
   return (
     <div className="relative h-40 bg-ink-900 md:h-52">
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={onBack}
-        className="absolute left-4 top-4 flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 text-sm text-sand-page transition-colors hover:bg-white/20"
+        className="absolute left-4 top-4 bg-white/10 text-sand-page hover:bg-white/20 hover:text-sand-page"
       >
         <ArrowLeft className="h-4 w-4" />
         Zurück
-      </button>
+      </Button>
     </div>
   )
 }

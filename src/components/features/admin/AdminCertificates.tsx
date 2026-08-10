@@ -17,6 +17,7 @@ import {
   ADMIN_SELECT_CLASS,
 } from "@/src/components/shared"
 import StatusBadge from "@/src/components/shared/StatusBadge"
+import { Button } from "@/src/components/ui/button"
 import { TableCell } from "@/src/components/ui/table"
 import { useAdminList } from "@/src/hooks/useAdminList"
 import { toast } from "sonner"
@@ -138,26 +139,30 @@ export default function AdminCertificates() {
               <div className="flex items-center justify-end gap-2">
                 {cert.status === "PENDING" && (
                   <>
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleVerify(cert)
                       }}
-                      className="rounded-lg p-1.5 text-green-500 transition-colors hover:bg-green-700/40"
+                      className="h-7 w-7 text-green-500 hover:bg-green-700/40 hover:text-green-500"
                       title="Verifizieren"
                     >
                       <CheckCircle2 className="h-4 w-4" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={(e) => {
                         e.stopPropagation()
                         setRejectTarget(cert)
                       }}
-                      className="rounded-lg p-1.5 text-danger transition-colors hover:bg-destructive/40"
+                      className="h-7 w-7 text-danger hover:bg-destructive/40 hover:text-danger"
                       title="Ablehnen"
                     >
                       <XCircle className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </>
                 )}
               </div>

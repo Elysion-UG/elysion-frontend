@@ -11,6 +11,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/src/components/ui/sheet"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
 import { useProducts, PRODUCTS_PAGE_SIZE } from "@/src/hooks/useProducts"
 import { useMaterials } from "@/src/hooks/useMaterials"
 import { useProductFacets } from "@/src/hooks/useProductFacets"
@@ -231,12 +233,12 @@ export default function SustainableShop() {
       {/* ── Search bar ────────────────────────────────────────────────── */}
       <div ref={shopRef} className="relative mb-6">
         <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
+        <Input
           type="text"
           value={search}
           onChange={handleSearchChange}
           placeholder="Produkte suchen…"
-          className="w-full rounded-xl border border-border bg-white py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="pl-10 text-sm"
         />
       </div>
 
@@ -267,9 +269,10 @@ export default function SustainableShop() {
               {/* Mobiler Filter-Trigger — nur unterhalb md, öffnet das Sheet (#78). */}
               <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
                 <SheetTrigger asChild>
-                  <button
+                  <Button
                     type="button"
-                    className="inline-flex items-center gap-2 rounded-xl border border-border bg-white px-4 py-2 text-sm text-foreground shadow-sm transition-colors hover:bg-secondary md:hidden"
+                    variant="outline"
+                    className="border-border md:hidden [&_svg]:size-3.5"
                   >
                     <SlidersHorizontal className="h-3.5 w-3.5" />
                     Filter
@@ -278,7 +281,7 @@ export default function SustainableShop() {
                         {activeFilterCount}
                       </span>
                     )}
-                  </button>
+                  </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-[88vw] max-w-sm overflow-y-auto p-4">
                   <SheetHeader className="mb-4 text-left">
@@ -328,12 +331,7 @@ export default function SustainableShop() {
                   Bitte überprüfe deine Verbindung
                 </p>
               </div>
-              <button
-                onClick={() => refetch()}
-                className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-green-600"
-              >
-                Erneut versuchen
-              </button>
+              <Button onClick={() => refetch()}>Erneut versuchen</Button>
             </div>
           )}
 
@@ -352,12 +350,13 @@ export default function SustainableShop() {
                 </p>
               </div>
               {hasActiveFilters && (
-                <button
+                <Button
+                  variant="link"
                   onClick={resetFilters}
-                  className="text-sm font-medium text-green-600 hover:underline"
+                  className="h-auto px-0 text-green-600"
                 >
                   Filter zurücksetzen
-                </button>
+                </Button>
               )}
             </div>
           )}
@@ -383,38 +382,37 @@ export default function SustainableShop() {
           {/* Pagination */}
           {!isLoading && totalPages > 1 && (
             <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
-              <button
+              <Button
+                variant="outline"
                 onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
                 disabled={currentPage === 0}
-                className="rounded-lg border border-border bg-white px-4 py-2 text-sm text-foreground shadow-sm transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:text-muted-foreground"
+                className="border-border"
               >
                 Vorherige
-              </button>
+              </Button>
 
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 const page = Math.max(0, Math.min(currentPage - 2, totalPages - 5)) + i
                 return (
-                  <button
+                  <Button
                     key={page}
+                    variant={page === currentPage ? "default" : "outline"}
                     onClick={() => setCurrentPage(page)}
-                    className={`rounded-lg border px-4 py-2 text-sm shadow-sm transition-colors ${
-                      page === currentPage
-                        ? "border-green-600 bg-green-500 text-ink-900"
-                        : "border-border bg-white text-foreground hover:bg-secondary"
-                    }`}
+                    className={page === currentPage ? undefined : "border-border"}
                   >
                     {page + 1}
-                  </button>
+                  </Button>
                 )
               })}
 
-              <button
+              <Button
+                variant="outline"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={currentPage >= totalPages - 1}
-                className="rounded-lg border border-border bg-white px-4 py-2 text-sm text-foreground shadow-sm transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:text-muted-foreground"
+                className="border-border"
               >
                 Nächste
-              </button>
+              </Button>
             </div>
           )}
         </div>

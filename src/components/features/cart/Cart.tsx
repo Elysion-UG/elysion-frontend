@@ -4,6 +4,8 @@ import Image from "next/image"
 import Link from "next/link"
 import { ShoppingCart, Trash2, Plus, Minus, ArrowRight, Loader2, PackageOpen } from "lucide-react"
 import { CartSkeleton } from "./CartSkeleton"
+import { Button, buttonVariants } from "@/src/components/ui/button"
+import { cn } from "@/src/lib/utils"
 import { useCart } from "@/src/context/CartContext"
 import { formatEuro, centsToEuro } from "@/src/lib/currency"
 import { toast } from "sonner"
@@ -55,10 +57,7 @@ export default function Cart() {
             Entdecke unsere nachhaltigen Produkte.
           </p>
         </div>
-        <Link
-          href="/"
-          className="rounded-xl bg-green-500 px-6 py-2.5 text-sm font-semibold text-ink-900 shadow-sm transition-colors hover:bg-green-700"
-        >
+        <Link href="/" className={cn(buttonVariants(), "px-6")}>
           Zum Shop
         </Link>
       </div>
@@ -145,13 +144,16 @@ export default function Cart() {
                   </p>
 
                   <div className="mt-3 flex items-center gap-2">
-                    <button
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      aria-label="Menge verringern"
                       onClick={() => handleUpdateQty(item.id, item.quantity - 1)}
                       disabled={isItemLoading || item.quantity <= 1}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-green-600 hover:bg-green-50 hover:text-green-600 disabled:opacity-40"
+                      className="h-7 w-7 rounded-full border border-border text-muted-foreground hover:border-green-600 hover:bg-green-50 hover:text-green-600 disabled:opacity-40 [&_svg]:size-3"
                     >
                       <Minus className="h-3 w-3" />
-                    </button>
+                    </Button>
                     <span className="w-8 text-center text-sm font-semibold text-foreground">
                       {isItemLoading ? (
                         <Loader2 className="mx-auto h-4 w-4 animate-spin text-green-500" />
@@ -159,13 +161,16 @@ export default function Cart() {
                         item.quantity
                       )}
                     </span>
-                    <button
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      aria-label="Menge erhöhen"
                       onClick={() => handleUpdateQty(item.id, item.quantity + 1)}
                       disabled={isItemLoading}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-green-600 hover:bg-green-50 hover:text-green-600 disabled:opacity-40"
+                      className="h-7 w-7 rounded-full border border-border text-muted-foreground hover:border-green-600 hover:bg-green-50 hover:text-green-600 disabled:opacity-40 [&_svg]:size-3"
                     >
                       <Plus className="h-3 w-3" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -204,10 +209,7 @@ export default function Cart() {
             {/* Muss Client-Navigation sein (next/link): ein Full-Page-Reload verwirft
                 den In-Memory-Access-Token und erzwingt eine Refresh-Token-Rotation,
                 die den User intermittierend ausloggt (#89). */}
-            <Link
-              href="/checkout"
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-green-500 py-3 text-sm font-semibold text-ink-900 shadow-sm transition-colors hover:bg-green-700"
-            >
+            <Link href="/checkout" className={cn(buttonVariants({ size: "lg" }), "mt-5 w-full")}>
               Zur Kasse
               <ArrowRight className="h-4 w-4" />
             </Link>

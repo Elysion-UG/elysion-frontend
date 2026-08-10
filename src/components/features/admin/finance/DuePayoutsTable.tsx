@@ -3,6 +3,7 @@ import type { PayoutDueItem } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
 import { ADMIN_TH_CLASS, ADMIN_THEAD_CLASS, ADMIN_TR_CLASS } from "@/src/components/shared"
 import StatusBadge from "@/src/components/shared/StatusBadge"
+import { Button } from "@/src/components/ui/button"
 import {
   Table,
   TableHeader,
@@ -68,7 +69,9 @@ export default function DuePayoutsTable({
                     {formatEuro(d.netAmount)}
                   </TableCell>
                   <TableCell className="px-3 py-2.5 text-right">
-                    <button
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => onRelease(d)}
                       disabled={!canRelease || releasingSellerId === d.sellerId}
                       title={
@@ -76,7 +79,7 @@ export default function DuePayoutsTable({
                           ? "Auszahlung freigeben"
                           : "Verkäufer hat kein aktives Auszahlungskonto"
                       }
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-green-600/60 bg-green-700/30 px-3 py-1.5 text-xs text-green-500 hover:text-green-500 disabled:opacity-40"
+                      className="h-8 gap-1.5 border-green-600/60 bg-green-700/30 text-xs text-green-500 disabled:opacity-40 [&_svg]:size-3.5"
                     >
                       {releasingSellerId === d.sellerId ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -84,7 +87,7 @@ export default function DuePayoutsTable({
                         <Send className="h-3.5 w-3.5" />
                       )}
                       Freigeben
-                    </button>
+                    </Button>
                   </TableCell>
                 </TableRow>
               )

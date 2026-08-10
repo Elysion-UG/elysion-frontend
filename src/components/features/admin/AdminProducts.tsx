@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, ToggleLeft, ToggleRight, ExternalLink } from "lucide-react"
-import { cn } from "@/src/lib/utils"
 import { AdminService } from "@/src/services/admin.service"
 import type { AdminProductListItem, ProductStatus } from "@/src/types"
 import {
@@ -17,6 +16,7 @@ import {
   ADMIN_SELECT_CLASS,
 } from "@/src/components/shared"
 import StatusBadge from "@/src/components/shared/StatusBadge"
+import { Button } from "@/src/components/ui/button"
 import { TableCell } from "@/src/components/ui/table"
 import { useAdminList } from "@/src/hooks/useAdminList"
 import { toast } from "sonner"
@@ -169,21 +169,25 @@ export default function AdminProducts() {
               {actionLoading === product.id ? (
                 <Loader2 className="h-4 w-4 animate-spin text-green-500" />
               ) : product.status === "ACTIVE" ? (
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handleDeactivate(product)}
-                  className="flex items-center gap-1 rounded-lg border border-border/60 bg-ink-900/60 px-2 py-1 text-xs text-muted-foreground hover:text-muted-foreground"
+                  className="h-7 gap-1 border-border/60 bg-ink-900/60 px-2 text-xs text-muted-foreground"
                   title="Deaktivieren"
                 >
                   <ToggleLeft className="h-4 w-4" /> Deaktivieren
-                </button>
+                </Button>
               ) : product.status === "INACTIVE" || product.status === "REVIEW" ? (
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handleActivate(product)}
-                  className="flex items-center gap-1 rounded-lg border border-green-600/60 bg-green-700/30 px-2 py-1 text-xs text-green-500 hover:text-green-500"
+                  className="h-7 gap-1 border-green-600/60 bg-green-700/30 px-2 text-xs text-green-500"
                   title="Aktivieren"
                 >
                   <ToggleRight className="h-4 w-4" /> Aktivieren
-                </button>
+                </Button>
               ) : null}
             </div>
           </TableCell>

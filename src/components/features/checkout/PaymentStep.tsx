@@ -6,6 +6,7 @@ import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-
 import { Loader2, CreditCard, AlertCircle, RefreshCw } from "lucide-react"
 import { PaymentService } from "@/src/services/payment.service"
 import { PaymentMethodBadges } from "@/src/components/shared"
+import { Button } from "@/src/components/ui/button"
 import { formatEuro } from "@/src/lib/currency"
 import type { PaymentStatusResponse } from "@/src/types"
 import {
@@ -146,14 +147,15 @@ function PaymentForm({ paymentId, totalAmount, onSuccess }: PaymentFormProps) {
           <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-danger" />
           <div className="flex-1">
             <p className="text-sm text-danger">{errorMessage}</p>
-            <button
+            <Button
               type="button"
+              variant="link"
               onClick={handleRetry}
-              className="mt-2 flex items-center gap-1 text-sm font-medium text-danger underline underline-offset-2 hover:text-danger"
+              className="mt-2 h-auto gap-1 px-0 py-0 text-danger underline underline-offset-2 hover:text-danger [&_svg]:size-3.5"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Erneut versuchen
-            </button>
+            </Button>
           </div>
         </div>
       )}
@@ -165,10 +167,11 @@ function PaymentForm({ paymentId, totalAmount, onSuccess }: PaymentFormProps) {
         </div>
       </div>
 
-      <button
+      <Button
         type="submit"
+        size="lg"
         disabled={!stripe || !elements || submitting}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-500 py-3 font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="w-full"
       >
         {submitting ? (
           <>
@@ -181,7 +184,7 @@ function PaymentForm({ paymentId, totalAmount, onSuccess }: PaymentFormProps) {
             Jetzt bezahlen
           </>
         )}
-      </button>
+      </Button>
     </form>
   )
 }

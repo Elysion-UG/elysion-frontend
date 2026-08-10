@@ -2,6 +2,7 @@
 
 import { useId } from "react"
 import { Mail } from "lucide-react"
+import { Input } from "@/src/components/ui/input"
 
 type Variant = "light" | "dark"
 
@@ -16,17 +17,17 @@ interface EmailFieldProps {
   id?: string
 }
 
+// Radius, Rahmenstärke, Fokus und Transition kommen aus dem Input-Primitive —
+// hier bleibt nur, was zwischen heller und dunkler Oberfläche wirklich abweicht.
 const styles = {
   light: {
     label: "mb-1 block text-sm font-medium text-foreground",
-    input:
-      "w-full rounded-xl border border-border py-2.5 pl-10 pr-4 text-foreground focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500/20",
+    input: "",
     icon: "absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground",
   },
   dark: {
     label: "mb-1.5 block text-xs font-medium uppercase tracking-wider text-sand-page/60",
-    input:
-      "w-full rounded-xl border border-border/60 bg-ink-900/60 py-2.5 pl-10 pr-4 text-sand-page placeholder-sand-page/40 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500/20",
+    input: "border-border/60 bg-ink-900/60 text-sand-page placeholder:text-sand-page/40",
     icon: "absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-sand-page/50",
   },
 } satisfies Record<Variant, Record<string, string>>
@@ -54,7 +55,7 @@ export function EmailField({
       )}
       <div className="relative">
         <Mail className={s.icon} />
-        <input
+        <Input
           id={fieldId}
           type="email"
           value={value}
@@ -62,7 +63,7 @@ export function EmailField({
           required={required}
           autoComplete={autoComplete}
           placeholder={placeholder}
-          className={s.input}
+          className={`pl-10 ${s.input}`.trim()}
         />
       </div>
     </div>

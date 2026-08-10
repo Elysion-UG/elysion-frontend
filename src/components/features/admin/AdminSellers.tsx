@@ -27,6 +27,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/src/components/ui/dialog"
+import { Button } from "@/src/components/ui/button"
 import { Textarea } from "@/src/components/ui/textarea"
 import { toast } from "sonner"
 
@@ -72,22 +73,25 @@ function SuspendModal({
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           placeholder="Grund (optional)..."
-          className="w-full rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
+          className="border-border/60 bg-ink-900/60 text-sm text-muted-foreground"
         />
         <DialogFooter className="mt-4 flex gap-3 sm:flex-row">
-          <button
+          <Button
+            variant="outline"
             onClick={onClose}
-            className="flex-1 rounded-lg border border-border/60 py-2 text-sm font-medium text-muted-foreground hover:bg-ink-900/60"
+            className="flex-1 border-border/60 text-muted-foreground hover:bg-ink-900/60"
           >
             Abbrechen
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
             onClick={handleSubmit}
             disabled={loading}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-warning py-2 text-sm font-medium text-white hover:bg-warning disabled:opacity-60"
+            // Warnung #C98A1E trägt ein Ink-Label — Weiß darauf sind nur 2,6:1 (WCAG-AA verfehlt).
+            className="flex-1 bg-warning text-ink-900 hover:bg-warning/90 disabled:opacity-60 [&_svg]:size-3"
           >
             {loading && <Loader2 className="h-3 w-3 animate-spin" />} Sperren
-          </button>
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -202,39 +206,47 @@ export default function AdminSellers() {
             <div className="flex items-center justify-end gap-2">
               {seller.status === "PENDING" && (
                 <>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => handleApprove(seller)}
-                    className="rounded-lg p-1.5 text-green-500 transition-colors hover:bg-green-700/40"
+                    className="h-7 w-7 text-green-500 hover:bg-green-700/40 hover:text-green-500"
                     title="Genehmigen"
                   >
                     <CheckCircle2 className="h-4 w-4" />
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setRejectTarget(seller)}
-                    className="rounded-lg p-1.5 text-danger transition-colors hover:bg-destructive/40"
+                    className="h-7 w-7 text-danger hover:bg-destructive/40 hover:text-danger"
                     title="Ablehnen"
                   >
                     <XCircle className="h-4 w-4" />
-                  </button>
+                  </Button>
                 </>
               )}
               {seller.status === "APPROVED" && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setSuspendTarget(seller)}
-                  className="rounded-lg p-1.5 text-warning transition-colors hover:bg-warning/40"
+                  className="h-7 w-7 text-warning hover:bg-warning/40 hover:text-warning"
                   title="Sperren"
                 >
                   <Ban className="h-4 w-4" />
-                </button>
+                </Button>
               )}
               {seller.status === "SUSPENDED" && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => handleApprove(seller)}
-                  className="rounded-lg p-1.5 text-green-500 transition-colors hover:bg-green-700/40"
+                  className="h-7 w-7 text-green-500 hover:bg-green-700/40 hover:text-green-500"
                   title="Entsperren"
                 >
                   <CheckCircle2 className="h-4 w-4" />
-                </button>
+                </Button>
               )}
             </div>
           </TableCell>

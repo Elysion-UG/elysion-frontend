@@ -6,6 +6,8 @@ import { sellerUrl, adminUrl } from "@/src/lib/seller-url"
 import { useAuth } from "@/src/context/AuthContext"
 import { BrandLogo } from "@/src/components/shared/BrandLogo"
 import { PaymentMethodBadges } from "@/src/components/shared"
+import { buttonVariants } from "@/src/components/ui/button"
+import { cn } from "@/src/lib/utils"
 
 export default function Footer() {
   const year = new Date().getFullYear()
@@ -100,7 +102,11 @@ export default function Footer() {
             </p>
             <a
               href={sellerUrl("/login/seller")}
-              className="inline-flex items-center gap-2 rounded-xl border-[1.5px] border-green-600 bg-green-500/10 px-4 py-2.5 text-sm font-semibold text-green-500 transition-colors duration-200 ease-brand hover:bg-green-500/20 hover:text-sand-page"
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                // Grüne Kontur auf dunklem Band — diese Fläche gibt es als Variante nicht.
+                "border-green-600 bg-green-500/10 text-green-500 hover:bg-green-500/20 hover:text-sand-page"
+              )}
             >
               <Store className="h-4 w-4" />
               Seller Portal öffnen

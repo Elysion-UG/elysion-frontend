@@ -13,6 +13,8 @@ import {
   Factory,
   AlertCircle,
 } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
 import { formatEuro } from "@/src/lib/currency"
 import type { Material, ProductFacetValue, SellerFacet } from "@/src/types"
 import {
@@ -247,22 +249,22 @@ export default function FilterSidebar({
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <label className="mb-1 block text-xs text-muted-foreground">Min (€)</label>
-                <input
+                <Input
                   type="number"
                   value={priceRange.min}
                   onChange={(e) => handlePriceMinChange(Number(e.target.value))}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="text-sm"
                   placeholder="0"
                 />
               </div>
               <span className="mt-5 text-muted-foreground">–</span>
               <div className="flex-1">
                 <label className="mb-1 block text-xs text-muted-foreground">Max (€)</label>
-                <input
+                <Input
                   type="number"
                   value={priceRange.max}
                   onChange={(e) => handlePriceMaxChange(Number(e.target.value))}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm text-foreground focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                  className="text-sm"
                   placeholder="300"
                 />
               </div>
@@ -503,13 +505,14 @@ export default function FilterSidebar({
               Filter für {formatFacetList(unavailableFacets)} konnten nicht geladen werden.
             </span>
           </p>
-          <button
+          <Button
             type="button"
+            variant="link"
             onClick={onRetryFacets}
-            className="mt-1.5 pl-[1.375rem] text-xs font-medium text-green-600 hover:underline"
+            className="mt-1.5 h-auto px-0 pl-[1.375rem] text-xs text-green-600"
           >
             Erneut versuchen
-          </button>
+          </Button>
         </div>
       )}
     </div>

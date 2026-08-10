@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { ChevronRight, Loader2, MapPin } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
 import type { Address } from "@/src/types"
 
 interface AddressStepProps {
@@ -75,10 +76,11 @@ export function AddressStep({
         </div>
       )}
 
-      <button
+      <Button
+        size="lg"
         onClick={onContinue}
         disabled={isLoading || !selectedAddressId}
-        className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-500 py-3 font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-60"
+        className="w-full"
       >
         {isLoading ? (
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -87,7 +89,7 @@ export function AddressStep({
             Weiter zur Übersicht <ChevronRight className="h-4 w-4" />
           </>
         )}
-      </button>
+      </Button>
     </div>
   )
 }

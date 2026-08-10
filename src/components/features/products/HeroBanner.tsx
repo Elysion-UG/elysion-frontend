@@ -2,6 +2,8 @@
 
 import type React from "react"
 import Link from "next/link"
+import { Button, buttonVariants } from "@/src/components/ui/button"
+import { cn } from "@/src/lib/utils"
 
 interface HeroBannerProps {
   onScrollToShop: () => void
@@ -27,16 +29,10 @@ export default function HeroBanner({ onScrollToShop }: HeroBannerProps) {
           Produkte, die fair hergestellt, zertifiziert und für die Zukunft gedacht sind.
         </p>
         <div className="animate-fade-up-3 flex flex-wrap gap-3">
-          <button
-            onClick={onScrollToShop}
-            className="rounded-xl bg-green-500 px-5 py-2.5 text-sm font-semibold text-ink-900 shadow-sm transition-colors hover:bg-green-700"
-          >
+          <Button onClick={onScrollToShop} className="px-5">
             Jetzt entdecken
-          </button>
-          <Link
-            href="/about"
-            className="rounded-xl border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-secondary"
-          >
+          </Button>
+          <Link href="/about" className={cn(buttonVariants({ variant: "outline" }), "px-5")}>
             Mehr erfahren
           </Link>
         </div>

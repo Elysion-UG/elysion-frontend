@@ -2,6 +2,8 @@
 
 import Link from "next/link"
 import { CheckCircle2 } from "lucide-react"
+import { buttonVariants } from "@/src/components/ui/button"
+import { cn } from "@/src/lib/utils"
 
 interface SuccessStepProps {
   orderNumber: string | undefined
@@ -16,16 +18,10 @@ export function SuccessStep({ orderNumber }: SuccessStepProps) {
       <p className="mb-8 text-2xl font-bold text-green-600">#{orderNumber}</p>
       <p className="mb-8 text-muted-foreground">Du erhältst eine Bestätigung per E-Mail.</p>
       <div className="flex flex-col justify-center gap-3 sm:flex-row">
-        <Link
-          href="/orders"
-          className="rounded-lg bg-green-500 px-6 py-3 font-medium text-ink-900 transition-colors hover:bg-green-700"
-        >
+        <Link href="/orders" className={cn(buttonVariants({ size: "lg" }), "px-6")}>
           Meine Bestellungen
         </Link>
-        <Link
-          href="/"
-          className="rounded-lg border border-border px-6 py-3 font-medium text-foreground transition-colors hover:bg-secondary"
-        >
+        <Link href="/" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "px-6")}>
           Weiter einkaufen
         </Link>
       </div>

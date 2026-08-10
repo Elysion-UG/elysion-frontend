@@ -1,6 +1,7 @@
 "use client"
 
 import { Minus, Plus } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
 
 interface QuantityStepperProps {
   quantity: number
@@ -17,14 +18,16 @@ export function QuantityStepper({ quantity, onChange, min = 1, max }: QuantitySt
     <div>
       <h3 className="mb-3 text-sm font-semibold text-foreground">Menge</h3>
       <div className="flex items-center gap-3">
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           onClick={decrement}
           aria-label="Menge verringern"
           disabled={quantity <= min}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-green-600 hover:bg-green-50 hover:text-green-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-9 w-9 rounded-full border border-border text-muted-foreground hover:border-green-600 hover:bg-green-50 hover:text-green-600 [&_svg]:size-3.5"
         >
           <Minus className="h-3.5 w-3.5" />
-        </button>
+        </Button>
         <span
           aria-live="polite"
           aria-label={`Menge: ${quantity}`}
@@ -32,14 +35,16 @@ export function QuantityStepper({ quantity, onChange, min = 1, max }: QuantitySt
         >
           {quantity}
         </span>
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           onClick={increment}
           aria-label="Menge erhöhen"
           disabled={max != null && quantity >= max}
-          className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-green-600 hover:bg-green-50 hover:text-green-600 disabled:cursor-not-allowed disabled:opacity-50"
+          className="h-9 w-9 rounded-full border border-border text-muted-foreground hover:border-green-600 hover:bg-green-50 hover:text-green-600 [&_svg]:size-3.5"
         >
           <Plus className="h-3.5 w-3.5" />
-        </button>
+        </Button>
       </div>
     </div>
   )

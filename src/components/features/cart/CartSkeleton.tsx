@@ -51,7 +51,7 @@ export function CartSkeleton() {
               <div className="h-4 w-16 animate-pulse rounded bg-muted" />
               <div className="h-4 w-20 animate-pulse rounded bg-muted" />
             </div>
-            <div className="mt-5 h-11 w-full animate-pulse rounded-xl bg-green-50" />
+            <div className="mt-5 h-12 w-full animate-pulse rounded-xl bg-green-50" />
           </div>
         </div>
       </div>

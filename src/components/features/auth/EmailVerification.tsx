@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react"
 import { Mail, CheckCircle, XCircle, RefreshCw, ArrowLeft, Loader2 } from "lucide-react"
 import { AuthService } from "@/src/services/auth.service"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
 import { useEffectEvent } from "@/src/hooks/use-effect-event"
 import { toast } from "sonner"
 
@@ -96,12 +98,9 @@ export default function EmailVerification() {
             <p className="mb-6 text-muted-foreground">
               Ihr Konto wurde erfolgreich verifiziert. Sie können sich jetzt anmelden.
             </p>
-            <button
-              onClick={handleBackToLogin}
-              className="w-full rounded-xl bg-green-500 py-2.5 font-semibold text-ink-900 transition-colors hover:bg-green-700"
-            >
+            <Button onClick={handleBackToLogin} className="w-full">
               Zur Anmeldung
-            </button>
+            </Button>
           </div>
         )}
 
@@ -115,17 +114,17 @@ export default function EmailVerification() {
               Der Verifizierungslink ist ungültig oder abgelaufen. Bitte fordern Sie einen neuen
               Link an.
             </p>
-            <input
+            <Input
               type="email"
               placeholder="Ihre E-Mail-Adresse"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mb-3 w-full rounded-xl border border-border px-4 py-2.5 text-foreground focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500/20"
+              className="mb-3"
             />
-            <button
+            <Button
               onClick={handleResendEmail}
               disabled={isResending || !email.trim() || resendBlocked || resendCoolingDown}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-500 py-2.5 font-semibold text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-50"
+              className="w-full"
             >
               {isResending ? (
                 <>
@@ -136,7 +135,7 @@ export default function EmailVerification() {
                   <RefreshCw className="h-4 w-4" /> Neuen Link anfordern
                 </>
               )}
-            </button>
+            </Button>
           </div>
         )}
 
@@ -172,17 +171,16 @@ export default function EmailVerification() {
             </div>
 
             <div className="space-y-3">
-              <input
+              <Input
                 type="email"
                 placeholder="Ihre E-Mail-Adresse"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-border px-4 py-2.5 text-foreground focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500/20"
               />
-              <button
+              <Button
                 onClick={handleResendEmail}
                 disabled={isResending || !email.trim() || resendBlocked || resendCoolingDown}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-green-500 py-2.5 font-semibold text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-50"
+                className="w-full"
               >
                 {isResending ? (
                   <>
@@ -193,7 +191,7 @@ export default function EmailVerification() {
                     <Mail className="h-4 w-4" /> Erneut senden
                   </>
                 )}
-              </button>
+              </Button>
 
               {resendCount > 0 && (
                 <p className="text-center text-sm text-green-600">
@@ -201,12 +199,9 @@ export default function EmailVerification() {
                 </p>
               )}
 
-              <button
-                onClick={handleBackToLogin}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-border py-2.5 font-semibold text-foreground transition-colors hover:bg-secondary"
-              >
+              <Button variant="outline" onClick={handleBackToLogin} className="w-full">
                 <ArrowLeft className="h-4 w-4" /> Zurück zur Startseite
-              </button>
+              </Button>
             </div>
           </>
         )}

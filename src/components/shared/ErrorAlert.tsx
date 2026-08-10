@@ -11,8 +11,8 @@ interface ErrorAlertProps {
 export function ErrorAlert({ message, variant = "light", className }: ErrorAlertProps) {
   const styles =
     variant === "dark"
-      ? "border-red-900/50 bg-red-950/40 text-red-400"
-      : "border-red-200 bg-red-50 text-red-700"
+      ? "border-danger/50 bg-danger/15 text-danger-tint"
+      : "border-danger/30 bg-danger-tint text-danger"
 
   return (
     <div className={cn("flex items-start gap-2 rounded-xl border p-3 text-sm", styles, className)}>

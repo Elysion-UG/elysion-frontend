@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Cookie } from "lucide-react"
 import { useCookieConsent } from "@/src/context/CookieConsentContext"
+import { Button } from "@/src/components/ui/button"
 
 /**
  * TTDSG § 25: Cookie-Consent-Banner.
@@ -43,18 +44,12 @@ export default function CookieConsentBanner() {
           .
         </p>
         <div className="flex gap-2">
-          <button
-            onClick={decline}
-            className="flex-1 rounded-xl border-[1.5px] border-foreground px-3 py-2 text-xs font-bold text-foreground transition-colors hover:bg-secondary"
-          >
+          <Button variant="outline" size="sm" onClick={decline} className="flex-1 text-xs">
             Nur notwendige
-          </button>
-          <button
-            onClick={accept}
-            className="flex-1 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-primary-foreground transition-colors hover:bg-green-600"
-          >
+          </Button>
+          <Button size="sm" onClick={accept} className="flex-1 text-xs">
             Alle akzeptieren
-          </button>
+          </Button>
         </div>
       </div>
     </div>

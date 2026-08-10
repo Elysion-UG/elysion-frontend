@@ -1,5 +1,7 @@
 import { ShieldCheck, Heart, Recycle, Users, Globe } from "lucide-react"
 import Link from "next/link"
+import { buttonVariants } from "@/src/components/ui/button"
+import { cn } from "@/src/lib/utils"
 
 const VALUES = [
   {
@@ -127,15 +129,15 @@ export default function About() {
             Sie mit gutem Gewissen.
           </p>
           <div className="flex flex-col justify-center gap-4 sm:flex-row">
-            <Link
-              href="/"
-              className="rounded-xl bg-primary px-8 py-3 font-bold text-primary-foreground transition-colors hover:bg-green-600"
-            >
+            <Link href="/" className={buttonVariants({ size: "lg" })}>
               Zum Shop
             </Link>
             <Link
               href="/contact"
-              className="rounded-lg border border-green-600 px-8 py-3 font-medium text-green-600 transition-colors hover:bg-green-50"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "border-green-600 text-green-600 hover:bg-green-50"
+              )}
             >
               Als Verkäufer bewerben
             </Link>

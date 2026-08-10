@@ -8,11 +8,12 @@ import { validatePassword, isValidEmail } from "@/src/lib/validation"
 import { sellerUrl } from "@/src/lib/seller-url"
 import { toast } from "sonner"
 import { ErrorAlert } from "@/src/components/shared"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
 import { PasswordField } from "@/src/components/features/auth/_shared/PasswordField"
 import { EmailField } from "@/src/components/features/auth/_shared/EmailField"
 import { AuthSubmitButton } from "@/src/components/features/auth/_shared/AuthSubmitButton"
 import { PasswordStrengthHints } from "@/src/components/features/auth/_shared/PasswordStrengthHints"
-import { textInputClass } from "@/src/components/features/auth/_shared/form-styles"
 
 interface BuyerRegisterFormProps {
   /** "Bereits ein Konto? Anmelden" — parent switches to the login view. */
@@ -117,26 +118,24 @@ export function BuyerRegisterForm({
             <label htmlFor="reg-fn" className="mb-1 block text-sm font-medium text-foreground">
               Vorname
             </label>
-            <input
+            <Input
               id="reg-fn"
               type="text"
               value={regFirstName}
               onChange={(e) => setRegFirstName(e.target.value)}
               required
-              className={`${textInputClass} text-foreground`}
             />
           </div>
           <div>
             <label htmlFor="reg-ln" className="mb-1 block text-sm font-medium text-foreground">
               Nachname
             </label>
-            <input
+            <Input
               id="reg-ln"
               type="text"
               value={regLastName}
               onChange={(e) => setRegLastName(e.target.value)}
               required
-              className={`${textInputClass} text-foreground`}
             />
           </div>
         </div>
@@ -212,12 +211,9 @@ export function BuyerRegisterForm({
 
       <p className="mt-4 text-center text-sm text-muted-foreground">
         {"Bereits ein Konto? "}
-        <button
-          onClick={onLoginClick}
-          className="font-semibold text-green-600 hover:text-green-600"
-        >
+        <Button variant="link" onClick={onLoginClick} className="h-auto p-0 text-green-600">
           Anmelden
-        </button>
+        </Button>
       </p>
     </div>
   )

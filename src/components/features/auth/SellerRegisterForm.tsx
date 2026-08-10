@@ -6,11 +6,12 @@ import { useAuth } from "@/src/context/AuthContext"
 import { validatePassword, isValidEmail } from "@/src/lib/validation"
 import { toast } from "sonner"
 import { ErrorAlert } from "@/src/components/shared"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
 import { PasswordField } from "@/src/components/features/auth/_shared/PasswordField"
 import { EmailField } from "@/src/components/features/auth/_shared/EmailField"
 import { AuthSubmitButton } from "@/src/components/features/auth/_shared/AuthSubmitButton"
 import { PasswordStrengthHints } from "@/src/components/features/auth/_shared/PasswordStrengthHints"
-import { textInputClass } from "@/src/components/features/auth/_shared/form-styles"
 
 interface SellerRegisterFormProps {
   /** "Bereits registriert? Anmelden" — parent switches to the login view. */
@@ -84,22 +85,22 @@ export function SellerRegisterForm({ onLoginClick, onRegistered }: SellerRegiste
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">Vorname</label>
-            <input
+            <Input
               type="text"
               value={regFirstName}
               onChange={(e) => setRegFirstName(e.target.value)}
               required
-              className={`${textInputClass} text-sm`}
+              className="text-sm"
             />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">Nachname</label>
-            <input
+            <Input
               type="text"
               value={regLastName}
               onChange={(e) => setRegLastName(e.target.value)}
               required
-              className={`${textInputClass} text-sm`}
+              className="text-sm"
             />
           </div>
         </div>
@@ -144,34 +145,34 @@ export function SellerRegisterForm({ onLoginClick, onRegistered }: SellerRegiste
           </p>
           <div>
             <label className="mb-1 block text-sm text-foreground">Firmenname *</label>
-            <input
+            <Input
               type="text"
               value={regCompany}
               onChange={(e) => setRegCompany(e.target.value)}
               required
-              className={`${textInputClass} bg-white text-sm`}
+              className="bg-white text-sm"
             />
           </div>
           <div>
             <label className="mb-1 block text-sm text-foreground">USt-IdNr. *</label>
-            <input
+            <Input
               type="text"
               value={regVatId}
               onChange={(e) => setRegVatId(e.target.value)}
               required
               placeholder="DE123456789"
-              className={`${textInputClass} bg-white text-sm`}
+              className="bg-white text-sm"
             />
           </div>
           <div>
             <label className="mb-1 block text-sm text-foreground">IBAN *</label>
-            <input
+            <Input
               type="text"
               value={regIban}
               onChange={(e) => setRegIban(e.target.value)}
               required
               placeholder="DE89 3704 0044 …"
-              className={`${textInputClass} bg-white text-sm`}
+              className="bg-white text-sm"
             />
           </div>
         </div>
@@ -185,12 +186,9 @@ export function SellerRegisterForm({ onLoginClick, onRegistered }: SellerRegiste
 
       <p className="mt-8 text-center text-sm text-muted-foreground">
         Bereits registriert?{" "}
-        <button
-          onClick={onLoginClick}
-          className="font-semibold text-green-600 hover:text-green-600"
-        >
+        <Button variant="link" onClick={onLoginClick} className="h-auto p-0 text-green-600">
           Anmelden
-        </button>
+        </Button>
       </p>
     </>
   )
