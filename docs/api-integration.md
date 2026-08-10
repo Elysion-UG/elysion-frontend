@@ -515,6 +515,10 @@ PATCH  /api/v1/admin/sellers/{id}/commission         → AdminSellerDetail
 GET    /api/v1/admin/orders                          → PagedResponse<AdminOrderListItem>
 GET    /api/v1/admin/orders/{id}                     → AdminOrderDetail
 
+GET    /api/v1/admin/orders/duplicates               → PagedResponse<OrderDuplicateFlag>
+GET    /api/v1/admin/orders/duplicates/stats         → OrderDuplicateStats
+POST   /api/v1/admin/orders/duplicates/{id}/resolve  → OrderDuplicateResolveResult
+
 GET    /api/v1/admin/products                        → PagedResponse<AdminProductListItem>
 GET    /api/v1/admin/products/{id}                   → AdminProductDetail
 POST   /api/v1/admin/products/{id}/activate          → { id, status }
@@ -533,6 +537,70 @@ POST   /api/v1/admin/maintenance/cleanup-refresh-tokens  → { deletedCount }
 
 POST   /api/v1/admin/imports/products                → ProductImportReport
 ```
+
+**Duplicate-Order-Review** (`MANAGEMENT_DECISIONS.md` §1.8, Mechanismus 5; FE `#59`,
+BE `#146`/`#234`). Ein täglicher Backend-Scan flaggt Bestellpaare mit gleicher E-Mail, gleicher
+Lieferadresse und gleichen Positionen, die **weniger als 30 Minuten** auseinander liegen. Das
+Flag ist eine Beobachtung, keine Entscheidung — es verlässt `OPEN` ausschließlich durch die
+manuelle Admin-Entscheidung. Client: `AdminOrderDuplicateService`
+(`src/services/admin-order-duplicate.service.ts`), Oberfläche `/admin/order-duplicates`.
+
+```ts
+type OrderDuplicateFlag = {
+  id: string
+  status: "OPEN" | "RESOLVED"
+  matchSignature: string // SHA-256 über E-Mail, Lieferadresse und Positionen
+  secondsApart: number // Abstand der beiden Bestellungen
+  detectedAt: string
+  resolution: "RELEASED" | "CANCELLED_REFUNDED" | null
+  resolutionNote: string | null
+  resolvedBy: string | null
+  resolvedAt: string | null
+  order: OrderDuplicateOrderRef // die spätere Bestellung — der Verdacht
+  duplicateOf: OrderDuplicateOrderRef // die frühere Bestellung
+}
+
+// Nur `id` ist garantiert; ohne ladbare Bestellung liefert das Backend einen Id-Stub.
+type OrderDuplicateOrderRef = {
+  id: string
+  orderNumber: string | null
+  userId: string | null
+  guestEmail: string | null
+  status: OrderStatus | null
+  paymentStatus: string | null
+  total: number | null // Dezimalwert, Cent sind ein Backend-Speicherdetail
+  currency: string | null
+}
+
+type OrderDuplicateStats = { total: number; open: number; resolved: number }
+```
+
+- `GET …/duplicates` — neueste Erkennung zuerst; `status` (`OPEN`/`RESOLVED`, case-insensitiv,
+  Unbekanntes → `400`), `page`, `size` (Default 25).
+- `POST …/duplicates/{id}/resolve` — Body `{ resolution: "RELEASED" | "CANCELLED_REFUNDED",
+note?: string }`. `note` ist optional und auf **500 Zeichen** begrenzt; der Entscheider kommt
+  aus dem Token und darf **nicht** mitgeschickt werden. Fehler: `400` (Resolution fehlt/unbekannt,
+  Notiz zu lang), `404` (kein Flag), `409` (bereits mit **anderer** Resolution entschieden — die
+  UI lädt dann neu und zeigt die vorhandene Entscheidung, statt sie zu überschreiben).
+
+⚠️ **Der Endpoint protokolliert die Entscheidung, er führt sie nicht aus.** Auch
+`CANCELLED_REFUNDED` storniert nichts und erstattet nichts: ein Flag umspannt zwei ganze
+Bestellungen, eine Erstattung hängt dagegen an einer einzelnen `order_group`. Wie sich ein Storno
+über die Order-Groups einer Bestellung aufteilt, ist eine offene Domänenfrage (Backend-Issue
+`#220`), und einen Admin-Storno-Endpoint gibt es deshalb noch nicht. Die Erstattung läuft
+weiterhin über `POST /api/v1/admin/refunds` (Finanzbereich, FE `#56`). Die Oberfläche benennt
+diese Lücke ausdrücklich, statt einen Button anzubieten, der nichts storniert.
+
+Zwei Vertragsdetails, an denen die UI sonst falsch liest:
+
+- **Offen vs. entschieden** ist ausschließlich an `status` (gleichwertig `resolution !== null`)
+  zu erkennen. `resolutionNote` bleibt auch bei entschiedenen Flags `null`, wenn keine Begründung
+  angegeben wurde, und `resolvedBy` fällt auf `null` zurück, sobald das Admin-Konto gelöscht wird
+  (`ON DELETE SET NULL`) — beide Felder würden entschiedene Fälle wieder als offen zeigen.
+- **Erneutes Auflösen mit derselben Resolution ist ein No-op** und gibt den unveränderten Stand
+  zurück; eine dabei mitgeschickte, geänderte `note` wird **still verworfen**. Das Notizfeld
+  erscheint deshalb nur bei `OPEN`, und maßgeblich ist immer die `resolutionNote` der Antwort,
+  nicht der lokal getippte Text.
 
 **Produktimport (multipart).** `POST /api/v1/admin/imports/products` erwartet
 `multipart/form-data` mit `file` (CSV) und `sellerId`. Antwort ist ein zeilengenauer Report:

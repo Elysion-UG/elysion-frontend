@@ -128,6 +128,17 @@ export type {
   PayoutDueItem,
 } from "./admin"
 
+export type {
+  OrderDuplicateFlagStatus,
+  OrderDuplicateResolution,
+  OrderDuplicateOrderRef,
+  OrderDuplicateFlag,
+  OrderDuplicateStats,
+  OrderDuplicateResolveResult,
+  OrderDuplicateResolveDTO,
+  OrderDuplicateListParams,
+} from "./order-duplicate"
+
 export type { Material } from "./material"
 
 export type { SellerPayoutAccountStatus, SellerPayoutAccount, PayoutOnboardingLink } from "./payout"
