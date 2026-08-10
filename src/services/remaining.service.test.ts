@@ -110,6 +110,20 @@ describe("BuyerValueProfileService", () => {
 // ── CartService ───────────────────────────────────────────────────────────────
 import { CartService } from "./cart.service"
 
+// POST/PATCH answer with the affected line (`CartItemResponse`), never with the
+// whole cart — the service validates that shape (#188).
+const apiCartItem = {
+  id: "item1",
+  product: { id: "p1", slug: "p-1", name: "Produkt 1", primaryImage: null },
+  variant: { id: "v1", sku: "SKU-1", options: [] },
+  quantity: 2,
+  unitPrice: 10,
+  currency: "EUR",
+  lineTotal: 20,
+  createdAt: "",
+  updatedAt: "",
+}
+
 describe("CartService", () => {
   it("get calls GET /api/v1/cart", async () => {
     mockApiRequest.mockResolvedValue({
@@ -127,7 +141,7 @@ describe("CartService", () => {
   })
 
   it("addItem calls POST /api/v1/cart/items", async () => {
-    mockApiRequest.mockResolvedValue({ items: [] })
+    mockApiRequest.mockResolvedValue(apiCartItem)
     const dto = { productId: "p1", variantId: "v1", quantity: 2 }
     await CartService.addItem(dto)
     expect(mockApiRequest).toHaveBeenCalledWith(
@@ -140,7 +154,7 @@ describe("CartService", () => {
   })
 
   it("updateItem calls PATCH with itemId", async () => {
-    mockApiRequest.mockResolvedValue({ items: [] })
+    mockApiRequest.mockResolvedValue({ ...apiCartItem, quantity: 3, lineTotal: 30 })
     await CartService.updateItem("item1", { quantity: 3 })
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/cart/items/item1",

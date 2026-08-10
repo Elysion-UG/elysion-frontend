@@ -81,16 +81,20 @@ window.location.href = `/product?id=${product.id}`
 
 **Endpoint:** `POST /api/v1/checkout`
 
-`CheckoutStartResponse` enthält **kein** `productName`, `shippingCost` oder `total`:
+`CheckoutStartResponse` enthält **kein** `shippingCost` oder `total`:
 
-| Erwartet              | Tatsächlich         | Behandlung                                  |
-| --------------------- | ------------------- | ------------------------------------------- |
-| `items[].productName` | ❌ nicht vorhanden  | über `productId` aus dem Cart-Context lösen |
-| `items[].totalPrice`  | `items[].lineTotal` | Euro-Dezimalwert (z. B. `29.99`)            |
-| `shippingCost`        | ❌ nicht vorhanden  | keine separaten Versandkosten → „Kostenlos" |
-| `total`               | ❌ nicht vorhanden  | `subtotal` ist die Gesamtsumme              |
+| Erwartet             | Tatsächlich         | Behandlung                                  |
+| -------------------- | ------------------- | ------------------------------------------- |
+| `items[].totalPrice` | `items[].lineTotal` | Euro-Dezimalwert (z. B. `29.99`)            |
+| `shippingCost`       | ❌ nicht vorhanden  | keine separaten Versandkosten → „Kostenlos" |
+| `total`              | ❌ nicht vorhanden  | `subtotal` ist die Gesamtsumme              |
 
 `subtotal` und `lineTotal` sind Euro-Dezimalwerte (BigDecimal), **keine Cent**.
+
+**Erledigt (#188):** Der Eintrag „`items[].productName` nicht vorhanden — über
+`productId` aus dem Cart-Context lösen" ist weg. Die Checkout-Zeilen tragen
+`product.name`, `product.primaryImage` und `variant.options`, genau wie die
+Cart-Zeilen; `PreviewStep` rendert direkt daraus und lädt keine Produkte mehr nach.
 
 ---
 

@@ -1,17 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { CreditCard, FileText, Loader2, MapPin, ShoppingBag } from "lucide-react"
 import type { CheckoutStartResponse } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
-import {
-  getProductDisplayCache,
-  saveProductDisplay,
-  type ProductDisplayEntry,
-} from "@/src/lib/product-display-cache"
-import { ProductService } from "@/src/services/product.service"
 
 interface PreviewStepProps {
   preview: CheckoutStartResponse
@@ -20,52 +14,13 @@ interface PreviewStepProps {
   isLoading: boolean
 }
 
+// Display data comes straight from the checkout response: every line carries
+// `product.name`, `product.primaryImage` and the human-readable `variant.options`
+// (BE docs/api/checkout.md, "Variant Options Are Carried Through"). The former
+// lookup — read a localStorage cache, then fetch up to 200 products and one
+// detail request per line to recover names and images — is therefore gone (#188).
 export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewStepProps) {
   const [agbAccepted, setAgbAccepted] = useState(false)
-  const [displayMap, setDisplayMap] =
-    useState<Record<string, ProductDisplayEntry>>(getProductDisplayCache)
-
-  useEffect(() => {
-    if (!preview?.items?.length) return
-
-    const missing = (preview.items ?? [])
-      .map((i) => i.product?.id)
-      .filter((id): id is string => !!id && !displayMap[id])
-
-    if (missing.length === 0) return
-
-    ProductService.list({ size: 200 })
-      .then(async (page) => {
-        const found = page.items.filter((p) => missing.includes(p.id))
-        if (found.length === 0) return
-
-        const entries = await Promise.all(
-          found.map(async (p) => {
-            let imageUrl: string | undefined
-            if (p.slug) {
-              try {
-                const detail = await ProductService.getBySlug(p.slug)
-                imageUrl = detail.images?.[0]?.url ?? detail.imageUrls?.[0]
-              } catch {
-                // image fetch failed — show without image
-              }
-            }
-            const entry: ProductDisplayEntry = {
-              name: (p as unknown as { title?: string }).title ?? p.name ?? p.id,
-              imageUrl,
-              slug: p.slug,
-            }
-            saveProductDisplay(p.id, entry)
-            return [p.id, entry] as const
-          })
-        )
-
-        setDisplayMap((prev) => ({ ...prev, ...Object.fromEntries(entries) }))
-      })
-      .catch(() => {
-        // Silently ignore — placeholder remains
-      })
-  }, [preview, displayMap])
 
   return (
     <div className="mx-auto max-w-2xl animate-fade-up">
@@ -81,13 +36,15 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
         </h2>
         <div className="space-y-3">
           {(preview.items ?? []).map((item, idx) => {
-            const display = item.product?.id ? displayMap[item.product.id] : null
+            const name = item.product?.name ?? "Artikel"
+            const imageUrl = item.product?.primaryImage ?? undefined
+            const options = item.variant?.options ?? []
             return (
               <div key={idx} className="flex items-center gap-3 text-sm">
-                {display?.imageUrl ? (
+                {imageUrl ? (
                   <Image
-                    src={display.imageUrl}
-                    alt={display.name ?? "Produkt"}
+                    src={imageUrl}
+                    alt={name}
                     width={48}
                     height={48}
                     className="flex-shrink-0 rounded-lg object-cover"
@@ -98,7 +55,12 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
                   </div>
                 )}
                 <span className="flex-1 text-foreground">
-                  {item.quantity}× {display?.name ?? "Artikel"}
+                  {item.quantity}× {name}
+                  {options.length > 0 && (
+                    <span className="block text-xs text-muted-foreground">
+                      {options.map((o) => `${o.type}: ${o.value}`).join(", ")}
+                    </span>
+                  )}
                 </span>
                 <span className="font-medium text-foreground">{formatEuro(item.lineTotal)}</span>
               </div>

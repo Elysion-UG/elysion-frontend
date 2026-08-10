@@ -20,11 +20,17 @@ export interface CheckoutDTO {
 export interface CheckoutStartResponse {
   cartId?: string
   ownershipType?: string
-  /** Validated line items with nested product/variant summaries */
+  /**
+   * Validated line items with nested product/variant summaries. Both summaries are
+   * the cart ones (`CartProductSummaryResponse` / `CartVariantSummaryResponse`), so
+   * name, image and the human-readable variant options are server-owned here too.
+   * `primaryImage` is always `null` on the completion response — the frozen order
+   * snapshot carries no image.
+   */
   items?: Array<{
     id?: string
-    product?: { id: string; slug: string; name: string; primaryImage?: string }
-    variant?: { id: string; sku: string }
+    product?: { id: string; slug: string; name: string; primaryImage?: string | null }
+    variant?: { id: string; sku: string; options?: Array<{ type: string; value: string }> }
     quantity: number
     unitPrice?: number
     lineTotal: number

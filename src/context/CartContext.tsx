@@ -6,12 +6,7 @@ import { toast } from "sonner"
 import type { Cart, CartItem, AddToCartDTO } from "@/src/types"
 import { CartService } from "@/src/services/cart.service"
 import { useAuth } from "@/src/context/AuthContext"
-import {
-  saveProductDisplay,
-  getProductDisplay,
-  saveVariantOptions,
-  getVariantOptions,
-} from "@/src/lib/product-display-cache"
+import { clearLegacyVariantOptionsCache } from "@/src/lib/product-display-cache"
 
 interface CartContextValue {
   cart: Cart
@@ -27,30 +22,55 @@ interface CartContextValue {
 
 const emptyCart: Cart = { items: [] }
 
+// Converts priceSnapshot (decimal EUR from the backend) to unitPriceCents.
+//
+// Display data (name, image, slug, variant options) is NOT reconstructed here:
+// it is server-owned and delivered by every cart route — the read as well as
+// add and update (BE docs/api/cart.md, "Display Data Is Server-Owned", #188).
+// A cart opened on a second device or after cleared browser storage therefore
+// renders identically; there is no local display cache in this path any more.
+function normalizeItem(item: CartItem): CartItem {
+  return {
+    ...item,
+    unitPriceCents:
+      item.unitPriceCents ??
+      (item.priceSnapshot != null ? Math.round(item.priceSnapshot * 100) : undefined),
+  }
+}
+
 // Ensures a cart object from the backend always has a defined items array.
-// Also converts priceSnapshot (decimal EUR from backend) to unitPriceCents and
-// enriches items with display data (name, image, slug) from the local cache so
-// the cart renders correctly after backend sync.
 function normalizeCart(data: Cart): Cart {
-  const items = (data.items ?? []).map((item) => {
-    const display = item.productId ? getProductDisplay(item.productId) : null
-    return {
-      ...item,
-      unitPriceCents:
-        item.unitPriceCents ??
-        (item.priceSnapshot != null ? Math.round(item.priceSnapshot * 100) : undefined),
-      productName: item.productName ?? display?.name,
-      imageUrl: item.imageUrl ?? display?.imageUrl,
-      productSlug: item.productSlug ?? display?.slug,
-      variantOptions:
-        (item.variantOptions?.length ?? 0) > 0
-          ? item.variantOptions
-          : item.variantId
-            ? (getVariantOptions(item.variantId) ?? item.variantOptions)
-            : item.variantOptions,
+  return { ...data, items: (data.items ?? []).map(normalizeItem) }
+}
+
+// Replaces the optimistic line with the line the server actually persisted.
+//
+// Two reasons this is mandatory, not cosmetic:
+//   1. the optimistic line carries a client-generated id; only the server id is
+//      accepted by PATCH/DELETE — without this swap the next quantity change on
+//      a freshly added item hits the backend with an unknown id (404).
+//   2. adding a variant that is already in the cart merges server-side, so the
+//      returned line can carry a different quantity than the requested one and
+//      may collide with a line we already hold — the duplicate is dropped here.
+function applyServerItem(
+  items: CartItem[],
+  serverItem: CartItem,
+  optimisticId: string
+): CartItem[] {
+  let replaced = false
+  const next: CartItem[] = []
+  for (const item of items) {
+    if (item.id === optimisticId || item.id === serverItem.id) {
+      if (!replaced) {
+        next.push(normalizeItem(serverItem))
+        replaced = true
+      }
+      continue
     }
-  })
-  return { ...data, items }
+    next.push(item)
+  }
+  if (!replaced) next.push(normalizeItem(serverItem))
+  return next
 }
 
 export const CartContext = createContext<CartContextValue | null>(null)
@@ -64,20 +84,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // Seller/Admin tokens are bound to a different portal and would get 403.
   const isCustomerPortal = role === "BUYER" || role === null
 
-  // One-time cleanup: remove legacy localStorage guest cart from before the
-  // backend-sync migration. Harmless if the key doesn't exist.
+  // One-time cleanup: remove the legacy localStorage guest cart from before the
+  // backend-sync migration and the variant-options cache that #188 made obsolete.
+  // Harmless if the keys don't exist.
   useEffect(() => {
     try {
       localStorage.removeItem("guest_cart")
     } catch {
       // localStorage may be unavailable (private mode, SSR); safe to ignore.
     }
+    clearLegacyVariantOptionsCache()
   }, [])
 
   // Sync cart with backend on auth state changes:
   //   - guest (unauthenticated) → backend resolves via cartSessionId cookie
   //   - authenticated customer → backend resolves via Authorization header
   //   - authenticated seller/admin → no cart (skip fetch)
+  //
+  // This is also the guest-cart-merge path. The merge runs inside the login
+  // request (`CartMergeService`) and reports nothing back: the login response
+  // carries no cart, no cart id, no item count, and silently dropped guest lines
+  // produce no signal at all. `isAuthenticated` flipping is the only trigger the
+  // client has, so the fresh GET below is mandatory to see the merged state.
   useEffect(() => {
     if (authLoading) return
 
@@ -102,23 +130,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addItem = useCallback(
     async (dto: AddToCartDTO) => {
-      // Persist display metadata so the checkout page can show name + image
-      // even after a full page reload (when the backend cart has no such fields).
-      if (dto.productName) {
-        saveProductDisplay(dto.productId, {
-          name: dto.productName,
-          imageUrl: dto.imageUrl,
-          slug: dto.productSlug,
-        })
-      }
-      if (dto.variantId && dto.variantOptions?.length) {
-        saveVariantOptions(dto.variantId, dto.variantOptions)
-      }
-
       // Snapshot previous state for rollback before any optimistic mutation
       const prevCart = cart
 
-      // Optimistic update
+      // Optimistic update. The display fields come from the DTO purely to avoid a
+      // flicker until the server answers — they are overwritten by the server line
+      // below, which is the only source the rendered cart depends on.
+      const optimisticId = `${dto.productId}-${dto.variantId ?? "default"}-${Date.now()}`
       setCart((prev) => {
         const existingIdx = prev.items.findIndex(
           (i) => i.productId === dto.productId && i.variantId === dto.variantId
@@ -130,7 +148,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           return { ...prev, items: updated }
         }
         const newItem: CartItem = {
-          id: `${dto.productId}-${dto.variantId ?? "default"}-${Date.now()}`,
+          id: optimisticId,
           productId: dto.productId,
           variantId: dto.variantId,
           quantity: dto.quantity,
@@ -143,9 +161,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         return { ...prev, items: [...prev.items, newItem] }
       })
 
-      // Sync with backend
+      // Sync with backend and adopt the persisted line (id, quantity, display data)
       try {
-        await CartService.addItem(dto)
+        const serverItem = await CartService.addItem(dto)
+        setCart((prev) => ({
+          ...prev,
+          items: applyServerItem(prev.items, serverItem, optimisticId),
+        }))
       } catch (err) {
         setCart(prevCart)
         throw err
@@ -168,9 +190,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         }))
       }
 
-      // Sync with backend
+      // Sync with backend. `quantity <= 0` is rejected by PATCH and never deletes
+      // (BE docs/api/cart.md) — the delete route is the only way to drop a line.
       try {
-        await CartService.updateItem(itemId, dto)
+        if (dto.quantity <= 0) {
+          await CartService.removeItem(itemId)
+        } else {
+          const serverItem = await CartService.updateItem(itemId, dto)
+          setCart((prev) => ({
+            ...prev,
+            items: applyServerItem(prev.items, serverItem, itemId),
+          }))
+        }
       } catch (err) {
         setCart(prevCart)
         throw err
