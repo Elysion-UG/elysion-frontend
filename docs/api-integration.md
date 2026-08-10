@@ -385,15 +385,57 @@ PATCH  /api/v1/admin/certificates/{id}/reject                → Certificate
 
 ```
 GET    /api/v1/cart                     → Cart
-POST   /api/v1/cart/items               → Cart
-PATCH  /api/v1/cart/items/{id}          → Cart
-DELETE /api/v1/cart/items/{id}          → Cart (204)
+POST   /api/v1/cart/items               → CartItem   (nur die betroffene Zeile, 200)
+PATCH  /api/v1/cart/items/{id}          → CartItem   (nur die betroffene Zeile, 200)
+DELETE /api/v1/cart/items/{id}          → null       (200, kein 204)
 
 POST   /api/v1/checkout                 → CheckoutStartResponse
 POST   /api/v1/checkout/complete        → CheckoutCompleteResponse
 ```
 
-Zu den Feldabweichungen in `CheckoutStartResponse` (kein `total`, kein `shippingCost`):
+Jede Cart-Route antwortet mit **`200`** — auch `POST` (kein `201`) und `DELETE`
+(kein `204`). `POST`/`PATCH` liefern **nicht** den ganzen Warenkorb, sondern die
+betroffene Zeile; Summen muss der Client selbst fortschreiben oder per `GET` neu lesen.
+
+#### Anzeigedaten gehören dem Server
+
+```
+CartItem {
+  id, quantity, unitPrice, currency, lineTotal, createdAt, updatedAt
+  product { id, slug, name, primaryImage|null }
+  variant { id, sku, options: [{ type, value }] }|null
+}
+```
+
+Jede Cart-Zeile trägt Name, Slug, Bild, SKU und die lesbaren Varianten-Optionen —
+auf **allen** Routen, Lesen wie Schreiben (BE `docs/api/cart.md`, „Display Data Is
+Server-Owned"). Ein lokaler Produkt-Cache ist damit reine Optimierung und **keine**
+Korrektheits-Voraussetzung: derselbe Warenkorb rendert auf einem zweiten Gerät oder
+nach geleertem Browser-Speicher identisch (#188).
+
+- `options` ist nie `null`, höchstens `[]`. `type`/`value` sind **freier Text**, kein
+  Enum: die beiden Schreibpfade normalisieren `type` unterschiedlich (Varianten-Befehle
+  in Großbuchstaben, Produktanlage wie eingegeben). Immer den gelieferten Wert rendern,
+  nie auf einen exakten String verzweigen. `CartService` mappt `type` → `name`, weil die
+  UI `name: value` rendert.
+- `currency` ist `null`, solange der Warenkorb leer ist.
+- Die Antwort von `POST` trägt die **server-seitig gemergte** Menge und die echte
+  Item-`id`. Nur diese `id` akzeptieren `PATCH`/`DELETE` — eine optimistisch vergebene
+  Client-`id` läuft in ein `404`.
+- `PATCH` mit `quantity: 0` löscht **nicht**, sondern wird mit `400` abgelehnt; Löschen
+  geht ausschließlich über `DELETE`.
+
+**Gast-Cart-Merge beim Login:** Der Merge läuft im Login-Request und meldet nichts
+zurück — keine Cart-Id, kein Zähler, und stillschweigend verworfene Gast-Zeilen
+(Preis- oder Bestandsänderung, gelöschte Variante) erzeugen kein Signal. Nach
+erfolgreichem Login ist ein frischer `GET /api/v1/cart` deshalb Pflicht; im Frontend
+löst der Wechsel von `isAuthenticated` im `CartContext` genau das aus.
+
+`CheckoutStartResponse.items[]` nutzt dieselben `product`/`variant`-Summaries inkl.
+`options` — die Bestätigungsseite braucht dafür keine Produkt-Nachladung.
+`product.primaryImage` ist auf der **Completion**-Antwort immer `null` (der eingefrorene
+Bestell-Snapshot trägt kein Bild). Zu den restlichen Feldabweichungen in
+`CheckoutStartResponse` (kein `total`, kein `shippingCost`):
 [`BACKEND_QUIRKS.md`](./BACKEND_QUIRKS.md).
 
 ### Bestellungen

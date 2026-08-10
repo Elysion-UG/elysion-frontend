@@ -3,14 +3,16 @@
  *
  * Lightweight localStorage cache for product display metadata (name, imageUrl, slug).
  *
- * Why this exists: neither the cart API nor the checkout preview API returns
- * product names or images. We populate this cache whenever a product is added
- * to the cart (at that point we always have the display metadata) so that the
- * checkout page can look up names and images even after a full page reload.
+ * Scope since #188: **orders only.** Cart and checkout deliver their own display
+ * data — every cart line and every checkout line carries name, slug, primary image
+ * and variant options — so neither reads this cache any more. The order detail is
+ * the remaining consumer: the frozen order snapshot carries the product name but
+ * no image, so `OrderDetail` resolves images once per product and memoizes them
+ * here. It fills the cache itself and works with an empty one, which keeps this a
+ * pure optimization rather than a correctness precondition.
  */
 
 const CACHE_KEY = "product_display_cache"
-const VARIANT_OPTIONS_CACHE_KEY = "variant_options_cache"
 const CONSENT_KEY = "elysion_cookie_consent"
 
 /** TTDSG § 25: nur schreiben wenn Nutzer funktionale Cookies akzeptiert hat */
@@ -81,61 +83,17 @@ export function getProductDisplayCache(): CacheMap {
   return readCache()
 }
 
-// ── Variant options cache ──────────────────────────────────────────────────────
-// Keyed by variantId. The backend never returns human-readable variant labels
-// (e.g. "Größe: XL"), so we cache them at add-to-cart time and restore them
-// in normalizeCart after a backend cart load.
+// The variant-options cache that used to live here is gone (#188): the backend
+// delivers `variant.options` on every cart and checkout line, so mirroring them
+// into localStorage stored personal data for no benefit. The stale key is removed
+// below on first load.
+const LEGACY_VARIANT_OPTIONS_CACHE_KEY = "variant_options_cache"
 
-type VariantOption = { name: string; value: string }
-type VariantOptionsMap = Record<string, VariantOption[]>
-
-// Narrow a parsed value to VariantOption[] (#70.5): an array of { name, value }
-// string pairs. Tampered / malformed entries are dropped rather than rendered.
-function isValidVariantOptions(value: unknown): value is VariantOption[] {
-  return (
-    Array.isArray(value) &&
-    value.every(
-      (o) =>
-        !!o &&
-        typeof o === "object" &&
-        typeof (o as Record<string, unknown>).name === "string" &&
-        typeof (o as Record<string, unknown>).value === "string"
-    )
-  )
-}
-
-function readVariantOptionsCache(): VariantOptionsMap {
-  if (typeof window === "undefined") return {}
+export function clearLegacyVariantOptionsCache(): void {
+  if (typeof window === "undefined") return
   try {
-    const raw = localStorage.getItem(VARIANT_OPTIONS_CACHE_KEY)
-    if (!raw) return {}
-    const parsed: unknown = JSON.parse(raw)
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {}
-    const clean: VariantOptionsMap = {}
-    for (const [id, options] of Object.entries(parsed as Record<string, unknown>)) {
-      if (isValidVariantOptions(options)) clean[id] = options
-    }
-    return clean
+    localStorage.removeItem(LEGACY_VARIANT_OPTIONS_CACHE_KEY)
   } catch {
-    return {}
+    // localStorage may be unavailable (private mode) — nothing to clean up then.
   }
-}
-
-export function saveVariantOptions(variantId: string, options: VariantOption[]): void {
-  if (!variantId || options.length === 0) return
-  if (!isFunctionalConsentGiven()) return
-  try {
-    const cache = readVariantOptionsCache()
-    localStorage.setItem(
-      VARIANT_OPTIONS_CACHE_KEY,
-      JSON.stringify({ ...cache, [variantId]: options })
-    )
-  } catch {
-    // QuotaExceededError or private-mode restriction — cache is best-effort.
-  }
-}
-
-export function getVariantOptions(variantId: string): VariantOption[] | null {
-  if (!variantId) return null
-  return readVariantOptionsCache()[variantId] ?? null
 }
