@@ -182,6 +182,14 @@ describe("Content-Security-Policy (#33)", () => {
     expect(imgSrc).toContain("'self'")
   })
 
+  function scriptSrcOf(res: Response): string {
+    return (
+      csp(res)
+        .split(";")
+        .find((d) => d.trim().startsWith("script-src")) ?? ""
+    )
+  }
+
   it("carries a per-request nonce in script-src on authenticated routes (#37)", () => {
     // A protected buyer route stays dynamically rendered and nonce-based.
     const policy = csp(
@@ -195,8 +203,7 @@ describe("Content-Security-Policy (#33)", () => {
     // Public routes render statically/ISR — no per-request nonce, so script-src
     // falls back to 'unsafe-inline' (scoped relaxation; see buildCsp).
     for (const path of ["/", "/product", "/about", "/impressum", "/cart"]) {
-      const policy = csp(middleware(request(`http://${BUYER_HOST}${path}`, BUYER_HOST)))
-      const scriptSrc = policy.split(";").find((d) => d.trim().startsWith("script-src")) ?? ""
+      const scriptSrc = scriptSrcOf(middleware(request(`http://${BUYER_HOST}${path}`, BUYER_HOST)))
       expect(scriptSrc).toContain("'unsafe-inline'")
       expect(scriptSrc).not.toContain("nonce-")
     }
@@ -205,6 +212,67 @@ describe("Content-Security-Policy (#33)", () => {
   it("keeps the nonce on the admin/seller portals even at their root (#37)", () => {
     const adminPolicy = csp(middleware(request(`http://${ADMIN_HOST}/admin`, ADMIN_HOST)))
     expect(adminPolicy).toMatch(/script-src[^;]*'nonce-[a-f0-9]+'/)
+  })
+
+  // ── Nonce ist Opt-in (#221) ───────────────────────────────────────────────
+  //
+  // Die Klassifikation ist invertiert: nicht „alles außer PUBLIC_ROUTES kriegt
+  // die Nonce", sondern „nur die authentifizierten Listen kriegen sie". Diese
+  // Tests halten die neue Fehlerrichtung fest — unbekannte Pfade rendern das
+  // statisch vorgerenderte /_not-found und dürfen deshalb keine Nonce sehen,
+  // sonst hydratisiert die 404-Seite nie (FE#23).
+  describe("Nonce-Opt-in (#221)", () => {
+    it.each(["/_not-found", "/gibt-es-nicht", "/produkte/tippfehler", "/products"])(
+      "gibt %s keine Nonce — die Seite wird statisch als /_not-found ausgeliefert",
+      (path) => {
+        const scriptSrc = scriptSrcOf(
+          middleware(request(`http://${BUYER_HOST}${path}`, BUYER_HOST))
+        )
+        expect(scriptSrc).not.toContain("nonce-")
+        expect(scriptSrc).toContain("'unsafe-inline'")
+      }
+    )
+
+    it("gibt einen unbekannten Pfad auch auf den Portal-Domains keine Nonce", () => {
+      // Vor der Inversion bekam auf seller./admin. jeder Pfad eine Nonce, allein
+      // wegen der Domain — inklusive des statischen /_not-found.
+      for (const host of [SELLER_HOST, ADMIN_HOST]) {
+        const scriptSrc = scriptSrcOf(
+          middleware(request(`http://${host}/gibt-es-nicht`, host, { withMarker: true }))
+        )
+        expect(scriptSrc).not.toContain("nonce-")
+      }
+    })
+
+    it.each([
+      [`http://${SELLER_HOST}/seller-dashboard`, SELLER_HOST],
+      [`http://${SELLER_HOST}/login/seller`, SELLER_HOST],
+      [`http://${ADMIN_HOST}/admin/products`, ADMIN_HOST],
+      [`http://${ADMIN_HOST}/login/admin`, ADMIN_HOST],
+      [`http://${BUYER_HOST}/checkout`, BUYER_HOST],
+      [`http://${BUYER_HOST}/orders/42`, BUYER_HOST],
+      [`http://${BUYER_HOST}/profil`, BUYER_HOST],
+      [`http://${BUYER_HOST}/praeferenzen`, BUYER_HOST],
+      [`http://${BUYER_HOST}/onboarding`, BUYER_HOST],
+      [`http://${BUYER_HOST}/reset-password`, BUYER_HOST],
+      [`http://${BUYER_HOST}/verify-email`, BUYER_HOST],
+    ])("behält die Nonce auf der authentifizierten Route %s", (url, host) => {
+      // Alle diese Pfade liegen in force-dynamic-Route-Gruppen ((admin)/(auth)/
+      // (buyer)/(seller)) und werden pro Request gerendert — dort kann Next die
+      // Nonce in die Bootstrap-Scripts stempeln.
+      const scriptSrc = scriptSrcOf(middleware(request(url, host, { withMarker: true })))
+      expect(scriptSrc).toMatch(/'nonce-[a-f0-9]+'/)
+      expect(scriptSrc).not.toContain("'unsafe-inline'")
+    })
+
+    it("verwechselt einen Pfad mit gemeinsamem Präfix nicht mit einer Admin-Route", () => {
+      // "/administration" ist keine Route — segmentgenaues Matching verhindert,
+      // dass das statische /_not-found doch eine Nonce bekommt.
+      const scriptSrc = scriptSrcOf(
+        middleware(request(`http://${BUYER_HOST}/administration`, BUYER_HOST))
+      )
+      expect(scriptSrc).not.toContain("nonce-")
+    })
   })
 
   it("denies framing and upgrades insecure subresources (#172)", () => {
@@ -218,12 +286,23 @@ describe("Content-Security-Policy (#33)", () => {
 // ── PUBLIC_ROUTES ↔ src/app/(public)/ drift guard (#225, aus #37) ────────────
 //
 // PUBLIC_ROUTES is a hand-maintained mirror of the (public) route group, and
-// nothing enforces the mirroring. Forgetting an entry fails silently and badly:
-// the new page is statically prerendered (no root force-dynamic since #37) yet
-// the middleware hands it the nonce CSP — the build-time inline bootstrap
-// scripts carry no matching nonce, so hydration never starts (the FE#23 bug).
-// `next dev` renders everything dynamically, so this only shows up on staging.
-// Hence this test diffs the list against the filesystem in both directions.
+// nothing enforces the mirroring. Hence this test diffs the list against the
+// filesystem in both directions.
+//
+// Was der Guard seit der Inversion (#221) leistet: PUBLIC_ROUTES entscheidet
+// nicht mehr über die CSP — öffentlich ist der Default, eine fehlende Seite in
+// der Liste bleibt folgenlos. Teuer ist jetzt die andere Richtung, der UMZUG:
+// wandert (public)/x nach (buyer)/x, wird /x eine authentifizierte, dynamisch
+// gerenderte URL und muss in BUYER_PROTECTED stehen, sonst verliert sie still
+// die strikte Nonce-Policy. Genau das meldet der Stale-Entry-Test unten — der
+// zurückgebliebene Eintrag ist das einzige automatische Signal dafür. Damit das
+// trägt, muss die Liste vollständig bleiben: eine nie eingetragene Seite kann
+// auch keinen Eintrag zurücklassen, wenn sie umzieht. Deshalb bleiben beide
+// Richtungen geprüft.
+//
+// Nicht geprüft (bewusst zurückgestellt, eigenes Issue #235): das Gegenstück
+// über src/app/(seller|admin|buyer|auth)/ gegen die authentifizierten Listen,
+// das eine vergessene geschützte Route sichtbar machen würde.
 
 // Vitest runs from the project root (vitest.config.ts lives there), so the app
 // directory is reachable from cwd.
@@ -323,30 +402,31 @@ describe("PUBLIC_ROUTES mirrors src/app/(public)/ (#225)", () => {
     expect(
       unexpressible,
       `Dynamische Segmente direkt unter src/app/(public)/: ${unexpressible.join(", ")}. ` +
-        "PUBLIC_ROUTES kann sie nicht ausdrücken — isPublicRoute() vergleicht Strings, ein " +
-        'Literal-Eintrag wie "/[slug]" matcht nie. Die echten URLs (z. B. /bio-hof-mueller) ' +
-        "bekämen die Nonce-CSP auf statischem HTML (FE#23). Entweder die Seite unter ein " +
-        'statisches Segment hängen (z. B. /producer/[handle], vom Eintrag "/producer" gedeckt) ' +
-        "oder isPublicRoute() auf Pattern-Matching umstellen."
+        'PUBLIC_ROUTES kann sie nicht ausdrücken — ein Literal-Eintrag wie "/[slug]" matcht ' +
+        "keine echte URL. Damit fehlen sie im Inventar, und ein späterer Umzug der Seite in " +
+        "eine authentifizierte Route-Gruppe lässt keinen Eintrag zurück, den der Stale-Test " +
+        "unten melden könnte. Die Seite unter ein statisches Segment hängen (z. B. " +
+        '/producer/[handle], vom Eintrag "/producer" gedeckt).'
     ).toEqual([])
   })
 
   it("has no bracketed PUBLIC_ROUTES entry (a literal pattern never matches a real URL)", () => {
     // Closes the escape hatch of the two diff tests below: adding "/[slug]" or
-    // "/producer/[handle]" to the list would silence them while isPublicRoute()
-    // — plain equality / startsWith — never matches the actual request path.
+    // "/producer/[handle]" to the list would silence them while the list's own
+    // matching — plain equality / startsWith — never hits an actual request path.
     const literalPatterns = PUBLIC_ROUTES.filter((entry) => entry.includes("["))
 
     expect(
       literalPatterns,
       `Diese PUBLIC_ROUTES-Einträge sehen aus wie Route-Patterns: ${literalPatterns.join(", ")}. ` +
-        "isPublicRoute() vergleicht Strings, sie matchen also keine einzige echte URL — der " +
+        "Die Liste vergleicht Strings, sie matchen also keine einzige echte URL — der " +
         "Eintrag beruhigt nur diesen Test. Stattdessen das statische Elternsegment eintragen."
     ).toEqual([])
   })
 
-  it("lists every page under src/app/(public)/ (missing entry → nonce CSP on a static page)", () => {
-    // "/" is the shop home; isPublicRoute() special-cases it instead of listing it.
+  it("lists every page under src/app/(public)/ (incomplete inventory → moves go unnoticed)", () => {
+    // "/" is the shop home; the list omits it deliberately (it is never a
+    // candidate for a move into an authenticated group).
     const missing = discovered
       .filter((route) => route !== "/")
       .filter((route) => !PUBLIC_ROUTES.some((entry) => covers(entry, route)))
@@ -354,21 +434,23 @@ describe("PUBLIC_ROUTES mirrors src/app/(public)/ (#225)", () => {
     expect(
       missing,
       `Diese (public)-Seiten fehlen in PUBLIC_ROUTES (src/middleware.ts): ${missing.join(", ")}. ` +
-        "Ohne Eintrag bekommen sie die Nonce-CSP, obwohl sie statisch gerendert werden — " +
-        "die Bootstrap-Scripts tragen dann keine passende Nonce und die Hydration startet nie (FE#23)."
+        "Seit #221 bekommen sie dadurch nicht mehr die falsche CSP — aber eine Seite, die nie " +
+        "im Inventar stand, hinterlässt beim Umzug in eine authentifizierte Route-Gruppe auch " +
+        "keinen Eintrag, den der Stale-Test melden könnte. Die Lücke entwertet den Guard."
     ).toEqual([])
   })
 
-  it("has no entry without a matching directory (stale entry → 'unsafe-inline' on a moved page)", () => {
+  it("has no entry without a matching directory (stale entry → moved page without nonce)", () => {
     const stale = PUBLIC_ROUTES.filter((entry) => !discovered.some((route) => covers(entry, route)))
 
     expect(
       stale,
       `Diese PUBLIC_ROUTES-Einträge haben keine Seite unter src/app/(public)/ mehr: ${stale.join(", ")}. ` +
         "Der teure Fall ist der Umzug: Wandert (public)/x nach (buyer)/x, bleibt /x eine gültige — " +
-        "jetzt authentifizierte und dynamisch gerenderte — URL, die durch den zurückgebliebenen " +
-        "Eintrag weiterhin script-src 'unsafe-inline' statt der strikten Nonce-Policy bekommt. " +
-        "Das ist eine echte Sicherheitsregression, kein toter Eintrag."
+        "jetzt authentifizierte und dynamisch gerenderte — URL. Sie bekommt seit #221 nur dann die " +
+        "strikte Nonce-Policy, wenn sie in BUYER_PROTECTED (bzw. der passenden Portal-Liste) steht. " +
+        "Also: Eintrag hier entfernen UND die Route in die authentifizierte Liste aufnehmen — sonst " +
+        "läuft sie dauerhaft mit script-src 'unsafe-inline'."
     ).toEqual([])
   })
 })
