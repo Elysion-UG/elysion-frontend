@@ -23,8 +23,6 @@ export interface TreeNodeRowProps {
   onEdit: (node: CategoryTreeNode) => void
   onToggleStatus: (node: CategoryTreeNode, currentlyActive: boolean) => void
   statusLoading: string | null
-  /** Map of id → status from the flat category list */
-  statusMap: Record<string, string>
 }
 
 export default function AdminCategoryTreeNode({
@@ -35,11 +33,14 @@ export default function AdminCategoryTreeNode({
   onEdit,
   onToggleStatus,
   statusLoading,
-  statusMap,
 }: TreeNodeRowProps) {
   const hasChildren = node.children.length > 0
   const isExpanded = expandedIds.has(node.id)
-  const isActive = (statusMap[node.id] ?? "ACTIVE") === "ACTIVE"
+  // The status comes off the node itself (#226). It used to be looked up in a
+  // `statusMap` built from the separately fetched flat list, defaulting to
+  // "ACTIVE" on a miss — and since the backend never sent the field the map was
+  // always empty, so every category rendered as active.
+  const isActive = node.isActive
 
   return (
     <>
@@ -144,7 +145,6 @@ export default function AdminCategoryTreeNode({
             onEdit={onEdit}
             onToggleStatus={onToggleStatus}
             statusLoading={statusLoading}
-            statusMap={statusMap}
           />
         ))}
     </>

@@ -10,7 +10,7 @@ import {
   useToggleCategoryStatus,
 } from "@/src/hooks/useAdminCategories"
 import { ApiError } from "@/src/lib/api-client"
-import type { CategoryTreeNode, CategoryCreateDTO, CategoryUpdateDTO } from "@/src/types"
+import type { Category, CategoryTreeNode, CategoryCreateDTO, CategoryUpdateDTO } from "@/src/types"
 import { toast } from "sonner"
 
 export const ORDER_INVALID_MESSAGE = "Sortierung muss eine ganze Zahl ≥ 0 sein."
@@ -43,6 +43,38 @@ function saveErrorMessage(err: unknown, fallback: string): string {
   if (err instanceof Error && err.message) return err.message
   return fallback
 }
+
+export const MISSING_FLAT_ENTRY_MESSAGE =
+  "Diese Kategorie fehlt in der geladenen Liste. Bitte aktualisieren und erneut versuchen."
+
+/**
+ * Seed the edit form from the tree node plus its flat-list counterpart (#226).
+ *
+ * `parentId` and `description` only exist on the flat list, and tree and list
+ * arrive from two separate HTTP calls — there is no atomic snapshot. The old
+ * code seeded `flat?.parentId ?? ""`, where `""` means *both* "root" and "no
+ * flat entry found". A missing entry therefore submitted an empty parent, and
+ * `resolveParent(null)` moves the category to root/level 1 while the equally
+ * empty description wipes the stored one. Silent data loss — exactly what #178
+ * hardened against.
+ *
+ * The two meanings are separated here: `null` is "not found" and must block the
+ * edit, `""` inside a returned form state is a genuine root category.
+ */
+export function buildEditFormState(
+  node: Pick<CategoryTreeNode, "id" | "name" | "slug" | "order">,
+  flatCategories: Category[]
+): FormState | null {
+  const flat = flatCategories.find((c) => c.id === node.id)
+  if (!flat) return null
+  return {
+    name: node.name,
+    slug: node.slug,
+    parentId: flat.parentId ?? "",
+    description: flat.description ?? "",
+    order: String(node.order),
+  }
+}
 import AdminCategoryTreeNode from "./AdminCategoryTreeNode"
 import AdminCategoryFormModal, {
   type FormState,
@@ -50,12 +82,23 @@ import AdminCategoryFormModal, {
   slugify,
 } from "./AdminCategoryFormModal"
 
-/** Flatten tree into a list of { id, name, level } for the parent dropdown. */
+/**
+ * Flatten tree into a list of { id, name, level } for the parent dropdown.
+ *
+ * Deactivated nodes are skipped along with their subtree (#226). They only
+ * appear in the tree at all because this screen reads the admin endpoints, and
+ * offering one as a parent would be a trap: the backend happily accepts it
+ * (`resolveParent` looks the parent up with `findById`), but the resulting child
+ * can never be activated — `/activate` requires an active parent. A deactivated
+ * node cannot have active children either (`/deactivate` refuses that), so
+ * pruning the whole subtree loses nothing.
+ */
 function flattenTree(
   nodes: CategoryTreeNode[],
   result: { id: string; name: string; level: number }[] = []
 ): { id: string; name: string; level: number }[] {
   for (const node of nodes) {
+    if (!node.isActive) continue
     result.push({ id: node.id, name: node.name, level: node.level })
     if (node.children.length > 0) {
       flattenTree(node.children, result)
@@ -90,16 +133,6 @@ export default function AdminCategories() {
     setModalMode(null)
     setSaveError(null)
   }, [])
-
-  const statusMap = useMemo(() => {
-    const map: Record<string, string> = {}
-    for (const cat of flatCategories) {
-      if (cat.status) {
-        map[cat.id] = cat.status
-      }
-    }
-    return map
-  }, [flatCategories])
 
   // Expand all top-level nodes on first successful load (useEffectEvent keeps the
   // set-state-in-effect lint rule happy, as in useAdminList).
@@ -137,14 +170,15 @@ export default function AdminCategories() {
   }
 
   const handleOpenEdit = (node: CategoryTreeNode) => {
-    const flat = flatCategories.find((c) => c.id === node.id)
-    setForm({
-      name: node.name,
-      slug: node.slug,
-      parentId: flat?.parentId ?? "",
-      description: flat?.description ?? "",
-      order: String(node.order),
-    })
+    const seeded = buildEditFormState(node, flatCategories)
+    if (!seeded) {
+      // No flat entry ⇒ parent and description are unknown. Opening the modal
+      // anyway would offer a form whose blank fields look like deliberate
+      // values and would unnest the category on save (#226).
+      toast.error(MISSING_FLAT_ENTRY_MESSAGE)
+      return
+    }
+    setForm(seeded)
     setEditingId(node.id)
     setSaveError(null)
     setModalMode("edit")
@@ -180,6 +214,14 @@ export default function AdminCategories() {
   const handleSubmitEdit = () => {
     if (!editingId) return
     setSaveError(null)
+    // Re-checked at submit time, not just when the modal opened: the query can
+    // refetch while the modal is up, and a category that has meanwhile
+    // disappeared from the flat list would be saved with a stale parent (#226).
+    if (!flatCategories.some((c) => c.id === editingId)) {
+      setSaveError(MISSING_FLAT_ENTRY_MESSAGE)
+      toast.error(MISSING_FLAT_ENTRY_MESSAGE)
+      return
+    }
     const order = parseOrder(form.order)
     if (order === null) {
       setSaveError(ORDER_INVALID_MESSAGE)
@@ -288,7 +330,6 @@ export default function AdminCategories() {
                   onEdit={handleOpenEdit}
                   onToggleStatus={handleToggleStatus}
                   statusLoading={statusLoading}
-                  statusMap={statusMap}
                 />
               ))}
             </tbody>

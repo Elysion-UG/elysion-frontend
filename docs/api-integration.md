@@ -283,16 +283,48 @@ tut `producerHref()` ohnehin.
 ### Kategorien
 
 ```
-GET    /api/v1/categories                          → Category[]      — flache Liste, aktiv
-GET    /api/v1/categories/tree                     → CategoryNode[]  — verschachtelt, aktiv
-POST   /api/v1/admin/categories                    → Category        — ADMIN
-PATCH  /api/v1/admin/categories/{id}               → Category        — ADMIN
-PATCH  /api/v1/admin/categories/{id}/activate      → Category        — ADMIN
-PATCH  /api/v1/admin/categories/{id}/deactivate    → Category        — ADMIN
+GET    /api/v1/categories                          → Category[]                — flache Liste, nur aktiv
+GET    /api/v1/categories/tree                     → CategoryTreeNode[]        — verschachtelt, nur aktiv
+GET    /api/v1/admin/categories                    → Category[]                — ADMIN, inkl. deaktivierter
+GET    /api/v1/admin/categories/tree               → CategoryTreeNode[]        — ADMIN, inkl. deaktivierter
+POST   /api/v1/admin/categories                    → CategoryCommandResult     — ADMIN
+PATCH  /api/v1/admin/categories/{id}               → CategoryCommandResult     — ADMIN
+PATCH  /api/v1/admin/categories/{id}/activate      → data: null                — ADMIN
+PATCH  /api/v1/admin/categories/{id}/deactivate    → data: null                — ADMIN
 ```
 
 Schreib-Operationen liegen unter `/api/v1/admin/categories`. `/api/v1/categories` ist der
 öffentliche Lesepfad und kennt **nur `GET`** — ein `POST` dorthin endet als 405 (#178).
+
+**Zwei Lese-Familien, ein Datenmodell (#226).** Die öffentlichen Reads filtern hart auf
+`is_active`; nur die Admin-Reads liefern deaktivierte Kategorien mit. Wer eine Kategorie über
+`/deactivate` abschaltet und danach nur den öffentlichen Read liest, verliert sie aus der
+Oberfläche und kann sie nicht mehr reaktivieren — genau der Zustand, den `AdminCategories`
+bis #226 hatte. `useAdminCategories` liest deshalb ausschließlich `adminTree()` + `adminList()`.
+
+**Statusfeld ist `isActive: boolean`** — auf `Category` **und** auf `CategoryTreeNode`. Das
+frühere `status: "ACTIVE" | "INACTIVE"` auf dem FE-Typ hat das Backend nie geliefert; die
+`statusMap` der Admin-Oberfläche war dadurch immer leer und jede Kategorie rendete als „Aktiv".
+Auf den öffentlichen Reads ist `isActive` immer `true`. Weil das Flag am Baumknoten selbst hängt,
+braucht die Admin-UI keinen Join über eine zweite, separat geladene Liste mehr.
+
+**Rückgabetyp der Schreib-Operationen:** `POST` und `PATCH .../{id}` antworten mit
+`CategoryCommandResponse` — `{ id, slug, level, isActive }` — und **nicht** mit einem vollen
+`Category`. `activate`/`deactivate` antworten mit `data: null`; im Service sind sie
+`Promise<void>`.
+
+**Validierung:** alle vier Reads und die beiden Command-Antworten laufen durch
+`parseApiResponse` mit Zod-Schema (`category.list`, `category.tree`, `category.adminList`,
+`category.adminTree`, `category.create`, `category.update`). Ein fehlendes `isActive` ist damit
+ein lauter `ApiSchemaError` statt eines still angenommenen Defaults.
+
+**Kein atomarer Snapshot zwischen Baum und flacher Liste.** `useAdminCategories` holt beide per
+`Promise.all` aus **zwei** Requests. `parentId` und `description` gibt es nur in der flachen
+Liste — fehlt dort der Eintrag zu einem Baumknoten, sind beide Werte unbekannt. Der Edit-Dialog
+unterscheidet das jetzt von „Root": `buildEditFormState()` liefert `null` (Bearbeiten wird
+blockiert), während `parentId: ""` in einem zurückgegebenen Formularzustand eine echte
+Root-Kategorie meint. Vor #226 bedeutete `""` beides — und ein fehlender Flat-Eintrag hätte die
+Kategorie beim Speichern still auf Root verschoben und die Beschreibung geleert.
 
 **Pflichtfelder bei `POST` und `PATCH`:** `name`, `slug` und `order` sind bei **beiden**
 Operationen zwingend. `order` ist `INTEGER NOT NULL DEFAULT 0` — ein fehlendes Feld ergibt

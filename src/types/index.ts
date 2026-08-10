@@ -16,11 +16,11 @@ export type {
 } from "./user"
 
 export type {
-  CategoryStatus,
   Category,
   CategoryTreeNode,
   CategoryCreateDTO,
   CategoryUpdateDTO,
+  CategoryCommandResult,
 } from "./category"
 
 export type {

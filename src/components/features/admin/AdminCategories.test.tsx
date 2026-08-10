@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest"
 import { render, screen, fireEvent } from "@testing-library/react"
 
-import AdminCategories from "./AdminCategories"
+import AdminCategories, { MISSING_FLAT_ENTRY_MESSAGE, buildEditFormState } from "./AdminCategories"
 import { ApiError } from "@/src/lib/api-client"
 import type { Category, CategoryTreeNode } from "@/src/types"
 
@@ -26,6 +26,7 @@ const CHILD: CategoryTreeNode = {
   slug: "t-shirts",
   level: 2,
   order: 3,
+  isActive: true,
   children: [],
 }
 const ROOT: CategoryTreeNode = {
@@ -34,10 +35,11 @@ const ROOT: CategoryTreeNode = {
   slug: "kleidung",
   level: 1,
   order: 0,
+  isActive: true,
   children: [CHILD],
 }
 const FLAT: Category[] = [
-  { id: "root-1", name: "Kleidung", slug: "kleidung", level: 1, order: 0, status: "ACTIVE" },
+  { id: "root-1", name: "Kleidung", slug: "kleidung", level: 1, order: 0, isActive: true },
   {
     id: "child-1",
     name: "T-Shirts",
@@ -46,22 +48,35 @@ const FLAT: Category[] = [
     level: 2,
     order: 3,
     description: "Shirts und Tops",
-    status: "ACTIVE",
+    isActive: true,
   },
 ]
+
+// Overridable per test so the status rendering and the missing-flat-entry guard
+// can be exercised without rewiring the whole mock.
+let adminData: { tree: CategoryTreeNode[]; flat: Category[] } = { tree: [ROOT], flat: FLAT }
+const toggleMutate = vi.fn()
 
 vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }))
 
 vi.mock("@/src/hooks/useAdminCategories", () => ({
   useAdminCategories: () => ({
-    data: { tree: [ROOT], flat: FLAT },
+    data: adminData,
     isLoading: false,
     refetch: vi.fn(),
   }),
   useCreateCategory: () => ({ mutate: createMutate, isPending: false }),
   useUpdateCategory: () => ({ mutate: updateMutate, isPending: false }),
-  useToggleCategoryStatus: () => ({ mutate: vi.fn(), isPending: false, variables: undefined }),
+  useToggleCategoryStatus: () => ({
+    mutate: toggleMutate,
+    isPending: false,
+    variables: undefined,
+  }),
 }))
+
+beforeEach(() => {
+  adminData = { tree: [ROOT], flat: FLAT }
+})
 
 const setOrder = (value: string) =>
   fireEvent.change(screen.getByLabelText("Sortierung"), { target: { value } })
@@ -208,5 +223,134 @@ describe("AdminCategories – save failure", () => {
     save()
 
     expect(screen.getByRole("alert")).toHaveTextContent("order is required")
+  })
+})
+
+describe("AdminCategories – Status-Anzeige (#226)", () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  it("renders a deactivated category as 'Inaktiv' instead of defaulting to 'Aktiv'", () => {
+    adminData = {
+      tree: [{ ...ROOT, isActive: false, children: [] }],
+      flat: [{ ...FLAT[0], isActive: false }],
+    }
+    render(<AdminCategories />)
+
+    expect(screen.getByText("Inaktiv")).toBeInTheDocument()
+    expect(screen.queryByText("Aktiv")).not.toBeInTheDocument()
+  })
+
+  it("offers reactivation for a deactivated category", () => {
+    adminData = {
+      tree: [{ ...ROOT, isActive: false, children: [] }],
+      flat: [{ ...FLAT[0], isActive: false }],
+    }
+    render(<AdminCategories />)
+
+    fireEvent.click(screen.getByRole("button", { name: "Aktivieren" }))
+
+    expect(toggleMutate).toHaveBeenCalledWith({
+      id: "root-1",
+      name: "Kleidung",
+      currentlyActive: false,
+    })
+  })
+
+  it("offers deactivation for an active category", () => {
+    render(<AdminCategories />)
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Deaktivieren" })[0])
+
+    expect(toggleMutate).toHaveBeenCalledWith({
+      id: "root-1",
+      name: "Kleidung",
+      currentlyActive: true,
+    })
+  })
+
+  it("reads the status per node — a deactivated child under an active root", () => {
+    adminData = {
+      tree: [{ ...ROOT, children: [{ ...CHILD, isActive: false }] }],
+      flat: [FLAT[0], { ...FLAT[1], isActive: false }],
+    }
+    render(<AdminCategories />)
+
+    expect(screen.getByText("Aktiv")).toBeInTheDocument()
+    expect(screen.getByText("Inaktiv")).toBeInTheDocument()
+  })
+})
+
+describe("AdminCategories – fehlender Flat-Eintrag (#226)", () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  it("buildEditFormState returns null when the flat entry is missing", () => {
+    expect(buildEditFormState(CHILD, [])).toBeNull()
+  })
+
+  it("buildEditFormState keeps '' for a genuine root category", () => {
+    expect(buildEditFormState(ROOT, FLAT)).toMatchObject({ parentId: "", name: "Kleidung" })
+  })
+
+  it("buildEditFormState seeds the parent of a nested category", () => {
+    expect(buildEditFormState(CHILD, FLAT)).toEqual({
+      name: "T-Shirts",
+      slug: "t-shirts",
+      parentId: "root-1",
+      description: "Shirts und Tops",
+      order: "3",
+    })
+  })
+
+  it("does not open the edit modal when the tree node has no flat counterpart", () => {
+    // Tree and flat list come from two separate calls; a node without its flat
+    // entry used to be edited with an empty parent and description — and saved
+    // straight to root/level 1.
+    adminData = { tree: [ROOT], flat: [FLAT[0]] }
+    render(<AdminCategories />)
+
+    fireEvent.click(screen.getAllByRole("button", { name: "Bearbeiten" })[1])
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    expect(updateMutate).not.toHaveBeenCalled()
+  })
+
+  it("blocks the save when the flat entry disappears while the modal is open", () => {
+    render(<AdminCategories />)
+    fireEvent.click(screen.getAllByRole("button", { name: "Bearbeiten" })[1])
+
+    // Simulates a refetch that dropped the edited category from the flat list.
+    adminData = { tree: [ROOT], flat: [FLAT[0]] }
+    fireEvent.change(screen.getByLabelText("Sortierung"), { target: { value: "4" } })
+    save()
+
+    expect(updateMutate).not.toHaveBeenCalled()
+    expect(screen.getByRole("alert")).toHaveTextContent(MISSING_FLAT_ENTRY_MESSAGE)
+  })
+})
+
+describe("AdminCategories – Parent-Auswahl (#226)", () => {
+  beforeEach(() => vi.resetAllMocks())
+
+  it("does not offer a deactivated category as parent", () => {
+    adminData = {
+      tree: [{ ...ROOT, isActive: false, children: [{ ...CHILD, isActive: false }] }],
+      flat: [
+        { ...FLAT[0], isActive: false },
+        { ...FLAT[1], isActive: false },
+      ],
+    }
+    render(<AdminCategories />)
+    fireEvent.click(screen.getByRole("button", { name: /Neue Kategorie/ }))
+
+    const options = screen.getAllByRole("option").map((o) => o.textContent?.trim())
+    expect(options).toEqual(["Keine (Root)"])
+  })
+
+  it("still offers active categories as parent", () => {
+    render(<AdminCategories />)
+    fireEvent.click(screen.getByRole("button", { name: /Neue Kategorie/ }))
+
+    const options = screen.getAllByRole("option").map((o) => o.textContent ?? "")
+    expect(options.some((o) => o.includes("Kleidung"))).toBe(true)
   })
 })
