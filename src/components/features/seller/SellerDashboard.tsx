@@ -51,7 +51,9 @@ export default function SellerDashboard() {
       </div>
 
       {/* Tab content */}
-      {activeTab === "products" && <SellerProductsTab isApproved={isApproved} userId={user?.id} />}
+      {/* Kein userId mehr: die Produktverwaltung liest über /api/v1/seller/products,
+          und dort kommt der Verkäufer ausschließlich aus dem Token (#227). */}
+      {activeTab === "products" && <SellerProductsTab isApproved={isApproved} />}
       {activeTab === "orders" && <SellerOrdersTab />}
       {activeTab === "certificates" && <SellerCertificatesTab />}
       {activeTab === "settlements" && <SellerSettlementsTab />}

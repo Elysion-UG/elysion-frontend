@@ -1,4 +1,5 @@
 import type { CertificateType, CertificateStatus } from "./certificate"
+import type { ProductStatus } from "./product"
 import type { ValuesProfileType } from "./user"
 
 // ── Öffentliches Verkäuferprofil (Produzenten-Seite, Backend #104) ───
@@ -43,14 +44,25 @@ export interface SellerValueProfile {
 }
 
 // ── Seller Product List Item ─────────────────────────────────────────
+/**
+ * Ein Eintrag aus `GET /api/v1/seller/products` — der Produktverwaltung des
+ * Verkäuferportals (#227).
+ *
+ * Eigenes DTO, **nicht** das des öffentlichen Katalogs: das Feld heißt `name`
+ * (kein `title`), es gibt kein `seller`-Objekt und keine `shortDescription`,
+ * und `primaryImage` ist eine einzelne URL statt eines `images[]`.
+ */
 export interface SellerProductListItem {
   id: string
   slug: string
   name: string
-  status: string
+  /** Interner Status — anders als der Katalog ist diese Liste nicht auf `ACTIVE` gefiltert. */
+  status: ProductStatus
+  /** Basispreis in Euro; die Cent-Beträge der DB rechnet das Backend um. */
   price: number
   currency: string
-  primaryImage?: string
+  /** URL des Primärbilds, oder `null` solange das Produkt keins hat. */
+  primaryImage: string | null
   createdAt: string
 }
 
