@@ -1,9 +1,21 @@
 import type {
+  AddressType,
   ProductStatus,
   OrderGroupStatus,
   CertificateStatus,
   ShippingSlaStatus,
 } from "@/src/types"
+
+/**
+ * `BOTH` ist im Adressformular nicht wählbar, kommt aber laut Vertrag aus dem
+ * Backend zurück — ohne eigenes Label wäre es früher als „Rechnungsadresse"
+ * gelaufen.
+ */
+export const ADDRESS_TYPE_LABEL: Record<AddressType, string> = {
+  SHIPPING: "Lieferadresse",
+  BILLING: "Rechnungsadresse",
+  BOTH: "Liefer- und Rechnungsadresse",
+}
 
 export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
   DRAFT: "Entwurf",

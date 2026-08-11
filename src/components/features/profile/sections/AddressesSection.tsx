@@ -3,6 +3,7 @@
 import { MapPin, Plus, Edit2, Trash2, Star } from "lucide-react"
 import type { Address } from "@/src/types"
 import { toCountryName } from "@/src/lib/country"
+import { ADDRESS_TYPE_LABEL } from "@/src/lib/constants"
 import { Button } from "@/src/components/ui/button"
 import { SectionHeader } from "./SectionHeader"
 
@@ -67,7 +68,7 @@ export function AddressesSection({
                 </p>
                 <p className="text-sm text-foreground">{toCountryName(addr.country)}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {addr.type === "SHIPPING" ? "Lieferadresse" : "Rechnungsadresse"}
+                  {ADDRESS_TYPE_LABEL[addr.type]}
                 </p>
                 <div className="mt-3 flex items-center gap-3">
                   <Button

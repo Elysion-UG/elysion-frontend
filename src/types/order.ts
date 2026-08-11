@@ -35,11 +35,15 @@ export interface OrderProductSnapshot {
 
 export interface OrderItem {
   id: string
+  /**
+   * Aus dem eingefrorenen Snapshot (`product.variantId`) — die Bestellzeile
+   * selbst trägt kein `variantId`.
+   */
   variantId?: string
   quantity: number
-  /** Price per unit in euro (decimal). Backend field: pricePerUnit */
+  /** Price per unit in euro (decimal). Backend field: `unitPrice` */
   pricePerUnit: number
-  /** Line total in euro (decimal). Backend field: subtotal */
+  /** Line total in euro (decimal). Backend field: `lineTotal` */
   subtotal: number
   productSnapshot?: OrderProductSnapshot
 }
@@ -58,8 +62,13 @@ export interface OrderGroup {
   sellerId?: string
   status: OrderGroupStatus
   subtotal?: number
+  /** Backend field: `shipping` */
   shippingCost?: number
-  shipment?: { trackingNumber: string; carrier?: string } | null
+  /**
+   * `trackingNumber` ist nullable: das Backend liefert das Objekt auch dann,
+   * wenn nur `deliveredAt` gesetzt ist.
+   */
+  shipment?: { trackingNumber: string | null; carrier?: string } | null
   items: OrderItem[]
 }
 
