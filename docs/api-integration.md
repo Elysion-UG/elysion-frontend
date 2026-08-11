@@ -116,6 +116,12 @@ PUT    /api/v1/users/me/seller/value-profile    → SellerValueProfile
 
 Das Buyer-Werteprofil liegt auf `/users/me/profile` — nicht auf `/users/me/value-profile`.
 
+`Address.type` ist `SHIPPING | BILLING | BOTH`. **`BOTH`** gehört zum Backend-Enum
+(`domain/address/AddressType`) und wird von der Create-Route ungefiltert angenommen, ist im
+Adressformular aber nicht wählbar. Gelesen werden muss der Wert trotzdem — Label:
+`ADDRESS_TYPE_LABEL` in `src/lib/constants`. `AddressService` validiert alle
+Adress-Antworten an der Grenze (`safeParse`, #38).
+
 ### Produkte
 
 ```
@@ -483,9 +489,31 @@ löst der Wechsel von `isAuthenticated` im `CartContext` genau das aus.
 `CheckoutStartResponse.items[]` nutzt dieselben `product`/`variant`-Summaries inkl.
 `options` — die Bestätigungsseite braucht dafür keine Produkt-Nachladung.
 `product.primaryImage` ist auf der **Completion**-Antwort immer `null` (der eingefrorene
-Bestell-Snapshot trägt kein Bild). Zu den restlichen Feldabweichungen in
-`CheckoutStartResponse` (kein `total`, kein `shippingCost`):
-[`BACKEND_QUIRKS.md`](./BACKEND_QUIRKS.md).
+Bestell-Snapshot trägt kein Bild).
+
+```
+CheckoutStartResponse {
+  cartId, ownershipType, totalQuantity, subtotal, currency
+  items: [{ id, quantity, unitPrice, lineTotal, currency,
+            product { id, slug, name, primaryImage|null },
+            variant { id, sku, options: [{ type, value }] } }]
+  shippingAddress, billingAddress          // je CheckoutAddressResponse
+}
+
+CheckoutCompleteResponse {
+  orderId, orderNumber, orderStatus, paymentStatus, paymentMethod, completedAt
+  checkout: CheckoutStartResponse          // validierter Snapshot, immer vorhanden
+}
+```
+
+- Das ist die **vollständige** Form: **kein** `total`, **kein** `shippingCost`, **kein**
+  `tax` — Details in [`BACKEND_QUIRKS.md`](./BACKEND_QUIRKS.md). Die Bestätigungsseite
+  zeigt deshalb `subtotal` als Gesamtsumme und Versand als „Kostenlos"; das Backend bucht
+  beim Anlegen der Bestellung fest `0`.
+- `items[].id` wechselt die Bedeutung: beim Start ist es die **Cart**-Item-Id, beim
+  Abschluss die **Order**-Item-Id. Nicht über die Id korrelieren.
+- Beide Routen antworten mit `200` — auch `complete`, obwohl sie eine Bestellung anlegt.
+- `CheckoutService` validiert beide Antworten an der Grenze (`safeParse`, #38).
 
 ### Bestellungen
 
@@ -505,6 +533,46 @@ POST   /api/v1/seller/refunds                  → RefundResult
 Settlements liegen auf `/seller/settlements` — **nicht** unter `/seller/orders/`.
 Erstattungen ebenso auf `/seller/refunds`; Vertrag siehe
 [Erstattungen](#erstattungen-refunds).
+
+#### Käufer-Reads — die Feldnamen weichen ab
+
+`GET /api/v1/orders` liefert den kanonischen Paged-Envelope (`data.items`), **keine**
+nackte Liste; `OrderService.list()` gibt daraus die Zeilen zurück.
+
+```
+OrderSummaryResponse { id, orderNumber, status, paymentStatus, total, currency, createdAt }
+
+OrderDetailResponse {
+  id, orderNumber, guestEmail, status, paymentStatus
+  subtotal, shipping, tax, total, currency
+  shippingAddress, billingAddress|null
+  groups: [{ id, seller { id }, status, subtotal, shipping,
+             shipment { trackingNumber|null, carrier|null, shippedAt, deliveredAt }|null,
+             items: [{ id, quantity, unitPrice, lineTotal, currency,
+                       product { id, name, slug, seller { id }, variantId, sku,
+                                 options: [{ type, value }], currency } }] }]
+  createdAt, updatedAt
+}
+```
+
+`OrderService` bildet das auf das FE-Modell ab — die Namen sind **nicht** identisch:
+
+| Backend                | Frontend                    |
+| ---------------------- | --------------------------- |
+| `shipping`             | `shippingCost`              |
+| `groups[].seller.id`   | `groups[].sellerId`         |
+| `items[].unitPrice`    | `items[].pricePerUnit`      |
+| `items[].lineTotal`    | `items[].subtotal`          |
+| `items[].product`      | `items[].productSnapshot`   |
+
+- Eine Bestellzeile trägt **kein** eigenes `variantId` — die Variante steckt im
+  eingefrorenen Snapshot (`product.variantId`).
+- `shipment.trackingNumber` darf `null` sein: das Backend liefert das Objekt auch dann,
+  wenn nur `deliveredAt` gesetzt ist.
+- `shipping` und `tax` sind beim Anlegen der Bestellung fest `0`.
+- Unbekannte Status-Werte schießen die Antwort **nicht** ab: sie werden gemeldet
+  (`errorStore`) und wie `PENDING` behandelt. Strukturelle Drift — ein fehlendes
+  Preis- oder Adressfeld — schlägt dagegen laut fehl (`safeParse`, #38).
 
 #### Versandfrist (`shippingSla`) — nur Seller-Reads
 
@@ -540,6 +608,23 @@ shippingSla: {
 POST   /api/v1/payments/create-intent   → PaymentIntent
 GET    /api/v1/payments/{paymentId}     → PaymentStatusResponse
 ```
+
+```
+PaymentIntent         { paymentId, orderId, provider, amount, currency, status,
+                        clientSecret|null, providerPaymentId|null }
+PaymentStatusResponse { paymentId, orderId, provider, amount, currency, status,
+                        receiptUrl, createdAt, succeededAt, failedAt }
+```
+
+- Betrag und Währung kommen laut Vertrag **immer** aus der persistierten Bestellung, nie
+  aus vom Client geschickten Geldwerten.
+- `provider` ist `STRIPE | PAYPAL | KLARNA | SOFORT` und wird streng geprüft.
+- `clientSecret` und `providerPaymentId` sind provider-abhängig und dürfen `null` sein.
+- `status` ist `PENDING | SUCCEEDED | FAILED | REFUNDED | PARTIALLY_REFUNDED` —
+  **`CANCELLED` gibt es nicht** (siehe [`BACKEND_QUIRKS.md`](./BACKEND_QUIRKS.md)); die
+  Zahlungsseite verzweigt weiterhin darauf, der Zweig ist aber tot. Ein unbekannter Wert
+  wird gemeldet und wie `PENDING` behandelt, damit das Polling weiterläuft.
+- `PaymentService` validiert beide Antworten an der Grenze (`safeParse`, #38).
 
 ### Dateien
 

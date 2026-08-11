@@ -87,15 +87,22 @@ window.location.href = `/product?id=${product.id}`
 
 **Endpoint:** `POST /api/v1/checkout`
 
-`CheckoutStartResponse` enthält **kein** `shippingCost` oder `total`:
+`CheckoutStartResponse` enthält **kein** `shippingCost`, `tax` oder `total`:
 
 | Erwartet             | Tatsächlich         | Behandlung                                  |
 | -------------------- | ------------------- | ------------------------------------------- |
 | `items[].totalPrice` | `items[].lineTotal` | Euro-Dezimalwert (z. B. `29.99`)            |
 | `shippingCost`       | ❌ nicht vorhanden  | keine separaten Versandkosten → „Kostenlos" |
+| `tax`                | ❌ nicht vorhanden  | keine MwSt-Position auf dem Checkout        |
 | `total`              | ❌ nicht vorhanden  | `subtotal` ist die Gesamtsumme              |
 
 `subtotal` und `lineTotal` sind Euro-Dezimalwerte (BigDecimal), **keine Cent**.
+
+**Erledigt (#38):** `shippingCost` und `tax` standen bis dahin trotzdem im TS-Typ
+`CheckoutStartResponse`, und `PreviewStep` hat damit gerechnet — die Zeile
+„Zwischensumme (netto)" zeigte `subtotal - tax` mit einem `tax`, das nie ankam,
+also den Bruttobetrag unter einem Netto-Label. Beide Felder sind jetzt aus Typ
+und Schema raus, die Antwort wird an der Service-Grenze validiert.
 
 **Erledigt (#188):** Der Eintrag „`items[].productName` nicht vorhanden — über
 `productId` aus dem Cart-Context lösen" ist weg. Die Checkout-Zeilen tragen

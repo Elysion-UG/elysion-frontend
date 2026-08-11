@@ -54,6 +54,12 @@ export const orderGroupStatusSchema = z.enum([
   "CANCELLED",
 ])
 
+/** Zahlungsanbieter (`api/v1/payments/dto/PaymentProviderCode`). */
+export const paymentProviderCodeSchema = z.enum(["STRIPE", "PAYPAL", "KLARNA", "SOFORT"])
+
+/** Adresstyp (`domain/address/AddressType`) — `BOTH` gehört dazu. */
+export const addressTypeSchema = z.enum(["SHIPPING", "BILLING", "BOTH"])
+
 /** Read-only Versandfrist-Zustand der Seller-Order-Reads (Backend #143). */
 export const shippingSlaStatusSchema = z.enum([
   "NOT_APPLICABLE",

@@ -3,9 +3,10 @@ import { apiRequest } from "@/src/lib/api-client"
 import { AddressService } from "./address.service"
 import type { Address, AddressDTO } from "@/src/types"
 
-vi.mock("@/src/lib/api-client", () => ({
-  apiRequest: vi.fn(),
-}))
+vi.mock("@/src/lib/api-client", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/src/lib/api-client")>()
+  return { ...actual, apiRequest: vi.fn() }
+})
 
 const mockApiRequest = vi.mocked(apiRequest)
 
@@ -81,6 +82,29 @@ describe("AddressService", () => {
       expect.objectContaining({ method: "PATCH" })
     )
     expect(result).toMatchObject({ isDefault: true })
+  })
+
+  it("getAll — accepts the BOTH address type the backend allows", async () => {
+    mockApiRequest.mockResolvedValue([{ ...mockAddress, type: "BOTH" }])
+
+    const result = await AddressService.getAll()
+
+    expect(result[0].type).toBe("BOTH")
+  })
+
+  it("getAll — throws when an address loses a field the checkout needs (#38)", async () => {
+    const { postalCode: _postalCode, ...drifted } = mockAddress
+    mockApiRequest.mockResolvedValue([drifted])
+
+    await expect(AddressService.getAll()).rejects.toThrow(/Ungültige Server-Antwort/)
+  })
+
+  it("create — throws on an unknown address type", async () => {
+    mockApiRequest.mockResolvedValue({ ...mockAddress, type: "PICKUP_STATION" })
+
+    await expect(AddressService.create(mockAddressDTO)).rejects.toThrow(
+      /Ungültige Server-Antwort/
+    )
   })
 
   it("remove — calls DELETE /api/v1/users/me/addresses/:id", async () => {

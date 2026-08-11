@@ -36,10 +36,10 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
           Deine Artikel
         </h2>
         <div className="space-y-3">
-          {(preview.items ?? []).map((item, idx) => {
-            const name = item.product?.name ?? "Artikel"
-            const imageUrl = item.product?.primaryImage ?? undefined
-            const options = item.variant?.options ?? []
+          {preview.items.map((item, idx) => {
+            const name = item.product.name
+            const imageUrl = item.product.primaryImage ?? undefined
+            const options = item.variant.options
             return (
               <div key={idx} className="flex items-center gap-3 text-sm">
                 {imageUrl ? (
@@ -87,29 +87,26 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
       )}
 
       <div className="mb-6 rounded-xl border border-border bg-white p-6">
+        {/* Der Checkout-Vertrag liefert genau eine Geldsumme: `subtotal`, aus den
+            aktuell validierten Preisen. Eine Steuer- oder Versandkostenposition
+            gibt es nicht — die frühere Zeile „Zwischensumme (netto)" rechnete
+            `subtotal - tax` mit einem `tax`, das nie ankam, und wies damit den
+            Bruttobetrag als Nettobetrag aus. Versand ist beim Anlegen der
+            Bestellung fest 0 (BE `OrderCreationService`), deshalb bleibt die
+            Zeile — § 312j BGB verlangt die Angabe — mit „Kostenlos" stehen. */}
         <div className="space-y-2 text-sm text-foreground">
           <div className="flex justify-between">
-            <span>Zwischensumme (netto)</span>
-            <span>{formatEuro((preview.subtotal ?? 0) - (preview.tax ?? 0))}</span>
+            <span>Zwischensumme</span>
+            <span>{formatEuro(preview.subtotal)}</span>
           </div>
-          {(preview.tax ?? 0) > 0 && (
-            <div className="flex justify-between">
-              <span>Enthaltene MwSt.</span>
-              <span>{formatEuro(preview.tax ?? 0)}</span>
-            </div>
-          )}
           <div className="flex justify-between">
             <span>Versand</span>
-            <span>
-              {(preview.shippingCost ?? 0) > 0
-                ? formatEuro(preview.shippingCost ?? 0)
-                : "Kostenlos"}
-            </span>
+            <span>Kostenlos</span>
           </div>
         </div>
         <div className="mt-3 flex justify-between border-t border-border pt-3 font-bold text-foreground">
           <span>Gesamt (inkl. MwSt.)</span>
-          <span>{formatEuro(preview.subtotal ?? 0)}</span>
+          <span>{formatEuro(preview.subtotal)}</span>
         </div>
       </div>
 

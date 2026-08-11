@@ -349,11 +349,36 @@ describe("CertificateService", () => {
 // ── CheckoutService ───────────────────────────────────────────────────────────
 import { CheckoutService } from "./checkout.service"
 
+// Beide Routen validieren ihre Antwort jetzt an der Grenze (#38), deshalb
+// tragen die Fixtures die vertragliche Form statt einer freien Erfindung
+// (`{ items: [] }` / `{ orderId: "o1" }`). Inhaltliche Fälle stehen in
+// `checkout.service.test.ts`.
+const apiCheckoutAddress = {
+  firstName: "Max",
+  lastName: "Mustermann",
+  street: "Musterstraße",
+  houseNumber: "1",
+  postalCode: "12345",
+  city: "Berlin",
+  country: "DE",
+}
+
+const apiCheckoutStart = {
+  cartId: "cart1",
+  ownershipType: "AUTHENTICATED",
+  totalQuantity: 0,
+  subtotal: 0,
+  currency: "EUR",
+  items: [],
+  shippingAddress: apiCheckoutAddress,
+  billingAddress: apiCheckoutAddress,
+}
+
 describe("CheckoutService", () => {
   const dto = { shippingAddressId: "addr1", paymentMethod: "STRIPE" as const }
 
   it("preview calls POST /api/v1/checkout", async () => {
-    mockApiRequest.mockResolvedValue({ items: [] })
+    mockApiRequest.mockResolvedValue(apiCheckoutStart)
     await CheckoutService.preview(dto)
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/checkout",
@@ -362,7 +387,15 @@ describe("CheckoutService", () => {
   })
 
   it("complete calls POST /api/v1/checkout/complete", async () => {
-    mockApiRequest.mockResolvedValue({ orderId: "o1" })
+    mockApiRequest.mockResolvedValue({
+      orderId: "o1",
+      orderNumber: "ORD-1",
+      orderStatus: "PENDING",
+      paymentStatus: "PENDING",
+      paymentMethod: "STRIPE",
+      completedAt: "2026-01-01T10:00:00Z",
+      checkout: apiCheckoutStart,
+    })
     await CheckoutService.complete(dto)
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/checkout/complete",
@@ -460,14 +493,20 @@ describe("FileService", () => {
 // ── PaymentService ────────────────────────────────────────────────────────────
 import { PaymentService } from "./payment.service"
 
+// Auch hier tragen die Fixtures jetzt die vertragliche Form: `id`/`status:
+// "created"` waren Stripe-Vokabular, das diese Routen nie geliefert haben.
+// Inhaltliche Fälle stehen in `payment.service.test.ts`.
 describe("PaymentService", () => {
   it("createIntent calls POST /api/v1/payments/create-intent", async () => {
     mockApiRequest.mockResolvedValue({
-      id: "pi_1",
-      clientSecret: "sec",
+      paymentId: "pay_1",
+      orderId: "o1",
+      provider: "STRIPE",
       amount: 100,
-      currency: "eur",
-      status: "created",
+      currency: "EUR",
+      status: "PENDING",
+      clientSecret: "sec",
+      providerPaymentId: "pi_1",
     })
     await PaymentService.createIntent({ orderId: "o1", provider: "STRIPE" })
     expect(mockApiRequest).toHaveBeenCalledWith(
@@ -479,9 +518,15 @@ describe("PaymentService", () => {
   it("getStatus calls GET /api/v1/payments/:paymentId", async () => {
     mockApiRequest.mockResolvedValue({
       paymentId: "p1",
-      status: "SUCCEEDED",
+      orderId: "o1",
+      provider: "STRIPE",
       amount: 100,
-      updatedAt: "",
+      currency: "EUR",
+      status: "SUCCEEDED",
+      receiptUrl: null,
+      createdAt: "2026-01-01T10:00:00Z",
+      succeededAt: "2026-01-01T10:00:05Z",
+      failedAt: null,
     })
     await PaymentService.getStatus("p1")
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/payments/p1")
