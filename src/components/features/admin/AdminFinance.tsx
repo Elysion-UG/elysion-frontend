@@ -4,6 +4,7 @@ import React, { useState } from "react"
 import { DollarSign, CreditCard, ArrowDownLeft, Banknote, Wrench, HandCoins } from "lucide-react"
 import { PageHeader, RefreshButton, LoadingFullPage } from "@/src/components/shared"
 import { RefundDialog } from "@/src/components/shared/RefundDialog"
+import { Button } from "@/src/components/ui/button"
 import { remainingRefundable } from "@/src/lib/refund"
 import type { Settlement } from "@/src/types"
 import {
@@ -91,6 +92,8 @@ export default function AdminFinance() {
       />
 
       <div className="overflow-hidden rounded-xl border border-border/60 bg-ink-900/60">
+        {/* Tabs bleiben bespoke — das Design System sieht dafür keine
+            Button-Variante vor (#83, Punkt 6). */}
         <div className="flex overflow-x-auto border-b border-border/60">
           {tabs.map((t) => (
             <button
@@ -111,12 +114,14 @@ export default function AdminFinance() {
           {activeQuery && (
             <div className="mb-4 flex items-center justify-end gap-3">
               {tab === "refunds" && (
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setRefundTarget({ alreadyRefunded: null, remaining: null })}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-ink-900/30 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
+                  className="h-8 gap-1.5 border-border/60 bg-ink-900/30 text-xs text-muted-foreground hover:text-foreground [&_svg]:size-3.5"
                 >
                   <ArrowDownLeft className="h-3.5 w-3.5" /> Erstattung auslösen
-                </button>
+                </Button>
               )}
               <RefreshButton
                 onClick={() => void activeQuery.refetch()}
@@ -130,12 +135,13 @@ export default function AdminFinance() {
           ) : activeQuery?.isError ? (
             <div className="py-8 text-center text-danger">
               Fehler beim Laden.{" "}
-              <button
+              <Button
+                variant="link"
                 onClick={() => void activeQuery.refetch()}
-                className="underline hover:text-muted-foreground"
+                className="h-auto px-0 text-danger underline hover:text-muted-foreground"
               >
                 Erneut versuchen
-              </button>
+              </Button>
             </div>
           ) : (
             <>
