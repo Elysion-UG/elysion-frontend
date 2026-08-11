@@ -174,10 +174,71 @@ describe("SellerOrderService", () => {
     expect(group.totalAmount).toBe(55.0)
   })
 
-  it("listSettlements GETs /api/v1/seller/settlements", async () => {
-    mockApiRequest.mockResolvedValue([])
-    await SellerOrderService.listSettlements()
-    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/seller/settlements")
+  describe("listSettlements (#53)", () => {
+    const rawSettlement = {
+      settlementId: "stl_1",
+      orderGroupId: "grp_1",
+      sellerId: "seller_1",
+      grossAmount: 110.0,
+      goodsAmount: 100.0,
+      shippingAmount: 10.0,
+      refundedAmount: 10.0,
+      platformFeeAmount: 15.0,
+      stripeFeeAmount: 1.9,
+      refundFeeAmount: 0.4,
+      chargebackAmount: 15.0,
+      netAmount: 68.1,
+      currency: "EUR",
+      status: "PENDING",
+      adjustmentRequired: true,
+      eligibleAt: "2026-02-01T10:00:00Z",
+      createdAt: "2026-01-20T10:00:00Z",
+    }
+
+    it("GETs /api/v1/seller/settlements", async () => {
+      mockApiRequest.mockResolvedValue([])
+      await SellerOrderService.listSettlements()
+      expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/seller/settlements")
+    })
+
+    it("reicht die vollständige Gebührenkette durch", async () => {
+      mockApiRequest.mockResolvedValue([rawSettlement])
+
+      const [settlement] = await SellerOrderService.listSettlements()
+
+      expect(settlement.grossAmount).toBe(110.0)
+      expect(settlement.goodsAmount).toBe(100.0)
+      expect(settlement.shippingAmount).toBe(10.0)
+      expect(settlement.refundedAmount).toBe(10.0)
+      expect(settlement.platformFeeAmount).toBe(15.0)
+      expect(settlement.stripeFeeAmount).toBe(1.9)
+      expect(settlement.refundFeeAmount).toBe(0.4)
+      expect(settlement.chargebackAmount).toBe(15.0)
+      expect(settlement.netAmount).toBe(68.1)
+      expect(settlement.adjustmentRequired).toBe(true)
+    })
+
+    it("hebt nullbare Felder auf undefined statt null", async () => {
+      mockApiRequest.mockResolvedValue([
+        { ...rawSettlement, orderGroupId: null, currency: null, eligibleAt: null },
+      ])
+
+      const [settlement] = await SellerOrderService.listSettlements()
+
+      expect(settlement.orderGroupId).toBeUndefined()
+      expect(settlement.currency).toBeUndefined()
+      expect(settlement.eligibleAt).toBeUndefined()
+    })
+
+    it("lehnt eine Zeile ohne Stripe-Gebühr ab, statt sie als 0,00 € durchzureichen", async () => {
+      // Genau der Fall, den der frühere Cast verschluckt hätte: Ein Geldfeld
+      // fehlt, und die Abrechnung zeigt klaglos einen zu hohen Nettobetrag.
+      const withoutStripeFee: Record<string, unknown> = { ...rawSettlement }
+      delete withoutStripeFee.stripeFeeAmount
+      mockApiRequest.mockResolvedValue([withoutStripeFee])
+
+      await expect(SellerOrderService.listSettlements()).rejects.toThrow(/Ungültige Server-Antwort/)
+    })
   })
 
   describe("refund", () => {
