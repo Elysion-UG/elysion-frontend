@@ -13,6 +13,7 @@ import {
   ADMIN_TR_CLICKABLE_CLASS,
 } from "@/src/components/shared"
 import StatusBadge from "@/src/components/shared/StatusBadge"
+import { Button } from "@/src/components/ui/button"
 import {
   Table,
   TableBody,
@@ -108,13 +109,14 @@ export default function AdminOrderDuplicates() {
       {list.isError ? (
         <div className="rounded-xl border border-border/60 bg-ink-900/60 py-10 text-center text-sm text-danger">
           Verdachtsfälle konnten nicht geladen werden.{" "}
-          <button
+          <Button
             type="button"
+            variant="link"
             onClick={reload}
-            className="underline underline-offset-2 hover:text-muted-foreground"
+            className="h-auto px-0 text-danger underline underline-offset-2 hover:text-muted-foreground"
           >
             Erneut versuchen
-          </button>
+          </Button>
         </div>
       ) : (
         <AdminTableContainer

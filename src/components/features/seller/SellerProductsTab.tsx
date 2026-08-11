@@ -46,11 +46,13 @@ interface SellerProductsTabProps {
   isApproved: boolean
 }
 
-/** Farbe der Aktions-Schaltfläche, abhängig vom Zielstatus des Übergangs. */
+/**
+ * Abweichende Fläche der Aktions-Schaltfläche, abhängig vom Zielstatus des
+ * Übergangs. Ohne Eintrag bleibt die Sand-Fläche der `secondary`-Variante.
+ */
 const TRANSITION_BUTTON_CLASS: Partial<Record<ProductStatus, string>> = {
   REVIEW: "bg-warning-tint text-warning hover:bg-warning-tint",
   ACTIVE: "bg-green-50 text-green-600 hover:bg-green-50",
-  INACTIVE: "bg-secondary text-foreground hover:bg-muted",
 }
 
 export default function SellerProductsTab({ isApproved }: SellerProductsTabProps) {
@@ -104,23 +106,24 @@ export default function SellerProductsTab({ isApproved }: SellerProductsTabProps
         <div className="flex items-center justify-between border-b border-border p-6">
           <h2 className="text-xl font-semibold text-foreground">Ihre Produkte</h2>
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={refresh}
-              className="text-muted-foreground transition-colors hover:text-foreground"
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
               title="Aktualisieren"
             >
               <RefreshCw className={`h-4 w-4 ${productsQuery.isFetching ? "animate-spin" : ""}`} />
-            </button>
-            <button
+            </Button>
+            <Button
               disabled={!isApproved}
-              className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-50"
               onClick={() => {
                 setEditProduct(null)
                 setShowProductForm(true)
               }}
             >
               <Plus className="h-4 w-4" /> Neues Produkt
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -191,19 +194,23 @@ export default function SellerProductsTab({ isApproved }: SellerProductsTabProps
                     </TableCell>
                     <TableCell className={SELLER_TABLE_CELL_CLASS}>
                       <div className="flex items-center gap-2">
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => {
                             setEditProduct(product)
                             setShowProductForm(true)
                           }}
-                          className="text-green-600 transition-colors hover:text-green-600"
+                          className="h-8 w-8 text-green-600 hover:text-green-600"
                           title="Bearbeiten"
                         >
                           <Edit className="h-4 w-4" />
-                        </button>
+                        </Button>
                         {sellerProductTransitions(product.status).map((transition) => (
-                          <button
+                          <Button
                             key={transition.target}
+                            variant="secondary"
+                            size="sm"
                             disabled={updateStatus.isPending}
                             onClick={() =>
                               updateStatus.mutate({
@@ -211,12 +218,12 @@ export default function SellerProductsTab({ isApproved }: SellerProductsTabProps
                                 status: transition.target,
                               })
                             }
-                            className={`rounded px-2 py-0.5 text-xs disabled:opacity-50 ${
-                              TRANSITION_BUTTON_CLASS[transition.target] ?? "bg-secondary"
+                            className={`h-7 px-2 text-xs ${
+                              TRANSITION_BUTTON_CLASS[transition.target] ?? ""
                             }`}
                           >
                             {transition.label}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     </TableCell>

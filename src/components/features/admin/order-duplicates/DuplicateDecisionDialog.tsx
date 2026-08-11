@@ -11,6 +11,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/src/components/ui/dialog"
+import { Button } from "@/src/components/ui/button"
 import { Textarea } from "@/src/components/ui/textarea"
 import StatusBadge from "@/src/components/shared/StatusBadge"
 import { formatEuro } from "@/src/lib/currency"
@@ -240,22 +241,23 @@ export default function DuplicateDecisionDialog({
         )}
 
         <DialogFooter className="mt-6 flex gap-3 sm:flex-row">
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onClose}
-            className="flex-1 rounded-lg border border-border/60 py-2 text-sm font-medium text-muted-foreground hover:bg-ink-900/60"
+            className="flex-1 border-border/60 text-muted-foreground hover:bg-ink-900/60"
           >
             {decidable ? "Abbrechen" : "Schließen"}
-          </button>
+          </Button>
           {decidable && (
-            <button
+            <Button
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-500 py-2 text-sm font-medium text-ink-900 hover:bg-green-600 disabled:opacity-60"
+              className="flex-1 [&_svg]:size-3"
             >
               {isSubmitting && <Loader2 className="h-3 w-3 animate-spin" />} Entscheidung vermerken
-            </button>
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>

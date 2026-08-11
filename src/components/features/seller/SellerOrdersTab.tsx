@@ -15,6 +15,7 @@ import { remainingRefundable } from "@/src/lib/refund"
 import { RefundDialog } from "@/src/components/shared/RefundDialog"
 import { hasShippingSla, shippingSlaBadgeLabel } from "@/src/lib/shipping-sla"
 import { StatusBadge } from "@/src/components/shared"
+import { Button } from "@/src/components/ui/button"
 import { orderStatusLabel, orderStatusColor, shippingSlaColor } from "./sellerDashboard.constants"
 import SellerKpiCard from "./SellerKpiCard"
 import SellerOrderDetailDrawer from "./SellerOrderDetailDrawer"
@@ -86,12 +87,14 @@ export default function SellerOrdersTab() {
               Bestellungen sind rot markiert.
             </p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => void refetch()}
-            className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
           >
             <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-          </button>
+          </Button>
         </div>
 
         {isFetching && orders.length === 0 ? (

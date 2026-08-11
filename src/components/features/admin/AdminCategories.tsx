@@ -10,6 +10,7 @@ import {
   useToggleCategoryStatus,
 } from "@/src/hooks/useAdminCategories"
 import { ApiError } from "@/src/lib/api-client"
+import { Button } from "@/src/components/ui/button"
 import type { Category, CategoryTreeNode, CategoryCreateDTO, CategoryUpdateDTO } from "@/src/types"
 import { toast } from "sonner"
 
@@ -270,18 +271,17 @@ export default function AdminCategories() {
           </p>
         </div>
         <div className="flex gap-2">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => void refetch()}
-            className="flex items-center gap-1.5 rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground hover:text-muted-foreground"
+            className="gap-1.5 border border-border/60 bg-ink-900/60 text-muted-foreground"
           >
             <RefreshCw className="h-4 w-4" /> Aktualisieren
-          </button>
-          <button
-            onClick={handleOpenCreate}
-            className="flex items-center gap-1.5 rounded-lg bg-green-500 px-3 py-2 text-sm font-medium text-ink-900 hover:bg-green-500"
-          >
+          </Button>
+          <Button size="sm" onClick={handleOpenCreate} className="gap-1.5">
             <Plus className="h-4 w-4" /> Neue Kategorie
-          </button>
+          </Button>
         </div>
       </div>
 
