@@ -153,9 +153,19 @@ export interface UpdateSellerCommissionDTO {
 }
 
 /**
- * Eine fällige Auszahlung pro Seller — aggregiert alle auszahlungsfähigen
- * (Status PENDING, Order DELIVERED) Settlements. Quelle für die monatliche
- * manuelle Admin-Freigabe.
+ * Eine fällige Auszahlung pro Seller und Währung — aggregiert alle
+ * auszahlungsfähigen Settlements. Quelle für die manuelle Admin-Freigabe.
+ *
+ * Die Geldfelder sind die **positionsweise Summe** derselben Gebührenkette wie
+ * auf der einzelnen `Settlement`-Zeile (Backend `docs/api/payouts.md`):
+ *
+ * ```
+ * grossAmount − refundedAmount − feeAmount − stripeFeeAmount
+ *   − chargebackAmount = netAmount
+ * ```
+ *
+ * `refundFeeAmount` ist **Teil von** `stripeFeeAmount` und wird nicht erneut
+ * abgezogen.
  */
 export interface PayoutDueItem {
   sellerId: string
@@ -165,7 +175,16 @@ export interface PayoutDueItem {
   /** Anzahl der zusammengefassten Settlement-Zeilen */
   settlementCount: number
   grossAmount: number
+  /** Summe der bereits erstatteten Beträge */
+  refundedAmount: number
+  /** Summe der Provisionen (Elysion-Kommission) */
   feeAmount: number
+  /** Summe der Stripe-Ist-Gebühren; trägt der Verkäufer */
+  stripeFeeAmount: number
+  /** Gebührenanteil ohne Gegenumsatz — **enthalten in** `stripeFeeAmount` */
+  refundFeeAmount: number
+  /** Summe der gebuchten Chargeback-Abzüge */
+  chargebackAmount: number
   /** Auszahlbarer Nettobetrag (= Summe sellerNet) */
   netAmount: number
   currency?: string
