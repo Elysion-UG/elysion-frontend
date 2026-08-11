@@ -102,9 +102,7 @@ describe("AddressService", () => {
   it("create — throws on an unknown address type", async () => {
     mockApiRequest.mockResolvedValue({ ...mockAddress, type: "PICKUP_STATION" })
 
-    await expect(AddressService.create(mockAddressDTO)).rejects.toThrow(
-      /Ungültige Server-Antwort/
-    )
+    await expect(AddressService.create(mockAddressDTO)).rejects.toThrow(/Ungültige Server-Antwort/)
   })
 
   it("remove — calls DELETE /api/v1/users/me/addresses/:id", async () => {

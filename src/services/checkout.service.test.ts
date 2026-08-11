@@ -109,9 +109,7 @@ describe("CheckoutService", () => {
     it("normalises missing variant options to an empty list", async () => {
       mockApiRequest.mockResolvedValue({
         ...rawStart,
-        items: [
-          { ...rawStart.items[0], variant: { id: "var-1", sku: "SKU-L" } },
-        ],
+        items: [{ ...rawStart.items[0], variant: { id: "var-1", sku: "SKU-L" } }],
       })
       const preview = await CheckoutService.preview(dto)
       expect(preview.items[0].variant.options).toEqual([])

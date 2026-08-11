@@ -557,13 +557,13 @@ OrderDetailResponse {
 
 `OrderService` bildet das auf das FE-Modell ab — die Namen sind **nicht** identisch:
 
-| Backend                | Frontend                    |
-| ---------------------- | --------------------------- |
-| `shipping`             | `shippingCost`              |
-| `groups[].seller.id`   | `groups[].sellerId`         |
-| `items[].unitPrice`    | `items[].pricePerUnit`      |
-| `items[].lineTotal`    | `items[].subtotal`          |
-| `items[].product`      | `items[].productSnapshot`   |
+| Backend              | Frontend                  |
+| -------------------- | ------------------------- |
+| `shipping`           | `shippingCost`            |
+| `groups[].seller.id` | `groups[].sellerId`       |
+| `items[].unitPrice`  | `items[].pricePerUnit`    |
+| `items[].lineTotal`  | `items[].subtotal`        |
+| `items[].product`    | `items[].productSnapshot` |
 
 - Eine Bestellzeile trägt **kein** eigenes `variantId` — die Variante steckt im
   eingefrorenen Snapshot (`product.variantId`).
