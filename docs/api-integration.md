@@ -534,6 +534,59 @@ Settlements liegen auf `/seller/settlements` — **nicht** unter `/seller/orders
 Erstattungen ebenso auf `/seller/refunds`; Vertrag siehe
 [Erstattungen](#erstattungen-refunds).
 
+#### Abrechnungszeile (`Settlement`) — die vollständige Gebührenkette
+
+`GET /api/v1/seller/settlements` (eigene Zeilen) und
+`GET /api/v1/admin/settlements` (alle Verkäufer, paginiert) liefern **denselben**
+Zeilenvertrag (Backend `docs/api/settlements.md`, Issue #140):
+
+```ts
+interface Settlement {
+  settlementId: string
+  orderGroupId?: string
+  sellerId: string
+  grossAmount: number // goodsAmount + shippingAmount, vom Käufer gezahlt
+  goodsAmount: number // Warenwert ohne Versand — Bemessungsgrundlage der Provision
+  shippingAmount: number // provisionsfrei, fließt ungekürzt an den Verkäufer
+  refundedAmount: number
+  platformFeeAmount: number // Provision; bei Retoure anteilig gekürzt
+  stripeFeeAmount: number // Ist-Gebühr aus der Stripe-Balance-Transaction
+  refundFeeAmount: number // Gebührenanteil ohne Gegenumsatz — TEIL VON stripeFeeAmount
+  chargebackAmount: number
+  netAmount: number // darf negativ sein
+  currency?: string
+  status: string
+  adjustmentRequired?: boolean
+  eligibleAt?: string
+  createdAt: string
+}
+```
+
+Die Kette geht **serverseitig** auf, das Frontend rechnet sie nicht nach:
+
+```
+grossAmount − refundedAmount − platformFeeAmount − stripeFeeAmount
+  − chargebackAmount = netAmount
+```
+
+- **`refundFeeAmount` ist in `stripeFeeAmount` enthalten** und darf **nie** zusätzlich
+  abgezogen werden. Die eigene Position weist nur aus, welcher Anteil der Ist-Gebühr auf
+  erstattete Beträge entfällt — Stripe gibt die Transaktionsgebühr bei einer Retoure nicht
+  zurück.
+- **`netAmount` darf negativ sein.** Nach einer Vollretoure bleibt die Ist-Gebühr stehen;
+  der Betrag wird laut §1.1 mit der nächsten Auszahlung verrechnet. Das ist ein regulärer
+  Zustand, kein Fehler.
+- Der **Provisionssatz wird dem Verkäufer nicht angezeigt** (§1.1) — nur der absolute
+  Betrag. Kein Prozentsatz in Seller-Ansichten.
+- Beträge sind **Decimal EUR** auf der Leitung; die DB führt Cent. Clientseitige
+  Vergleiche und Summen laufen über `euroToCents` (`src/lib/settlement.ts`), nicht über
+  Euro-Floats.
+
+Client: `SellerOrderService.listSettlements()` bzw. `AdminService.listSettlements()`, beide
+über das gemeinsame Zod-Schema in `src/services/_settlement-schemas.ts` an der Boundary
+geprüft. Anzeigemodell und Darstellung: `src/lib/settlement.ts` +
+`SettlementBreakdown` (Brutto → Abzüge → Netto, ausklappbar unter der Tabellenzeile).
+
 #### Käufer-Reads — die Feldnamen weichen ab
 
 `GET /api/v1/orders` liefert den kanonischen Paged-Envelope (`data.items`), **keine**
@@ -706,7 +759,7 @@ POST   /api/v1/admin/products/{id}/deactivate        → { id, status }
 GET    /api/v1/admin/payments                        → PagedResponse<AdminPaymentItem>
 GET    /api/v1/admin/refunds                         → PagedResponse<AdminRefundItem>
 POST   /api/v1/admin/refunds                         → RefundResult          # Eskalation, siehe unten
-GET    /api/v1/admin/settlements                     → PagedResponse<Settlement>
+GET    /api/v1/admin/settlements                     → PagedResponse<Settlement>   # Vertrag: siehe Abrechnungszeile
 GET    /api/v1/admin/payouts                         → PagedResponse<AdminPayoutItem>
 
 GET    /api/v1/admin/monitoring/errors               → PagedResponse<PersistedErrorEvent>
@@ -931,7 +984,9 @@ GET  /api/v1/admin/payouts/due
      → PayoutDueItem[] mit {
          sellerId, sellerName,
          payoutAccountStatus: "NOT_CONNECTED" | "PENDING" | "ACTIVE" | "RESTRICTED",
-         settlementCount, grossAmount, feeAmount, netAmount,
+         settlementCount,
+         grossAmount, refundedAmount, feeAmount,
+         stripeFeeAmount, refundFeeAmount, chargebackAmount, netAmount,
          currency?, oldestEligibleAt?
        }
 
@@ -942,6 +997,22 @@ POST /api/v1/admin/payouts/run
 Setzt `payoutAccountStatus === "ACTIVE"` voraus. Settlement-Auslöser bleibt
 `DELIVERED`. Bei Freigabe geht eine gebrandete Payout-Mail an den Seller.
 Backend-seitig muss `createPayout()` das bestehende `ConflictException`-Stub ersetzen.
+
+Eine Zeile ist **je Seller und Währung** verdichtet (ein Stripe-Transfer kennt genau eine
+Währung). Die Geldfelder sind die **positionsweise Summe** derselben Kette wie auf der
+[Abrechnungszeile](#abrechnungszeile-settlement--die-vollständige-gebührenkette) —
+`feeAmount` heißt dort `platformFeeAmount`, sonst sind die Namen identisch:
+
+```
+grossAmount − refundedAmount − feeAmount − stripeFeeAmount − chargebackAmount = netAmount
+```
+
+`refundFeeAmount` steckt auch hier **in** `stripeFeeAmount`. Die vier Positionen neben
+`grossAmount`/`feeAmount`/`netAmount` sind additiv hinzugekommen (Backend-PR
+`Elysion-UG/elysion-marketplace-backend#240`, Doku `docs/api/payouts.md`); die
+Fälligkeitsliste ist die einzige Stelle, an der ein Klick echtes Geld bewegt, deshalb wird
+die Antwort per Zod geprüft und ein unbekannter `payoutAccountStatus` abgelehnt, statt
+still als „nicht freigebbar" durchzulaufen.
 
 ---
 

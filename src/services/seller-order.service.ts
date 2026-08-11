@@ -16,6 +16,7 @@ import type {
 } from "@/src/types"
 import { apiOrderProductSnapshotSchema, normalizeSnapshot } from "./_order-normalizers"
 import { apiRefundResultSchema, buildRefundBody, normalizeRefundResult } from "./_refund-schemas"
+import { apiSettlementListSchema, normalizeSettlement } from "./_settlement-schemas"
 
 export interface SellerOrderListParams {
   page?: number
@@ -166,8 +167,18 @@ export const SellerOrderService = {
     return normalizeOrderGroup(parseApiResponse(apiOrderGroupSchema, raw, "seller-order.deliver"))
   },
 
+  /**
+   * Eigene Abrechnungszeilen mit der vollständigen Gebührenkette (#53).
+   *
+   * Die Antwort wird geprüft, nicht gecastet: Auf der Zeile hängen neun
+   * Geldfelder, und ein umbenanntes Feld liefe sonst als `0,00 €` durch die
+   * Abrechnungsansicht (#38).
+   */
   async listSettlements(): Promise<Settlement[]> {
-    return apiRequest<Settlement[]>("/api/v1/seller/settlements")
+    const raw = await apiRequest<unknown>("/api/v1/seller/settlements")
+    return parseApiResponse(apiSettlementListSchema, raw, "seller-order.listSettlements").map(
+      normalizeSettlement
+    )
   },
 
   /**

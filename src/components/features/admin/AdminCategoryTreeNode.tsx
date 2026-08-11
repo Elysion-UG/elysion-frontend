@@ -1,6 +1,7 @@
 "use client"
 
 import { ChevronRight, ChevronDown, Pencil, ToggleLeft, ToggleRight, Loader2 } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
 import type { CategoryTreeNode } from "@/src/types"
 
 const levelColor: Record<number, string> = {
@@ -49,16 +50,18 @@ export default function AdminCategoryTreeNode({
         <td className="px-4 py-3">
           <div className="flex items-center" style={{ paddingLeft: `${depth * 24}px` }}>
             {hasChildren ? (
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => onToggleExpand(node.id)}
-                className="mr-2 shrink-0 rounded p-0.5 text-muted-foreground hover:text-muted-foreground"
+                className="mr-2 h-6 w-6 shrink-0 text-muted-foreground"
               >
                 {isExpanded ? (
                   <ChevronDown className="h-4 w-4" />
                 ) : (
                   <ChevronRight className="h-4 w-4" />
                 )}
-              </button>
+              </Button>
             ) : (
               <span className="mr-2 inline-block w-5" />
             )}
@@ -101,32 +104,38 @@ export default function AdminCategoryTreeNode({
         {/* Actions */}
         <td className="px-4 py-3">
           <div className="flex items-center justify-end gap-2">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => onEdit(node)}
-              className="flex items-center gap-1 rounded-lg border border-border/60 bg-ink-900/60 px-2 py-1 text-xs text-muted-foreground hover:text-muted-foreground"
+              className="h-7 gap-1 border-border/60 bg-ink-900/60 px-2 text-xs text-muted-foreground [&_svg]:size-3.5"
               title="Bearbeiten"
             >
               <Pencil className="h-3.5 w-3.5" />
-            </button>
+            </Button>
 
             {statusLoading === node.id ? (
               <Loader2 className="h-4 w-4 animate-spin text-green-500" />
             ) : isActive ? (
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => onToggleStatus(node, true)}
-                className="flex items-center gap-1 rounded-lg border border-border/60 bg-ink-900/60 px-2 py-1 text-xs text-muted-foreground hover:text-muted-foreground"
+                className="h-7 gap-1 border-border/60 bg-ink-900/60 px-2 text-xs text-muted-foreground"
                 title="Deaktivieren"
               >
                 <ToggleLeft className="h-4 w-4" />
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => onToggleStatus(node, false)}
-                className="flex items-center gap-1 rounded-lg border border-green-600/60 bg-green-700/30 px-2 py-1 text-xs text-green-500 hover:text-green-500"
+                className="h-7 gap-1 border-green-600/60 bg-green-700/30 px-2 text-xs text-green-500"
                 title="Aktivieren"
               >
                 <ToggleRight className="h-4 w-4" />
-              </button>
+              </Button>
             )}
           </div>
         </td>

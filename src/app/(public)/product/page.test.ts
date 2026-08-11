@@ -1,46 +1,35 @@
-import { describe, it, expect, vi, beforeEach } from "vitest"
+import { describe, it, expect, vi } from "vitest"
 
-const { mockGetBySlug } = vi.hoisted(() => ({ mockGetBySlug: vi.fn() }))
-
-vi.mock("@/src/services/product.service", () => ({
-  ProductService: { getBySlug: mockGetBySlug },
-}))
 vi.mock("@/src/components/features/products/ProductDetail", () => ({ default: () => null }))
 
-import { generateMetadata } from "./page"
+import * as page from "./page"
 
-describe("product page — generateMetadata", () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
+/**
+ * Drift-Guard für das Static Rendering von `/product` (#37).
+ *
+ * Ein `generateMetadata({ searchParams })` auf dieser Route nimmt ihr das
+ * Static Rendering (`○` → `ƒ`) — und zwar unabhängig davon, ob die Metadaten
+ * überhaupt ankommen. Genau das war der Zustand bis #37: der Fetch scheiterte
+ * server-seitig an der relativen API-Base und lieferte immer den generischen
+ * Titel, bezahlt wurde trotzdem ein Per-Request-Render.
+ *
+ * Der Fehler ist im Build-Output sichtbar, aber leicht zu übersehen. Dieser
+ * Test macht ihn zum Testfehler. Er ist keine Absage an produktspezifische
+ * Metadaten — die brauchen pfadbasierte URLs (`/product/[slug]`) und eine
+ * server-taugliche API-Base (#245); dann verschwindet dieser Guard mit der
+ * Route.
+ */
+describe("product page — statische Metadaten", () => {
+  it("exportiert kein generateMetadata (würde die Route dynamisch machen)", () => {
+    expect("generateMetadata" in page).toBe(false)
   })
 
-  it("builds title, description and OG image from the product", async () => {
-    mockGetBySlug.mockResolvedValueOnce({
-      name: "Bio T-Shirt",
-      shortDesc: "Weiche Bio-Baumwolle aus fairem Anbau.",
-      images: [{ url: "https://cdn.example/x.jpg" }],
-    })
-
-    const meta = await generateMetadata({
-      searchParams: Promise.resolve({ slug: "bio-t-shirt" }),
-    })
-
-    expect(meta.title).toBe("Bio T-Shirt")
-    expect(meta.description).toContain("Weiche Bio-Baumwolle")
-    expect(mockGetBySlug).toHaveBeenCalledWith("bio-t-shirt")
-    const images = (meta.openGraph as { images?: Array<{ url: string }> }).images
-    expect(images?.[0]?.url).toBe("https://cdn.example/x.jpg")
+  it("setzt keine Route-Segment-Option, die das Prerendering abschaltet", () => {
+    expect("dynamic" in page).toBe(false)
+    expect("revalidate" in page).toBe(false)
   })
 
-  it("returns a generic title when no slug is present", async () => {
-    const meta = await generateMetadata({ searchParams: Promise.resolve({}) })
-    expect(meta.title).toBe("Produkt")
-    expect(mockGetBySlug).not.toHaveBeenCalled()
-  })
-
-  it("falls back to a generic title when the fetch fails", async () => {
-    mockGetBySlug.mockRejectedValueOnce(new Error("404"))
-    const meta = await generateMetadata({ searchParams: Promise.resolve({ slug: "missing" }) })
-    expect(meta.title).toBe("Produkt")
+  it("liefert denselben generischen Titel wie bisher der Fehlerzweig", () => {
+    expect(page.metadata).toEqual({ title: "Produkt" })
   })
 })

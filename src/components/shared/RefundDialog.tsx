@@ -10,6 +10,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/src/components/ui/dialog"
+import { Button } from "@/src/components/ui/button"
 import { Input } from "@/src/components/ui/input"
 import { Textarea } from "@/src/components/ui/textarea"
 import { ErrorAlert } from "@/src/components/shared/ErrorAlert"
@@ -268,27 +269,27 @@ export function RefundDialog({
         </div>
 
         <DialogFooter className="mt-6 flex gap-3 sm:flex-row">
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={onClose}
-            className={`flex-1 rounded-lg border py-2 text-sm font-medium ${
-              dark
-                ? "border-border/60 text-muted-foreground hover:bg-ink-900/60"
-                : "border-border text-foreground hover:bg-secondary"
+            className={`flex-1 ${
+              dark ? "border-border/60 text-muted-foreground hover:bg-ink-900/60" : ""
             }`}
           >
             Abbrechen
-          </button>
+          </Button>
           {!nothingLeft && (
-            <button
+            <Button
               type="button"
+              variant="destructive"
               onClick={confirming ? handleSubmit : handleRequestConfirm}
               disabled={isSubmitting}
-              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-destructive py-2 text-sm font-medium text-white hover:bg-destructive disabled:opacity-60"
+              className="flex-1 disabled:opacity-60"
             >
               {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
               {confirming ? "Endgültig erstatten" : "Erstattung auslösen"}
-            </button>
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>

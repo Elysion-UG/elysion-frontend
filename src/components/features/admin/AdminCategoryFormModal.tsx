@@ -3,6 +3,9 @@
 import { useId } from "react"
 import { X, Loader2 } from "lucide-react"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
+import { Textarea } from "@/src/components/ui/textarea"
 
 export interface FormState {
   name: string
@@ -87,12 +90,14 @@ export default function AdminCategoryFormModal({
           <h2 id={titleId} className="font-mono text-lg font-semibold text-muted-foreground">
             {title}
           </h2>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="rounded-md p-1 text-muted-foreground hover:text-muted-foreground"
+            className="h-8 w-8 text-muted-foreground [&_svg]:size-5"
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         <div className="space-y-4">
@@ -104,12 +109,12 @@ export default function AdminCategoryFormModal({
             >
               Name *
             </label>
-            <input
+            <Input
               id={nameId}
               type="text"
               value={form.name}
               onChange={(e) => handleNameChange(e.target.value)}
-              className="w-full rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
+              className="h-9 border-border/60 bg-ink-900/60 px-3 text-sm text-muted-foreground"
               placeholder="z.B. Bio-Textilien"
             />
           </div>
@@ -122,12 +127,12 @@ export default function AdminCategoryFormModal({
             >
               Slug
             </label>
-            <input
+            <Input
               id={slugId}
               type="text"
               value={form.slug}
               onChange={(e) => onChange({ ...form, slug: e.target.value })}
-              className="w-full rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 font-mono text-sm text-muted-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
+              className="h-9 border-border/60 bg-ink-900/60 px-3 font-mono text-sm text-muted-foreground"
               placeholder="auto-generiert"
             />
           </div>
@@ -141,11 +146,14 @@ export default function AdminCategoryFormModal({
               >
                 Eltern-Kategorie
               </label>
+              {/* Für <select> gibt es kein Primitive — die Feld-Optik von <Input>
+                  steht hier deshalb von Hand (Guide 03: Radius 12, Hairline,
+                  3-px-Grün-Fokusring). */}
               <select
                 id={parentId}
                 value={form.parentId}
                 onChange={(e) => onChange({ ...form, parentId: e.target.value })}
-                className="w-full rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                className="h-9 w-full rounded-xl border-[1.5px] border-border/60 bg-ink-900/60 px-3 text-sm text-muted-foreground transition-[color,border-color,box-shadow] duration-200 ease-brand focus-visible:border-green-500 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-green-500/40"
               >
                 <option value="">Keine (Root)</option>
                 {parentOptions
@@ -167,12 +175,12 @@ export default function AdminCategoryFormModal({
             >
               Beschreibung
             </label>
-            <textarea
+            <Textarea
               id={descriptionId}
               value={form.description}
               onChange={(e) => onChange({ ...form, description: e.target.value })}
               rows={2}
-              className="w-full rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
+              className="min-h-0 border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground"
               placeholder="Optionale Beschreibung..."
             />
           </div>
@@ -185,12 +193,12 @@ export default function AdminCategoryFormModal({
             >
               Sortierung
             </label>
-            <input
+            <Input
               id={orderId}
               type="number"
               value={form.order}
               onChange={(e) => onChange({ ...form, order: e.target.value })}
-              className="w-full rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
+              className="h-9 border-border/60 bg-ink-900/60 px-3 text-sm text-muted-foreground"
               min={0}
               step={1}
             />
@@ -207,20 +215,17 @@ export default function AdminCategoryFormModal({
         )}
 
         <div className="mt-6 flex justify-end gap-3">
-          <button
+          <Button
+            variant="outline"
             onClick={onClose}
-            className="rounded-lg border border-border/60 bg-ink-900/60 px-4 py-2 text-sm text-muted-foreground hover:text-muted-foreground"
+            className="border-border/60 bg-ink-900/60 text-muted-foreground"
           >
             Abbrechen
-          </button>
-          <button
-            onClick={onSubmit}
-            disabled={isSaving || !form.name.trim()}
-            className="flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-ink-900 hover:bg-green-500 disabled:opacity-40"
-          >
+          </Button>
+          <Button onClick={onSubmit} disabled={isSaving || !form.name.trim()}>
             {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
             Speichern
-          </button>
+          </Button>
         </div>
       </div>
     </div>
