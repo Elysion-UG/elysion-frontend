@@ -1,13 +1,17 @@
 "use client"
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { SellerOrderService } from "@/src/services/seller-order.service"
+import { SellerProductService } from "@/src/services/seller-product.service"
+import { ProductService } from "@/src/services/product.service"
 import { CertificateService } from "@/src/services/certificate.service"
 import { SellerProfileService } from "@/src/services/seller-profile.service"
 import { SellerValueProfileService } from "@/src/services/seller-value-profile.service"
 import { ApiError } from "@/src/lib/api-client"
-import type { SellerCertificateCreateDTO } from "@/src/types"
+import { formatEuro } from "@/src/lib/currency"
+import { PRODUCT_STATUS_LABEL } from "@/src/lib/constants/status-labels"
+import type { ProductStatus, RefundRequestDTO, SellerCertificateCreateDTO } from "@/src/types"
 
 // Derive the mutation input types straight from the service signatures — these
 // endpoints have no exported DTO type, and inferring avoids drift.
@@ -23,6 +27,10 @@ type SellerValueProfileUpsertInput = Parameters<typeof SellerValueProfileService
 
 export const sellerKeys = {
   orders: ["seller", "orders"] as const,
+  /** Präfix über Produktseiten **und** Statuszahlen — invalidieren trifft beides. */
+  products: ["seller", "products"] as const,
+  productsPage: (page: number) => ["seller", "products", "page", page] as const,
+  productCounts: ["seller", "products", "counts"] as const,
   certificates: ["seller", "certificates"] as const,
   settlements: ["seller", "settlements"] as const,
   profile: ["seller", "profile"] as const,
@@ -63,6 +71,84 @@ export function useDeliverSellerOrder() {
       void queryClient.invalidateQueries({ queryKey: sellerKeys.orders })
     },
     onError: () => toast.error("Fehler beim Aktualisieren."),
+  })
+}
+
+/**
+ * Erstattung auf einer eigenen OrderGroup (#56). Der Fehlerfall wird bewusst
+ * **nicht** hier abgefangen: das Modal zeigt ihn instanz- und konsequenzgenau
+ * inline an (§1.9), ein zusätzlicher Toast würde dieselbe Aussage doppeln.
+ *
+ * Nach Erfolg werden Bestellungen **und** Abrechnungen invalidiert — die
+ * Gegenbuchung verändert beide Sichten in derselben Transaktion.
+ */
+export function useSellerRefund() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (dto: RefundRequestDTO) => SellerOrderService.refund(dto),
+    onSuccess: (result) => {
+      toast.success(`${formatEuro(result.amount)} erstattet.`)
+      void queryClient.invalidateQueries({ queryKey: sellerKeys.orders })
+      void queryClient.invalidateQueries({ queryKey: sellerKeys.settlements })
+    },
+  })
+}
+
+// ── Products ──────────────────────────────────────────────────────────────────
+//
+// Quelle ist ausschließlich `GET /api/v1/seller/products` (#227). Der öffentliche
+// Katalog zeigt nur `ACTIVE` und hat neu angelegte Entwürfe deshalb nie geliefert.
+
+/** Seitengröße der Produktverwaltung — der Default des Backends. */
+export const SELLER_PRODUCTS_PAGE_SIZE = 20
+
+/** Status, deren Zahlen als KPI-Kachel über der Tabelle stehen. */
+export const SELLER_PRODUCT_KPI_STATUSES = ["ACTIVE", "DRAFT", "REVIEW"] as const
+
+export function useSellerProductsPage(page: number, enabled = true) {
+  return useQuery({
+    queryKey: sellerKeys.productsPage(page),
+    queryFn: () => SellerProductService.list({ page, size: SELLER_PRODUCTS_PAGE_SIZE }),
+    enabled,
+    staleTime: STALE,
+    // Beim Blättern die alte Seite stehen lassen, statt die Tabelle gegen einen
+    // Ladezustand zu tauschen.
+    placeholderData: keepPreviousData,
+  })
+}
+
+/**
+ * Statuszahlen der KPI-Kacheln. Bewusst eine eigene Abfrage: über die gerade
+ * sichtbare Seite gezählt wären die Zahlen falsch, sobald ein Verkäufer mehr
+ * Produkte hat, als auf eine Seite passen.
+ */
+export function useSellerProductCounts(enabled = true) {
+  return useQuery({
+    queryKey: sellerKeys.productCounts,
+    queryFn: () => SellerProductService.countByStatus(SELLER_PRODUCT_KPI_STATUSES),
+    enabled,
+    staleTime: STALE,
+  })
+}
+
+export function useUpdateSellerProductStatus() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ productId, status }: { productId: string; status: ProductStatus }) =>
+      ProductService.updateStatus(productId, { status }),
+    onSuccess: (_result, { status }) => {
+      toast.success(`Status auf „${PRODUCT_STATUS_LABEL[status]}" gesetzt.`)
+      void queryClient.invalidateQueries({ queryKey: sellerKeys.products })
+    },
+    // Bei `DRAFT → REVIEW` steht im 400 der eigentliche Grund („REVIEW requires
+    // at least one image"). Ihn zu verschlucken lässt den Verkäufer ratlos vor
+    // einem Knopf zurück, der nichts tut — deshalb wird er durchgereicht.
+    onError: (err) =>
+      toast.error(
+        err instanceof ApiError && err.status === 400 && err.message
+          ? `Status konnte nicht geändert werden: ${err.message}`
+          : "Status konnte nicht geändert werden."
+      ),
   })
 }
 

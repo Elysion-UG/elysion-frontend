@@ -1,6 +1,8 @@
 "use client"
 
 import { User, Loader2 } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
 import { SectionHeader } from "./SectionHeader"
 
 interface PersonalDataSectionProps {
@@ -44,20 +46,18 @@ export function PersonalDataSection({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-foreground">Vorname</label>
-              <input
+              <Input
                 type="text"
                 value={firstName}
                 onChange={(e) => onFirstNameChange(e.target.value)}
-                className="w-full rounded-lg border border-border px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-foreground">Nachname</label>
-              <input
+              <Input
                 type="text"
                 value={lastName}
                 onChange={(e) => onLastNameChange(e.target.value)}
-                className="w-full rounded-lg border border-border px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
           </div>
@@ -65,27 +65,18 @@ export function PersonalDataSection({
             <label className="mb-1 block text-sm font-medium text-foreground">
               E-Mail <span className="text-muted-foreground">(nicht änderbar)</span>
             </label>
-            <input
+            <Input
               type="email"
               value={email}
               disabled
-              className="w-full cursor-not-allowed rounded-lg border border-border bg-secondary px-3 py-2 text-muted-foreground"
+              className="bg-secondary text-muted-foreground"
             />
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-foreground">Telefon</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => onPhoneChange(e.target.value)}
-              className="w-full rounded-lg border border-border px-3 py-2 text-foreground focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
+            <Input type="tel" value={phone} onChange={(e) => onPhoneChange(e.target.value)} />
           </div>
-          <button
-            onClick={onSave}
-            disabled={isSaving}
-            className="mt-2 flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-50"
-          >
+          <Button onClick={onSave} disabled={isSaving} className="mt-2">
             {isSaving ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" /> Speichern...
@@ -93,7 +84,7 @@ export function PersonalDataSection({
             ) : (
               "Änderungen speichern"
             )}
-          </button>
+          </Button>
         </div>
       )}
     </div>

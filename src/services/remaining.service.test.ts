@@ -110,6 +110,20 @@ describe("BuyerValueProfileService", () => {
 // ── CartService ───────────────────────────────────────────────────────────────
 import { CartService } from "./cart.service"
 
+// POST/PATCH answer with the affected line (`CartItemResponse`), never with the
+// whole cart — the service validates that shape (#188).
+const apiCartItem = {
+  id: "item1",
+  product: { id: "p1", slug: "p-1", name: "Produkt 1", primaryImage: null },
+  variant: { id: "v1", sku: "SKU-1", options: [] },
+  quantity: 2,
+  unitPrice: 10,
+  currency: "EUR",
+  lineTotal: 20,
+  createdAt: "",
+  updatedAt: "",
+}
+
 describe("CartService", () => {
   it("get calls GET /api/v1/cart", async () => {
     mockApiRequest.mockResolvedValue({
@@ -127,7 +141,7 @@ describe("CartService", () => {
   })
 
   it("addItem calls POST /api/v1/cart/items", async () => {
-    mockApiRequest.mockResolvedValue({ items: [] })
+    mockApiRequest.mockResolvedValue(apiCartItem)
     const dto = { productId: "p1", variantId: "v1", quantity: 2 }
     await CartService.addItem(dto)
     expect(mockApiRequest).toHaveBeenCalledWith(
@@ -140,7 +154,7 @@ describe("CartService", () => {
   })
 
   it("updateItem calls PATCH with itemId", async () => {
-    mockApiRequest.mockResolvedValue({ items: [] })
+    mockApiRequest.mockResolvedValue({ ...apiCartItem, quantity: 3, lineTotal: 30 })
     await CartService.updateItem("item1", { quantity: 3 })
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/cart/items/item1",
@@ -176,7 +190,18 @@ describe("CategoryService", () => {
         slug: "root",
         level: 1,
         order: 1,
-        children: [{ id: "child", name: "Child", slug: "child", level: 2, order: 1, children: [] }],
+        isActive: true,
+        children: [
+          {
+            id: "child",
+            name: "Child",
+            slug: "child",
+            level: 2,
+            order: 1,
+            isActive: true,
+            children: [],
+          },
+        ],
       },
     ]
     mockApiRequest.mockResolvedValue(nested)
@@ -185,39 +210,51 @@ describe("CategoryService", () => {
     expect(tree).toEqual(nested)
   })
 
-  it("create calls POST /api/v1/categories", async () => {
-    mockApiRequest.mockResolvedValue({ id: "c1" })
-    const dto = { name: "Kleidung" }
+  it("adminList calls GET /api/v1/admin/categories", async () => {
+    mockApiRequest.mockResolvedValue([])
+    await CategoryService.adminList()
+    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/categories")
+  })
+
+  it("adminTree calls GET /api/v1/admin/categories/tree", async () => {
+    mockApiRequest.mockResolvedValue([])
+    await CategoryService.adminTree()
+    expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/categories/tree")
+  })
+
+  it("create calls POST /api/v1/admin/categories", async () => {
+    mockApiRequest.mockResolvedValue({ id: "c1", slug: "kleidung", level: 1, isActive: true })
+    const dto = { name: "Kleidung", slug: "kleidung", order: 0 }
     await CategoryService.create(dto)
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/categories",
+      "/api/v1/admin/categories",
       expect.objectContaining({ method: "POST", body: JSON.stringify(dto) })
     )
   })
 
   it("update calls PATCH with category id", async () => {
-    mockApiRequest.mockResolvedValue({ id: "c1" })
-    await CategoryService.update("c1", { name: "Neu" })
+    mockApiRequest.mockResolvedValue({ id: "c1", slug: "neu", level: 1, isActive: true })
+    await CategoryService.update("c1", { name: "Neu", slug: "neu", order: 0 })
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/categories/c1",
+      "/api/v1/admin/categories/c1",
       expect.objectContaining({ method: "PATCH" })
     )
   })
 
   it("activate calls PATCH on activate endpoint", async () => {
-    mockApiRequest.mockResolvedValue({ id: "c1" })
+    mockApiRequest.mockResolvedValue(null)
     await CategoryService.activate("c1")
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/categories/c1/activate",
+      "/api/v1/admin/categories/c1/activate",
       expect.objectContaining({ method: "PATCH" })
     )
   })
 
   it("deactivate calls PATCH on deactivate endpoint", async () => {
-    mockApiRequest.mockResolvedValue({ id: "c1" })
+    mockApiRequest.mockResolvedValue(null)
     await CategoryService.deactivate("c1")
     expect(mockApiRequest).toHaveBeenCalledWith(
-      "/api/v1/categories/c1/deactivate",
+      "/api/v1/admin/categories/c1/deactivate",
       expect.objectContaining({ method: "PATCH" })
     )
   })
@@ -312,11 +349,36 @@ describe("CertificateService", () => {
 // ── CheckoutService ───────────────────────────────────────────────────────────
 import { CheckoutService } from "./checkout.service"
 
+// Beide Routen validieren ihre Antwort jetzt an der Grenze (#38), deshalb
+// tragen die Fixtures die vertragliche Form statt einer freien Erfindung
+// (`{ items: [] }` / `{ orderId: "o1" }`). Inhaltliche Fälle stehen in
+// `checkout.service.test.ts`.
+const apiCheckoutAddress = {
+  firstName: "Max",
+  lastName: "Mustermann",
+  street: "Musterstraße",
+  houseNumber: "1",
+  postalCode: "12345",
+  city: "Berlin",
+  country: "DE",
+}
+
+const apiCheckoutStart = {
+  cartId: "cart1",
+  ownershipType: "AUTHENTICATED",
+  totalQuantity: 0,
+  subtotal: 0,
+  currency: "EUR",
+  items: [],
+  shippingAddress: apiCheckoutAddress,
+  billingAddress: apiCheckoutAddress,
+}
+
 describe("CheckoutService", () => {
   const dto = { shippingAddressId: "addr1", paymentMethod: "STRIPE" as const }
 
   it("preview calls POST /api/v1/checkout", async () => {
-    mockApiRequest.mockResolvedValue({ items: [] })
+    mockApiRequest.mockResolvedValue(apiCheckoutStart)
     await CheckoutService.preview(dto)
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/checkout",
@@ -325,7 +387,15 @@ describe("CheckoutService", () => {
   })
 
   it("complete calls POST /api/v1/checkout/complete", async () => {
-    mockApiRequest.mockResolvedValue({ orderId: "o1" })
+    mockApiRequest.mockResolvedValue({
+      orderId: "o1",
+      orderNumber: "ORD-1",
+      orderStatus: "PENDING",
+      paymentStatus: "PENDING",
+      paymentMethod: "STRIPE",
+      completedAt: "2026-01-01T10:00:00Z",
+      checkout: apiCheckoutStart,
+    })
     await CheckoutService.complete(dto)
     expect(mockApiRequest).toHaveBeenCalledWith(
       "/api/v1/checkout/complete",
@@ -423,14 +493,20 @@ describe("FileService", () => {
 // ── PaymentService ────────────────────────────────────────────────────────────
 import { PaymentService } from "./payment.service"
 
+// Auch hier tragen die Fixtures jetzt die vertragliche Form: `id`/`status:
+// "created"` waren Stripe-Vokabular, das diese Routen nie geliefert haben.
+// Inhaltliche Fälle stehen in `payment.service.test.ts`.
 describe("PaymentService", () => {
   it("createIntent calls POST /api/v1/payments/create-intent", async () => {
     mockApiRequest.mockResolvedValue({
-      id: "pi_1",
-      clientSecret: "sec",
+      paymentId: "pay_1",
+      orderId: "o1",
+      provider: "STRIPE",
       amount: 100,
-      currency: "eur",
-      status: "created",
+      currency: "EUR",
+      status: "PENDING",
+      clientSecret: "sec",
+      providerPaymentId: "pi_1",
     })
     await PaymentService.createIntent({ orderId: "o1", provider: "STRIPE" })
     expect(mockApiRequest).toHaveBeenCalledWith(
@@ -442,9 +518,15 @@ describe("PaymentService", () => {
   it("getStatus calls GET /api/v1/payments/:paymentId", async () => {
     mockApiRequest.mockResolvedValue({
       paymentId: "p1",
-      status: "SUCCEEDED",
+      orderId: "o1",
+      provider: "STRIPE",
       amount: 100,
-      updatedAt: "",
+      currency: "EUR",
+      status: "SUCCEEDED",
+      receiptUrl: null,
+      createdAt: "2026-01-01T10:00:00Z",
+      succeededAt: "2026-01-01T10:00:05Z",
+      failedAt: null,
     })
     await PaymentService.getStatus("p1")
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/payments/p1")

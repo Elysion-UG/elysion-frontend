@@ -192,16 +192,16 @@ const isDev = process.env.NODE_ENV !== "production"
 const BACKEND_HOST = resolveBackendHost()
 const BACKEND_ORIGIN = `https://${BACKEND_HOST}`
 
-// script-src is nonce-based for dynamically-rendered routes (portals + auth),
-// where the middleware can hand Next.js a per-request nonce to stamp onto its
-// bootstrap scripts. Public routes are served statically/ISR (#37) and have no
-// per-request nonce, so they fall back to 'unsafe-inline' for script-src. That
-// is a deliberate, scoped relaxation: it applies ONLY to the token-free public
-// shop pages, and the rest of the policy still bounds it — connect-src/img-src
-// are restricted to self + the single backend origin, object-src 'none',
-// base-uri 'self', frame-ancestors 'none' — so an injected inline script cannot
-// exfiltrate to an arbitrary origin. The strict nonce policy is retained on
-// every authenticated surface (see middleware() route classification).
+// script-src is nonce-based for the dynamically-rendered, authenticated routes
+// (portals + auth + gated buyer pages), where the middleware can hand Next.js a
+// per-request nonce to stamp onto its bootstrap scripts. Everything else —
+// statically prerendered public pages, but also /_not-found and any unknown
+// path — falls back to 'unsafe-inline' for script-src, because there is no
+// per-request render that could carry a nonce (see NONCE_ROUTES / usesNonce).
+// That relaxation is deliberate and bounded by the rest of the policy:
+// connect-src/img-src are restricted to self + the single backend origin,
+// object-src 'none', base-uri 'self', frame-ancestors 'none' — so an injected
+// inline script cannot exfiltrate to an arbitrary origin.
 function buildCsp(nonce: string | null): string {
   const scriptSrc = [
     "'self'",
@@ -243,10 +243,78 @@ function generateNonce(): string {
   return crypto.randomUUID().replace(/-/g, "")
 }
 
-// Routes in the (public) group — statically/ISR-rendered, no per-request nonce
-// (#37). Kept in sync with src/app/(public)/. "/" is the shop home. The check
-// only matters on the buyer/main domain; seller/admin domains never serve these.
-const PUBLIC_ROUTES = [
+// ── Nonce-Klassifikation: Opt-in statt Default (#221) ──────────────────────
+//
+// Die Nonce-CSP gilt NUR für die hier gelisteten, authentifizierten Flächen.
+// Alles andere — öffentliche Seiten, /_not-found und jeder unbekannte Pfad —
+// bekommt die nonce-freie Policy.
+//
+// Warum diese Richtung: entscheidend ist, was ein Fehler kostet, nicht wie oft
+// er passiert.
+//
+//   • Route fehlt in dieser Liste (vergessene authentifizierte Route)
+//     → script-src 'unsafe-inline' statt Nonce: der Verlust EINER
+//       Härtungsschicht. Session-Gate oben und die clientseitigen Guards
+//       (AuthGuard/SellerGuard/AdminGuard) plus das Backend bleiben unberührt,
+//       und der Rest der Policy bindet die Relaxation (siehe buildCsp).
+//   • Route steht fälschlich drin bzw. eine Seite ist statisch, bekommt aber
+//     die Nonce → Next stempelt in die build-time gerenderten Bootstrap-Scripts
+//     keine passende Nonce, die Hydration startet nie, die Seite ist TOT
+//     (FE#23). In `next dev` unsichtbar (dort rendert alles dynamisch), erst auf
+//     Staging sichtbar.
+//
+// Bis #221 war die Klassifikation herum: Nonce als Default, öffentliche Routen
+// als Ausnahmeliste. Damit fiel /_not-found durch die Liste und jeder unbekannte
+// Pfad lieferte totes HTML — der Totalausfall war der REGELFALL des Fehlers.
+// Invertiert ist der Fehlerfall die laschere CSP; das ist der billigere Preis.
+//
+// Die Liste ist genau die Vereinigung der Portal-/Buyer-Listen oben und deckt
+// sich 1:1 mit den vier Route-Gruppen, die `export const dynamic =
+// "force-dynamic"` setzen ((admin), (auth), (buyer), (seller)) — nur dort
+// existiert überhaupt ein Per-Request-Render, das eine Nonce tragen kann.
+// Deshalb keine eigene Struktur: neue geschützte Route → in die bestehende
+// Portal-/Buyer-Liste eintragen, die Nonce folgt automatisch.
+//
+// Verbleibender Rest, bewusst offen: ein Tippfehler UNTERHALB eines
+// authentifizierten Prefixes (z. B. /admin/tippfehler) matcht hier weiter und
+// rendert doch das statische /_not-found — die Middleware kennt die Route-Tabelle
+// nicht und kann „Pfad existiert" nicht prüfen. Betrifft nur eingeloggte Nutzer
+// hinter dem Portal-Prefix; der Regelfall (jeder unbekannte Pfad auf der
+// Shop-Domain) ist damit behoben.
+//
+// Dass die Liste die authentifizierten Route-Gruppen wirklich vollständig
+// abbildet, prüft der Drift-Guard in middleware.test.ts (#235): eine Seite unter
+// src/app/(seller|admin|buyer|auth)/, die von keinem Eintrag gedeckt ist, fällt
+// dort auf statt still in der CSP. Deshalb exportiert — sonst importiert nichts
+// diese Konstante.
+export const NONCE_ROUTES = Array.from(
+  new Set([
+    ...SELLER_PROTECTED,
+    ...SELLER_PUBLIC,
+    ...ADMIN_PROTECTED,
+    ...ADMIN_PUBLIC,
+    ...BUYER_PROTECTED,
+  ])
+)
+
+// Segmentgenaues Matching (exakt oder Prefix mit "/"), bewusst strenger als das
+// lose `startsWith` der Redirect-Zweige weiter unten: "/administration" ist
+// keine Admin-Route, existiert nicht und rendert das statische /_not-found —
+// eine Nonce wäre dort genau der Bug aus #221.
+function usesNonce(pathname: string): boolean {
+  return NONCE_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`))
+}
+
+// Inventar der (public)-Route-Gruppe. Seit der Inversion (#221) steuert diese
+// Liste die CSP NICHT mehr — öffentlich ist jetzt der Default, nicht die
+// Ausnahme. Sie bleibt als gepflegtes Abbild von src/app/(public)/ bestehen und
+// speist den Drift-Guard in middleware.test.ts (#218): dessen verbliebener Wert
+// ist der UMZUG. Wandert (public)/x nach (buyer)/x, wird /x eine
+// authentifizierte, dynamisch gerenderte URL — sie muss dann in BUYER_PROTECTED
+// stehen, sonst verliert sie still die Nonce-Policy. Der zurückgebliebene
+// Eintrag hier ist das einzige automatische Signal für diesen Umzug.
+// Exportiert ausschließlich für middleware.test.ts; sonst nichts importiert sie.
+export const PUBLIC_ROUTES = [
   "/about",
   "/agb",
   "/cart",
@@ -258,12 +326,6 @@ const PUBLIC_ROUTES = [
   "/versand",
   "/widerruf",
 ]
-
-function isPublicRoute(pathname: string): boolean {
-  return (
-    pathname === "/" || PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(`${r}/`))
-  )
-}
 
 function applySecurityHeaders(
   request: NextRequest,
@@ -281,21 +343,19 @@ function applySecurityHeaders(
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Public shop routes are served statically/ISR with a nonce-free CSP (#37);
-  // every authenticated surface (portals + auth) keeps the strict per-request
-  // nonce and stays dynamically rendered. Seller/admin domains only ever serve
-  // portal routes, so they always get a nonce regardless of pathname.
-  const usesNonce = !(
-    isPublicRoute(pathname) &&
-    !isSellerDomain(request) &&
-    !isAdminDomain(request)
-  )
-  const nonce = usesNonce ? generateNonce() : null
+  // Nonce ist Opt-in (#221): nur die authentifizierten, per Request gerenderten
+  // Flächen bekommen sie — alles andere, inklusive /_not-found und jedem
+  // unbekannten Pfad, die nonce-freie Policy. Die Entscheidung hängt allein am
+  // Pfad, nicht an der Domain: die Portalpfade sind auf allen Domains dieselben,
+  // und ein unbekannter Pfad rendert auch auf seller./admin. das statische
+  // /_not-found. Begründung der Fehlerrichtung: siehe NONCE_ROUTES.
+  const nonce = usesNonce(pathname) ? generateNonce() : null
   const csp = buildCsp(nonce)
 
   // Forward the nonce to the app so <Script nonce={…}> and Next.js' own inline
-  // bootstrap scripts can adopt it during SSR. Omitted for public routes, which
-  // render statically and use the nonce-free policy.
+  // bootstrap scripts can adopt it during SSR. Omitted for everything that is
+  // not an authenticated route — those render statically and use the nonce-free
+  // policy.
   const requestHeaders = new Headers(request.headers)
   if (nonce) requestHeaders.set("x-nonce", nonce)
   requestHeaders.set("Content-Security-Policy", csp)

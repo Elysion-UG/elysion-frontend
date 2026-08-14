@@ -4,24 +4,19 @@ import React from "react"
 import { CartProvider, useCart } from "./CartContext"
 import { useAuth } from "@/src/context/AuthContext"
 import { CartService } from "@/src/services/cart.service"
-import * as productDisplayCache from "@/src/lib/product-display-cache"
-import type { AddToCartDTO, Cart } from "@/src/types"
+import type { AddToCartDTO, Cart, CartItem } from "@/src/types"
 
 vi.mock("@/src/services/cart.service", () => ({
   CartService: {
-    get: vi.fn().mockResolvedValue({ items: [] }),
-    addItem: vi.fn().mockResolvedValue(undefined),
-    updateItem: vi.fn().mockResolvedValue(undefined),
-    removeItem: vi.fn().mockResolvedValue(undefined),
+    get: vi.fn(),
+    addItem: vi.fn(),
+    updateItem: vi.fn(),
+    removeItem: vi.fn(),
   },
 }))
 
 vi.mock("@/src/lib/product-display-cache", () => ({
-  saveProductDisplay: vi.fn(),
-  getProductDisplay: vi.fn().mockReturnValue(null),
-  getProductDisplayCache: vi.fn().mockReturnValue({}),
-  saveVariantOptions: vi.fn(),
-  getVariantOptions: vi.fn().mockReturnValue(null),
+  clearLegacyVariantOptionsCache: vi.fn(),
 }))
 
 // CartProvider calls useAuth() — provide a default guest context for all tests.
@@ -36,12 +31,63 @@ const wrapper = ({ children }: { children: React.ReactNode }) => (
   <CartProvider>{children}</CartProvider>
 )
 
+// ── Fake cart backend ──────────────────────────────────────────────────────────
+// POST and PATCH answer with the affected line (`CartItemResponse`) carrying the
+// server's own item id, the server-side merged quantity and the server-owned
+// display data. The default mocks emulate exactly that, because the context now
+// reconciles its optimistic line against the response (#188).
+
+const serverLines = new Map<string, CartItem>()
+let serverIdCounter = 0
+
+function lineKey(productId: string, variantId?: string) {
+  return `${productId}|${variantId ?? ""}`
+}
+
+function fakeAddItem(dto: AddToCartDTO): CartItem {
+  const key = lineKey(dto.productId, dto.variantId)
+  const existing = serverLines.get(key)
+  const line: CartItem = {
+    id: existing?.id ?? `srv-${++serverIdCounter}`,
+    productId: dto.productId,
+    variantId: dto.variantId,
+    quantity: (existing?.quantity ?? 0) + dto.quantity,
+    productName: dto.productName,
+    productSlug: dto.productSlug,
+    imageUrl: dto.imageUrl,
+    unitPriceCents: dto.unitPriceCents,
+    variantOptions: dto.variantOptions ?? [],
+  }
+  serverLines.set(key, line)
+  return line
+}
+
+function fakeUpdateItem(itemId: string, dto: { quantity: number }): CartItem {
+  for (const [key, line] of serverLines) {
+    if (line.id === itemId) {
+      const updated = { ...line, quantity: dto.quantity }
+      serverLines.set(key, updated)
+      return updated
+    }
+  }
+  const line: CartItem = { id: itemId, productId: "unknown", quantity: dto.quantity }
+  return line
+}
+
 beforeEach(() => {
   localStorage.clear()
+  serverLines.clear()
+  serverIdCounter = 0
+  ;(CartService.get as MockedFunction<typeof CartService.get>).mockReset()
+  ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockReset()
+  ;(CartService.updateItem as MockedFunction<typeof CartService.updateItem>).mockReset()
+  ;(CartService.removeItem as MockedFunction<typeof CartService.removeItem>).mockReset()
   ;(CartService.get as MockedFunction<typeof CartService.get>).mockResolvedValue({ items: [] })
-  ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockResolvedValue(undefined)
-  ;(CartService.updateItem as MockedFunction<typeof CartService.updateItem>).mockResolvedValue(
-    undefined
+  ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockImplementation(
+    async (dto) => fakeAddItem(dto)
+  )
+  ;(CartService.updateItem as MockedFunction<typeof CartService.updateItem>).mockImplementation(
+    async (itemId, dto) => fakeUpdateItem(itemId, dto)
   )
   ;(CartService.removeItem as MockedFunction<typeof CartService.removeItem>).mockResolvedValue(
     undefined
@@ -721,10 +767,6 @@ describe("authenticated cart — backend API contract (regression)", () => {
     ;(CartService.get as MockedFunction<typeof CartService.get>).mockResolvedValue({
       items: [],
     } as Cart)
-    ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockReset()
-    ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockResolvedValue(
-      undefined
-    )
   })
 
   afterEach(() => {
@@ -756,7 +798,7 @@ describe("authenticated cart — backend API contract (regression)", () => {
     ).toMatchObject({ variantId: "var-XL", quantity: 2 })
   })
 
-  it("addItem result: item retains display fields from the optimistic update after backend sync", async () => {
+  it("addItem result: the line carries the display fields after backend sync", async () => {
     const { result } = renderHook(() => useCart(), { wrapper })
     await act(async () => {})
 
@@ -779,41 +821,24 @@ describe("authenticated cart — backend API contract (regression)", () => {
     expect(item.unitPriceCents).toBe(2999)
   })
 
-  it("restores variantOptions from cache after backend cart load (regression: options lost on reload)", async () => {
-    const cachedOptions = [{ name: "Größe", value: "XL" }]
-    ;(
-      productDisplayCache.getVariantOptions as MockedFunction<
-        typeof productDisplayCache.getVariantOptions
-      >
-    ).mockReturnValue(cachedOptions)
-
+  it("takes variantOptions from the backend cart load, not from a local cache", async () => {
     const backendCart: Cart = {
-      items: [{ id: "srv-1", productId: "prod-1", variantId: "var-XL", quantity: 1 }],
+      items: [
+        {
+          id: "srv-1",
+          productId: "prod-1",
+          variantId: "var-XL",
+          quantity: 1,
+          variantOptions: [{ name: "SIZE", value: "XL" }],
+        },
+      ],
     }
     ;(CartService.get as MockedFunction<typeof CartService.get>).mockResolvedValue(backendCart)
 
     const { result } = renderHook(() => useCart(), { wrapper })
     await act(async () => {})
 
-    expect(result.current.cart.items[0].variantOptions).toEqual(cachedOptions)
-  })
-
-  it("saves variantOptions to cache when addItem is called with variantId and options", async () => {
-    const { result } = renderHook(() => useCart(), { wrapper })
-    await act(async () => {})
-
-    await act(async () => {
-      await result.current.addItem({
-        productId: "prod-1",
-        variantId: "var-XL",
-        quantity: 1,
-        variantOptions: [{ name: "Größe", value: "XL" }],
-      })
-    })
-
-    expect(productDisplayCache.saveVariantOptions).toHaveBeenCalledWith("var-XL", [
-      { name: "Größe", value: "XL" },
-    ])
+    expect(result.current.cart.items[0].variantOptions).toEqual([{ name: "SIZE", value: "XL" }])
   })
 
   it("normalizes priceSnapshot (decimal EUR) to unitPriceCents on backend cart load", async () => {
@@ -903,9 +928,6 @@ describe("authenticated cart — backend API contract (regression)", () => {
   })
 
   it("item stays in cart after quantity decrease (regression: PATCH returns CartItemResponse not Cart)", async () => {
-    ;(CartService.updateItem as MockedFunction<typeof CartService.updateItem>).mockResolvedValue(
-      undefined
-    )
     const { result } = renderHook(() => useCart(), { wrapper })
     await act(async () => {})
 
@@ -945,5 +967,173 @@ describe("authenticated cart — backend API contract (regression)", () => {
 
     // unitPriceCents from backend takes precedence over priceSnapshot conversion
     expect(result.current.cart.items[0].unitPriceCents).toBe(3000)
+  })
+})
+
+// ── Display cache is only an optimization (#188) ────────────────────────────────
+//
+// The core requirement: display data is server-owned, so a cart opened on a second
+// device or after cleared browser storage must render identically. These tests run
+// with an empty localStorage and never populate any cache.
+
+describe("cart is complete without a local display cache (#188)", () => {
+  const fullBackendCart: Cart = {
+    id: "cart-1",
+    totalAmount: 59.8,
+    items: [
+      {
+        id: "srv-1",
+        productId: "prod-1",
+        productName: "Bio-Shirt",
+        productSlug: "bio-shirt",
+        imageUrl: "https://example.com/shirt.jpg",
+        variantId: "var-XL",
+        variantSku: "SKU-XL",
+        variantOptions: [
+          { name: "COLOR", value: "Rot" },
+          { name: "SIZE", value: "XL" },
+        ],
+        quantity: 2,
+        priceSnapshot: 29.9,
+        lineTotal: 59.8,
+        currency: "EUR",
+      },
+    ],
+  }
+
+  it("renders name, slug, image and options from the backend with empty browser storage", async () => {
+    localStorage.clear()
+    ;(CartService.get as MockedFunction<typeof CartService.get>).mockResolvedValue(fullBackendCart)
+
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    const item = result.current.cart.items[0]
+    expect(item.productName).toBe("Bio-Shirt")
+    expect(item.productSlug).toBe("bio-shirt")
+    expect(item.imageUrl).toBe("https://example.com/shirt.jpg")
+    expect(item.variantOptions).toEqual([
+      { name: "COLOR", value: "Rot" },
+      { name: "SIZE", value: "XL" },
+    ])
+    expect(item.unitPriceCents).toBe(2990)
+    expect(result.current.totalPrice).toBeCloseTo(59.8, 2)
+    expect(localStorage.length).toBe(0)
+  })
+
+  it("takes the display data from the add response even when the caller supplied none", async () => {
+    ;(CartService.addItem as MockedFunction<typeof CartService.addItem>).mockResolvedValue({
+      id: "srv-9",
+      productId: "prod-1",
+      productName: "Bio-Shirt",
+      productSlug: "bio-shirt",
+      imageUrl: "https://example.com/shirt.jpg",
+      variantId: "var-XL",
+      variantOptions: [{ name: "SIZE", value: "XL" }],
+      quantity: 1,
+      priceSnapshot: 29.9,
+    })
+
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    await act(async () => {
+      await result.current.addItem({ productId: "prod-1", variantId: "var-XL", quantity: 1 })
+    })
+
+    const item = result.current.cart.items[0]
+    expect(item.productName).toBe("Bio-Shirt")
+    expect(item.imageUrl).toBe("https://example.com/shirt.jpg")
+    expect(item.variantOptions).toEqual([{ name: "SIZE", value: "XL" }])
+    expect(item.unitPriceCents).toBe(2990)
+  })
+
+  it("adopts the server item id so the next quantity change targets the real line", async () => {
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    await act(async () => {
+      await result.current.addItem({ productId: "prod-1", variantId: "var-XL", quantity: 1 })
+    })
+
+    const itemId = result.current.cart.items[0].id
+    expect(itemId).toBe("srv-1")
+
+    await act(async () => {
+      await result.current.updateItem(itemId, { quantity: 4 })
+    })
+
+    expect(CartService.updateItem).toHaveBeenCalledWith("srv-1", { quantity: 4 })
+    expect(result.current.cart.items[0].quantity).toBe(4)
+  })
+
+  it("keeps one line when the backend merges the same variant into an existing line", async () => {
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    await act(async () => {
+      await result.current.addItem({ productId: "prod-1", variantId: "var-XL", quantity: 2 })
+    })
+    await act(async () => {
+      await result.current.addItem({ productId: "prod-1", variantId: "var-XL", quantity: 3 })
+    })
+
+    expect(result.current.cart.items).toHaveLength(1)
+    expect(result.current.cart.items[0].id).toBe("srv-1")
+    expect(result.current.cart.items[0].quantity).toBe(5)
+  })
+
+  it("deletes via DELETE instead of PATCH quantity 0 (0 never deletes)", async () => {
+    const { result } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+
+    await act(async () => {
+      await result.current.addItem({ productId: "prod-1", quantity: 1 })
+    })
+    const itemId = result.current.cart.items[0].id
+    ;(CartService.updateItem as MockedFunction<typeof CartService.updateItem>).mockClear()
+
+    await act(async () => {
+      await result.current.updateItem(itemId, { quantity: 0 })
+    })
+
+    expect(CartService.removeItem).toHaveBeenCalledWith(itemId)
+    expect(CartService.updateItem).not.toHaveBeenCalled()
+    expect(result.current.cart.items).toHaveLength(0)
+  })
+
+  it("re-reads the cart after login so the merged guest cart is fully rendered", async () => {
+    // The guest-cart merge happens inside the login request and reports nothing
+    // back — the fresh GET is the only way the client learns the merged state.
+    localStorage.clear()
+    const mockUseAuth = useAuth as MockedFunction<typeof useAuth>
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: false,
+      isLoading: false,
+      role: null,
+    } as ReturnType<typeof useAuth>)
+    ;(CartService.get as MockedFunction<typeof CartService.get>).mockResolvedValue({ items: [] })
+
+    const { result, rerender } = renderHook(() => useCart(), { wrapper })
+    await act(async () => {})
+    expect(result.current.cart.items).toHaveLength(0)
+    ;(CartService.get as MockedFunction<typeof CartService.get>).mockResolvedValue(fullBackendCart)
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      isLoading: false,
+      role: "BUYER",
+    } as ReturnType<typeof useAuth>)
+    rerender()
+    await act(async () => {})
+
+    expect(result.current.cart.items).toHaveLength(1)
+    expect(result.current.cart.items[0].productName).toBe("Bio-Shirt")
+    expect(result.current.cart.items[0].imageUrl).toBe("https://example.com/shirt.jpg")
+
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: false,
+      isLoading: false,
+      role: null,
+    } as ReturnType<typeof useAuth>)
   })
 })

@@ -1124,3 +1124,106 @@ describe("decodeJwtClaims", () => {
     expect(claims?.exp).toBeUndefined()
   })
 })
+
+// ── Error message extraction ──────────────────────────────────────────────────
+// Investigating #178 raised the question whether a failed admin write actually
+// reaches the UI with a readable message. It does — the first three cases below
+// are characterization tests that pin behaviour which was already correct, so
+// the contract the category modal relies on cannot silently drift.
+//
+// The two HTML/oversized-body cases ARE regression guards: before this change a
+// non-JSON error body was handed to the caller verbatim, so a proxy error page
+// ended up rendered inside a toast.
+
+function mockTextResponse(status: number, text: string): Response {
+  return {
+    status,
+    ok: status >= 200 && status < 300,
+    text: vi.fn().mockResolvedValue(text),
+    json: vi.fn().mockRejectedValue(new Error("not json")),
+    headers: new Headers(),
+  } as unknown as Response
+}
+
+describe("error message extraction", () => {
+  beforeEach(() => {
+    setAccessToken(null)
+    vi.stubGlobal("fetch", vi.fn())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    setAccessToken(null)
+  })
+
+  it("surfaces the ApiResponse message of a 405 (characterization)", async () => {
+    const mockFetch = vi.fn().mockResolvedValue(
+      mockTextResponse(
+        405,
+        JSON.stringify({
+          status: "error",
+          message: "Method not allowed",
+          data: { code: "METHOD_NOT_ALLOWED" },
+        })
+      )
+    )
+    vi.stubGlobal("fetch", mockFetch)
+
+    await expect(apiRequest("/api/v1/categories", { method: "POST" })).rejects.toMatchObject({
+      status: 405,
+      message: "Method not allowed",
+    })
+  })
+
+  it("falls back to the status message for an HTML error page (guard #178)", async () => {
+    const html = "<!DOCTYPE html><html><body><h1>405 Not Allowed</h1></body></html>"
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockTextResponse(405, html)))
+
+    await expect(apiRequest("/api/v1/categories", { method: "POST" })).rejects.toMatchObject({
+      status: 405,
+      message: "Request failed (405)",
+    })
+  })
+
+  it("falls back to the status message for an implausibly long body (guard #178)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockTextResponse(500, "x".repeat(5000))))
+
+    await expect(apiRequest("/api/v1/items")).rejects.toMatchObject({
+      status: 500,
+      message: "Request failed (500)",
+    })
+  })
+
+  it("falls back to the status message for a blank body (characterization)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockTextResponse(502, "   ")))
+
+    await expect(apiRequest("/api/v1/items")).rejects.toMatchObject({
+      status: 502,
+      message: "Request failed (502)",
+    })
+  })
+
+  it("keeps a short plain-text error message (characterization)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(mockTextResponse(400, "order is required")))
+
+    await expect(apiRequest("/api/v1/admin/categories", { method: "POST" })).rejects.toMatchObject({
+      status: 400,
+      message: "order is required",
+    })
+  })
+
+  it("trims surrounding whitespace off the message", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValue(
+          mockTextResponse(400, JSON.stringify({ message: "  slug already exists\n" }))
+        )
+    )
+
+    await expect(apiRequest("/api/v1/admin/categories", { method: "POST" })).rejects.toMatchObject({
+      message: "slug already exists",
+    })
+  })
+})

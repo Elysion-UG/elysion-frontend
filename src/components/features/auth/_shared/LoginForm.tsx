@@ -4,6 +4,7 @@ import React, { useState, type ReactNode } from "react"
 import { useAuth } from "@/src/context/AuthContext"
 import type { AuthPortal } from "@/src/lib/api-client"
 import { ErrorAlert } from "@/src/components/shared"
+import { Button } from "@/src/components/ui/button"
 import { EmailField } from "./EmailField"
 import { PasswordField } from "./PasswordField"
 import { AuthSubmitButton } from "./AuthSubmitButton"
@@ -61,8 +62,8 @@ export interface LoginFormProps {
 }
 
 const forgotLinkClass: Record<Variant, string> = {
-  light: "text-sm text-green-600 hover:text-green-600",
-  dark: "text-xs text-sand-page/70 transition-colors hover:text-green-500",
+  light: "text-green-600",
+  dark: "text-xs text-sand-page/70 hover:text-green-500",
 }
 
 /**
@@ -159,19 +160,19 @@ export function LoginForm({
           variant={variant}
         />
         <div className="text-right">
-          <button
+          <Button
             type="button"
+            variant="link"
             onClick={() => goToView("forgot")}
-            className={forgotLinkClass[variant]}
+            className={`h-auto p-0 ${forgotLinkClass[variant]}`}
           >
             Passwort vergessen?
-          </button>
+          </Button>
         </div>
         <AuthSubmitButton
           label={submitLabel}
           pendingLabel={submitPendingLabel}
           isLoading={isLoading}
-          variant={variant}
         />
       </form>
 

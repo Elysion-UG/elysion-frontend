@@ -8,9 +8,14 @@ import type { CategoryCreateDTO, CategoryTreeNode, CategoryUpdateDTO, Category }
 /**
  * TanStack-Query hooks for the admin category manager (#35). The page used to
  * carry a manual load() plus per-action loading flags. The query fetches the
- * tree and the flat list together (the flat list carries status/description the
- * tree nodes omit); each mutation invalidates it so the tree reflects the change.
- * Save-error diagnostics (#178) stay in the component, which owns the modal.
+ * tree and the flat list together (the flat list carries parentId/description
+ * the tree nodes omit); each mutation invalidates it so the tree reflects the
+ * change. Save-error diagnostics (#178) stay in the component, which owns the
+ * modal.
+ *
+ * Both reads go against the **admin** endpoints (#226). The public ones filter
+ * on `is_active` — a category deactivated from this very screen would vanish
+ * from it and could never be reactivated through the UI again.
  */
 
 export const categoryKeys = {
@@ -26,7 +31,10 @@ export function useAdminCategories() {
   return useQuery({
     queryKey: categoryKeys.all,
     queryFn: async (): Promise<AdminCategoryData> => {
-      const [tree, flat] = await Promise.all([CategoryService.tree(), CategoryService.list()])
+      const [tree, flat] = await Promise.all([
+        CategoryService.adminTree(),
+        CategoryService.adminList(),
+      ])
       return { tree, flat }
     },
     staleTime: 30 * 1000,

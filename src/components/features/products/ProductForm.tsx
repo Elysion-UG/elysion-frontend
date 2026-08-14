@@ -14,6 +14,9 @@ import type {
   Category,
 } from "@/src/types"
 import { toast } from "sonner"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
+import { Textarea } from "@/src/components/ui/textarea"
 import ProductImageManager from "./ProductImageManager"
 
 interface ProductFormProps {
@@ -174,12 +177,12 @@ export default function ProductForm({
         <div className="space-y-4 p-6">
           <div>
             <label className="mb-1 block text-sm font-medium text-foreground">Produktname *</label>
-            <input
+            <Input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="z.B. Bio-Baumwoll-T-Shirt"
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="text-sm"
             />
           </div>
 
@@ -187,23 +190,23 @@ export default function ProductForm({
             <label className="mb-1 block text-sm font-medium text-foreground">
               Kurzbeschreibung
             </label>
-            <input
+            <Input
               type="text"
               value={shortDesc}
               onChange={(e) => setShortDesc(e.target.value)}
               placeholder="1–2 Sätze für die Produktliste"
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="text-sm"
             />
           </div>
 
           <div>
             <label className="mb-1 block text-sm font-medium text-foreground">Beschreibung *</label>
-            <textarea
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
               placeholder="Detaillierte Produktbeschreibung..."
-              className="w-full resize-none rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="resize-none text-sm"
             />
           </div>
 
@@ -212,14 +215,14 @@ export default function ProductForm({
               <label className="mb-1 block text-sm font-medium text-foreground">
                 Preis (EUR) *
               </label>
-              <input
+              <Input
                 type="number"
                 min="0.01"
                 step="0.01"
                 value={basePrice}
                 onChange={(e) => setBasePrice(e.target.value)}
                 placeholder="29.99"
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="text-sm"
               />
             </div>
             <div>
@@ -290,20 +293,13 @@ export default function ProductForm({
 
         {/* Footer */}
         <div className="flex gap-3 border-t border-border p-6">
-          <button
-            onClick={onClose}
-            className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
-          >
+          <Button variant="outline" onClick={onClose} className="flex-1">
             Abbrechen
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSaving}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-500 py-2.5 text-sm font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-60"
-          >
+          </Button>
+          <Button onClick={handleSubmit} disabled={isSaving} className="flex-1">
             {isSaving && <Loader2 className="h-4 w-4 animate-spin" />}
             {isEdit ? "Speichern" : "Produkt erstellen"}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

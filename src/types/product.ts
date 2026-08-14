@@ -15,7 +15,10 @@ export interface ProductVariant {
   size?: string
   color?: string
   material?: string
+  /** Raw stock level — internal/seller routes only, never on the public detail route. */
   stock?: number
+  /** Public detail route: whether this variant is currently sellable (stock − reserved > 0). */
+  inStock?: boolean
   price?: number | null
   imageUrls?: string[]
   options?: ProductVariantOption[]
@@ -28,8 +31,28 @@ export interface ProductImage {
   position?: number
 }
 
+/**
+ * Compact seller object of the **public** product reads (list, storefront detail
+ * `{slug}`, recommendations). The seller-portal and admin reads use their own
+ * shapes and are not covered by this.
+ *
+ * `userId` carries the backend's `seller.id` — the services rename it while
+ * mapping, so the raw API name never leaks past `product.service.ts`.
+ */
 export interface ProductSeller {
   userId?: string
+  /**
+   * Public seller slug — the routing identifier of `GET /api/v1/sellers/{slug}`,
+   * derived once at registration and stable across a company rename.
+   *
+   * **`null` whenever the seller is not `APPROVED`.** The producer page answers
+   * 404 for every other seller status, and an `ACTIVE` product of a `PENDING`
+   * seller *is* publicly listed — so a link built from a slug that the backend
+   * withheld would be a guaranteed dead end. `producerHref()` falls back to the
+   * id-based route in that case; `companyName` stays populated either way, only
+   * the link is withheld.
+   */
+  slug?: string | null
   companyName?: string
   firstName?: string
   lastName?: string
@@ -56,7 +79,7 @@ export interface ProductDetail {
   seller?: ProductSeller
   sellerId?: string
   status?: ProductStatus | string
-  /** List API only: whether the product is currently sellable. Detail view derives stock from variants instead. */
+  /** List API: whether the product is currently sellable. The detail view uses the per-variant `inStock` instead. */
   inStock?: boolean
   variants?: ProductVariant[]
   certificates?: PublicCertificate[]
@@ -87,14 +110,68 @@ export interface ProductListItem {
 export interface ProductListParams {
   search?: string
   categoryId?: string
-  sellerId?: string
+  /**
+   * Seller UUID(s). Repeatable manufacturer filter — a product matches when it
+   * belongs to *any* of the supplied sellers (OR within the axis, AND with the
+   * other filters). A single string keeps the pre-#50 behaviour.
+   */
+  sellerId?: string | string[]
   minPrice?: number
   maxPrice?: number
   /** Material slugs; a product matches when linked to any of them. */
   materials?: string[]
+  /**
+   * Variant colour values, taken verbatim from `GET /api/v1/products/facets`.
+   * Serialised as the repeatable `color` param. OR within the axis.
+   */
+  colors?: string[]
+  /**
+   * Variant size values, taken verbatim from `GET /api/v1/products/facets`.
+   * Serialised as the repeatable **`variantSize`** param — *not* `size`, which
+   * is already the page size of the list endpoint. OR within the axis;
+   * `colors` and `sizes` combine with AND.
+   */
+  sizes?: string[]
   sort?: string
   page?: number
   size?: number
+}
+
+// ── Filter facets ────────────────────────────────────────────────────────────
+
+/** One selectable value of a product filter axis plus the products behind it. */
+export interface ProductFacetValue {
+  /** Normalised (trimmed, lower case) — pass back verbatim as a filter value. */
+  value: string
+  /** Number of ACTIVE *products* (not variants) carrying this value. */
+  productCount: number
+}
+
+/**
+ * `GET /api/v1/products/facets` — selectable colours and sizes.
+ *
+ * The facet is **global**: it does not narrow down with the other filters that
+ * are currently applied, so the UI must not suggest otherwise. Both axes are
+ * always present; an axis without values is an empty array.
+ */
+export interface ProductFacets {
+  colors: ProductFacetValue[]
+  sizes: ProductFacetValue[]
+}
+
+/** One entry of `GET /api/v1/sellers/facets` — a manufacturer filter option. */
+export interface SellerFacet {
+  /** Seller UUID — exactly the value for `GET /api/v1/products?sellerId=<id>`. */
+  id: string
+  /**
+   * Public seller slug, or `null` when the seller is not `APPROVED` — same rule
+   * and same meaning as {@link ProductSeller.slug}. A non-approved manufacturer
+   * stays filterable but is not linkable.
+   */
+  slug?: string | null
+  companyName: string
+  /** Number of ACTIVE products of this manufacturer. */
+  productCount: number
 }
 
 export interface ProductCreateDTO {

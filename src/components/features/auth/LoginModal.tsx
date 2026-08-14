@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import { X, Mail, User } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
 import { LoginForm } from "@/src/components/features/auth/_shared/LoginForm"
 import { BuyerRegisterForm } from "@/src/components/features/auth/BuyerRegisterForm"
 
@@ -88,12 +89,13 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
               loginFooter={
                 <p className="mt-4 text-center text-sm text-muted-foreground">
                   {"Noch kein Konto? "}
-                  <button
+                  <Button
+                    variant="link"
                     onClick={() => setMode("register")}
-                    className="font-semibold text-green-600 hover:text-green-600"
+                    className="h-auto p-0 text-green-600"
                   >
                     Registrieren
-                  </button>
+                  </Button>
                 </p>
               }
               forgot={{

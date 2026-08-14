@@ -6,12 +6,17 @@ import {
   useSellerOrders,
   useUpdateSellerOrderStatus,
   useDeliverSellerOrder,
+  useSellerRefund,
+  useSellerSettlements,
 } from "@/src/hooks/useSellerDashboard"
 import type { OrderGroupDetail } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
-import { computeShippingSla, formatSlaRemaining } from "@/src/lib/shipping-sla"
+import { remainingRefundable } from "@/src/lib/refund"
+import { RefundDialog } from "@/src/components/shared/RefundDialog"
+import { hasShippingSla, shippingSlaBadgeLabel } from "@/src/lib/shipping-sla"
 import { StatusBadge } from "@/src/components/shared"
-import { orderStatusLabel, orderStatusColor } from "./sellerDashboard.constants"
+import { Button } from "@/src/components/ui/button"
+import { orderStatusLabel, orderStatusColor, shippingSlaColor } from "./sellerDashboard.constants"
 import SellerKpiCard from "./SellerKpiCard"
 import SellerOrderDetailDrawer from "./SellerOrderDetailDrawer"
 import SellerShipModal from "./SellerShipModal"
@@ -22,6 +27,24 @@ export default function SellerOrdersTab() {
   const deliver = useDeliverSellerOrder()
   const [selectedOrder, setSelectedOrder] = useState<OrderGroupDetail | null>(null)
   const [shipModalGroupId, setShipModalGroupId] = useState<string | null>(null)
+  const [refundGroupId, setRefundGroupId] = useState<string | null>(null)
+
+  // Der erstattbare Restbetrag steht auf der Abrechnungszeile, nicht auf der
+  // Bestellung — `GET /api/v1/seller/settlements` ist die einzige Sicht, die
+  // `refundedAmount` je OrderGroup führt.
+  const { data: settlements = [] } = useSellerSettlements()
+  const refund = useSellerRefund()
+
+  const refundStateFor = (orderGroupId: string) => {
+    const settlement = settlements.find((s) => s.orderGroupId === orderGroupId)
+    if (!settlement) return undefined
+    return {
+      alreadyRefunded: settlement.refundedAmount ?? 0,
+      remaining: remainingRefundable(settlement),
+    }
+  }
+
+  const refundState = refundGroupId ? refundStateFor(refundGroupId) : undefined
 
   const pendingCount = orders.filter(
     (o) => o.status === "CONFIRMED" || o.status === "PENDING"
@@ -60,16 +83,18 @@ export default function SellerOrdersTab() {
           <div>
             <h2 className="text-xl font-semibold text-foreground">Eingehende Bestellungen</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Versandfrist: binnen 48 h nach Zahlungseingang versenden. Überfällige Bestellungen
-              sind rot markiert.
+              Die Versandfrist läuft ab Zahlungseingang und wird vom Server vorgegeben. Überfällige
+              Bestellungen sind rot markiert.
             </p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => void refetch()}
-            className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+            className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
           >
             <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-          </button>
+          </Button>
         </div>
 
         {isFetching && orders.length === 0 ? (
@@ -84,7 +109,7 @@ export default function SellerOrdersTab() {
         ) : (
           <div className="divide-y divide-border">
             {orders.map((group) => {
-              const sla = computeShippingSla(group.createdAt, group.status)
+              const sla = group.shippingSla
               return (
                 <button
                   key={group.orderGroupId}
@@ -116,14 +141,10 @@ export default function SellerOrdersTab() {
                         />
                         <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </div>
-                      {sla.applies && (
+                      {hasShippingSla(sla) && (
                         <StatusBadge
-                          label={formatSlaRemaining(sla.remainingMs)}
-                          colorClasses={
-                            sla.isOverdue
-                              ? "bg-danger-tint text-danger"
-                              : "bg-warning-tint text-warning"
-                          }
+                          label={shippingSlaBadgeLabel(sla)}
+                          colorClasses={shippingSlaColor[sla.status]}
                         />
                       )}
                     </div>
@@ -150,6 +171,23 @@ export default function SellerOrdersTab() {
           onShip={(groupId) => {
             setShipModalGroupId(groupId)
           }}
+          refund={refundStateFor(selectedOrder.orderGroupId)}
+          onRefund={(groupId) => {
+            setRefundGroupId(groupId)
+            setSelectedOrder(null)
+          }}
+        />
+      )}
+
+      {refundGroupId && (
+        <RefundDialog
+          title="Erstattung auslösen"
+          description="Die Erstattung bezieht sich auf diese Bestellung und wird sofort beim Zahlungsdienstleister gebucht."
+          orderGroupId={refundGroupId}
+          alreadyRefunded={refundState?.alreadyRefunded ?? null}
+          remaining={refundState?.remaining ?? null}
+          onSubmit={(dto) => refund.mutateAsync(dto)}
+          onClose={() => setRefundGroupId(null)}
         />
       )}
 

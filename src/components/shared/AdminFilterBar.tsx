@@ -2,6 +2,8 @@
 
 import type { ReactNode } from "react"
 import { Search, RefreshCw } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
 import { cn } from "@/src/lib/utils"
 
 interface AdminFilterBarProps {
@@ -38,12 +40,13 @@ export function SearchInput({
   return (
     <div className={cn("relative min-w-48 flex-1", className)}>
       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground" />
-      <input
+      <Input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-lg border border-border/60 bg-ink-900/60 py-2 pl-9 pr-3 text-sm text-muted-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
+        // Ink-Fläche der Filterleiste + Platz für das Lupen-Icon.
+        className="h-9 border border-border/60 bg-ink-900/60 pl-9 pr-3 text-sm text-muted-foreground"
       />
     </div>
   )
@@ -57,15 +60,14 @@ interface RefreshButtonProps {
 
 export function RefreshButton({ onClick, isLoading, className }: RefreshButtonProps) {
   return (
-    <button
+    <Button
+      variant="outline"
+      size="sm"
       onClick={onClick}
       disabled={isLoading}
-      className={cn(
-        "flex items-center gap-1.5 rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground hover:text-muted-foreground disabled:opacity-50",
-        className
-      )}
+      className={cn("border border-border/60 bg-ink-900/60 text-muted-foreground", className)}
     >
       <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} /> Aktualisieren
-    </button>
+    </Button>
   )
 }

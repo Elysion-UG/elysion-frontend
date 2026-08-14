@@ -3,6 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 import { AdminService } from "@/src/services/admin.service"
+import { formatEuro } from "@/src/lib/currency"
+import type { RefundRequestDTO } from "@/src/types"
 
 /**
  * TanStack-Query hooks for the admin finance area (#35). Replaces the manual
@@ -87,6 +89,27 @@ export function useReleasePayout() {
       void queryClient.invalidateQueries({ queryKey: adminFinanceKeys.duePayouts })
     },
     onError: () => toast.error("Auszahlung konnte nicht freigegeben werden."),
+  })
+}
+
+/**
+ * Admin-Eskalation: Erstattung auf einer beliebigen OrderGroup (#56).
+ *
+ * Wie beim Seller-Pfad ohne `onError` — das Modal zeigt den Fehler inline mit
+ * Instanz und Konsequenz (§1.9). Nach Erfolg werden Erstattungs-,
+ * Abrechnungs- und Fälligkeitsliste invalidiert: die Gegenbuchung nimmt der
+ * Zeile ihre Auszahlungsberechtigung.
+ */
+export function useAdminRefund() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (dto: RefundRequestDTO) => AdminService.createRefund(dto),
+    onSuccess: (result) => {
+      toast.success(`${formatEuro(result.amount)} erstattet.`)
+      void queryClient.invalidateQueries({ queryKey: adminFinanceKeys.refunds })
+      void queryClient.invalidateQueries({ queryKey: adminFinanceKeys.settlements })
+      void queryClient.invalidateQueries({ queryKey: adminFinanceKeys.duePayouts })
+    },
   })
 }
 

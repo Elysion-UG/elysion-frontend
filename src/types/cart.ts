@@ -5,6 +5,13 @@ export interface CartItem {
   productName?: string
   productSlug?: string
   variantId?: string
+  /** Backend field: variant SKU from the server-owned line display data */
+  variantSku?: string
+  /**
+   * Human-readable variant labels. Server-owned: the backend delivers them as
+   * `{ type, value }` (free text, e.g. `COLOR: Rot`), the cart service maps
+   * `type` → `name`. Never inferred from a local cache.
+   */
   variantOptions?: Array<{ name: string; value: string }>
   name?: string
   imageUrl?: string
@@ -17,6 +24,8 @@ export interface CartItem {
   priceSnapshot?: number
   /** Backend field: line total in euro (decimal) */
   lineTotal?: number
+  /** Backend field: ISO 4217 code of the line */
+  currency?: string
 }
 
 export interface Cart {

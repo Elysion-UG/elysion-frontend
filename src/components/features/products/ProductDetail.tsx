@@ -4,6 +4,7 @@ import { AlertCircle, Loader2 } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { toast } from "sonner"
+import { Button } from "@/src/components/ui/button"
 import { useCart } from "@/src/context/CartContext"
 import { ProductDetailView, useProductDetail } from "./product-detail"
 
@@ -65,12 +66,9 @@ export default function ProductDetail() {
         <div className="text-center">
           <p className="font-medium text-foreground">{error ?? "Produkt nicht gefunden."}</p>
         </div>
-        <button
-          onClick={() => router.back()}
-          className="rounded-xl bg-green-500 px-5 py-2.5 text-sm font-semibold text-ink-900 shadow-sm transition-colors hover:bg-green-700"
-        >
+        <Button onClick={() => router.back()} className="px-5">
           Zurück zum Shop
-        </button>
+        </Button>
       </div>
     )
   }
@@ -84,10 +82,11 @@ export default function ProductDetail() {
       ? `${product.seller.firstName} ${product.seller.lastName}`
       : null)
 
-  // stock == null means the API returned no stock info → treat as available.
-  // Only mark unavailable when stock is explicitly 0.
+  // Prefer the backend's derived flag (#175). The stock fallback only applies to
+  // internal/seller routes, which still return raw levels; when neither is present
+  // we treat the variant as available — absence of info is not evidence of sold out.
   const inStock = selectedVariant
-    ? selectedVariant.stock == null || selectedVariant.stock > 0
+    ? (selectedVariant.inStock ?? (selectedVariant.stock == null || selectedVariant.stock > 0))
     : true
 
   return (

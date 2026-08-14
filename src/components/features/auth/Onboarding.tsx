@@ -6,6 +6,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { ChevronRight, ChevronLeft, Check, Globe, Heart, Recycle, ShieldCheck } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
 
 type SustainabilityPreference = {
   id: string
@@ -306,23 +307,20 @@ export default function Onboarding() {
 
         {/* Navigation Buttons */}
         <div className="flex items-center justify-between">
-          <button
+          <Button
+            variant="ghost"
             onClick={handlePrevious}
             disabled={currentStep === 1}
-            className="flex items-center gap-2 px-4 py-2 text-green-700 transition-colors hover:text-green-700 disabled:cursor-not-allowed disabled:text-green-500"
+            className="text-green-700"
           >
             <ChevronLeft className="h-4 w-4" />
             Previous
-          </button>
+          </Button>
 
-          <button
-            onClick={handleNext}
-            disabled={!canProceed()}
-            className="flex items-center gap-2 rounded-lg bg-green-600 px-6 py-2 font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <Button onClick={handleNext} disabled={!canProceed()} className="px-6">
             {currentStep === totalSteps ? "Complete Setup" : "Next"}
             <ChevronRight className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </div>
     </div>

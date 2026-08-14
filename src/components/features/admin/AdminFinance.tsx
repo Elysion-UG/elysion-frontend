@@ -3,12 +3,17 @@
 import React, { useState } from "react"
 import { DollarSign, CreditCard, ArrowDownLeft, Banknote, Wrench, HandCoins } from "lucide-react"
 import { PageHeader, RefreshButton, LoadingFullPage } from "@/src/components/shared"
+import { RefundDialog } from "@/src/components/shared/RefundDialog"
+import { Button } from "@/src/components/ui/button"
+import { remainingRefundable } from "@/src/lib/refund"
+import type { Settlement } from "@/src/types"
 import {
   useAdminPayments,
   useAdminRefunds,
   useAdminSettlements,
   useDuePayouts,
   useAdminPayouts,
+  useAdminRefund,
   useReleasePayout,
   useRunMaintenance,
 } from "@/src/hooks/useAdminFinance"
@@ -34,6 +39,23 @@ export default function AdminFinance() {
 
   const releasePayout = useReleasePayout()
   const maintenance = useRunMaintenance()
+  const refund = useAdminRefund()
+
+  // Ziel der Eskalations-Erstattung. Aus der Abrechnungszeile heraus sind
+  // OrderGroup und Restbetrag bekannt; aus der Erstattungsliste heraus wird die
+  // Bestell-ID erfasst und die Obergrenze bleibt allein beim Server.
+  const [refundTarget, setRefundTarget] = useState<{
+    orderGroupId?: string
+    alreadyRefunded: number | null
+    remaining: number | null
+  } | null>(null)
+
+  const openRefundForSettlement = (settlement: Settlement) =>
+    setRefundTarget({
+      orderGroupId: settlement.orderGroupId,
+      alreadyRefunded: settlement.refundedAmount ?? 0,
+      remaining: remainingRefundable(settlement),
+    })
 
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "payments", label: "Zahlungen", icon: <CreditCard className="h-4 w-4" /> },
@@ -70,6 +92,8 @@ export default function AdminFinance() {
       />
 
       <div className="overflow-hidden rounded-xl border border-border/60 bg-ink-900/60">
+        {/* Tabs bleiben bespoke — das Design System sieht dafür keine
+            Button-Variante vor (#83, Punkt 6). */}
         <div className="flex overflow-x-auto border-b border-border/60">
           {tabs.map((t) => (
             <button
@@ -88,7 +112,17 @@ export default function AdminFinance() {
 
         <div className="p-6">
           {activeQuery && (
-            <div className="mb-4 flex justify-end">
+            <div className="mb-4 flex items-center justify-end gap-3">
+              {tab === "refunds" && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setRefundTarget({ alreadyRefunded: null, remaining: null })}
+                  className="h-8 gap-1.5 border-border/60 bg-ink-900/30 text-xs text-muted-foreground hover:text-foreground [&_svg]:size-3.5"
+                >
+                  <ArrowDownLeft className="h-3.5 w-3.5" /> Erstattung auslösen
+                </Button>
+              )}
               <RefreshButton
                 onClick={() => void activeQuery.refetch()}
                 isLoading={activeQuery.isFetching}
@@ -101,18 +135,24 @@ export default function AdminFinance() {
           ) : activeQuery?.isError ? (
             <div className="py-8 text-center text-danger">
               Fehler beim Laden.{" "}
-              <button
+              <Button
+                variant="link"
                 onClick={() => void activeQuery.refetch()}
-                className="underline hover:text-muted-foreground"
+                className="h-auto px-0 text-danger underline hover:text-muted-foreground"
               >
                 Erneut versuchen
-              </button>
+              </Button>
             </div>
           ) : (
             <>
               {tab === "payments" && <PaymentsTable items={payments.data ?? []} />}
               {tab === "refunds" && <RefundsTable items={refunds.data ?? []} />}
-              {tab === "settlements" && <SettlementsTable items={settlements.data ?? []} />}
+              {tab === "settlements" && (
+                <SettlementsTable
+                  items={settlements.data ?? []}
+                  onRefund={openRefundForSettlement}
+                />
+              )}
               {tab === "due" && (
                 <DuePayoutsTable
                   items={due.data ?? []}
@@ -133,6 +173,19 @@ export default function AdminFinance() {
           )}
         </div>
       </div>
+
+      {refundTarget && (
+        <RefundDialog
+          variant="dark"
+          title="Erstattung auslösen (Eskalation)"
+          description="Eskalationspfad: greift, wenn der Verkäufer nicht reagiert, bei Disputes und bei Betrug. Der Vorgang wird im Prüfprotokoll festgehalten."
+          orderGroupId={refundTarget.orderGroupId}
+          alreadyRefunded={refundTarget.alreadyRefunded}
+          remaining={refundTarget.remaining}
+          onSubmit={(dto) => refund.mutateAsync(dto)}
+          onClose={() => setRefundTarget(null)}
+        />
+      )}
     </div>
   )
 }

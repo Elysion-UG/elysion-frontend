@@ -6,6 +6,7 @@ import { Loader2, Banknote, CheckCircle2, AlertTriangle } from "lucide-react"
 import { SellerPayoutService } from "@/src/services/seller-payout.service"
 import { assertStripeRedirectUrl } from "@/src/lib/stripe-redirect"
 import type { SellerPayoutAccount } from "@/src/types"
+import { Button } from "@/src/components/ui/button"
 import { toast } from "sonner"
 import { payoutAccountStatusLabel, payoutAccountStatusColor } from "./sellerDashboard.constants"
 
@@ -110,14 +111,10 @@ export default function SellerPayoutAccountCard() {
           )}
 
           {(needsAction || isActive) && (
-            <button
-              onClick={handleConnect}
-              disabled={redirecting}
-              className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-50"
-            >
+            <Button onClick={handleConnect} disabled={redirecting}>
               {redirecting && <Loader2 className="h-4 w-4 animate-spin" />}
               {ctaLabel}
-            </button>
+            </Button>
           )}
         </div>
       )}

@@ -1,9 +1,22 @@
 import { z } from "zod"
 import { apiRequest, buildQuery } from "@/src/lib/api-client"
-import { parseApiResponse, orderGroupStatusSchema } from "@/src/lib/api-schemas"
+import {
+  parseApiResponse,
+  orderGroupStatusSchema,
+  shippingSlaStatusSchema,
+} from "@/src/lib/api-schemas"
 import { normalizePage } from "@/src/lib/normalize-page"
-import type { OrderGroupDetail, Page, Settlement, ShipOrderDTO } from "@/src/types"
+import type {
+  OrderGroupDetail,
+  Page,
+  RefundRequestDTO,
+  RefundResult,
+  Settlement,
+  ShipOrderDTO,
+} from "@/src/types"
 import { apiOrderProductSnapshotSchema, normalizeSnapshot } from "./_order-normalizers"
+import { apiRefundResultSchema, buildRefundBody, normalizeRefundResult } from "./_refund-schemas"
+import { apiSettlementListSchema, normalizeSettlement } from "./_settlement-schemas"
 
 export interface SellerOrderListParams {
   page?: number
@@ -39,13 +52,30 @@ const apiOrderItemSchema = z.object({
   updatedAt: z.string().optional(),
 })
 
+/**
+ * Read-only Versandfrist (Backend #143). Der Vertrag sagt „always present":
+ * das Record wird bedingungslos konstruiert, und ohne Frist liefert
+ * `OrderGroupShippingSlaStatus.evaluate` genau `NOT_APPLICABLE`. Das `nullish`
+ * ist deshalb reine Defensive — ein hartes `required` würde eine ganze
+ * Bestellliste an einem einzelnen fehlenden Feld scheitern lassen, und das
+ * Anzeigeverhalten ist ohnehin dasselbe wie bei `NOT_APPLICABLE`.
+ */
+const apiShippingSlaSchema = z.object({
+  status: shippingSlaStatusSchema,
+  deadlineAt: z.string().nullish(),
+  breachedAt: z.string().nullish(),
+})
+
 const apiOrderGroupSchema = z.object({
   id: z.string(),
   orderId: z.string(),
   status: orderGroupStatusSchema,
   items: z.array(apiOrderItemSchema),
+  subtotal: z.number().optional(),
+  shipping: z.number().optional(),
   total: z.number(),
   currency: z.string().optional(),
+  shippingSla: apiShippingSlaSchema.nullish(),
   shipment: z.object({ trackingNumber: z.string(), carrier: z.string().optional() }).nullish(),
   buyer: z.object({ userId: z.string().optional(), guestEmail: z.string().nullish() }).optional(),
   /** Backend only includes this for CONFIRMED/PROCESSING/SHIPPED orders (DSGVO: purpose limitation). */
@@ -71,8 +101,17 @@ function normalizeOrderGroup(raw: ApiOrderGroup): OrderGroupDetail {
     orderId: raw.orderId,
     status: raw.status,
     totalAmount: raw.total,
+    subtotal: raw.subtotal,
+    shipping: raw.shipping,
     currency: raw.currency,
     shipment: raw.shipment,
+    shippingSla: raw.shippingSla
+      ? {
+          status: raw.shippingSla.status,
+          deadlineAt: raw.shippingSla.deadlineAt ?? null,
+          breachedAt: raw.shippingSla.breachedAt ?? null,
+        }
+      : undefined,
     buyer: raw.buyer,
     shippingAddress: raw.shippingAddress,
     createdAt: raw.createdAt,
@@ -128,7 +167,33 @@ export const SellerOrderService = {
     return normalizeOrderGroup(parseApiResponse(apiOrderGroupSchema, raw, "seller-order.deliver"))
   },
 
+  /**
+   * Eigene Abrechnungszeilen mit der vollständigen Gebührenkette (#53).
+   *
+   * Die Antwort wird geprüft, nicht gecastet: Auf der Zeile hängen neun
+   * Geldfelder, und ein umbenanntes Feld liefe sonst als `0,00 €` durch die
+   * Abrechnungsansicht (#38).
+   */
   async listSettlements(): Promise<Settlement[]> {
-    return apiRequest<Settlement[]>("/api/v1/seller/settlements")
+    const raw = await apiRequest<unknown>("/api/v1/seller/settlements")
+    return parseApiResponse(apiSettlementListSchema, raw, "seller-order.listSettlements").map(
+      normalizeSettlement
+    )
+  },
+
+  /**
+   * Voll- oder Teilerstattung auf einer **eigenen** OrderGroup — ohne Freigabe
+   * von Elysion (Management-Decision §1.4). Der Seller kommt aus dem
+   * SecurityContext, nie aus dem Body; `amount` weglassen erstattet den
+   * gesamten Restbetrag.
+   */
+  async refund(dto: RefundRequestDTO): Promise<RefundResult> {
+    const raw = await apiRequest<unknown>("/api/v1/seller/refunds", {
+      method: "POST",
+      body: buildRefundBody(dto),
+    })
+    return normalizeRefundResult(
+      parseApiResponse(apiRefundResultSchema, raw, "seller-order.refund")
+    )
   },
 }

@@ -63,7 +63,12 @@ export interface TokensResponse {
 }
 
 // ── Address Types ──────────────────────────────────────────────────
-export type AddressType = "SHIPPING" | "BILLING"
+/**
+ * `domain/address/AddressType` — `BOTH` gehört dazu und wird von
+ * `POST /api/v1/users/me/addresses` ungefiltert angenommen. Das Adressformular
+ * bietet nur SHIPPING und BILLING an, gelesen werden muss BOTH trotzdem.
+ */
+export type AddressType = "SHIPPING" | "BILLING" | "BOTH"
 
 export interface Address {
   id: string

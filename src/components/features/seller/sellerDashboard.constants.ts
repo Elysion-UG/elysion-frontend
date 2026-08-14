@@ -4,11 +4,13 @@ import type {
   ProductStatus,
   OrderGroupStatus,
   SellerPayoutAccountStatus,
+  ShippingSlaStatus,
 } from "@/src/types"
 import {
   PRODUCT_STATUS_LABEL,
   ORDER_GROUP_STATUS_LABEL,
   CERTIFICATE_STATUS_LABEL,
+  SHIPPING_SLA_STATUS_LABEL,
 } from "@/src/lib/constants/status-labels"
 
 export type Tab = "products" | "orders" | "settlements" | "certificates" | "profile"
@@ -43,6 +45,24 @@ export const orderStatusColor: Record<OrderGroupStatus, string> = {
   SHIPPED: "bg-secondary text-foreground",
   DELIVERED: "bg-green-50 text-green-700",
   CANCELLED: "bg-danger-tint text-danger",
+}
+
+// ── Versand-SLA (read-only, Backend #143) ────────────────────────────
+// NOT_APPLICABLE wird nie gerendert (siehe hasShippingSla) und bekommt deshalb
+// keine eigene Farbe; der Eintrag existiert nur, damit der Record vollständig ist.
+export const shippingSlaLabel: Record<ShippingSlaStatus, string> = SHIPPING_SLA_STATUS_LABEL
+
+// Eine laufende Frist ist kein Missstand, sondern der Normalfall — deshalb
+// `info` und nicht `warning`. Damit bleibt Amber dem einen Zustand vorbehalten,
+// der tatsächlich schiefging und nicht mehr zu retten ist: `MISSED`
+// („Verspätet versandt"). `BREACHED` ist die einzige Lage, die der Verkäufer
+// noch abwenden kann, und deshalb als einzige rot.
+export const shippingSlaColor: Record<ShippingSlaStatus, string> = {
+  NOT_APPLICABLE: "bg-secondary text-muted-foreground",
+  PENDING: "bg-info-tint text-info",
+  BREACHED: "bg-danger-tint text-danger",
+  MET: "bg-green-50 text-green-700",
+  MISSED: "bg-warning-tint text-warning",
 }
 
 // Shared seller table styling (light theme)

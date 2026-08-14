@@ -6,6 +6,7 @@ import {
   Store,
   Package,
   ShoppingCart,
+  CopyCheck,
   Award,
   AlertCircle,
   RefreshCw,
@@ -14,6 +15,7 @@ import {
   Activity,
 } from "lucide-react"
 import { useAdminDashboard } from "@/src/hooks/useAdminDashboard"
+import { Button } from "@/src/components/ui/button"
 
 // v0-Leftover-Akzent „cyber" entfernt (#83): war wertgleich mit „emerald" (beide
 // Logo-Grün) — konsolidiert auf die markenkonforme Benennung.
@@ -84,6 +86,7 @@ const QUICK_LINKS = [
   { href: "/admin/sellers", label: "Verkäufer", icon: Store },
   { href: "/admin/products", label: "Produkte", icon: Package },
   { href: "/admin/orders", label: "Bestellungen", icon: ShoppingCart },
+  { href: "/admin/order-duplicates", label: "Duplikat-Prüfung", icon: CopyCheck },
   { href: "/admin/finance", label: "Finanzen", icon: DollarSign },
   { href: "/admin/certificates", label: "Zertifikate", icon: Award },
   { href: "/admin/monitoring", label: "Monitoring", icon: Activity },
@@ -97,13 +100,10 @@ export default function AdminDashboard() {
       <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
         <AlertCircle className="h-10 w-10 text-danger" />
         <p className="text-sm text-muted-foreground">Dashboard konnte nicht geladen werden.</p>
-        <button
-          onClick={() => void refetch()}
-          className="flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-green-500"
-        >
+        <Button onClick={() => void refetch()}>
           <RefreshCw className="h-4 w-4" />
           Erneut versuchen
-        </button>
+        </Button>
       </div>
     )
   }

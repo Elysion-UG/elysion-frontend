@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
 import { useCart } from "@/src/context/CartContext"
+import { Button } from "@/src/components/ui/button"
 import LoginModal from "@/src/components/features/auth/LoginModal"
 import Footer from "@/src/components/layout/Footer"
 import { BrandLogo } from "@/src/components/shared/BrandLogo"
@@ -180,12 +181,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
                   Abmelden
                 </button>
               ) : (
-                <button
-                  onClick={() => setIsLoginModalOpen(true)}
-                  className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-colors hover:bg-green-600"
-                >
-                  Anmelden
-                </button>
+                <Button onClick={() => setIsLoginModalOpen(true)}>Anmelden</Button>
               )}
             </nav>
 
@@ -251,15 +247,14 @@ export default function PageLayout({ children }: PageLayoutProps) {
                     <LogOut className="h-4 w-4" /> Abmelden
                   </button>
                 ) : (
-                  <button
+                  <Button
                     onClick={() => {
                       setIsLoginModalOpen(true)
                       setMobileMenuOpen(false)
                     }}
-                    className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-green-600"
                   >
                     Anmelden
-                  </button>
+                  </Button>
                 ))}
             </nav>
           )}

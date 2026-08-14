@@ -8,6 +8,15 @@
  * either service works.
  */
 import { apiRequest, buildQuery } from "@/src/lib/api-client"
+import { parseApiResponse } from "@/src/lib/api-schemas"
+import { normalizePage } from "@/src/lib/normalize-page"
+import { apiRefundResultSchema, buildRefundBody, normalizeRefundResult } from "./_refund-schemas"
+import {
+  apiDuePayoutListSchema,
+  apiSettlementPageSchema,
+  normalizeDuePayout,
+  normalizeSettlement,
+} from "./_settlement-schemas"
 import type {
   AdminDashboardData,
   AdminUserListItem,
@@ -23,6 +32,8 @@ import type {
   AdminRefundItem,
   AdminPayoutItem,
   PayoutDueItem,
+  RefundRequestDTO,
+  RefundResult,
   Settlement,
   Page,
   OrderStatus,
@@ -180,10 +191,30 @@ export const AdminService = {
     )
   },
 
+  /**
+   * Erstattung als **Eskalation** — gleicher Pfad wie die Leseliste, andere
+   * Methode. Ohne Ownership-Schranke: greift, wenn der Seller nicht reagiert,
+   * bei Disputes und Betrug (Management-Decision §1.4). `amount` weglassen
+   * erstattet den kompletten Restbetrag der OrderGroup.
+   */
+  async createRefund(dto: RefundRequestDTO): Promise<RefundResult> {
+    const raw = await apiRequest<unknown>("/api/v1/admin/refunds", {
+      method: "POST",
+      body: buildRefundBody(dto),
+    })
+    return normalizeRefundResult(parseApiResponse(apiRefundResultSchema, raw, "admin.createRefund"))
+  },
+
+  /**
+   * Abrechnungszeilen aller Verkäufer — gleicher Zeilenvertrag wie
+   * `GET /api/v1/seller/settlements`, deshalb dasselbe Schema (#53).
+   */
   async listSettlements(params: { page?: number; size?: number } = {}): Promise<Page<Settlement>> {
-    return apiRequest(
+    const raw = await apiRequest<unknown>(
       `/api/v1/admin/settlements${buildQuery({ page: params.page, size: params.size })}`
     )
+    const page = parseApiResponse(apiSettlementPageSchema, raw, "admin.listSettlements")
+    return normalizePage(page, normalizeSettlement)
   },
 
   async listPayouts(params: { page?: number; size?: number } = {}): Promise<Page<AdminPayoutItem>> {
@@ -193,11 +224,20 @@ export const AdminService = {
   },
 
   /**
-   * Listet pro Seller die fälligen (auszahlungsfähigen) Settlements,
-   * aggregiert für die monatliche manuelle Freigabe.
+   * Listet pro Seller und Währung die fälligen (auszahlungsfähigen)
+   * Settlements, aggregiert für die manuelle Freigabe. Die Geldfelder tragen
+   * dieselbe Gebührenkette wie die Einzelzeile, positionsweise summiert
+   * (Backend `docs/api/payouts.md`).
+   *
+   * Geprüft statt gecastet: Vor dem Klick auf „Freigeben" steht hier eine
+   * Geldsumme — ein stilles `undefined` in einer ihrer Positionen wäre der
+   * schlechtestmögliche Ort für Contract-Drift (#38).
    */
   async listDuePayouts(): Promise<PayoutDueItem[]> {
-    return apiRequest(`/api/v1/admin/payouts/due`)
+    const raw = await apiRequest<unknown>(`/api/v1/admin/payouts/due`)
+    return parseApiResponse(apiDuePayoutListSchema, raw, "admin.listDuePayouts").map(
+      normalizeDuePayout
+    )
   },
 
   /**

@@ -13,6 +13,7 @@
  * auf Staging rotiert, in Produktion niemals vorhanden.
  */
 import { test, expect } from "@playwright/test"
+import { clearCredentialFields, fillCredentialField } from "../fixtures/credential-fields"
 import { BUYER as CREDS } from "../fixtures/credentials"
 
 const BUYER = "http://localhost:3000"
@@ -31,9 +32,17 @@ test("Deep-Link → Login → Ziel: /orders bleibt nach dem Login erhalten", asy
   })
 
   // 3. Login durchführen.
-  await page.getByPlaceholder("ihre@email.de").fill(CREDS.email)
-  await page.getByPlaceholder("Passwort").fill(CREDS.password)
-  await page.getByRole("button", { name: "Anmelden" }).last().click()
+  const emailInput = page.getByPlaceholder("ihre@email.de")
+  const passwordInput = page.getByPlaceholder("Passwort")
+  // Siehe e2e/fixtures/credential-fields.ts — Felder im `finally` leeren, damit
+  // auch ein Timeout im Klick sie nicht im Snapshot stehen lässt (#106).
+  try {
+    await fillCredentialField(emailInput, CREDS.email)
+    await fillCredentialField(passwordInput, CREDS.password)
+    await page.getByRole("button", { name: "Anmelden" }).last().click()
+  } finally {
+    await clearCredentialFields(passwordInput, emailInput)
+  }
 
   // 4. Nach erfolgreichem Login landet der Nutzer wieder auf /orders.
   await expect(page).toHaveURL(`${BUYER}/orders`, { timeout: 15_000 })

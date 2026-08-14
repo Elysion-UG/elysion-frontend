@@ -301,6 +301,56 @@ describe("AdminService", () => {
     expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/settlements?page=1&size=20")
   })
 
+  // ── Gebührenkette (#53) ──────────────────────────────────────────────
+  //
+  // Seller- und Admin-Sicht teilen sich einen Zeilenvertrag; hier steht die
+  // Admin-Seite, die Seller-Seite in `seller-order.service.test.ts`.
+
+  const rawSettlement = {
+    settlementId: "stl_1",
+    orderGroupId: "grp_1",
+    sellerId: "seller_1",
+    grossAmount: 110.0,
+    goodsAmount: 100.0,
+    shippingAmount: 10.0,
+    refundedAmount: 10.0,
+    platformFeeAmount: 15.0,
+    stripeFeeAmount: 1.9,
+    refundFeeAmount: 0.4,
+    chargebackAmount: 15.0,
+    netAmount: 68.1,
+    currency: "EUR",
+    status: "PENDING",
+    adjustmentRequired: true,
+    eligibleAt: "2026-02-01T10:00:00Z",
+    createdAt: "2026-01-20T10:00:00Z",
+  }
+
+  it("listSettlements — reicht die vollständige Gebührenkette durch", async () => {
+    mockApiRequest.mockResolvedValue(mockPagedResponse([rawSettlement]))
+
+    const page = await AdminService.listSettlements()
+
+    expect(page.totalItems).toBe(1)
+    expect(page.items[0]).toMatchObject({
+      grossAmount: 110.0,
+      refundedAmount: 10.0,
+      platformFeeAmount: 15.0,
+      stripeFeeAmount: 1.9,
+      refundFeeAmount: 0.4,
+      chargebackAmount: 15.0,
+      netAmount: 68.1,
+    })
+  })
+
+  it("listSettlements — lehnt eine Zeile ohne Chargeback-Feld ab statt sie zu casten", async () => {
+    const incomplete: Record<string, unknown> = { ...rawSettlement }
+    delete incomplete.chargebackAmount
+    mockApiRequest.mockResolvedValue(mockPagedResponse([incomplete]))
+
+    await expect(AdminService.listSettlements()).rejects.toThrow(/Ungültige Server-Antwort/)
+  })
+
   it("listPayouts — calls GET /api/v1/admin/payouts with no params", async () => {
     mockApiRequest.mockResolvedValue(mockPagedResponse([]))
 
@@ -365,6 +415,69 @@ describe("AdminService", () => {
     expect(result).toEqual([])
   })
 
+  describe("listDuePayouts — Gebührenkette (#53)", () => {
+    const rawDue = {
+      sellerId: "s1",
+      sellerName: "Atelier Nord",
+      payoutAccountStatus: "ACTIVE",
+      settlementCount: 2,
+      grossAmount: 160.0,
+      refundedAmount: 10.0,
+      feeAmount: 22.5,
+      stripeFeeAmount: 2.9,
+      refundFeeAmount: 0.4,
+      chargebackAmount: 15.0,
+      netAmount: 109.6,
+      currency: "EUR",
+      oldestEligibleAt: "2026-03-22T10:00:00Z",
+    }
+
+    it("reicht die verdichteten Positionen durch", async () => {
+      mockApiRequest.mockResolvedValue([rawDue])
+
+      const [item] = await AdminService.listDuePayouts()
+
+      expect(item).toEqual({
+        sellerId: "s1",
+        sellerName: "Atelier Nord",
+        payoutAccountStatus: "ACTIVE",
+        settlementCount: 2,
+        grossAmount: 160.0,
+        refundedAmount: 10.0,
+        feeAmount: 22.5,
+        stripeFeeAmount: 2.9,
+        refundFeeAmount: 0.4,
+        chargebackAmount: 15.0,
+        netAmount: 109.6,
+        currency: "EUR",
+        oldestEligibleAt: "2026-03-22T10:00:00Z",
+      })
+    })
+
+    it("hebt fehlende Währung und Fälligkeit auf undefined", async () => {
+      mockApiRequest.mockResolvedValue([{ ...rawDue, currency: null, oldestEligibleAt: null }])
+
+      const [item] = await AdminService.listDuePayouts()
+
+      expect(item.currency).toBeUndefined()
+      expect(item.oldestEligibleAt).toBeUndefined()
+    })
+
+    it("lehnt einen unbekannten Kontostatus ab, statt ihn als nicht-freigebbar zu deuten", async () => {
+      mockApiRequest.mockResolvedValue([{ ...rawDue, payoutAccountStatus: "SUSPENDED" }])
+
+      await expect(AdminService.listDuePayouts()).rejects.toThrow(/Ungültige Server-Antwort/)
+    })
+
+    it("lehnt eine Zeile ohne Stripe-Gebühr ab — vor der Freigabe darf nichts fehlen", async () => {
+      const incomplete: Record<string, unknown> = { ...rawDue }
+      delete incomplete.stripeFeeAmount
+      mockApiRequest.mockResolvedValue([incomplete])
+
+      await expect(AdminService.listDuePayouts()).rejects.toThrow(/Ungültige Server-Antwort/)
+    })
+  })
+
   it("runPayout — POST /api/v1/admin/payouts/run with sellerId body", async () => {
     mockApiRequest.mockResolvedValue({
       payoutId: "p1",
@@ -380,5 +493,76 @@ describe("AdminService", () => {
       "/api/v1/admin/payouts/run",
       expect.objectContaining({ method: "POST", body: JSON.stringify({ sellerId: "s1" }) })
     )
+  })
+
+  // ── Refund escalation (#56) ──────────────────────────────────────────
+
+  describe("createRefund", () => {
+    const rawRefund = {
+      refundId: "ref_1",
+      paymentId: "pay_1",
+      orderId: "ord_1",
+      orderGroupId: "grp_1",
+      sellerId: "seller_1",
+      amount: 55,
+      currency: "EUR",
+      status: "SUCCEEDED",
+      providerRefundId: "re_stripe_1",
+      initiatedBy: "ADMIN",
+      reason: "Eskalation: Seller reagiert nicht",
+      settlementRefundedAmount: 55,
+      settlementRemainingRefundableAmount: 0,
+      settlementPlatformFeeAmount: 0,
+      settlementRefundFeeAmount: 1.25,
+      settlementNetAmount: -1.25,
+      settlementAdjustmentRequired: true,
+    }
+
+    it("POSTs /api/v1/admin/refunds — same path as the read list, other method", async () => {
+      mockApiRequest.mockResolvedValue(rawRefund)
+
+      const result = await AdminService.createRefund({
+        orderGroupId: "grp_1",
+        reason: "Eskalation: Seller reagiert nicht",
+      })
+
+      expect(mockApiRequest).toHaveBeenCalledWith(
+        "/api/v1/admin/refunds",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            orderGroupId: "grp_1",
+            reason: "Eskalation: Seller reagiert nicht",
+          }),
+        })
+      )
+      expect(result.initiatedBy).toBe("ADMIN")
+    })
+
+    it("keeps a negative settlement net amount after a full refund", async () => {
+      mockApiRequest.mockResolvedValue(rawRefund)
+
+      const result = await AdminService.createRefund({ orderGroupId: "grp_1" })
+
+      expect(result.settlementNetAmount).toBe(-1.25)
+      expect(result.settlementRemainingRefundableAmount).toBe(0)
+    })
+
+    it("sends a partial amount as decimal EUR", async () => {
+      mockApiRequest.mockResolvedValue({ ...rawRefund, amount: 10.5 })
+
+      await AdminService.createRefund({ orderGroupId: "grp_1", amount: 10.5 })
+
+      const body = mockApiRequest.mock.calls[0][1]?.body as string
+      expect(JSON.parse(body)).toEqual({ orderGroupId: "grp_1", amount: 10.5 })
+    })
+
+    it("rejects an unknown initiator instead of casting it through", async () => {
+      mockApiRequest.mockResolvedValue({ ...rawRefund, initiatedBy: "BUYER" })
+
+      await expect(AdminService.createRefund({ orderGroupId: "grp_1" })).rejects.toThrow(
+        /Ungültige Server-Antwort/
+      )
+    })
   })
 })

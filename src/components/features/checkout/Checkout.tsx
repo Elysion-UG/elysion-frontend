@@ -100,8 +100,8 @@ export default function Checkout() {
   if (step === "payment" && result) {
     return (
       <PaymentStep
-        orderId={result.orderId ?? ""}
-        totalAmount={result.checkout?.subtotal ?? preview?.subtotal ?? 0}
+        orderId={result.orderId}
+        totalAmount={result.checkout.subtotal}
         onSuccess={handlePaymentSuccess}
         onError={handlePaymentError}
       />

@@ -15,6 +15,7 @@
  *   `APP_AUTH_RATE_LIMIT_LOGIN_IP_CAPACITY=100` im Backend setzen.
  */
 import { test, expect } from "@playwright/test"
+import { clearCredentialFields, fillCredentialField } from "../fixtures/credential-fields"
 import { BUYER, SELLER } from "../fixtures/credentials"
 
 // Credentials: e2e/fixtures/credentials.ts (Secret, sonst lokaler Seed-Default).
@@ -29,12 +30,20 @@ async function openLoginModal(page: import("@playwright/test").Page) {
 }
 
 async function submitLoginForm(page: import("@playwright/test").Page, email: string, pw: string) {
-  await page.getByPlaceholder("ihre@email.de").fill(email)
-  await page.getByPlaceholder("Passwort").fill(pw)
-  // .last() = Submit-Button im Form (der erste war der Navbar-Trigger der schon
-  // verarbeitet ist, aber zur Sicherheit den letzten zu nehmen ist robuster
-  // falls weitere Anmelden-Buttons gemounted werden).
-  await page.getByRole("button", { name: "Anmelden" }).last().click()
+  const emailInput = page.getByPlaceholder("ihre@email.de")
+  const passwordInput = page.getByPlaceholder("Passwort")
+  // Siehe e2e/fixtures/credential-fields.ts — Felder im `finally` leeren, damit
+  // auch ein Timeout im Klick sie nicht im Snapshot stehen lässt (#106).
+  try {
+    await fillCredentialField(emailInput, email)
+    await fillCredentialField(passwordInput, pw)
+    // .last() = Submit-Button im Form (der erste war der Navbar-Trigger der schon
+    // verarbeitet ist, aber zur Sicherheit den letzten zu nehmen ist robuster
+    // falls weitere Anmelden-Buttons gemounted werden).
+    await page.getByRole("button", { name: "Anmelden" }).last().click()
+  } finally {
+    await clearCredentialFields(passwordInput, emailInput)
+  }
 }
 
 test.describe.configure({ mode: "serial" })

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ArrowUpDown } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
 import { sortOptions } from "./shop-constants"
 
 interface SortControlsProps {
@@ -15,13 +16,15 @@ export default function SortControls({ sortBy, onSortChange }: SortControlsProps
 
   return (
     <div className="relative">
-      <button
+      {/* Auslöser wie der mobile Filter-Trigger daneben: Hairline statt Ink-Kontur. */}
+      <Button
+        variant="outline"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 rounded-xl border border-border bg-white px-4 py-2 text-sm text-foreground shadow-sm transition-colors hover:border-border hover:bg-secondary"
+        className="border-border bg-white font-normal [&_svg]:size-3.5"
       >
         <ArrowUpDown className="h-3.5 w-3.5" />
         {activeLabel}
-      </button>
+      </Button>
       {isOpen && (
         <div className="absolute right-0 z-10 mt-2 w-52 overflow-hidden rounded-xl border border-border bg-white shadow-lg">
           {sortOptions.map((option) => (

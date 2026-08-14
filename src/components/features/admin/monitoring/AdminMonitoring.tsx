@@ -10,6 +10,7 @@ import type {
   ErrorStoreStats,
 } from "@/src/types/error"
 import dynamic from "next/dynamic"
+import { Button } from "@/src/components/ui/button"
 import HealthSummaryCards from "./HealthSummaryCards"
 import ErrorList from "./ErrorList"
 
@@ -70,13 +71,15 @@ export default function AdminMonitoring() {
             Frontend-Fehlerübersicht und Systemstatus
           </p>
         </div>
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={handleClear}
-          className="inline-flex items-center gap-2 rounded-lg border border-border bg-ink-900 px-3 py-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-muted-foreground"
+          className="border-border bg-ink-900 text-xs text-muted-foreground hover:bg-muted hover:text-muted-foreground [&_svg]:size-3.5"
         >
           <Trash2 className="h-3.5 w-3.5" />
           Fehler zurücksetzen
-        </button>
+        </Button>
       </div>
 
       {/* Health cards */}

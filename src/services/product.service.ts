@@ -4,12 +4,19 @@
  * List and detail are public; writes are seller-only. Endpoint catalogue:
  * docs/api-integration.md.
  *
+ * Two different path families, do not mix them up (#219):
+ *   - reads   → /api/v1/products/…        (public + internal query controllers)
+ *   - writes  → /api/v1/seller/products/… (SellerProduct*CommandController)
+ * The read controllers expose GET only; a write against /api/v1/products dies
+ * as 405 in the dispatcher.
+ *
  * The list endpoint paginates with its own shape — data.items (not content),
  * data.totalItems (not totalElements), data.page (not number). list() normalises
  * that to ProductPage, so callers must never hit the endpoint directly.
  *
- * Public detail is addressed by {slug} and returns `name`; the internal
- * by-id/{id} route returns `title` and requires ADMIN or the owning SELLER.
+ * Public detail is addressed by {slug}; the internal by-id/{id} route requires
+ * ADMIN or the owning SELLER. Both name the product field `name` — by-id has
+ * never carried a `title`, the internal type derives it (see getById()).
  */
 import { z } from "zod"
 import { apiRequest, buildQuery } from "@/src/lib/api-client"
@@ -18,6 +25,8 @@ import { normalizePage } from "@/src/lib/normalize-page"
 import type {
   Page,
   ProductListParams,
+  ProductFacets,
+  SellerFacet,
   ProductDetail,
   ProductInternalDetail,
   ProductCreateDTO,
@@ -42,7 +51,12 @@ const apiProductListItemSchema = z.object({
   price: z.number(),
   currency: z.string(),
   primaryImage: z.string().nullable(),
-  seller: z.object({ id: z.string(), companyName: z.string() }).nullable(),
+  // `slug` is nullish, not required: the backend always sends the key but sends
+  // `null` for every seller that is not APPROVED (see the mapper below), and an
+  // API that predates the field must not take the whole list down.
+  seller: z
+    .object({ id: z.string(), slug: z.string().nullish(), companyName: z.string() })
+    .nullable(),
   createdAt: z.string(),
   matchScore: z.number().nullable(),
   status: z.string().optional(),
@@ -57,6 +71,28 @@ const apiProductPageSchema = z.object({
   totalPages: z.number(),
 })
 
+// ── Raw API schemas (filter facets) ───────────────────────────────────────────
+
+const apiFacetValueSchema = z.object({
+  value: z.string(),
+  productCount: z.number(),
+})
+
+const apiProductFacetsSchema = z.object({
+  colors: z.array(apiFacetValueSchema),
+  sizes: z.array(apiFacetValueSchema),
+})
+
+const apiSellerFacetsSchema = z.array(
+  z.object({
+    id: z.string(),
+    // Same null-means-not-APPROVED rule as the product-list seller summary.
+    slug: z.string().nullish(),
+    companyName: z.string(),
+    productCount: z.number(),
+  })
+)
+
 // ── Raw API schemas (detail endpoint) ─────────────────────────────────────────
 
 const apiProductVariantSchema = z.object({
@@ -64,6 +100,9 @@ const apiProductVariantSchema = z.object({
   sku: z.string().optional(),
   price: z.number().nullish(),
   stock: z.number().optional(),
+  // Backend #175: derived sellable flag on the public detail route. `stock` stays
+  // optional because only internal/seller routes ever expose raw stock levels.
+  inStock: z.boolean().optional(),
   available: z.boolean().optional(),
   imageUrls: z.array(z.string()).optional(),
   options: z.array(z.object({ type: z.string(), value: z.string() })).optional(),
@@ -98,6 +137,7 @@ const apiProductDetailSchema = z.object({
   seller: z
     .object({
       id: z.string(),
+      slug: z.string().nullish(),
       companyName: z.string().optional(),
       firstName: z.string().optional(),
       lastName: z.string().optional(),
@@ -106,6 +146,57 @@ const apiProductDetailSchema = z.object({
   category: z
     .object({ id: z.string().optional(), name: z.string(), slug: z.string().optional() })
     .nullish(),
+  matchScore: z.number().nullish(),
+  matchBreakdown: z.unknown().optional(),
+})
+
+// ── Raw API schemas (internal by-id detail) ───────────────────────────────────
+// Deliberately its own schema and not a reuse of apiProductDetailSchema: the
+// internal route answers with a *different*, leaner DTO (backend
+// `ProductDetailDto`) — no `title`, no `category`, no `taxRate`, no `variants`,
+// but `materials`, `status` and the timestamps that the public detail omits.
+// Sharing one schema would have to make every one of those optional and would
+// stop catching drift on either route (#232).
+
+const apiProductInternalDetailSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  name: z.string(),
+  description: z.string().nullish(),
+  // Same rename as the public detail: API `shortDescription` → internal `shortDesc`.
+  shortDescription: z.string().nullish(),
+  // Major units; this is the product's base price (`basePriceCents / 100`).
+  price: z.number().nullish(),
+  currency: z.string().nullish(),
+  status: z.string().nullish(),
+  materials: z.array(z.object({ id: z.string(), slug: z.string(), name: z.string() })).nullish(),
+  // The route does not carry images today, and since #234 nothing consumes the
+  // mapped field — ProductImageManager no longer refetches, because this DTO
+  // never answered with images. Kept defensively so the `order` → `position`
+  // rename lives next to its sibling in getBySlug() and does not have to be
+  // reinvented should the route ever gain them.
+  images: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+        url: z.string(),
+        altText: z.string().nullish(),
+        order: z.number().nullish(),
+      })
+    )
+    .optional(),
+  // Same seller summary as the public reads, same `slug`-is-null-unless-APPROVED
+  // rule. `companyName` is declared nullable by the backend purely defensively
+  // (a product without a seller profile is excluded by the foreign key).
+  seller: z
+    .object({
+      id: z.string(),
+      slug: z.string().nullish(),
+      companyName: z.string().nullish(),
+    })
+    .nullish(),
+  createdAt: z.string().nullish(),
+  updatedAt: z.string().nullish(),
   matchScore: z.number().nullish(),
   matchBreakdown: z.unknown().optional(),
 })
@@ -123,6 +214,10 @@ export const ProductService = {
         maxPrice: params.maxPrice,
         // Backend expects the repeatable param name `material`.
         material: params.materials,
+        // Variant facets (#49): the size axis is `variantSize`, NOT `size` —
+        // `size` is already the page size below.
+        color: params.colors,
+        variantSize: params.sizes,
         sort: params.sort,
         page: params.page,
         size: params.size,
@@ -140,11 +235,47 @@ export const ProductService = {
       // Backend reports availability per list item; absent (older API) → assume available.
       inStock: item.inStock ?? true,
       imageUrls: item.primaryImage ? [item.primaryImage] : undefined,
+      // `slug` is normalised to an explicit null: "the backend withheld the link
+      // because the seller is not APPROVED" is a state producerHref() acts on,
+      // not an absent field. companyName stays set either way.
       seller: item.seller?.id
-        ? { userId: item.seller.id, companyName: item.seller.companyName }
+        ? {
+            userId: item.seller.id,
+            slug: item.seller.slug ?? null,
+            companyName: item.seller.companyName,
+          }
         : undefined,
       createdAt: item.createdAt,
     }))
+  },
+
+  /**
+   * Colour/size filter facet of the product list (#49).
+   *
+   * Values come back normalised (trimmed, lower case) and are passed back
+   * verbatim as `colors` / `sizes` in {@link ProductService.list}. The facet is
+   * **global** — it does not narrow down with the other active filters.
+   */
+  async listFacets(): Promise<ProductFacets> {
+    return parseApiResponse(
+      apiProductFacetsSchema,
+      await apiRequest<unknown>("/api/v1/products/facets"),
+      "product.listFacets"
+    )
+  },
+
+  /**
+   * Manufacturer facet of the product list (#50). Lives under `/api/v1/sellers`
+   * on the backend but is purely a product-filter concern, so it sits next to
+   * the colour/size facet rather than in the (authenticated) seller-profile
+   * service. Alphabetical by `companyName`, not paginated.
+   */
+  async listSellerFacets(): Promise<SellerFacet[]> {
+    return parseApiResponse(
+      apiSellerFacetsSchema,
+      await apiRequest<unknown>("/api/v1/sellers/facets"),
+      "product.listSellerFacets"
+    )
   },
 
   async getBySlug(slug: string): Promise<ProductDetail> {
@@ -170,6 +301,7 @@ export const ProductService = {
         sku: v.sku,
         price: v.price,
         stock: v.stock,
+        inStock: v.inStock,
         available: v.available,
         imageUrls: v.imageUrls,
         options: v.options,
@@ -180,6 +312,7 @@ export const ProductService = {
       seller: raw.seller
         ? {
             userId: raw.seller.id,
+            slug: raw.seller.slug ?? null,
             companyName: raw.seller.companyName,
             firstName: raw.seller.firstName,
             lastName: raw.seller.lastName,
@@ -191,48 +324,102 @@ export const ProductService = {
 
   // ── Authenticated ─────────────────────────────────────────────────
 
+  /**
+   * Internal UUID read (`ADMIN` or the owning `SELLER`).
+   *
+   * Parses and maps like its public siblings instead of casting the raw
+   * response (#232): the API says `seller.id`, the frontend type says
+   * `seller.userId` — a cast let that mismatch through without a compiler or
+   * schema complaint, and anyone reading `seller.userId` got `undefined`.
+   *
+   * `title` is derived from `name`: the route carries no separate title, and
+   * `ProductInternalDetail` requires one — same fallback as list().
+   */
   async getById(id: string): Promise<ProductInternalDetail> {
-    return apiRequest<ProductInternalDetail>(`/api/v1/products/by-id/${id}`)
+    const raw = parseApiResponse(
+      apiProductInternalDetailSchema,
+      await apiRequest<unknown>(`/api/v1/products/by-id/${id}`),
+      "product.getById"
+    )
+    return {
+      id: raw.id,
+      slug: raw.slug,
+      name: raw.name,
+      title: raw.name,
+      description: raw.description ?? undefined,
+      shortDesc: raw.shortDescription ?? undefined,
+      // The route reports exactly one price and it is the base price, so both
+      // fields are fed from it — the seller form edits `basePrice`.
+      price: raw.price ?? undefined,
+      basePrice: raw.price ?? undefined,
+      currency: raw.currency ?? undefined,
+      status: raw.status ?? undefined,
+      materials: raw.materials ?? undefined,
+      images: raw.images?.map((img) => ({
+        id: img.id,
+        url: img.url,
+        position: img.order ?? undefined,
+      })),
+      // `slug` normalised to an explicit null exactly like list()/getBySlug():
+      // "the backend withheld the link because the seller is not APPROVED".
+      seller: raw.seller
+        ? {
+            userId: raw.seller.id,
+            slug: raw.seller.slug ?? null,
+            companyName: raw.seller.companyName ?? undefined,
+          }
+        : undefined,
+      createdAt: raw.createdAt ?? undefined,
+      updatedAt: raw.updatedAt ?? undefined,
+    }
   },
 
-  // ── Seller commands ───────────────────────────────────────────────
+  // ── Seller commands (/api/v1/seller/products) ─────────────────────
+  //
+  // There is deliberately no delete() here: the backend exposes no
+  // DELETE /api/v1/seller/products/{id} (see #219).
+  //
+  // updateStatus(id, { status: "INACTIVE" }) is not a substitute. The backend
+  // state machine only allows DRAFT → REVIEW, REVIEW → ACTIVE|REJECTED and
+  // ACTIVE ⇄ INACTIVE, so retiring a product works only from ACTIVE; a DRAFT,
+  // REVIEW or REJECTED product currently cannot be removed or hidden at all.
 
   async create(dto: ProductCreateDTO): Promise<ProductCommandResponse> {
-    return apiRequest("/api/v1/products", {
+    return apiRequest("/api/v1/seller/products", {
       method: "POST",
       body: JSON.stringify(dto),
     })
   },
 
   async update(id: string, dto: ProductUpdateDTO): Promise<ProductCommandResponse> {
-    return apiRequest(`/api/v1/products/${id}`, {
+    return apiRequest(`/api/v1/seller/products/${id}`, {
       method: "PATCH",
       body: JSON.stringify(dto),
     })
   },
 
   async updateStatus(id: string, dto: ProductStatusUpdateDTO): Promise<ProductCommandResponse> {
-    return apiRequest(`/api/v1/products/${id}/status`, {
+    return apiRequest(`/api/v1/seller/products/${id}/status`, {
       method: "PATCH",
       body: JSON.stringify(dto),
     })
   },
 
   async addImage(id: string, dto: ProductImageCreateDTO): Promise<null> {
-    return apiRequest(`/api/v1/products/${id}/images`, {
+    return apiRequest(`/api/v1/seller/products/${id}/images`, {
       method: "POST",
       body: JSON.stringify(dto),
     })
   },
 
   async deleteImage(productId: string, imageId: string): Promise<null> {
-    return apiRequest(`/api/v1/products/${productId}/images/${imageId}`, {
+    return apiRequest(`/api/v1/seller/products/${productId}/images/${imageId}`, {
       method: "DELETE",
     })
   },
 
   async reorderImages(id: string, dto: ProductImageReorderDTO): Promise<null> {
-    return apiRequest(`/api/v1/products/${id}/images/order`, {
+    return apiRequest(`/api/v1/seller/products/${id}/images/order`, {
       method: "PATCH",
       body: JSON.stringify(dto),
     })
@@ -242,7 +429,7 @@ export const ProductService = {
     productId: string,
     dto: ProductVariantInput
   ): Promise<{ id: string; sku: string }> {
-    return apiRequest(`/api/v1/products/${productId}/variants`, {
+    return apiRequest(`/api/v1/seller/products/${productId}/variants`, {
       method: "POST",
       body: JSON.stringify(dto),
     })
@@ -253,19 +440,15 @@ export const ProductService = {
     variantId: string,
     dto: Partial<ProductVariantInput>
   ): Promise<{ id: string; sku: string }> {
-    return apiRequest(`/api/v1/products/${productId}/variants/${variantId}`, {
+    return apiRequest(`/api/v1/seller/products/${productId}/variants/${variantId}`, {
       method: "PATCH",
       body: JSON.stringify(dto),
     })
   },
 
   async deleteVariant(productId: string, variantId: string): Promise<null> {
-    return apiRequest(`/api/v1/products/${productId}/variants/${variantId}`, {
+    return apiRequest(`/api/v1/seller/products/${productId}/variants/${variantId}`, {
       method: "DELETE",
     })
-  },
-
-  async delete(id: string): Promise<void> {
-    return apiRequest(`/api/v1/products/${id}`, { method: "DELETE" })
   },
 }

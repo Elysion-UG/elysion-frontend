@@ -1,12 +1,18 @@
 "use client"
 
-import { Truck, CheckCircle2, Clock, AlertTriangle, X } from "lucide-react"
+import { Truck, CheckCircle2, Clock, AlertTriangle, X, Undo2 } from "lucide-react"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 import type { OrderGroupDetail } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
-import { computeShippingSla } from "@/src/lib/shipping-sla"
+import { hasShippingSla, formatSlaDeadline } from "@/src/lib/shipping-sla"
+import { Button } from "@/src/components/ui/button"
 import { StatusBadge } from "@/src/components/shared"
-import { orderStatusLabel, orderStatusColor } from "./sellerDashboard.constants"
+import {
+  orderStatusLabel,
+  orderStatusColor,
+  shippingSlaLabel,
+  shippingSlaColor,
+} from "./sellerDashboard.constants"
 
 export interface SellerOrderDetailDrawerProps {
   group: OrderGroupDetail
@@ -14,6 +20,13 @@ export interface SellerOrderDetailDrawerProps {
   onStatusChange: (groupId: string, status: string) => void
   onDeliver: (groupId: string) => void
   onShip: (groupId: string) => void
+  /**
+   * Erstattungsstand aus der Abrechnungszeile (`GET /api/v1/seller/settlements`).
+   * `undefined`, solange die Zeile noch lädt oder es keine gibt — dann bietet
+   * der Drawer keine Erstattung an, statt einen Restbetrag zu erfinden.
+   */
+  refund?: { alreadyRefunded: number; remaining: number }
+  onRefund?: (groupId: string) => void
 }
 
 export default function SellerOrderDetailDrawer({
@@ -22,6 +35,8 @@ export default function SellerOrderDetailDrawer({
   onStatusChange,
   onDeliver,
   onShip,
+  refund,
+  onRefund,
 }: SellerOrderDetailDrawerProps) {
   const formattedDate = new Date(group.createdAt).toLocaleDateString("de-DE", {
     day: "2-digit",
@@ -31,12 +46,22 @@ export default function SellerOrderDetailDrawer({
     minute: "2-digit",
   })
 
-  const hasActions =
-    group.status === "CONFIRMED" || group.status === "PROCESSING" || group.status === "SHIPPED"
+  // Erstattung hängt nicht am Bestellstatus, sondern allein am offenen
+  // Restbetrag der Abrechnungszeile (§1.4): auch eine gelieferte Bestellung ist
+  // erstattbar, eine vollständig erstattete dagegen nicht mehr.
+  const canRefund = refund !== undefined && refund.remaining > 0 && onRefund !== undefined
 
-  // 48h-Versand-SLA (§1.6 Szenario 1) — client-seitig aus createdAt abgeleitet,
-  // bis Backend #143 ein explizites Frist-Feld liefert.
-  const sla = computeShippingSla(group.createdAt, group.status)
+  const hasActions =
+    group.status === "CONFIRMED" ||
+    group.status === "PROCESSING" ||
+    group.status === "SHIPPED" ||
+    canRefund
+
+  // Versand-SLA (§1.6 Szenario 1) — reiner Lesezustand vom Server (#143).
+  // Es gibt keine Aktion dazu: eine Überschreitung löst man durch Versenden.
+  const sla = group.shippingSla
+  const slaShipped = sla?.status === "MET" || sla?.status === "MISSED"
+  const slaOverdue = sla?.status === "BREACHED" || sla?.status === "MISSED"
 
   const drawerRef = useFocusTrap(onClose)
 
@@ -70,45 +95,49 @@ export default function SellerOrderDetailDrawer({
               colorClasses={orderStatusColor[group.status]}
               className="px-3 py-1"
             />
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={onClose}
               aria-label="Schliessen"
-              className="rounded-lg p-1.5 text-muted-foreground hover:bg-secondary hover:text-foreground"
+              className="text-muted-foreground"
             >
-              <X className="h-5 w-5" />
-            </button>
+              <X />
+            </Button>
           </div>
         </div>
 
         {/* Scrollable body */}
         <div className="flex-1 space-y-6 overflow-y-auto p-5">
-          {/* 48h-Versand-SLA */}
-          {sla.applies && (
+          {/* Versand-SLA — Server-Zustand, keine Aktion */}
+          {hasShippingSla(sla) && (
             <section
-              className={`flex items-start gap-3 rounded-lg px-4 py-3 ${
-                sla.isOverdue ? "bg-danger-tint text-danger" : "bg-warning-tint text-warning"
-              }`}
+              className={`flex items-start gap-3 rounded-lg px-4 py-3 ${shippingSlaColor[sla.status]}`}
             >
-              {sla.isOverdue ? (
+              {slaOverdue ? (
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              ) : slaShipped ? (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
               ) : (
                 <Clock className="mt-0.5 h-4 w-4 shrink-0" />
               )}
               <div className="text-sm">
-                <p className="font-semibold">
-                  {sla.isOverdue ? "Versandfrist überschritten" : "48h-Versandfrist"}
-                </p>
-                <p className="mt-0.5">
-                  {sla.isOverdue ? "Fällig war " : "Bitte versenden bis "}
-                  {sla.deadline.toLocaleString("de-DE", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}{" "}
-                  Uhr.
-                </p>
+                <p className="font-semibold">{shippingSlaLabel[sla.status]}</p>
+                {sla.deadlineAt && (
+                  <p className="mt-0.5">
+                    {slaShipped
+                      ? "Frist war "
+                      : slaOverdue
+                        ? "Fällig war "
+                        : "Bitte versenden bis "}
+                    {formatSlaDeadline(sla.deadlineAt)} Uhr.
+                  </p>
+                )}
+                {sla.breachedAt && (
+                  <p className="mt-0.5">
+                    Eskalation an Sie am {formatSlaDeadline(sla.breachedAt)} Uhr.
+                  </p>
+                )}
               </div>
             </section>
           )}
@@ -200,6 +229,27 @@ export default function SellerOrderDetailDrawer({
             </div>
           </section>
 
+          {/* Erstattungen — Stand aus der Abrechnungszeile, nicht nachgerechnet */}
+          {refund && refund.alreadyRefunded > 0 && (
+            <section>
+              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Erstattungen
+              </h3>
+              <dl className="rounded-lg bg-secondary px-4 py-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">Bereits erstattet</dt>
+                  <dd className="font-mono text-foreground">
+                    {formatEuro(refund.alreadyRefunded)}
+                  </dd>
+                </div>
+                <div className="mt-1 flex items-center justify-between">
+                  <dt className="text-muted-foreground">Noch erstattbar</dt>
+                  <dd className="font-mono text-foreground">{formatEuro(refund.remaining)}</dd>
+                </div>
+              </dl>
+            </section>
+          )}
+
           {/* Shipment */}
           <section>
             <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -226,39 +276,57 @@ export default function SellerOrderDetailDrawer({
           <div className="border-t border-border p-5">
             <div className="flex flex-wrap gap-2">
               {group.status === "CONFIRMED" && (
-                <button
+                <Button
+                  variant="secondary"
                   onClick={() => {
                     onStatusChange(group.orderGroupId, "PROCESSING")
                     onClose()
                   }}
-                  className="flex-1 rounded-lg bg-warning-tint px-4 py-2.5 text-sm font-medium text-warning hover:bg-warning-tint"
+                  className="flex-1 bg-warning-tint text-warning hover:bg-warning-tint"
                 >
                   In Bearbeitung setzen
-                </button>
+                </Button>
               )}
               {group.status === "PROCESSING" && (
-                <button
+                <Button
+                  variant="secondary"
                   onClick={() => {
                     onShip(group.orderGroupId)
                     onClose()
                   }}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-2.5 text-sm font-medium text-foreground hover:bg-secondary"
+                  className="flex-1"
                 >
                   <Truck className="h-4 w-4" /> Versenden
-                </button>
+                </Button>
               )}
               {group.status === "SHIPPED" && (
-                <button
+                <Button
+                  variant="secondary"
                   onClick={() => {
                     onDeliver(group.orderGroupId)
                     onClose()
                   }}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-50 px-4 py-2.5 text-sm font-medium text-green-700 hover:bg-green-50"
+                  className="flex-1 bg-green-50 text-green-700 hover:bg-green-50"
                 >
                   <CheckCircle2 className="h-4 w-4" /> Als geliefert markieren
+                </Button>
+              )}
+              {canRefund && (
+                <button
+                  onClick={() => onRefund?.(group.orderGroupId)}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-danger hover:bg-danger-tint"
+                >
+                  <Undo2 className="h-4 w-4" /> Erstatten
                 </button>
               )}
             </div>
+            {canRefund && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                Erstattungen lösen Sie eigenständig aus — eine Freigabe von Elysion ist nicht nötig.
+                Die Provision wird anteilig zurückgegeben; die Abrechnungszeile wird bis zur
+                Korrektur von der Auszahlung ausgenommen.
+              </p>
+            )}
           </div>
         )}
       </div>

@@ -3,6 +3,8 @@
 import { MapPin, Plus, Edit2, Trash2, Star } from "lucide-react"
 import type { Address } from "@/src/types"
 import { toCountryName } from "@/src/lib/country"
+import { ADDRESS_TYPE_LABEL } from "@/src/lib/constants"
+import { Button } from "@/src/components/ui/button"
 import { SectionHeader } from "./SectionHeader"
 
 interface AddressesSectionProps {
@@ -66,39 +68,39 @@ export function AddressesSection({
                 </p>
                 <p className="text-sm text-foreground">{toCountryName(addr.country)}</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {addr.type === "SHIPPING" ? "Lieferadresse" : "Rechnungsadresse"}
+                  {ADDRESS_TYPE_LABEL[addr.type]}
                 </p>
                 <div className="mt-3 flex items-center gap-3">
-                  <button
+                  <Button
+                    variant="link"
                     onClick={() => onEdit(addr)}
-                    className="flex items-center gap-1 text-sm text-green-600 hover:text-green-600"
+                    className="h-auto gap-1 p-0 text-green-600"
                   >
                     <Edit2 className="h-3 w-3" /> Bearbeiten
-                  </button>
+                  </Button>
                   {!addr.isDefault && (
-                    <button
+                    <Button
+                      variant="link"
                       onClick={() => onSetDefault(addr.id)}
-                      className="flex items-center gap-1 text-sm text-foreground hover:text-green-600"
+                      className="h-auto gap-1 p-0 hover:text-green-600"
                     >
                       <Star className="h-3 w-3" /> Als Standard
-                    </button>
+                    </Button>
                   )}
-                  <button
+                  <Button
+                    variant="link"
                     onClick={() => onDelete(addr.id)}
-                    className="flex items-center gap-1 text-sm text-danger hover:text-danger"
+                    className="h-auto gap-1 p-0 text-danger"
                   >
                     <Trash2 className="h-3 w-3" /> Löschen
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))
           )}
-          <button
-            onClick={onAdd}
-            className="flex items-center gap-2 text-sm font-medium text-green-600 hover:text-green-600"
-          >
+          <Button variant="link" onClick={onAdd} className="h-auto p-0 text-green-600">
             <Plus className="h-4 w-4" /> Neue Adresse hinzufügen
-          </button>
+          </Button>
         </div>
       )}
     </div>

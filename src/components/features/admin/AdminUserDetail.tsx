@@ -27,6 +27,7 @@ import {
   ADMIN_SELLER_DETAIL_STATUS_COLOR,
 } from "@/src/lib/constants"
 import { BackButton, LoadingFullPage, StatusBadge } from "@/src/components/shared"
+import { Button } from "@/src/components/ui/button"
 
 export default function AdminUserDetail() {
   const { id } = useParams<{ id: string }>()
@@ -148,14 +149,10 @@ export default function AdminUserDetail() {
         {/* Actions */}
         <div className="flex flex-wrap gap-3 border-t border-border/60 p-6">
           {/* Suspend / Activate */}
-          <button
+          <Button
+            variant={user.status === "SUSPENDED" ? "default" : "destructive"}
             onClick={handleSuspend}
             disabled={isUpdating}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 ${
-              user.status === "SUSPENDED"
-                ? "bg-green-700 text-ink-900 hover:bg-green-500"
-                : "bg-destructive text-white hover:bg-destructive"
-            }`}
           >
             {isUpdating ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -165,25 +162,21 @@ export default function AdminUserDetail() {
               <ShieldAlert className="h-4 w-4" />
             )}
             {user.status === "SUSPENDED" ? "Aktivieren" : "Sperren"}
-          </button>
+          </Button>
 
           {/* Seller approve / reject */}
           {user.sellerProfile && user.sellerProfile.status === "PENDING" && (
             <>
-              <button
-                onClick={() => handleSellerAction("APPROVED")}
-                disabled={isUpdating}
-                className="flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-green-500 disabled:opacity-50"
-              >
+              <Button onClick={() => handleSellerAction("APPROVED")} disabled={isUpdating}>
                 <CheckCircle className="h-4 w-4" /> Verkäufer genehmigen
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="destructive"
                 onClick={() => handleSellerAction("REJECTED")}
                 disabled={isUpdating}
-                className="flex items-center gap-2 rounded-lg bg-destructive px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-destructive disabled:opacity-50"
               >
                 <XCircle className="h-4 w-4" /> Verkäufer ablehnen
-              </button>
+              </Button>
             </>
           )}
         </div>

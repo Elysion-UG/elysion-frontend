@@ -11,6 +11,7 @@ import {
   DialogFooter,
 } from "@/src/components/ui/dialog"
 import { Textarea } from "@/src/components/ui/textarea"
+import { Button } from "@/src/components/ui/button"
 import { toast } from "sonner"
 import { useAsyncAction } from "@/src/hooks/useAsyncAction"
 
@@ -59,22 +60,26 @@ export function GenericRejectModal({
           onChange={(e) => setReason(e.target.value)}
           rows={3}
           placeholder="Ablehnungsgrund..."
-          className="w-full rounded-lg border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-green-500/20"
+          className="w-full border border-border/60 bg-ink-900/60 px-3 py-2 text-sm text-muted-foreground"
         />
         <DialogFooter className="mt-4 flex gap-3 sm:flex-row">
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={onClose}
-            className="flex-1 rounded-lg border border-border/60 py-2 text-sm font-medium text-muted-foreground hover:bg-ink-900/60"
+            className="flex-1 border border-border/60 text-muted-foreground hover:bg-ink-900/60"
           >
             Abbrechen
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="destructive"
+            size="sm"
             onClick={handleSubmit}
             disabled={loading}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-destructive py-2 text-sm font-medium text-white hover:bg-destructive disabled:opacity-60"
+            className="flex-1"
           >
             {loading && <Loader2 className="h-3 w-3 animate-spin" />} Ablehnen
-          </button>
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

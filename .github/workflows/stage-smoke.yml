@@ -83,5 +83,11 @@ jobs:
         with:
           name: stage-smoke-report-${{ github.run_number }}
           path: playwright-report/
-          # Kurze Retention: Fehler-Snapshots können sensible Felder enthalten (FE#106).
-          retention-days: 3
+          # Minimale Retention (FE#106). Das Repo ist öffentlich — jedes
+          # Artefakt hier ist für jeden abrufbar. Der Report ist Fehlerdiagnose
+          # für GENAU diesen Lauf: Der Cron läuft täglich, ein Report vom Vortag
+          # ist überholt, und ein weiterhin bestehender Fehler ist per
+          # `workflow_dispatch` in Minuten reproduzierbar. Jenseits von 24 h ist
+          # der Nutzen also nahe null, das Risiko nicht. 1 ist das Minimum, das
+          # GitHub zulässt.
+          retention-days: 1

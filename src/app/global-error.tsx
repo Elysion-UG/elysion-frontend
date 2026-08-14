@@ -2,6 +2,7 @@
 
 import { useEffect } from "react"
 import Link from "next/link"
+import { Button, buttonVariants } from "@/src/components/ui/button"
 import { errorStore } from "@/src/lib/error-store"
 
 export default function GlobalError({
@@ -46,16 +47,8 @@ export default function GlobalError({
             erneut oder kehren Sie zur Startseite zurück.
           </p>
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <button
-              onClick={reset}
-              className="rounded-md bg-green-500 px-5 py-2.5 text-sm font-medium text-ink-900 shadow-sm hover:bg-green-700"
-            >
-              Erneut versuchen
-            </button>
-            <Link
-              href="/"
-              className="rounded-md border border-border bg-white px-5 py-2.5 text-sm font-medium text-foreground shadow-sm hover:bg-secondary"
-            >
+            <Button onClick={reset}>Erneut versuchen</Button>
+            <Link href="/" className={buttonVariants({ variant: "outline" })}>
               Zur Startseite
             </Link>
           </div>

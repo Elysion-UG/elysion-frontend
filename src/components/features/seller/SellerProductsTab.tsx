@@ -1,13 +1,30 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useEffectEvent } from "@/src/hooks/use-effect-event"
-import { Plus, Edit, Package, RefreshCw, Loader2, CheckCircle2, Clock, Trash2 } from "lucide-react"
-import { ProductService } from "@/src/services/product.service"
+import { useState } from "react"
+import { useQueryClient } from "@tanstack/react-query"
+import {
+  Plus,
+  Edit,
+  Package,
+  ImageOff,
+  RefreshCw,
+  Loader2,
+  CheckCircle2,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react"
 import ProductForm from "@/src/components/features/products/ProductForm"
-import type { ProductListItem, ProductStatus } from "@/src/types"
+import { Button } from "@/src/components/ui/button"
+import {
+  sellerKeys,
+  useSellerProductCounts,
+  useSellerProductsPage,
+  useUpdateSellerProductStatus,
+} from "@/src/hooks/useSellerDashboard"
+import { sellerProductTransitions } from "@/src/lib/seller-product-transitions"
+import type { ProductStatus, SellerProductListItem } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
-import { toast } from "sonner"
 import {
   Table,
   TableHeader,
@@ -16,7 +33,7 @@ import {
   TableHead,
   TableCell,
 } from "@/src/components/ui/table"
-import { StatusBadge } from "@/src/components/shared"
+import { ErrorAlert, StatusBadge } from "@/src/components/shared"
 import {
   productStatusLabel,
   productStatusColor,
@@ -24,87 +41,59 @@ import {
   SELLER_TABLE_CELL_CLASS,
 } from "./sellerDashboard.constants"
 import SellerKpiCard from "./SellerKpiCard"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/src/components/ui/alert-dialog"
 
 interface SellerProductsTabProps {
   isApproved: boolean
-  userId: string | undefined
 }
 
-export default function SellerProductsTab({ isApproved, userId }: SellerProductsTabProps) {
-  const [products, setProducts] = useState<ProductListItem[]>([])
-  const [productsLoading, setProductsLoading] = useState(false)
+/**
+ * Abweichende Fläche der Aktions-Schaltfläche, abhängig vom Zielstatus des
+ * Übergangs. Ohne Eintrag bleibt die Sand-Fläche der `secondary`-Variante.
+ */
+const TRANSITION_BUTTON_CLASS: Partial<Record<ProductStatus, string>> = {
+  REVIEW: "bg-warning-tint text-warning hover:bg-warning-tint",
+  ACTIVE: "bg-green-50 text-green-600 hover:bg-green-50",
+}
+
+export default function SellerProductsTab({ isApproved }: SellerProductsTabProps) {
+  // 0-basiert wie im Backend; der Pager unten rechnet für die Anzeige um.
+  const [page, setPage] = useState(0)
   const [showProductForm, setShowProductForm] = useState(false)
-  const [editProduct, setEditProduct] = useState<ProductListItem | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<ProductListItem | null>(null)
+  const [editProduct, setEditProduct] = useState<SellerProductListItem | null>(null)
 
-  const fetchProducts = useCallback(async () => {
-    if (!userId || !isApproved) return
-    setProductsLoading(true)
-    try {
-      const page = await ProductService.list({ sellerId: userId, size: 100 })
-      setProducts(page.items)
-    } catch {
-      toast.error("Produkte konnten nicht geladen werden.")
-    } finally {
-      setProductsLoading(false)
-    }
-  }, [userId, isApproved])
+  const queryClient = useQueryClient()
+  const productsQuery = useSellerProductsPage(page, isApproved)
+  const countsQuery = useSellerProductCounts(isApproved)
+  const updateStatus = useUpdateSellerProductStatus()
 
-  const runProductsEffect = useEffectEvent(() => {
-    fetchProducts()
-  })
-  useEffect(() => {
-    runProductsEffect()
-  }, [fetchProducts])
+  const products = productsQuery.data?.items ?? []
+  const totalItems = productsQuery.data?.totalItems ?? 0
+  const totalPages = productsQuery.data?.totalPages ?? 0
+  const counts = countsQuery.data
 
-  const handleStatusChange = async (productId: string, status: ProductStatus) => {
-    try {
-      await ProductService.updateStatus(productId, { status })
-      toast.success(`Status auf "${productStatusLabel[status]}" gesetzt.`)
-      void fetchProducts()
-    } catch {
-      toast.error("Status konnte nicht geändert werden.")
-    }
-  }
+  // Über das Präfix invalidiert: trifft die sichtbare Seite und die Statuszahlen.
+  const refresh = () => void queryClient.invalidateQueries({ queryKey: sellerKeys.products })
 
-  const confirmDelete = async () => {
-    const target = deleteTarget
-    if (!target) return
-    setDeleteTarget(null)
-    try {
-      await ProductService.delete(target.id)
-      toast.success("Produkt gelöscht.")
-      void fetchProducts()
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Produkt konnte nicht gelöscht werden."
-      toast.error(msg)
-    }
-  }
-
-  const activeCount = products.filter((p) => p.status === "ACTIVE").length
-  const draftCount = products.filter((p) => p.status === "DRAFT").length
-  const reviewCount = products.filter((p) => p.status === "REVIEW").length
+  // Kein Löschen-Flow: das Backend hat kein DELETE /api/v1/seller/products/{id}
+  // (#219). Der frühere Button schickte ein DELETE an den GET-only-Lese-
+  // controller und lief immer in einen 405. Entwürfe bleiben bis zu einem
+  // Backend-Gegenstück bestehen.
 
   return (
     <>
-      {products.length > 0 && (
+      {totalItems > 0 && (
         <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <SellerKpiCard label="Gesamt" value={products.length} icon={Package} color="slate" />
-          <SellerKpiCard label="Aktiv" value={activeCount} icon={CheckCircle2} color="emerald" />
-          <SellerKpiCard label="Entwürfe" value={draftCount} icon={Edit} color="amber" />
+          <SellerKpiCard label="Gesamt" value={totalItems} icon={Package} color="slate" />
+          <SellerKpiCard
+            label="Aktiv"
+            value={counts?.ACTIVE ?? "–"}
+            icon={CheckCircle2}
+            color="emerald"
+          />
+          <SellerKpiCard label="Entwürfe" value={counts?.DRAFT ?? "–"} icon={Edit} color="amber" />
           <SellerKpiCard
             label="In Prüfung"
-            value={reviewCount}
+            value={counts?.REVIEW ?? "–"}
             icon={Clock}
             color="teal"
             note="Warten auf Freigabe"
@@ -117,27 +106,34 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
         <div className="flex items-center justify-between border-b border-border p-6">
           <h2 className="text-xl font-semibold text-foreground">Ihre Produkte</h2>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => void fetchProducts()}
-              className="text-muted-foreground transition-colors hover:text-foreground"
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={refresh}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
               title="Aktualisieren"
             >
-              <RefreshCw className={`h-4 w-4 ${productsLoading ? "animate-spin" : ""}`} />
-            </button>
-            <button
+              <RefreshCw className={`h-4 w-4 ${productsQuery.isFetching ? "animate-spin" : ""}`} />
+            </Button>
+            <Button
               disabled={!isApproved}
-              className="inline-flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-50"
               onClick={() => {
                 setEditProduct(null)
                 setShowProductForm(true)
               }}
             >
               <Plus className="h-4 w-4" /> Neues Produkt
-            </button>
+            </Button>
           </div>
         </div>
 
-        {productsLoading ? (
+        {productsQuery.isError ? (
+          <div className="p-6">
+            <ErrorAlert message="Produkte konnten nicht geladen werden." />
+          </div>
+        ) : /* Ohne Freigabe bleibt die Abfrage deaktiviert und damit dauerhaft
+             `isPending` — ein ewiger Spinner wäre die falsche Auskunft. */
+        productsQuery.isPending && isApproved ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-green-600" />
           </div>
@@ -150,27 +146,35 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
             </p>
           </div>
         ) : (
-          <Table>
-            <TableHeader className="bg-secondary">
-              <TableRow className="hover:bg-secondary">
-                <TableHead className={SELLER_TABLE_HEAD_CLASS}>Produkt</TableHead>
-                <TableHead className={SELLER_TABLE_HEAD_CLASS}>Preis</TableHead>
-                <TableHead className={SELLER_TABLE_HEAD_CLASS}>Status</TableHead>
-                <TableHead className={SELLER_TABLE_HEAD_CLASS}>Aktionen</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {products.map((product) => {
-                const status = product.status as ProductStatus | undefined
-                return (
+          <>
+            <Table>
+              <TableHeader className="bg-secondary">
+                <TableRow className="hover:bg-secondary">
+                  <TableHead className={SELLER_TABLE_HEAD_CLASS}>Produkt</TableHead>
+                  <TableHead className={SELLER_TABLE_HEAD_CLASS}>Preis</TableHead>
+                  <TableHead className={SELLER_TABLE_HEAD_CLASS}>Status</TableHead>
+                  <TableHead className={SELLER_TABLE_HEAD_CLASS}>Aktionen</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {products.map((product) => (
                   <TableRow key={product.id} className="hover:bg-secondary">
                     <TableCell className={SELLER_TABLE_CELL_CLASS}>
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-green-50">
-                          <Package className="h-5 w-5 text-green-600" />
+                          {product.primaryImage ? (
+                            <Package className="h-5 w-5 text-green-600" />
+                          ) : (
+                            // Ohne Bild kommt das Produkt nicht durch die Prüfung —
+                            // das Backend verlangt für DRAFT → REVIEW mindestens eins.
+                            <ImageOff
+                              className="h-5 w-5 text-muted-foreground"
+                              aria-label="Noch kein Produktbild"
+                            />
+                          )}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-foreground">{product.title}</p>
+                          <p className="text-sm font-medium text-foreground">{product.name}</p>
                           <p className="text-xs text-muted-foreground">
                             ID: {product.id.slice(0, 8)}…
                           </p>
@@ -180,70 +184,84 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
                     <TableCell
                       className={`${SELLER_TABLE_CELL_CLASS} text-sm font-medium text-foreground`}
                     >
-                      {formatEuro(product.price ?? 0)}
+                      {formatEuro(product.price)}
                     </TableCell>
                     <TableCell className={SELLER_TABLE_CELL_CLASS}>
-                      {status ? (
-                        <StatusBadge
-                          label={productStatusLabel[status]}
-                          colorClasses={productStatusColor[status]}
-                        />
-                      ) : (
-                        <span className="text-xs text-muted-foreground">–</span>
-                      )}
+                      <StatusBadge
+                        label={productStatusLabel[product.status]}
+                        colorClasses={productStatusColor[product.status]}
+                      />
                     </TableCell>
                     <TableCell className={SELLER_TABLE_CELL_CLASS}>
                       <div className="flex items-center gap-2">
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => {
                             setEditProduct(product)
                             setShowProductForm(true)
                           }}
-                          className="text-green-600 transition-colors hover:text-green-600"
+                          className="h-8 w-8 text-green-600 hover:text-green-600"
                           title="Bearbeiten"
                         >
                           <Edit className="h-4 w-4" />
-                        </button>
-                        {status === "DRAFT" && (
-                          <button
-                            onClick={() => void handleStatusChange(product.id, "REVIEW")}
-                            className="rounded bg-warning-tint px-2 py-0.5 text-xs text-warning hover:bg-warning-tint"
+                        </Button>
+                        {sellerProductTransitions(product.status).map((transition) => (
+                          <Button
+                            key={transition.target}
+                            variant="secondary"
+                            size="sm"
+                            disabled={updateStatus.isPending}
+                            onClick={() =>
+                              updateStatus.mutate({
+                                productId: product.id,
+                                status: transition.target,
+                              })
+                            }
+                            className={`h-7 px-2 text-xs ${
+                              TRANSITION_BUTTON_CLASS[transition.target] ?? ""
+                            }`}
                           >
-                            Zur Prüfung
-                          </button>
-                        )}
-                        {status === "ACTIVE" && (
-                          <button
-                            onClick={() => void handleStatusChange(product.id, "INACTIVE")}
-                            className="rounded bg-secondary px-2 py-0.5 text-xs text-foreground hover:bg-muted"
-                          >
-                            Deaktivieren
-                          </button>
-                        )}
-                        {status === "INACTIVE" && (
-                          <button
-                            onClick={() => void handleStatusChange(product.id, "ACTIVE")}
-                            className="rounded bg-green-50 px-2 py-0.5 text-xs text-green-600 hover:bg-green-50"
-                          >
-                            Aktivieren
-                          </button>
-                        )}
-                        {status === "DRAFT" && (
-                          <button
-                            onClick={() => setDeleteTarget(product)}
-                            className="text-danger transition-colors hover:text-danger"
-                            title="Produkt löschen"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
+                            {transition.label}
+                          </Button>
+                        ))}
                       </div>
                     </TableCell>
                   </TableRow>
-                )
-              })}
-            </TableBody>
-          </Table>
+                ))}
+              </TableBody>
+            </Table>
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between border-t border-border px-6 py-3">
+                <span className="text-sm text-muted-foreground">
+                  Seite {page + 1} von {totalPages} · {totalItems} Produkte
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
+                    disabled={page <= 0}
+                    aria-label="Vorherige Seite"
+                    className="h-8 w-8 border border-border text-muted-foreground hover:bg-secondary disabled:opacity-40"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                    disabled={page >= totalPages - 1}
+                    aria-label="Nächste Seite"
+                    className="h-8 w-8 border border-border text-muted-foreground hover:bg-secondary disabled:opacity-40"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -251,9 +269,8 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
         <ProductForm
           productId={editProduct?.id}
           initialValues={
-            editProduct ? { name: editProduct.title, basePrice: editProduct.price } : undefined
+            editProduct ? { name: editProduct.name, basePrice: editProduct.price } : undefined
           }
-          initialImages={editProduct?.images}
           onClose={() => {
             setShowProductForm(false)
             setEditProduct(null)
@@ -261,31 +278,13 @@ export default function SellerProductsTab({ isApproved, userId }: SellerProducts
           onSaved={() => {
             setShowProductForm(false)
             setEditProduct(null)
-            fetchProducts()
+            // Ein neues Produkt entsteht in DRAFT und landet durch die feste
+            // Sortierung (createdAt desc) auf Seite 1.
+            setPage(0)
+            refresh()
           }}
         />
       )}
-
-      <AlertDialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null)
-        }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Produkt löschen?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Möchten Sie „{deleteTarget?.title ?? "dieses Produkt"}“ wirklich löschen? Diese Aktion
-              kann nicht rückgängig gemacht werden.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void confirmDelete()}>Löschen</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   )
 }

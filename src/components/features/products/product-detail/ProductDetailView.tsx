@@ -3,6 +3,8 @@
 import { ArrowLeft } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { ProductDetail, ProductVariant, PublicCertificate } from "@/src/types"
+import { Button } from "@/src/components/ui/button"
+import { producerHref } from "@/src/lib/seller-url"
 import { AddToCartButton } from "./AddToCartButton"
 import { PriceWithStock } from "./PriceWithStock"
 import { ProductGallery } from "./ProductGallery"
@@ -47,13 +49,14 @@ export function ProductDetailView({
 
   return (
     <div>
-      <button
+      <Button
+        variant="link"
         onClick={() => router.back()}
-        className="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-green-600"
+        className="mb-6 h-auto gap-1.5 px-0 text-muted-foreground hover:text-green-600"
       >
         <ArrowLeft className="h-4 w-4" />
         Zurück zu Produkten
-      </button>
+      </Button>
 
       <div className="grid gap-12 lg:grid-cols-2">
         <ProductGallery images={images} alt={product.name} />
@@ -70,9 +73,10 @@ export function ProductDetailView({
 
             {sellerName && (
               <button
-                onClick={() =>
-                  product.seller?.userId && router.push(`/producer?id=${product.seller.userId}`)
-                }
+                onClick={() => {
+                  const href = producerHref(product.seller)
+                  if (href) router.push(href)
+                }}
                 className="mb-2 text-xs font-semibold uppercase tracking-wider text-green-600 transition-colors hover:text-green-600 hover:underline"
               >
                 {sellerName}
@@ -88,7 +92,11 @@ export function ProductDetailView({
           </div>
 
           {sellerName && (
-            <SellerCard sellerName={sellerName} sellerUserId={product.seller?.userId} />
+            <SellerCard
+              sellerName={sellerName}
+              sellerUserId={product.seller?.userId}
+              sellerSlug={product.seller?.slug}
+            />
           )}
 
           <PriceWithStock price={price} inStock={inStock} />

@@ -11,14 +11,20 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/src/components/ui/sheet"
+import { Button } from "@/src/components/ui/button"
+import { Input } from "@/src/components/ui/input"
 import { useProducts, PRODUCTS_PAGE_SIZE } from "@/src/hooks/useProducts"
 import { useMaterials } from "@/src/hooks/useMaterials"
+import { useProductFacets } from "@/src/hooks/useProductFacets"
+import { useSellerFacets } from "@/src/hooks/useSellerFacets"
+import { producerHref } from "@/src/lib/seller-url"
 import { useAuth } from "@/src/context/AuthContext"
 import { useBuyerValueProfile } from "@/src/hooks/useBuyerValueProfile"
 import {
   sustainabilityFilters,
   profileWeightToSlider,
   MIDDLE_IMPORTANCE,
+  DEFAULT_PRICE_RANGE,
   sortOptions,
   countActiveFilters,
 } from "./shop-constants"
@@ -39,12 +45,19 @@ export default function SustainableShop() {
   // ── Filter state ───────────────────────────────────────────────────
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 300 })
+  const [priceRange, setPriceRange] = useState<{ min: number; max: number }>(DEFAULT_PRICE_RANGE)
   const [selectedMaterials, setSelectedMaterials] = useState<string[]>([])
+  const [selectedColors, setSelectedColors] = useState<string[]>([])
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([])
+  const [selectedSellerIds, setSelectedSellerIds] = useState<string[]>([])
   const [sortBy, setSortBy] = useState("newest")
   const [currentPage, setCurrentPage] = useState(0)
   const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false)
   const { data: materials } = useMaterials()
+  const productFacetsQuery = useProductFacets()
+  const sellerFacetsQuery = useSellerFacets()
+  const productFacets = productFacetsQuery.data
+  const sellerFacets = sellerFacetsQuery.data
   const [sustainabilityImportance, setSustainabilityImportance] =
     useState<Record<string, string>>(MIDDLE_IMPORTANCE)
 
@@ -84,20 +97,43 @@ export default function SustainableShop() {
     shopRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
+  /**
+   * Clears every axis that `countActiveFilters` counts, plus the search term.
+   * That invariant matters: the empty state only offers this action when the
+   * count is > 0, so anything counted but not cleared would leave the badge
+   * standing after a reset — which is exactly what happened to the
+   * sustainability sliders before (#49/#50 review). A logged-in buyer gets the
+   * sliders seeded from the value profile, so they are almost always off the
+   * neutral middle and thus almost always part of the count.
+   *
+   * `sortBy` is deliberately *not* reset: it is not a filter, it does not
+   * narrow the result set, it is not part of the count, and it stays visible in
+   * its own control — silently flipping it back to "Neueste" would change
+   * something the user never asked to reset.
+   */
   const resetFilters = () => {
     setSearch("")
     setDebouncedSearch("")
-    setPriceRange({ min: 0, max: 300 })
+    setPriceRange(DEFAULT_PRICE_RANGE)
     setSelectedMaterials([])
+    setSelectedColors([])
+    setSelectedSizes([])
+    setSelectedSellerIds([])
+    setSustainabilityImportance(MIDDLE_IMPORTANCE)
     setCurrentPage(0)
   }
 
-  const handleToggleMaterial = (slug: string) => {
-    setSelectedMaterials((prev) =>
-      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
-    )
-    setCurrentPage(0)
-  }
+  /** Toggles one value of a multi-select filter axis and returns to page 1. */
+  const makeToggle =
+    (setter: React.Dispatch<React.SetStateAction<string[]>>) => (value: string) => {
+      setter((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]))
+      setCurrentPage(0)
+    }
+
+  const handleToggleMaterial = makeToggle(setSelectedMaterials)
+  const handleToggleColor = makeToggle(setSelectedColors)
+  const handleToggleSize = makeToggle(setSelectedSizes)
+  const handleToggleSeller = makeToggle(setSelectedSellerIds)
 
   // ── Data via React Query ───────────────────────────────────────────
   const apiSort = sortOptions.find((o) => o.value === sortBy)?.apiSort
@@ -105,6 +141,9 @@ export default function SustainableShop() {
     search: debouncedSearch,
     priceRange,
     materials: selectedMaterials,
+    colors: selectedColors,
+    sizes: selectedSizes,
+    sellerIds: selectedSellerIds,
     apiSort,
     currentPage,
   })
@@ -115,9 +154,29 @@ export default function SustainableShop() {
   // Count for the mobile "Filter (N)" trigger (search has its own bar → excluded).
   const activeFilterCount = countActiveFilters({
     selectedMaterials,
+    selectedColors,
+    selectedSizes,
+    selectedSellerIds,
     priceRange,
     sustainabilityImportance,
   })
+
+  // The empty state only offers "Filter zurücksetzen" when there is something
+  // to reset — search counts here even though it sits outside the sidebar.
+  const hasActiveFilters = activeFilterCount > 0 || debouncedSearch.length > 0
+
+  // A failing facet endpoint (HTTP error or schema violation) would otherwise be
+  // invisible: the `?? []` fallbacks below make the sections disappear exactly
+  // like an empty facet does, and the user reads that as "filter removed".
+  // Naming the affected axes keeps the notice honest when only one call fails.
+  const unavailableFacets = [
+    ...(productFacetsQuery.isError ? ["Farbe", "Größe"] : []),
+    ...(sellerFacetsQuery.isError ? ["Hersteller"] : []),
+  ]
+  const retryFacets = () => {
+    if (productFacetsQuery.isError) void productFacetsQuery.refetch()
+    if (sellerFacetsQuery.isError) void sellerFacetsQuery.refetch()
+  }
 
   // ── Handlers ───────────────────────────────────────────────────────
   const handleImportanceChange = (attribute: string, importance: string) => {
@@ -131,6 +190,32 @@ export default function SustainableShop() {
 
   const scrollToShop = () => {
     shopRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  // The sidebar is rendered twice (desktop column + mobile sheet). Sharing one
+  // prop object keeps both instances in sync — a new filter can't reach only one.
+  const sidebarProps: React.ComponentProps<typeof FilterSidebar> = {
+    isAuthenticated,
+    hasValueProfile: !!valueProfile?.simpleProfile,
+    sustainabilityImportance,
+    onImportanceChange: handleImportanceChange,
+    priceRange,
+    onPriceRangeChange: setPriceRange,
+    materials: materials ?? [],
+    selectedMaterials,
+    onToggleMaterial: handleToggleMaterial,
+    colorFacets: productFacets?.colors ?? [],
+    selectedColors,
+    onToggleColor: handleToggleColor,
+    sizeFacets: productFacets?.sizes ?? [],
+    selectedSizes,
+    onToggleSize: handleToggleSize,
+    sellerFacets: sellerFacets ?? [],
+    selectedSellerIds,
+    onToggleSeller: handleToggleSeller,
+    unavailableFacets,
+    onRetryFacets: retryFacets,
+    onPageReset: () => setCurrentPage(0),
   }
 
   return (
@@ -148,30 +233,19 @@ export default function SustainableShop() {
       {/* ── Search bar ────────────────────────────────────────────────── */}
       <div ref={shopRef} className="relative mb-6">
         <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
+        <Input
           type="text"
           value={search}
           onChange={handleSearchChange}
           placeholder="Produkte suchen…"
-          className="w-full rounded-xl border border-border bg-white py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="pl-10 text-sm"
         />
       </div>
 
       <div className="grid gap-8 md:grid-cols-[280px_1fr]">
         {/* Desktop: Sidebar in der linken Spalte; mobil ausgeblendet (→ Sheet). */}
         <div className="hidden md:block">
-          <FilterSidebar
-            isAuthenticated={isAuthenticated}
-            hasValueProfile={!!valueProfile?.simpleProfile}
-            sustainabilityImportance={sustainabilityImportance}
-            onImportanceChange={handleImportanceChange}
-            priceRange={priceRange}
-            onPriceRangeChange={setPriceRange}
-            materials={materials ?? []}
-            selectedMaterials={selectedMaterials}
-            onToggleMaterial={handleToggleMaterial}
-            onPageReset={() => setCurrentPage(0)}
-          />
+          <FilterSidebar {...sidebarProps} />
         </div>
 
         {/* ── Products Section ─────────────────────────────────────────── */}
@@ -195,9 +269,10 @@ export default function SustainableShop() {
               {/* Mobiler Filter-Trigger — nur unterhalb md, öffnet das Sheet (#78). */}
               <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
                 <SheetTrigger asChild>
-                  <button
+                  <Button
                     type="button"
-                    className="inline-flex items-center gap-2 rounded-xl border border-border bg-white px-4 py-2 text-sm text-foreground shadow-sm transition-colors hover:bg-secondary md:hidden"
+                    variant="outline"
+                    className="border-border md:hidden [&_svg]:size-3.5"
                   >
                     <SlidersHorizontal className="h-3.5 w-3.5" />
                     Filter
@@ -206,24 +281,13 @@ export default function SustainableShop() {
                         {activeFilterCount}
                       </span>
                     )}
-                  </button>
+                  </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-[88vw] max-w-sm overflow-y-auto p-4">
                   <SheetHeader className="mb-4 text-left">
                     <SheetTitle>Produkte filtern</SheetTitle>
                   </SheetHeader>
-                  <FilterSidebar
-                    isAuthenticated={isAuthenticated}
-                    hasValueProfile={!!valueProfile?.simpleProfile}
-                    sustainabilityImportance={sustainabilityImportance}
-                    onImportanceChange={handleImportanceChange}
-                    priceRange={priceRange}
-                    onPriceRangeChange={setPriceRange}
-                    materials={materials ?? []}
-                    selectedMaterials={selectedMaterials}
-                    onToggleMaterial={handleToggleMaterial}
-                    onPageReset={() => setCurrentPage(0)}
-                  />
+                  <FilterSidebar {...sidebarProps} />
                 </SheetContent>
               </Sheet>
 
@@ -267,12 +331,7 @@ export default function SustainableShop() {
                   Bitte überprüfe deine Verbindung
                 </p>
               </div>
-              <button
-                onClick={() => refetch()}
-                className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-green-600"
-              >
-                Erneut versuchen
-              </button>
+              <Button onClick={() => refetch()}>Erneut versuchen</Button>
             </div>
           )}
 
@@ -285,15 +344,20 @@ export default function SustainableShop() {
               <div className="text-center">
                 <p className="font-medium text-foreground">Keine Produkte gefunden</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Versuche andere Suchbegriffe oder passe die Filter an
+                  {hasActiveFilters
+                    ? "Versuche andere Suchbegriffe oder passe die Filter an"
+                    : "Aktuell sind keine Produkte verfügbar"}
                 </p>
               </div>
-              <button
-                onClick={resetFilters}
-                className="text-sm font-medium text-green-600 hover:underline"
-              >
-                Filter zurücksetzen
-              </button>
+              {hasActiveFilters && (
+                <Button
+                  variant="link"
+                  onClick={resetFilters}
+                  className="h-auto px-0 text-green-600"
+                >
+                  Filter zurücksetzen
+                </Button>
+              )}
             </div>
           )}
 
@@ -309,9 +373,7 @@ export default function SustainableShop() {
                   productHref={
                     product.slug ? `/product?slug=${product.slug}` : `/product?id=${product.id}`
                   }
-                  sellerHref={
-                    product.seller?.userId ? `/producer?id=${product.seller.userId}` : null
-                  }
+                  sellerHref={producerHref(product.seller)}
                 />
               ))}
             </div>
@@ -320,38 +382,37 @@ export default function SustainableShop() {
           {/* Pagination */}
           {!isLoading && totalPages > 1 && (
             <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
-              <button
+              <Button
+                variant="outline"
                 onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
                 disabled={currentPage === 0}
-                className="rounded-lg border border-border bg-white px-4 py-2 text-sm text-foreground shadow-sm transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:text-muted-foreground"
+                className="border-border"
               >
                 Vorherige
-              </button>
+              </Button>
 
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 const page = Math.max(0, Math.min(currentPage - 2, totalPages - 5)) + i
                 return (
-                  <button
+                  <Button
                     key={page}
+                    variant={page === currentPage ? "default" : "outline"}
                     onClick={() => setCurrentPage(page)}
-                    className={`rounded-lg border px-4 py-2 text-sm shadow-sm transition-colors ${
-                      page === currentPage
-                        ? "border-green-600 bg-green-500 text-ink-900"
-                        : "border-border bg-white text-foreground hover:bg-secondary"
-                    }`}
+                    className={page === currentPage ? undefined : "border-border"}
                   >
                     {page + 1}
-                  </button>
+                  </Button>
                 )
               })}
 
-              <button
+              <Button
+                variant="outline"
                 onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={currentPage >= totalPages - 1}
-                className="rounded-lg border border-border bg-white px-4 py-2 text-sm text-foreground shadow-sm transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:text-muted-foreground"
+                className="border-border"
               >
                 Nächste
-              </button>
+              </Button>
             </div>
           )}
         </div>

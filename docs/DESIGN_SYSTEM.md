@@ -17,6 +17,23 @@ Farben, Schriften, Radien, Schatten und Motion sind zentral definiert:
   `mono`), `fontSize`-Stufen, `boxShadow` (`card`/`float`/`focus`), Radius 12/16,
   Motion-Timing `ease-brand`.
 
+### Bausteine — Buttons und Felder (Guide 03)
+
+Buttons und Textfelder kommen **ausschließlich** aus den CVA-Primitives in
+`src/components/ui/`. Sie sind die einzige Stelle, an der Radius, Fokusring,
+Hover/Press, Schriftschnitt und Disabled-Bild festgelegt sind — eigene
+Tailwind-Ketten für Buttons/Inputs gelten als Abweichung (#83, Punkt 6):
+
+- **`ui/button.tsx`** — `<Button>` bzw. `buttonVariants()` für `<Link>`/`<a>`, die
+  wie Buttons aussehen. Varianten `default` (Grün mit Ink-Label), `outline`,
+  `secondary`, `destructive`, `ghost`, `link`; Größen `sm` · `default` · `lg` · `icon`.
+- **`ui/input.tsx`, `ui/textarea.tsx`** — Textfelder.
+
+Abweichendes gehört als `className` an das Primitive (Layout wie `w-full`/`flex-1`,
+abweichende Flächenfarben im Admin-Dark-Scope), nicht in eine neue Klassenkette.
+Bewusst **bespoke** bleiben: Navigations-Items, Tabs, Filter-Chips,
+Varianten-Kacheln, Status-Badges und `<select>` (kein Select-Primitive vorhanden).
+
 ### Palette (Guide 02)
 
 | Rolle                    | Hex                                                                      |
@@ -59,8 +76,8 @@ prüfen Produktionscode: ohne Tests, ohne `components/ui/` (shadcn-Primitives, s
 oben: nicht manuell editieren) und ohne Kommentarzeilen.
 
 ```bash
-# Keine Fremdpaletten
-grep -rE '\b(text|bg|border|ring|from|to|via|fill|stroke)-(sage|bark|cyber|teal|emerald|amber|slate|zinc|neutral|stone|sky|blue|indigo|purple|pink|rose|violet|fuchsia|lime|yellow|orange)-[0-9]{2,3}' \
+# Keine Fremdpaletten (rot/grau gehören dazu — dafür gibt es `danger` bzw. die Ink-Stufen)
+grep -rE '\b(text|bg|border|ring|from|to|via|fill|stroke)-(sage|bark|cyber|teal|emerald|amber|slate|zinc|neutral|stone|sky|blue|indigo|purple|pink|rose|violet|fuchsia|lime|yellow|orange|red|gray|grey)-[0-9]{2,3}' \
   src --include=*.tsx --include=*.ts | grep -v '.test.' | grep -v '/ui/'
 
 # Kein Leaf-Motiv, kein Pure-Black, keine Cyan-/Glow-Reste

@@ -1,6 +1,7 @@
 "use client"
 
 import { Sparkles, Loader2 } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
 import {
   ExtendedWeightsSection,
   PraeferenzenSkeleton,
@@ -72,11 +73,7 @@ export default function Praeferenzen() {
       )}
 
       <div className="mt-8 flex justify-center">
-        <button
-          onClick={save}
-          disabled={isSaving}
-          className="flex items-center gap-2 rounded-lg bg-green-500 px-8 py-3 font-semibold text-ink-900 transition-colors hover:bg-green-700 disabled:opacity-50"
-        >
+        <Button size="lg" onClick={save} disabled={isSaving}>
           {isSaving ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" /> Wird gespeichert...
@@ -84,7 +81,7 @@ export default function Praeferenzen() {
           ) : (
             "Präferenzen speichern"
           )}
-        </button>
+        </Button>
       </div>
     </div>
   )

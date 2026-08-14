@@ -27,6 +27,12 @@ export const accountStatusSchema = z.enum([
 
 export const sellerStatusSchema = z.enum(["PENDING", "APPROVED", "REJECTED", "SUSPENDED"])
 
+/**
+ * Interner Produktstatus. Öffentliche Reads liefern ausnahmslos `ACTIVE`; die
+ * volle Bandbreite taucht nur in den Seller- und Admin-Reads auf (#227).
+ */
+export const productStatusSchema = z.enum(["DRAFT", "REVIEW", "ACTIVE", "INACTIVE", "REJECTED"])
+
 export const orderStatusSchema = z.enum([
   "PENDING_PAYMENT",
   "PAID",
@@ -46,6 +52,21 @@ export const orderGroupStatusSchema = z.enum([
   "SHIPPED",
   "DELIVERED",
   "CANCELLED",
+])
+
+/** Zahlungsanbieter (`api/v1/payments/dto/PaymentProviderCode`). */
+export const paymentProviderCodeSchema = z.enum(["STRIPE", "PAYPAL", "KLARNA", "SOFORT"])
+
+/** Adresstyp (`domain/address/AddressType`) — `BOTH` gehört dazu. */
+export const addressTypeSchema = z.enum(["SHIPPING", "BILLING", "BOTH"])
+
+/** Read-only Versandfrist-Zustand der Seller-Order-Reads (Backend #143). */
+export const shippingSlaStatusSchema = z.enum([
+  "NOT_APPLICABLE",
+  "PENDING",
+  "BREACHED",
+  "MET",
+  "MISSED",
 ])
 
 // ── Object schemas ───────────────────────────────────────────────────────────

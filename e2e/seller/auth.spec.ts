@@ -3,6 +3,7 @@ import { fileURLToPath } from "url"
 import path from "path"
 
 import { persistAuthState } from "../fixtures/auth-state"
+import { fillCredentialField } from "../fixtures/credential-fields"
 
 // baseURL + storageState kommen aus playwright.config.ts (seller-Projekt)
 
@@ -50,8 +51,15 @@ test.describe("Seller – Login", () => {
     const loginPage = await context.newPage()
 
     await loginPage.goto("http://seller.localhost:3000/login/seller")
-    await loginPage.getByPlaceholder("ihre@firma.de").fill("seller1@greenthread.dev")
-    await loginPage.getByPlaceholder("Passwort").fill("FalschesPasswort!")
+    // Die Werte hier sind bewusst öffentlich (absichtlich falsches Passwort) —
+    // trotzdem über fillCredentialField, damit in einem Login-Pfad nirgends ein
+    // nacktes fill() steht, neben das jemand später ein echtes Secret setzt
+    // (#106). Die ESLint-Regel für diese Datei erzwingt das.
+    await fillCredentialField(
+      loginPage.getByPlaceholder("ihre@firma.de"),
+      "seller1@greenthread.dev"
+    )
+    await fillCredentialField(loginPage.getByPlaceholder("Passwort"), "FalschesPasswort!")
     await loginPage.getByRole("button", { name: "Anmelden" }).click()
 
     await expect(loginPage.getByText("Ungültige Anmeldedaten")).toBeVisible({ timeout: 5_000 })

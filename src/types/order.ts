@@ -35,11 +35,15 @@ export interface OrderProductSnapshot {
 
 export interface OrderItem {
   id: string
+  /**
+   * Aus dem eingefrorenen Snapshot (`product.variantId`) — die Bestellzeile
+   * selbst trägt kein `variantId`.
+   */
   variantId?: string
   quantity: number
-  /** Price per unit in euro (decimal). Backend field: pricePerUnit */
+  /** Price per unit in euro (decimal). Backend field: `unitPrice` */
   pricePerUnit: number
-  /** Line total in euro (decimal). Backend field: subtotal */
+  /** Line total in euro (decimal). Backend field: `lineTotal` */
   subtotal: number
   productSnapshot?: OrderProductSnapshot
 }
@@ -58,9 +62,36 @@ export interface OrderGroup {
   sellerId?: string
   status: OrderGroupStatus
   subtotal?: number
+  /** Backend field: `shipping` */
   shippingCost?: number
-  shipment?: { trackingNumber: string; carrier?: string } | null
+  /**
+   * `trackingNumber` ist nullable: das Backend liefert das Objekt auch dann,
+   * wenn nur `deliveredAt` gesetzt ist.
+   */
+  shipment?: { trackingNumber: string | null; carrier?: string } | null
   items: OrderItem[]
+}
+
+// ── Versand-SLA (read-only, Backend #143) ────────────────────────────
+/**
+ * Vom Server abgeleiteter Zustand der Versandfrist. Es gibt **keine** API-Aktion
+ * dazu — der Verkäufer löst eine Überschreitung durch Versenden, nicht durch
+ * Bestätigen.
+ *
+ * - `NOT_APPLICABLE` — keine Frist geschuldet (nicht captured, Altbestellung, storniert)
+ * - `PENDING` — Frist läuft, nichts versandt
+ * - `BREACHED` — Frist abgelaufen, nichts versandt
+ * - `MET` — rechtzeitig versandt
+ * - `MISSED` — versandt, aber nach der Frist
+ */
+export type ShippingSlaStatus = "NOT_APPLICABLE" | "PENDING" | "BREACHED" | "MET" | "MISSED"
+
+export interface ShippingSla {
+  status: ShippingSlaStatus
+  /** Eingefrorene Versandfrist; `null` vor dem Zahlungseinzug. */
+  deadlineAt: string | null
+  /** Zeitpunkt der Eskalation an den Verkäufer; `null`, solange keine erfolgt ist. */
+  breachedAt: string | null
 }
 
 /** Shipping address — only included by the backend for CONFIRMED/PROCESSING/SHIPPED orders. */
@@ -116,6 +147,12 @@ export interface OrderGroupDetail {
   shipping?: number
   currency?: string
   shipment?: { trackingNumber: string; carrier?: string } | null
+  /**
+   * Read-only Versandfrist des Servers. Laut Vertrag immer vorhanden; ohne
+   * Frist ist `deadlineAt` `null` und `status` `NOT_APPLICABLE`. Optional nur
+   * als Defensive — fehlendes Feld zeigt genauso nichts an.
+   */
+  shippingSla?: ShippingSla
   buyer?: { userId?: string; guestEmail?: string | null }
   /** Provided by backend only for shippable order states. DSGVO: use only for shipping, not marketing. */
   shippingAddress?: ShippingAddress
@@ -128,14 +165,47 @@ export interface ShipOrderDTO {
 }
 
 // ── Settlements ───────────────────────────────────────────────────────
+/**
+ * Abrechnungszeile einer OrderGroup mit der **vollständigen Gebührenkette**
+ * (`MANAGEMENT_DECISIONS.md` §1.1, Backend #140). Identischer Vertrag in
+ * `GET /api/v1/seller/settlements` (eigene Zeilen) und
+ * `GET /api/v1/admin/settlements`.
+ *
+ * ```
+ * grossAmount − refundedAmount − platformFeeAmount − stripeFeeAmount
+ *   − chargebackAmount = netAmount
+ * ```
+ *
+ * Gerechnet wird die Kette **serverseitig**; das Frontend zeigt die Positionen
+ * nur an. `refundFeeAmount` ist dabei **Teil von** `stripeFeeAmount` und wird
+ * nie zusätzlich abgezogen — die eigene Position weist lediglich aus, welcher
+ * Anteil der Ist-Gebühr ohne Gegenumsatz dasteht.
+ *
+ * Dem Verkäufer wird laut §1.1 der **Provisionssatz nicht** angezeigt, nur der
+ * absolute Betrag.
+ */
 export interface Settlement {
   settlementId: string
   orderGroupId?: string
   sellerId: string
+  /** Vom Käufer für die Gruppe gezahlt (`goodsAmount + shippingAmount`). */
   grossAmount: number
+  /** Warenwert ohne Versand — die Bemessungsgrundlage der Provision. */
+  goodsAmount: number
+  /** Versandanteil — provisionsfrei, fließt ungekürzt an den Verkäufer. */
+  shippingAmount: number
+  /** Bereits erstatteter Betrag. */
+  refundedAmount: number
+  /** Provision von Elysion; bei Retoure anteilig gekürzt. */
   platformFeeAmount: number
+  /** Ist-Gebühr aus der Stripe-Balance-Transaction; trägt der Verkäufer. */
+  stripeFeeAmount: number
+  /** Gebührenanteil ohne Gegenumsatz — **enthalten in** `stripeFeeAmount`. */
+  refundFeeAmount: number
+  /** Manuell gebuchter Chargeback-Abzug (Streitbetrag + Stripe-Gebühr). */
+  chargebackAmount: number
+  /** Auszahlbarer Rest; **darf negativ sein** (Verrechnung mit der nächsten Auszahlung). */
   netAmount: number
-  refundedAmount?: number
   currency?: string
   status: string
   adjustmentRequired?: boolean

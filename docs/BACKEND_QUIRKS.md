@@ -51,12 +51,18 @@ Der `sort`-Parameter erwartet Enum-Werte, **nicht** Springs `field,direction`:
 
 ---
 
-## Produktdetail — zwei Endpoints, zwei Feldnamen
+## Produktdetail — zwei Endpoints, zwei DTOs
 
 | Endpoint                          | Wrapper       | Namensfeld | Auth                   | Verwendung                |
 | --------------------------------- | ------------- | ---------- | ---------------------- | ------------------------- |
 | `GET /api/v1/products/{slug}`     | `ApiResponse` | `name`     | nein                   | öffentliche Produktseiten |
-| `GET /api/v1/products/by-id/{id}` | `ApiResponse` | `title`    | ADMIN, SELLER (eigene) | Seller-/Admin-Ansichten   |
+| `GET /api/v1/products/by-id/{id}` | `ApiResponse` | `name`     | ADMIN, SELLER (eigene) | Seller-/Admin-Ansichten   |
+
+> Der interne Read hieß hier lange „Namensfeld `title`" — das stimmt nicht: `ProductDetailDto`
+> kennt gar kein `title`. `ProductService.getById()` leitet es aus `name` ab. Der DTO ist
+> außerdem deutlich schlanker als das Storefront-Detail (kein `category`, `taxRate`,
+> `variants`, `images`) — Feldliste in [`api-integration.md`](./api-integration.md),
+> Abschnitt „`by-id/{id}` — eigener, schlankerer DTO".
 
 **Navigationsregel:** Für Storefront-Links immer den `slug` verwenden —
 `ProductListItemDto` enthält ihn. UUID-basierte öffentliche Navigation wird nicht
@@ -81,16 +87,27 @@ window.location.href = `/product?id=${product.id}`
 
 **Endpoint:** `POST /api/v1/checkout`
 
-`CheckoutStartResponse` enthält **kein** `productName`, `shippingCost` oder `total`:
+`CheckoutStartResponse` enthält **kein** `shippingCost`, `tax` oder `total`:
 
-| Erwartet              | Tatsächlich         | Behandlung                                  |
-| --------------------- | ------------------- | ------------------------------------------- |
-| `items[].productName` | ❌ nicht vorhanden  | über `productId` aus dem Cart-Context lösen |
-| `items[].totalPrice`  | `items[].lineTotal` | Euro-Dezimalwert (z. B. `29.99`)            |
-| `shippingCost`        | ❌ nicht vorhanden  | keine separaten Versandkosten → „Kostenlos" |
-| `total`               | ❌ nicht vorhanden  | `subtotal` ist die Gesamtsumme              |
+| Erwartet             | Tatsächlich         | Behandlung                                  |
+| -------------------- | ------------------- | ------------------------------------------- |
+| `items[].totalPrice` | `items[].lineTotal` | Euro-Dezimalwert (z. B. `29.99`)            |
+| `shippingCost`       | ❌ nicht vorhanden  | keine separaten Versandkosten → „Kostenlos" |
+| `tax`                | ❌ nicht vorhanden  | keine MwSt-Position auf dem Checkout        |
+| `total`              | ❌ nicht vorhanden  | `subtotal` ist die Gesamtsumme              |
 
 `subtotal` und `lineTotal` sind Euro-Dezimalwerte (BigDecimal), **keine Cent**.
+
+**Erledigt (#38):** `shippingCost` und `tax` standen bis dahin trotzdem im TS-Typ
+`CheckoutStartResponse`, und `PreviewStep` hat damit gerechnet — die Zeile
+„Zwischensumme (netto)" zeigte `subtotal - tax` mit einem `tax`, das nie ankam,
+also den Bruttobetrag unter einem Netto-Label. Beide Felder sind jetzt aus Typ
+und Schema raus, die Antwort wird an der Service-Grenze validiert.
+
+**Erledigt (#188):** Der Eintrag „`items[].productName` nicht vorhanden — über
+`productId` aus dem Cart-Context lösen" ist weg. Die Checkout-Zeilen tragen
+`product.name`, `product.primaryImage` und `variant.options`, genau wie die
+Cart-Zeilen; `PreviewStep` rendert direkt daraus und lädt keine Produkte mehr nach.
 
 ---
 

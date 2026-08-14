@@ -9,6 +9,7 @@ import {
   Package,
   FolderTree,
   ShoppingCart,
+  CopyCheck,
   DollarSign,
   Award,
   Activity,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/src/context/AuthContext"
 import { BrandLogo } from "@/src/components/shared/BrandLogo"
+import { Button } from "@/src/components/ui/button"
 
 interface NavItem {
   href: string
@@ -32,6 +34,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/admin/products", label: "Produkte", icon: Package },
   { href: "/admin/categories", label: "Kategorien", icon: FolderTree },
   { href: "/admin/orders", label: "Bestellungen", icon: ShoppingCart },
+  { href: "/admin/order-duplicates", label: "Duplikat-Prüfung", icon: CopyCheck },
   { href: "/admin/finance", label: "Finanzen", icon: DollarSign },
   { href: "/admin/certificates", label: "Zertifikate", icon: Award },
   { href: "/admin/monitoring", label: "Monitoring", icon: Activity },
@@ -111,13 +114,15 @@ function SidebarContent({
             </p>
             <p className="truncate text-xs text-sand-page/50">{user?.email}</p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onLogout}
             title="Abmelden"
-            className="shrink-0 rounded-md p-1.5 text-sand-page/50 transition-colors hover:bg-white/5 hover:text-sand-page"
+            className="h-8 w-8 shrink-0 text-sand-page/50 hover:bg-white/5 hover:text-sand-page"
           >
             <LogOut className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -152,13 +157,15 @@ export default function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebar
           />
           <aside className="fixed inset-y-0 left-0 z-50 w-64 lg:hidden">
             <div className="relative h-full">
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={onMobileClose}
-                className="absolute right-3 top-4 z-10 rounded-md p-1 text-sand-page/60 hover:text-sand-page"
+                className="absolute right-3 top-4 z-10 h-8 w-8 text-sand-page/60 hover:bg-white/5 hover:text-sand-page [&_svg]:size-5"
                 aria-label="Schließen"
               >
                 <X className="h-5 w-5" />
-              </button>
+              </Button>
               <SidebarContent
                 activePath={pathname}
                 onLogout={handleLogout}
@@ -174,12 +181,14 @@ export default function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebar
 
 export function AdminMobileMenuButton({ onClick }: { onClick: () => void }) {
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="icon"
       onClick={onClick}
-      className="rounded-md p-2 text-sand-page/60 hover:bg-white/5 hover:text-sand-page lg:hidden"
+      className="h-9 w-9 text-sand-page/60 hover:bg-white/5 hover:text-sand-page lg:hidden [&_svg]:size-5"
       aria-label="Menü öffnen"
     >
       <Menu className="h-5 w-5" />
-    </button>
+    </Button>
   )
 }

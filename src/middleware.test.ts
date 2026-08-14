@@ -1,5 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 import { NextRequest } from "next/server"
+import { existsSync, readdirSync } from "node:fs"
+import { join } from "node:path"
 
 import { SESSION_MARKER_COOKIE } from "@/src/lib/auth/session-marker"
 
@@ -14,13 +16,17 @@ const ADMIN_HOST = "admin.localhost:3000"
 const BUYER_HOST = "localhost:3000"
 
 let middleware: (req: NextRequest) => Response
+let PUBLIC_ROUTES: readonly string[]
+let NONCE_ROUTES: readonly string[]
 
 beforeAll(async () => {
   process.env.SELLER_DOMAIN = SELLER_HOST
   process.env.ADMIN_DOMAIN = ADMIN_HOST
   process.env.BUYER_DOMAIN = BUYER_HOST
-  ;({ middleware } = (await import("./middleware")) as unknown as {
+  ;({ middleware, PUBLIC_ROUTES, NONCE_ROUTES } = (await import("./middleware")) as unknown as {
     middleware: (req: NextRequest) => Response
+    PUBLIC_ROUTES: readonly string[]
+    NONCE_ROUTES: readonly string[]
   })
 })
 
@@ -178,6 +184,14 @@ describe("Content-Security-Policy (#33)", () => {
     expect(imgSrc).toContain("'self'")
   })
 
+  function scriptSrcOf(res: Response): string {
+    return (
+      csp(res)
+        .split(";")
+        .find((d) => d.trim().startsWith("script-src")) ?? ""
+    )
+  }
+
   it("carries a per-request nonce in script-src on authenticated routes (#37)", () => {
     // A protected buyer route stays dynamically rendered and nonce-based.
     const policy = csp(
@@ -191,8 +205,7 @@ describe("Content-Security-Policy (#33)", () => {
     // Public routes render statically/ISR — no per-request nonce, so script-src
     // falls back to 'unsafe-inline' (scoped relaxation; see buildCsp).
     for (const path of ["/", "/product", "/about", "/impressum", "/cart"]) {
-      const policy = csp(middleware(request(`http://${BUYER_HOST}${path}`, BUYER_HOST)))
-      const scriptSrc = policy.split(";").find((d) => d.trim().startsWith("script-src")) ?? ""
+      const scriptSrc = scriptSrcOf(middleware(request(`http://${BUYER_HOST}${path}`, BUYER_HOST)))
       expect(scriptSrc).toContain("'unsafe-inline'")
       expect(scriptSrc).not.toContain("nonce-")
     }
@@ -203,11 +216,322 @@ describe("Content-Security-Policy (#33)", () => {
     expect(adminPolicy).toMatch(/script-src[^;]*'nonce-[a-f0-9]+'/)
   })
 
+  // ── Nonce ist Opt-in (#221) ───────────────────────────────────────────────
+  //
+  // Die Klassifikation ist invertiert: nicht „alles außer PUBLIC_ROUTES kriegt
+  // die Nonce", sondern „nur die authentifizierten Listen kriegen sie". Diese
+  // Tests halten die neue Fehlerrichtung fest — unbekannte Pfade rendern das
+  // statisch vorgerenderte /_not-found und dürfen deshalb keine Nonce sehen,
+  // sonst hydratisiert die 404-Seite nie (FE#23).
+  describe("Nonce-Opt-in (#221)", () => {
+    it.each(["/_not-found", "/gibt-es-nicht", "/produkte/tippfehler", "/products"])(
+      "gibt %s keine Nonce — die Seite wird statisch als /_not-found ausgeliefert",
+      (path) => {
+        const scriptSrc = scriptSrcOf(
+          middleware(request(`http://${BUYER_HOST}${path}`, BUYER_HOST))
+        )
+        expect(scriptSrc).not.toContain("nonce-")
+        expect(scriptSrc).toContain("'unsafe-inline'")
+      }
+    )
+
+    it("gibt einen unbekannten Pfad auch auf den Portal-Domains keine Nonce", () => {
+      // Vor der Inversion bekam auf seller./admin. jeder Pfad eine Nonce, allein
+      // wegen der Domain — inklusive des statischen /_not-found.
+      for (const host of [SELLER_HOST, ADMIN_HOST]) {
+        const scriptSrc = scriptSrcOf(
+          middleware(request(`http://${host}/gibt-es-nicht`, host, { withMarker: true }))
+        )
+        expect(scriptSrc).not.toContain("nonce-")
+      }
+    })
+
+    it.each([
+      [`http://${SELLER_HOST}/seller-dashboard`, SELLER_HOST],
+      [`http://${SELLER_HOST}/login/seller`, SELLER_HOST],
+      [`http://${ADMIN_HOST}/admin/products`, ADMIN_HOST],
+      [`http://${ADMIN_HOST}/login/admin`, ADMIN_HOST],
+      [`http://${BUYER_HOST}/checkout`, BUYER_HOST],
+      [`http://${BUYER_HOST}/orders/42`, BUYER_HOST],
+      [`http://${BUYER_HOST}/profil`, BUYER_HOST],
+      [`http://${BUYER_HOST}/praeferenzen`, BUYER_HOST],
+      [`http://${BUYER_HOST}/onboarding`, BUYER_HOST],
+      [`http://${BUYER_HOST}/reset-password`, BUYER_HOST],
+      [`http://${BUYER_HOST}/verify-email`, BUYER_HOST],
+    ])("behält die Nonce auf der authentifizierten Route %s", (url, host) => {
+      // Alle diese Pfade liegen in force-dynamic-Route-Gruppen ((admin)/(auth)/
+      // (buyer)/(seller)) und werden pro Request gerendert — dort kann Next die
+      // Nonce in die Bootstrap-Scripts stempeln.
+      const scriptSrc = scriptSrcOf(middleware(request(url, host, { withMarker: true })))
+      expect(scriptSrc).toMatch(/'nonce-[a-f0-9]+'/)
+      expect(scriptSrc).not.toContain("'unsafe-inline'")
+    })
+
+    it("verwechselt einen Pfad mit gemeinsamem Präfix nicht mit einer Admin-Route", () => {
+      // "/administration" ist keine Route — segmentgenaues Matching verhindert,
+      // dass das statische /_not-found doch eine Nonce bekommt.
+      const scriptSrc = scriptSrcOf(
+        middleware(request(`http://${BUYER_HOST}/administration`, BUYER_HOST))
+      )
+      expect(scriptSrc).not.toContain("nonce-")
+    })
+  })
+
   it("denies framing and upgrades insecure subresources (#172)", () => {
     const policy = csp(middleware(request(`http://${BUYER_HOST}/`, BUYER_HOST)))
     // Modern counterpart to X-Frame-Options: DENY in next.config.mjs.
     expect(policy).toContain("frame-ancestors 'none'")
     expect(policy).toContain("upgrade-insecure-requests")
+  })
+})
+
+// ── PUBLIC_ROUTES ↔ src/app/(public)/ drift guard (#225, aus #37) ────────────
+//
+// PUBLIC_ROUTES is a hand-maintained mirror of the (public) route group, and
+// nothing enforces the mirroring. Hence this test diffs the list against the
+// filesystem in both directions.
+//
+// Was der Guard seit der Inversion (#221) leistet: PUBLIC_ROUTES entscheidet
+// nicht mehr über die CSP — öffentlich ist der Default, eine fehlende Seite in
+// der Liste bleibt folgenlos. Teuer ist jetzt die andere Richtung, der UMZUG:
+// wandert (public)/x nach (buyer)/x, wird /x eine authentifizierte, dynamisch
+// gerenderte URL und muss in BUYER_PROTECTED stehen, sonst verliert sie still
+// die strikte Nonce-Policy. Genau das meldet der Stale-Entry-Test unten — der
+// zurückgebliebene Eintrag ist das einzige automatische Signal dafür. Damit das
+// trägt, muss die Liste vollständig bleiben: eine nie eingetragene Seite kann
+// auch keinen Eintrag zurücklassen, wenn sie umzieht. Deshalb bleiben beide
+// Richtungen geprüft.
+//
+// Das Gegenstück über die authentifizierten Route-Gruppen steht weiter unten
+// (#235) und teilt sich den Walk mit diesem Guard.
+
+// Vitest runs from the project root (vitest.config.ts lives there), so the app
+// directory is reachable from cwd.
+const APP_DIR = join(process.cwd(), "src", "app")
+const PUBLIC_APP_DIR = join(APP_DIR, "(public)")
+
+// Next resolves a route from any of these without extra configuration, so the
+// walk must not key on page.tsx alone — a page.js would slip past the guard.
+const PAGE_FILES = ["page.tsx", "page.ts", "page.jsx", "page.js"]
+
+type RouteScan = {
+  /** URL paths that are actually reachable, "/" for the group root. */
+  routes: string[]
+  /** Dynamic segments directly below the group — see the note in scanRouteGroup. */
+  unexpressible: string[]
+}
+
+/**
+ * Walks a route group under src/app/ and maps every page file to the URL path
+ * Next would actually serve. Segment kinds are handled the way the router
+ * handles them — a walk that merely approximates them would sign off on the
+ * very bug this guard exists to catch:
+ *
+ *   • "(x)" route groups and "@x" parallel slots contribute NO URL segment.
+ *     Appending "@modal" would demand the entry "/@modal/photo" while the real
+ *     URL /photo stays unlisted — statically rendered, nonce CSP, FE#23.
+ *   • "_x" folders are not routable at all; everything below them is skipped
+ *     rather than passed through, which would invent a non-existent route.
+ *   • "[x]" directly below the group has no static ancestor that a route list
+ *     could name: a literal "/[slug]" entry never matches (the lists compare
+ *     plain equality / startsWith), so real URLs like /bio-hof-mueller would be
+ *     classified wrongly while the guard reports green. Those are collected as
+ *     `unexpressible` and reported as a distinct failure. Nested dynamics such
+ *     as /producer/[handle] or /orders/[id] are fine — the listed static prefix
+ *     covers them.
+ *
+ * Used by both drift guards: (public) against PUBLIC_ROUTES below, and the
+ * authenticated groups against NONCE_ROUTES (#235).
+ */
+function scanRouteGroup(dir: string, prefix = ""): RouteScan {
+  const routes: string[] = []
+  const unexpressible: string[] = []
+
+  // The group root itself carries src/app/(public)/page.tsx — the shop home.
+  if (PAGE_FILES.some((file) => existsSync(join(dir, file)))) routes.push(prefix || "/")
+
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    const name = entry.name
+
+    // "_x" is not routable in Next — nothing below it becomes a URL.
+    if (name.startsWith("_")) continue
+
+    // "(x)" and "@x" contribute no URL segment; the prefix passes through.
+    const isTransparent = name.startsWith("(") || name.startsWith("@")
+
+    // A dynamic segment with no static ancestor inside the group: the resulting
+    // URL has no literal prefix a route list could carry. Reported separately
+    // instead of being passed through as "/[slug]".
+    if (name.startsWith("[") && prefix === "") {
+      unexpressible.push(`/${name}`)
+      continue
+    }
+
+    const child = scanRouteGroup(join(dir, name), isTransparent ? prefix : `${prefix}/${name}`)
+    routes.push(...child.routes)
+    unexpressible.push(...child.unexpressible)
+  }
+
+  return { routes, unexpressible }
+}
+
+/** Mirrors the middleware's own prefix matching for a single list entry. */
+function covers(entry: string, route: string): boolean {
+  return route === entry || route.startsWith(`${entry}/`)
+}
+
+describe("PUBLIC_ROUTES mirrors src/app/(public)/ (#225)", () => {
+  // Checked before walking: a renamed/moved directory would otherwise throw
+  // ENOENT at collection time and take all of middleware.test.ts down with a
+  // raw fs error instead of one explanatory failure.
+  const publicDirExists = existsSync(PUBLIC_APP_DIR)
+  const { routes: discovered, unexpressible } = publicDirExists
+    ? scanRouteGroup(PUBLIC_APP_DIR)
+    : { routes: [], unexpressible: [] }
+
+  it("finds the (public) route group on disk", () => {
+    expect(
+      publicDirExists,
+      `src/app/(public)/ nicht gefunden (${PUBLIC_APP_DIR}). Wurde die Route-Gruppe umbenannt ` +
+        "oder verschoben? Dann geht dieser Guard ins Leere — Pfad hier und PUBLIC_ROUTES in " +
+        "src/middleware.ts anpassen."
+    ).toBe(true)
+
+    // Guards the guard: without a floor near the real count, pages could vanish
+    // (or the walk could stop finding them) and the diff below would still pass.
+    expect(discovered.length).toBeGreaterThanOrEqual(10)
+    expect(discovered).toContain("/")
+  })
+
+  it("has no dynamic segment directly below (public) — PUBLIC_ROUTES cannot express those", () => {
+    expect(
+      unexpressible,
+      `Dynamische Segmente direkt unter src/app/(public)/: ${unexpressible.join(", ")}. ` +
+        'PUBLIC_ROUTES kann sie nicht ausdrücken — ein Literal-Eintrag wie "/[slug]" matcht ' +
+        "keine echte URL. Damit fehlen sie im Inventar, und ein späterer Umzug der Seite in " +
+        "eine authentifizierte Route-Gruppe lässt keinen Eintrag zurück, den der Stale-Test " +
+        "unten melden könnte. Die Seite unter ein statisches Segment hängen (z. B. " +
+        '/producer/[handle], vom Eintrag "/producer" gedeckt).'
+    ).toEqual([])
+  })
+
+  it("has no bracketed PUBLIC_ROUTES entry (a literal pattern never matches a real URL)", () => {
+    // Closes the escape hatch of the two diff tests below: adding "/[slug]" or
+    // "/producer/[handle]" to the list would silence them while the list's own
+    // matching — plain equality / startsWith — never hits an actual request path.
+    const literalPatterns = PUBLIC_ROUTES.filter((entry) => entry.includes("["))
+
+    expect(
+      literalPatterns,
+      `Diese PUBLIC_ROUTES-Einträge sehen aus wie Route-Patterns: ${literalPatterns.join(", ")}. ` +
+        "Die Liste vergleicht Strings, sie matchen also keine einzige echte URL — der " +
+        "Eintrag beruhigt nur diesen Test. Stattdessen das statische Elternsegment eintragen."
+    ).toEqual([])
+  })
+
+  it("lists every page under src/app/(public)/ (incomplete inventory → moves go unnoticed)", () => {
+    // "/" is the shop home; the list omits it deliberately (it is never a
+    // candidate for a move into an authenticated group).
+    const missing = discovered
+      .filter((route) => route !== "/")
+      .filter((route) => !PUBLIC_ROUTES.some((entry) => covers(entry, route)))
+
+    expect(
+      missing,
+      `Diese (public)-Seiten fehlen in PUBLIC_ROUTES (src/middleware.ts): ${missing.join(", ")}. ` +
+        "Seit #221 bekommen sie dadurch nicht mehr die falsche CSP — aber eine Seite, die nie " +
+        "im Inventar stand, hinterlässt beim Umzug in eine authentifizierte Route-Gruppe auch " +
+        "keinen Eintrag, den der Stale-Test melden könnte. Die Lücke entwertet den Guard."
+    ).toEqual([])
+  })
+
+  it("has no entry without a matching directory (stale entry → moved page without nonce)", () => {
+    const stale = PUBLIC_ROUTES.filter((entry) => !discovered.some((route) => covers(entry, route)))
+
+    expect(
+      stale,
+      `Diese PUBLIC_ROUTES-Einträge haben keine Seite unter src/app/(public)/ mehr: ${stale.join(", ")}. ` +
+        "Der teure Fall ist der Umzug: Wandert (public)/x nach (buyer)/x, bleibt /x eine gültige — " +
+        "jetzt authentifizierte und dynamisch gerenderte — URL. Sie bekommt seit #221 nur dann die " +
+        "strikte Nonce-Policy, wenn sie in BUYER_PROTECTED (bzw. der passenden Portal-Liste) steht. " +
+        "Also: Eintrag hier entfernen UND die Route in die authentifizierte Liste aufnehmen — sonst " +
+        "läuft sie dauerhaft mit script-src 'unsafe-inline'."
+    ).toEqual([])
+  })
+})
+
+// ── NONCE_ROUTES ↔ authentifizierte Route-Gruppen (#235) ─────────────────────
+//
+// Das Gegenstück zum Guard oben, für die andere Fehlerrichtung. Seit der
+// Inversion (#221) ist die Nonce-CSP Opt-in: Eine neue Seite unter
+// src/app/(seller|admin|buyer|auth)/, die niemand in eine der fünf
+// authentifizierten Listen einträgt, läuft mit `script-src 'unsafe-inline'`
+// statt mit der Nonce. Nichts schlägt an — kein Typfehler, kein Build-Warning,
+// kein Test. Der Zugriffsschutz (Session-Gate, clientseitige Guards, Backend)
+// greift weiter; verloren geht eine Härtungsschicht, und zwar unbemerkt.
+//
+// Nur diese Richtung wird geprüft. Ein veralteter Eintrag ohne Seite auf der
+// Platte ist harmlos (eine Nonce auf einer nicht existierenden Route) — eine
+// Aufräum-, keine Sicherheitsfrage. Den teuren Fall dahinter, den UMZUG einer
+// Seite aus (public) heraus, meldet bereits der Stale-Entry-Test oben.
+const AUTH_APP_DIRS = ["(seller)", "(admin)", "(buyer)", "(auth)"] as const
+
+describe("authentifizierte Listen spiegeln src/app/(seller|admin|buyer|auth)/ (#235)", () => {
+  const missingDirs = AUTH_APP_DIRS.filter((group) => !existsSync(join(APP_DIR, group)))
+
+  // Wie beim (public)-Guard erst prüfen, dann laufen: ein umbenanntes
+  // Verzeichnis würde sonst zur Collection-Zeit mit einem rohen ENOENT die
+  // ganze Datei mitnehmen statt einen erklärenden Fehler zu liefern.
+  const scans =
+    missingDirs.length === 0
+      ? AUTH_APP_DIRS.map((group) => ({ group, ...scanRouteGroup(join(APP_DIR, group)) }))
+      : []
+
+  const discovered = scans.flatMap(({ group, routes }) => routes.map((route) => ({ group, route })))
+  const unexpressible = scans.flatMap(({ group, unexpressible: found }) =>
+    found.map((segment) => `${group}${segment}`)
+  )
+
+  it("findet alle vier authentifizierten Route-Gruppen auf der Platte", () => {
+    expect(
+      missingDirs,
+      `Nicht gefunden unter ${APP_DIR}: ${missingDirs.join(", ")}. Wurde eine Route-Gruppe ` +
+        "umbenannt oder verschoben? Dann geht dieser Guard ins Leere — AUTH_APP_DIRS hier und " +
+        "die passende Liste in src/middleware.ts anpassen."
+    ).toEqual([])
+
+    // Guards the guard: ohne einen Boden nahe der echten Zahl könnten Seiten
+    // verschwinden (oder der Walk sie nicht mehr finden) und der Diff unten
+    // bliebe trotzdem grün.
+    expect(discovered.length).toBeGreaterThanOrEqual(20)
+  })
+
+  it("hat kein dynamisches Segment direkt unter einer Gruppe — die Listen können das nicht ausdrücken", () => {
+    expect(
+      unexpressible,
+      `Dynamische Segmente direkt unter einer authentifizierten Route-Gruppe: ${unexpressible.join(", ")}. ` +
+        'Die Listen vergleichen Strings — ein Literal-Eintrag wie "/[id]" matcht keine echte URL, ' +
+        "die Seite bekäme also still die nonce-freie CSP. Die Seite unter ein statisches Segment " +
+        'hängen (z. B. /orders/[id], vom Eintrag "/orders" gedeckt).'
+    ).toEqual([])
+  })
+
+  it("listet jede Seite unter den authentifizierten Gruppen (fehlender Eintrag → stille Abschwächung der CSP)", () => {
+    const missing = discovered
+      .filter(({ route }) => !NONCE_ROUTES.some((entry) => covers(entry, route)))
+      .map(({ group, route }) => `${route} (${group})`)
+
+    expect(
+      missing,
+      `Diese Seiten sind von keiner authentifizierten Liste in src/middleware.ts gedeckt: ${missing.join(", ")}. ` +
+        "Folge: Sie laufen mit `script-src 'unsafe-inline'` statt mit der Nonce — eine " +
+        "Härtungsschicht weniger, ohne jedes Signal. Fix: die Route in die passende Liste " +
+        "aufnehmen (SELLER_PROTECTED / SELLER_PUBLIC / ADMIN_PROTECTED / ADMIN_PUBLIC / " +
+        "BUYER_PROTECTED). Achtung, kein Formalakt: dieselben Listen steuern das Session-Gate " +
+        "und die Redirects zwischen den Portal-Domains — also die Liste wählen, deren " +
+        "Gating-Verhalten die Route wirklich haben soll, statt blind einzutragen."
+    ).toEqual([])
   })
 })
 

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { ShieldCheck, BarChart3, Award, Banknote } from "lucide-react"
 import { buyerUrl } from "@/src/lib/seller-url"
 import { readRedirectTarget } from "@/src/lib/auth/redirect-param"
+import { Button } from "@/src/components/ui/button"
 import { LoginForm } from "@/src/components/features/auth/_shared/LoginForm"
 import { SellerRegisterForm } from "@/src/components/features/auth/SellerRegisterForm"
 import { BrandLogo } from "@/src/components/shared/BrandLogo"
@@ -109,12 +110,13 @@ export default function SellerLogin() {
               loginFooter={
                 <p className="mt-8 text-center text-sm text-muted-foreground">
                   Noch kein Verkäufer-Konto?{" "}
-                  <button
+                  <Button
+                    variant="link"
                     onClick={() => setMode("register")}
-                    className="font-semibold text-green-600 hover:text-green-600"
+                    className="h-auto p-0 text-green-600"
                   >
                     Registrieren
-                  </button>
+                  </Button>
                 </p>
               }
               forgot={{

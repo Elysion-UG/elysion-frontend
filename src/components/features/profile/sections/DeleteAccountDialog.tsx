@@ -1,6 +1,7 @@
 "use client"
 
 import { AlertTriangle, Loader2 } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
 import { useFocusTrap } from "@/src/hooks/useFocusTrap"
 
 interface DeleteAccountDialogProps {
@@ -36,16 +37,14 @@ export function DeleteAccountDialog({ onCancel, onConfirm, isDeleting }: DeleteA
           </div>
         </div>
         <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 rounded-lg border border-border py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary"
-          >
+          <Button variant="outline" onClick={onCancel} className="flex-1">
             Abbrechen
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="destructive"
             onClick={onConfirm}
             disabled={isDeleting}
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-destructive py-2.5 text-sm font-medium text-white transition-colors hover:bg-destructive disabled:opacity-50"
+            className="flex-1"
           >
             {isDeleting ? (
               <>
@@ -54,7 +53,7 @@ export function DeleteAccountDialog({ onCancel, onConfirm, isDeleting }: DeleteA
             ) : (
               "Konto endgültig löschen"
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

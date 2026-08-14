@@ -3,8 +3,7 @@ import {
   saveProductDisplay,
   getProductDisplay,
   getProductDisplayCache,
-  saveVariantOptions,
-  getVariantOptions,
+  clearLegacyVariantOptionsCache,
 } from "./product-display-cache"
 
 describe("product display cache", () => {
@@ -62,40 +61,24 @@ describe("product display cache", () => {
   })
 })
 
-describe("variant options cache", () => {
+describe("legacy variant options cache (#188)", () => {
   beforeEach(() => {
     localStorage.clear()
     sessionStorage.setItem("elysion_cookie_consent", "accepted")
   })
 
-  it("returns null for unknown variantId", () => {
-    expect(getVariantOptions("unknown")).toBeNull()
+  it("removes the obsolete variant_options_cache key", () => {
+    localStorage.setItem(
+      "variant_options_cache",
+      JSON.stringify({ v1: [{ name: "N", value: "V" }] })
+    )
+    clearLegacyVariantOptionsCache()
+    expect(localStorage.getItem("variant_options_cache")).toBeNull()
   })
 
-  it("returns null for empty variantId", () => {
-    expect(getVariantOptions("")).toBeNull()
-  })
-
-  it("saves and retrieves variant options", () => {
-    saveVariantOptions("v1", [{ name: "Größe", value: "XL" }])
-    expect(getVariantOptions("v1")).toEqual([{ name: "Größe", value: "XL" }])
-  })
-
-  it("does not save empty options array", () => {
-    saveVariantOptions("v1", [])
-    expect(getVariantOptions("v1")).toBeNull()
-  })
-
-  it("does not save without a variantId", () => {
-    saveVariantOptions("", [{ name: "Größe", value: "XL" }])
-    expect(getVariantOptions("")).toBeNull()
-  })
-
-  it("merges multiple variant entries", () => {
-    saveVariantOptions("v1", [{ name: "Größe", value: "S" }])
-    saveVariantOptions("v2", [{ name: "Farbe", value: "Blau" }])
-    expect(getVariantOptions("v1")?.[0].value).toBe("S")
-    expect(getVariantOptions("v2")?.[0].value).toBe("Blau")
+  it("is a no-op when the key does not exist", () => {
+    expect(() => clearLegacyVariantOptionsCache()).not.toThrow()
+    expect(localStorage.getItem("variant_options_cache")).toBeNull()
   })
 
   describe("tampered localStorage narrowing (#70.5)", () => {
@@ -114,15 +97,6 @@ describe("variant options cache", () => {
         JSON.stringify({ p1: { name: "N", imageUrl: 42 }, p2: { name: "N", slug: {} } })
       )
       expect(getProductDisplayCache()).toEqual({})
-    })
-
-    it("drops variant options that are not { name, value } string pairs", () => {
-      localStorage.setItem(
-        "variant_options_cache",
-        JSON.stringify({ v1: [{ name: "Größe", value: 1 }], v2: [{ name: "Farbe", value: "Rot" }] })
-      )
-      expect(getVariantOptions("v1")).toBeNull()
-      expect(getVariantOptions("v2")?.[0].value).toBe("Rot")
     })
   })
 })

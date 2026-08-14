@@ -1,4 +1,21 @@
-import type { ProductStatus, OrderGroupStatus, CertificateStatus } from "@/src/types"
+import type {
+  AddressType,
+  ProductStatus,
+  OrderGroupStatus,
+  CertificateStatus,
+  ShippingSlaStatus,
+} from "@/src/types"
+
+/**
+ * `BOTH` ist im Adressformular nicht wählbar, kommt aber laut Vertrag aus dem
+ * Backend zurück — ohne eigenes Label wäre es früher als „Rechnungsadresse"
+ * gelaufen.
+ */
+export const ADDRESS_TYPE_LABEL: Record<AddressType, string> = {
+  SHIPPING: "Lieferadresse",
+  BILLING: "Rechnungsadresse",
+  BOTH: "Liefer- und Rechnungsadresse",
+}
 
 export const PRODUCT_STATUS_LABEL: Record<ProductStatus, string> = {
   DRAFT: "Entwurf",
@@ -15,6 +32,15 @@ export const ORDER_GROUP_STATUS_LABEL: Record<OrderGroupStatus, string> = {
   SHIPPED: "Versandt",
   DELIVERED: "Geliefert",
   CANCELLED: "Storniert",
+}
+
+/** Read-only Versandfrist-Zustände der Seller-Order-Reads (#143). */
+export const SHIPPING_SLA_STATUS_LABEL: Record<ShippingSlaStatus, string> = {
+  NOT_APPLICABLE: "Keine Versandfrist",
+  PENDING: "Versandfrist läuft",
+  BREACHED: "Versand überfällig",
+  MET: "Rechtzeitig versandt",
+  MISSED: "Verspätet versandt",
 }
 
 export const CERTIFICATE_STATUS_LABEL: Record<CertificateStatus, string> = {

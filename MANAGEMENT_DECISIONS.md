@@ -130,7 +130,7 @@ Umsetzung: Elysion-UG/elysion-marketplace-backend#141 (Stripe-Methoden/SCA/async
 
 ### 1.4 Rückgaben & Erstattungen
 
-**Status:** TEILWEISE ENTSCHIEDEN — Refund-Berechtigungen entschieden (2026-06-10); Zeitfenster/Restocking offen
+**Status:** ENTSCHIEDEN — Refund-Berechtigungen (2026-06-10); Buyer-Rückgabe-Flow (2026-08-07)
 
 Backend unterstützt vollständige und teilweise Rückerstattungen. Keine Self-Service-UI für Käufer vorhanden.
 
@@ -150,6 +150,21 @@ Backend unterstützt vollständige und teilweise Rückerstattungen. Keine Self-S
 - **Zeitfenster:** **14 Tage gesetzliches Widerrufsrecht** als Standard (Kulanz darüber hinaus möglich) — konsistent mit dem bereits im Shop ausgewiesenen „14 Tage Widerrufsrecht".
 - **Keine Restocking-Gebühr** — beim gesetzlichen Widerruf grundsätzlich unzulässig und passt zur kundenfreundlichen/nachhaltigen Positionierung.
 
+**Festlegung (2026-08-07) — Buyer-Rückgabe-Flow als MVP:**
+
+Der oben als „eigenes Thema" markierte Antragsflow wird als schlanker MVP umgesetzt: **Antrag → Seller-Entscheidung → bestehender Refund-Flow.** Kein Rücksendelabel, keine Sendungsverfolgung, kein Wareneingang — das bleibt einem späteren RMA-Modul vorbehalten.
+
+**Entscheidend dabei: zwei Fälle, unterschieden nach der Widerrufsfrist.**
+
+| Fall                        | Zeitpunkt                         | Seller-Handlung                                                                             |
+| --------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------- |
+| **Widerruf**                | innerhalb 14 Tagen ab Warenerhalt | **bestätigen**; Ablehnung nur bei gesetzlichen Ausnahmetatbeständen, mit Begründungspflicht |
+| **Gewährleistung / Kulanz** | nach Fristablauf                  | freie Entscheidung des Sellers                                                              |
+
+Ein fristgerechter Widerruf ist **nicht ablehnbar** — der Seller bestätigt dort, er entscheidet nicht. Ein Flow, der an dieser Stelle ein wertungsfreies „Ablehnen" anbietet, provoziert genau die Chargeback-Eskalation, die er verhindern soll (`docs/PRE_MORTEM.md` Szenario 4; die Kosten trägt laut §1.1 der Seller).
+
+Der Fall wird **zum Antragszeitpunkt eingefroren** und nicht zur Anzeigezeit neu berechnet.
+
 **Noch offen:**
 
 - Detaillierter Eskalations-/Dispute-Prozess (über die Rollenzuordnung hinaus) — folgt mit dem Miro-BPMN „Retoure".
@@ -159,7 +174,7 @@ Backend unterstützt vollständige und teilweise Rückerstattungen. Keine Self-S
 - ~~Nur Admins können Erstattungen auslösen (API)~~ → **überholt (2026-06-10):** Seller lösen Full/Partial eigenständig aus, Admin nur als Eskalation
 - Käufer-seitiger Rückgabe-Flow: als **Antrag** vorgesehen (kein direkter Refund) — Umsetzung als eigenes Thema (Miro-BPMN)
 
-**Umsetzung:** Elysion-UG/elysion-marketplace-backend#142 (Seller-/Admin-Refund-Berechtigungen) · Elysion-UG/elysion-frontend#56 (Seller-Refund-UI).
+**Umsetzung:** Elysion-UG/elysion-marketplace-backend#142 (Seller-/Admin-Refund-Berechtigungen) · Elysion-UG/elysion-frontend#56 (Seller-Refund-UI) · Elysion-UG/elysion-frontend#207 (Buyer-Rückgabeantrag) · Elysion-UG/elysion-marketplace-backend#223 (Return-Domain + Antrags-Endpoints).
 
 ---
 
@@ -186,11 +201,18 @@ Beantwortete IT-Fragen zu Zahlungs-Sonderfällen. Ausgangslage im Code: Stripe c
 **Szenario 1 — Stripe-Autorisierung läuft ab (vor Versandfähigkeit):**
 
 - **Lösung:** **Immediate Capture** (bereits aktiv) + **48h-Versand-SLA** für Seller — Ware muss binnen **48 h** nach Capture versandfähig/versendet sein.
+- **Offen (aufgenommen 2026-08-07):** Die Frist rechnet in **Kalenderstunden** (`OrderLifecycleProperties.shippingSlaDuration = Duration.ofHours(48)`). Eine Bestellung, die Freitag 16:00 bezahlt wird, reißt die SLA Sonntag 16:00 — ohne dass der Seller einen Werktag hatte. Zu entscheiden: Frist über Wochenenden pausieren (Werktagsrechnung, dann Feiertagsbehandlung und Länderbezug DE/AT/CH klären), oder stattdessen auf 72 h verlängern, damit ein Wochenende hineinpasst. Spannung zur Brand-Vorgabe „Versand 1–2 Werktage" aus §4.4 beachten. → backend#224
 
 **Szenario 2 — Webhook kommt zu spät (Zahlung existiert, Order bereits storniert):**
 
-- **Lösung:** **Grace Period 30–60 Min.** vor Auto-Stornierung; trifft die Zahlung danach trotzdem ein → **automatischer Refund** + Kunden-E-Mail („Ihre Zahlung wurde erstattet, bitte bestellen Sie erneut").
-- Beantwortet die offene Entscheidung in #121 (Late-Success → **automatischer Refund**, nicht manuelle Reaktivierung).
+- **Lösung:** **Grace Period 30–60 Min.** vor Auto-Stornierung; trifft die Zahlung danach trotzdem ein → **Erstattung** + Kunden-E-Mail („Ihre Zahlung wurde erstattet, bitte bestellen Sie erneut").
+- Beantwortet die offene Entscheidung in #121 (Late-Success → **Erstattung**, nicht manuelle Reaktivierung).
+
+> **Präzisierung (2026-08-07):** Die Erstattung läuft im Pilotbetrieb **nicht vollautomatisch**. Das System erkennt den Fall, erzeugt einen **Refund-Vorschlag** und benachrichtigt den Admin; die Auslösung erfolgt per Bestätigung über den bestehenden Refund-Flow (backend#142).
+>
+> **Der Kern der Entscheidung vom 2026-06-10 bleibt unverändert** — erstattet wird, nicht reaktiviert. Begründung für den Zwischenschritt: Ein Fehler in der TTL- oder Erkennungslogik würde bei Vollautomatik reihenweise gültige Zahlungen erstatten. Der Bestätigungsschritt kostet fast nichts und macht den Fehlerfall harmlos; bei wachsendem Volumen kann er entfallen.
+>
+> **Gegen die Order-Reaktivierung spricht zusätzlich:** Beim Ablauf der TTL wird der Bestand freigegeben. Bei Einzelstücken und Kleinserien, wie unsere Brands sie führen, ist der Artikel bis zum Zahlungseingang häufig verkauft — die Reaktivierung scheitert dann an der Bestandsprüfung und endet doch bei der Erstattung.
 
 **Szenario 3 — BNPL-Stornierung (Klarna):**
 
@@ -200,7 +222,7 @@ Beantwortete IT-Fragen zu Zahlungs-Sonderfällen. Ausgangslage im Code: Stripe c
 
 - **Entscheidung:** **Nicht angeboten** — zu fehleranfällig. (Konsistent mit §1.3: nur Stripe-Methoden.)
 
-**Umsetzung:** Elysion-UG/elysion-marketplace-backend#143 (48h-SLA) · #144 (Klarna-Reversal) · #121 (Grace Period + Auto-Refund) · Elysion-UG/elysion-frontend#57 (48h-SLA-Anzeige Seller).
+**Umsetzung:** Elysion-UG/elysion-marketplace-backend#143 (48h-SLA) · #144 (Klarna-Reversal) · #121 (Grace Period + Refund-Vorschlag) · #224 (SLA über Wochenenden) · Elysion-UG/elysion-frontend#57 (48h-SLA-Anzeige Seller).
 
 ---
 
@@ -214,7 +236,19 @@ Beantwortete IT-Fragen zu Zahlungs-Sonderfällen. Ausgangslage im Code: Stripe c
 
 **Festlegung (2026-06-10, logisch):** Die **Einspruchsfrist entspricht der 7-Kalendertage-Haltefrist** (§1.2) — **eine** einzige Frist, kein zweiter Timer. Nach ihrem Ablauf wird der Wochenbericht **verbindlich** und am selben Mittwoch ausgezahlt (Verbindlichkeit + Auszahlung fallen zusammen).
 
-**Umsetzung:** Elysion-UG/elysion-marketplace-backend#145 (Settlement-Lifecycle informativ→verbindlich, Einspruchsfrist, Verrechnung) · Elysion-UG/elysion-frontend#58 (Dashboard: „unverbindlich"-Kennzeichnung + verbindlicher Wochenbericht).
+_Im Code bereits umgesetzt: `PayoutProperties.holdPeriod = Duration.ofDays(7)`, dokumentiert als ein Timer für beide Fristen; Kadenz „wöchentlich, fester Mittwoch" in `AdminPayoutService`._
+
+**Festlegung (2026-08-07) — Wirkung eines Einspruchs:**
+
+- Ein Einspruch blockiert **ausschließlich die strittige Zeile**, nicht den gesamten Bericht. Unstrittige Positionen werden normal finalisiert und ausgezahlt; der Streitbetrag bleibt offen und wandert in die Verrechnung mit der Folgeperiode.
+- **Konsequenz für das Datenmodell:** Ein Bericht muss zwei Zustände gleichzeitig tragen können — **teilweise finalisiert**. Das ist von Anfang an vorzusehen, nicht nachträglich einzuziehen.
+- **Begründung gegen „ganzer Bericht":** Eine strittige Position von zwanzig würde die gesamte Wochenauszahlung aufhalten. Das bestraft den Seller für den Streitfall und erzeugt genau den Druck, der zu Eskalationen führt.
+
+**Festlegung (2026-08-07) — Erfassung:** Der Einspruch läuft über einen **eigenen Seller-Endpoint** (Self-Service im Seller-Portal), nicht über den Support. Kostet Endpoint, DTO, Formular und Tests, liefert dafür einen lückenlosen Audit-Trail darüber, wer wann was bestritten hat. Bei verbindlichen Abrechnungsdokumenten ist das die belastbarere Variante.
+
+**Reihenfolge:** backend#220 (`refund_allocations`) sollte **vor** #145 gebaut werden. Ein Seller, der eine Zeile bestreitet, braucht eine belegbare Einzelbuchung statt einer Rekonstruktion aus Aggregaten.
+
+**Umsetzung:** Elysion-UG/elysion-marketplace-backend#145 (Settlement-Lifecycle informativ→verbindlich, Einspruchsfrist, Verrechnung) · #220 (Refund-Aufteilung als Voraussetzung) · Elysion-UG/elysion-frontend#58 (Dashboard: „unverbindlich"-Kennzeichnung + verbindlicher Wochenbericht).
 
 ---
 
@@ -394,6 +428,33 @@ Das Reservierungsmodell ist implementiert. Die Backorder-Logik ist nicht entschi
 
 ---
 
+### 3.4 Kanonische Varianten-Optionswerte (Farben & Größen)
+
+**Status:** ENTSCHIEDEN (2026-08-07)
+
+Ausgangslage: `variant_options.option_type`/`option_value` waren Freitext, normalisiert nur zur Abfragezeit (`trim` + `lower`). `Rot`/`rot`/`ROT ` fielen zusammen — `rot`/`Rubinrot`/`red` nicht. Die Filter-Facette zeigte damit so viele Einträge, wie es Schreibweisen gab.
+
+**Farben — kanonische Filterfarbe plus freier Anzeigename:**
+
+|                 | Zweck                                       | Pflege             |
+| --------------- | ------------------------------------------- | ------------------ |
+| **Filterfarbe** | Facette und Filter, ~12–15 kanonische Werte | Admin, feste Liste |
+| **Anzeigename** | Darstellung am Produkt, Freitext            | Seller             |
+
+Der Käufer filtert nach `rot`, sieht am Produkt aber `Rubinrot`. Eine reine Lookup-Liste hätte dem Seller die genaue Produktbezeichnung genommen, ein reines Alias-Mapping die Facette nie sauber bekommen.
+
+**Größen — Größensysteme, von Kategorien geteilt:** Eigene Entität mit geordneten Werten (Babygrößen 50/56–86/92, Kindergrößen 98/104–164, Konfektion XS–XXL, Zahlengrößen 36–46). Eine Kategorie verweist auf **ein** System; mehrere Kategorien teilen sich eines. Der Filter bietet in „Babybodys" damit kein `XL` an. Die Werte brauchen eine **eigene Sortierreihenfolge** — alphabetisch ergibt `110/116` vor `98/104` und `L` vor `M` vor `S`.
+
+**Pflege:** ausschließlich Admin. Beim aktuellen Onboarding mit persönlichem Kontakt kein Flaschenhals; bei späterer Selbstbedienung ist ein Beantragungs-Flow nachrüstbar.
+
+**CSV-Import mit unbekannten Werten:** Das Produkt wird **angelegt und im Status `DRAFT` geparkt**, bis die Optionswerte aufgelöst sind; der Import liefert einen Report der offenen Werte. Ablehnen würde Massenimporte an einer einzelnen Farbschreibweise scheitern lassen, ein Sammeleimer „sonstige" die Facette wieder aushöhlen. Der DRAFT-Weg fügt sich in die Zustandsmaschine aus §3.1 ein — ohne aufgelöste Optionswerte besteht ein Produkt den Übergang nach `REVIEW` schlicht nicht.
+
+**Abhängigkeit:** Die Textilkennzeichnungs-Verordnung (§8.4, `elysion-frontend#204`, anwaltliche Prüfung) fasst dieselbe Produktmaske und das `materials`-Modell an. Werden dort strukturierte Faserangaben _anstelle_ von `materials` gefordert, wird ein Teil dieser Arbeit erneut angefasst — bewusst in Kauf genommen. Die Produktmaske ist so zu schneiden, dass Materialangaben austauschbar bleiben.
+
+**Umsetzung:** Elysion-UG/elysion-marketplace-backend#218 · löst die query-seitige Normalisierung aus #136 und den funktionalen Index `V8` ab.
+
+---
+
 ## IV. Bestellmanagement & Versand
 
 ### 4.1 "Delivered"-Definition
@@ -445,8 +506,38 @@ Das Reservierungsmodell ist implementiert. Die Backorder-Logik ist nicht entschi
 **Offene Fragen:**
 
 - Soll der Checkout-Flow die Aufschlüsselung nach Seller anzeigen?
-- Unterschiedliche Versandkosten pro Seller oder Flatrate?
-- Was passiert wenn ein Seller-Artikel storniert wird (Teilerstattung oder Gesamtbestellung neu)?
+
+**Beantwortet (2026-08-07):**
+
+- ~~Unterschiedliche Versandkosten pro Seller oder Flatrate?~~ → **pro Seller**, siehe §4.4
+- ~~Was passiert wenn ein Seller-Artikel storniert wird (Teilerstattung oder Gesamtbestellung neu)?~~ → **Teilerstattung je `OrderGroup`**. Eine order-weite Erstattung ist zusätzlich möglich, aber ausschließlich über den **gesamten Restbetrag** — teilweise order-weite Erstattungen bleiben abgelehnt, weil sie sich keiner Settlement-Zeile eindeutig zuordnen ließen. Die Aufteilung je Seller wird in `refund_allocations` festgehalten (backend#220).
+
+---
+
+### 4.4 Versandkostenmodell je Brand
+
+**Status:** ENTSCHIEDEN (2026-08-07)
+
+Ausgangslage: Versandkosten waren nicht nur unkonfigurierbar, sondern **hart auf 0 verdrahtet** (`OrderCreationService`: `0L` für Steuer und Versand, `total = subtotal`). Jede bisher erzeugte Bestellung hat 0 € Versand.
+
+**Felder je Brand, im Onboarding zu hinterlegen:**
+
+| Feld                 | Typ                                                 | Beispiel                                           |
+| -------------------- | --------------------------------------------------- | -------------------------------------------------- |
+| Versandkostenstufen  | Stufentabelle (Basis: Bestellwert **oder** Gewicht) | bis 30 €: 4,90 € · bis 60 €: 3,90 € · ab 60 €: 0 € |
+| Versanddienstleister | Text                                                | DHL, DPD, GLS …                                    |
+| Liefergebiet         | Festwert                                            | DACH (DE/AT/CH)                                    |
+
+**SLA-Vorgabe für unsere Brands:** Versand 1–2 Werktage, Lieferung 3–5 Werktage. (Verhältnis zur technischen 48-h-Eskalationsschwelle aus §1.6 Szenario 1 ist dort als offener Punkt vermerkt.)
+
+**Berechnung:** pro Brand-Gruppe — Zwischensumme bzw. Gewicht → passende Stufe → Freiversand-Schwelle; Summierung über die Gruppen. Das Cart-/Preview-DTO liefert die Versandkosten **pro Brand-Gruppe** plus Gesamtsumme, sonst kann das Frontend die Aufteilung nicht darstellen.
+
+**Default ohne Konfiguration:**
+
+- **Neue Seller:** Pflichtfeld im Onboarding, ohne Konfiguration kein Abschluss.
+- **Bereits registrierte Seller:** laufen weiter auf 0 € (unveränderter Ist-Zustand) und erhalten eine Nachpflege-Aufforderung — keine sofortige Sperre, da bei ihnen das Onboarding bereits durch ist.
+
+**Umsetzung:** Elysion-UG/elysion-marketplace-backend#139 · Elysion-UG/elysion-frontend#52.
 
 ---
 
@@ -548,6 +639,59 @@ Umsetzung, beide beim Aufarbeiten des Klartext-Leaks in CI-Artefakten entdeckt:
   Stage-Smoke tatsächlich nutzt (`seller1@greenthread.dev`,
   `admin@marketplace.dev`) — die übrigen Seed-Accounts tragen weiterhin die
   dokumentierten Passwörter.
+
+---
+
+### 5.6 CSP-Nonce: Klassifikation invertiert (FE#221)
+
+**Status:** ENTSCHIEDEN & UMGESETZT (2026-08-10) — Option „Nonce als Opt-in"
+
+Die Content-Security-Policy wird pro Request in `src/middleware.ts` gesetzt. Bisher
+bekam **jede** Route die strikte Nonce-Policy; nur eine handgepflegte Liste
+öffentlicher Routen (`PUBLIC_ROUTES`) war davon ausgenommen. Eine Nonce auf einer
+statisch vorgerenderten Seite ist aber tödlich: Next stempelt in die zur Bauzeit
+erzeugten Bootstrap-Scripts keine passende Nonce, der Browser blockt sie, die
+Hydration startet nie — die Seite ist tot. In `next dev` ist das unsichtbar (dort
+rendert alles dynamisch) und fällt erst auf Staging auf.
+
+**Belegter Anlass:** `npm run build` gegen `dev` zeigt `/_not-found` als statisch
+vorgerendert (`○`). Die Route fiel durch die Ausnahmeliste und bekam die
+Nonce-Policy — jeder unbekannte Pfad lieferte damit totes HTML: Header und
+Warenkorb auf der 404-Seite funktionslos.
+
+**Entscheidung:** Die Klassifikation wird invertiert. Die Nonce gilt nur noch für
+die authentifizierten, dynamisch gerenderten Flächen (Seller-, Admin-, Auth- und
+geschützte Buyer-Routen — genau die vier Route-Gruppen mit `force-dynamic`).
+Alles andere, inklusive `/_not-found` und jedem unbekannten Pfad, bekommt die
+nonce-freie Policy.
+
+Maßgeblich ist die **Fehlerrichtung**, nicht die Fehlerzahl:
+
+| Fehlerfall                        | vorher             | invertiert                        |
+| --------------------------------- | ------------------ | --------------------------------- |
+| vergessene öffentliche Seite      | Seite **tot**      | läuft                             |
+| unbekannter Pfad / `/_not-found`  | Seite **tot**      | läuft                             |
+| vergessene authentifizierte Route | läuft, strikte CSP | läuft, **CSP eine Stufe lascher** |
+
+Vorher stand im Fehlerfall ein **Totalausfall**, invertiert der Verlust **einer
+Härtungsschicht**: die betroffene Route bekäme `script-src 'unsafe-inline'` statt
+der Nonce. Der eigentliche Zugriffsschutz — Session-Gate in der Middleware,
+clientseitige Guards, Backend-Autorisierung — bleibt unberührt, und der Rest der
+Policy (`connect-src`/`img-src` nur self + Backend-Origin, `object-src 'none'`,
+`frame-ancestors 'none'`) begrenzt die Relaxation.
+
+**Restpreis, bewusst offen:** Eine vergessene authentifizierte Route verliert die
+Nonce **still** — kein Test schlägt an. Der Drift-Guard aus FE#218 prüft bislang
+nur die öffentliche Seite. Ein Gegenstück über die authentifizierten Listen wurde
+zurückgestellt und als eigenes Issue nachgezogen (FE#235). Ebenfalls unverändert:
+ein Tippfehler unterhalb eines authentifizierten Prefixes (z. B.
+`/admin/tippfehler`) rendert weiter das statische `/_not-found` mit Nonce — die
+Middleware kennt die Route-Tabelle nicht.
+
+**Nebenbefund (offen, gehört zu FE#37):** `/producer` und `/product` werden
+weiterhin dynamisch (`ƒ`) gerendert. Das Akzeptanzkriterium aus FE#37
+(„(public)-Routen statisch/ISR") ist damit ausgerechnet für die beiden
+SEO-relevanten Shop-Routen nicht erfüllt.
 
 ---
 
@@ -719,7 +863,10 @@ Es existiert keinerlei Rechnungs-Funktionalität — weder im Datenmodell (`Invo
 
 - Cloud-Storage (AWS S3, Google Cloud Storage) oder anderes?
 - CDN für Produktbilder?
-- Backup-Strategie für Uploads?
+
+**Beantwortet (2026-08-07):**
+
+- ~~Backup-Strategie für Uploads?~~ → `/app/data/file-assets` (Zertifikatsdokumente, Produktbilder) liegt **außerhalb der Datenbank**; ein DB-Restore ohne diese Dateien liefert eine Datenbank voller Verweise ins Leere. Derselbe periodische Job, der den `pg_dump` erzeugt, archiviert auch das File-Verzeichnis und legt beides **gemeinsam** offsite ab — ein Zeitstempel, ein Wiederherstellungspaket, damit DB- und Dateistand nicht auseinanderlaufen. Details in §9.4.
 
 ---
 
@@ -738,13 +885,50 @@ Es existiert keinerlei Rechnungs-Funktionalität — weder im Datenmodell (`Invo
 
 ### 9.3 Monitoring & Alerting
 
-**Status:** OFFEN
+**Status:** TEILWEISE ENTSCHIEDEN — Uptime-Monitoring entschieden (2026-08-07); Systemwahl und On-Call offen
 
-**Offene Fragen:**
+**Festlegung (2026-08-07) — minimales Uptime-Monitoring:**
 
-- Welches Monitoring-System (Datadog, Grafana, Sentry)?
+Unabhängig von der Grundsatzentscheidung unten wird ein externer Uptime-Monitor eingerichtet: **Betterstack Free-Tier**, Alarmierung per **E-Mail an beide Entwickler**. Begründung: Der Free-Tier enthält Statuspage und Incident-Timeline; UptimeRobot bietet mehr Monitore, die im Pilot niemand braucht. Das Setup blockiert die spätere Systemwahl nicht und wird bei Bedarf ersetzt.
+
+Überwacht werden zunächst `GET /actuator/health` (Backend Staging) und die Buyer-Frontend-Startseite; mit dem Prod-Aufbau kommen die Prod-URLs und die Erreichbarkeit des Stripe-Webhook-Endpoints dazu.
+
+> **Wichtig bei der Konfiguration:** Check-Timeout auf **~120 s**, nicht auf den Default von 30 s. Der Render-Free-Tier hat einen Kaltstart von 60–90 s; bei zu kurzem Timeout alarmiert der Monitor bei jedem Kaltstart, und die Alarme werden nach zwei Wochen ignoriert — das ist schlimmer als kein Monitoring. Nebeneffekt: Der Monitor übernimmt damit den Keep-Alive-Ping.
+
+**Zusätzlich zu überwachen (2026-08-07):** Die von den externen Connectoren verwendete API-Version, insbesondere bei Shopify. Läuft eine Version aus, führt Shopify die Anfrage stillschweigend gegen die älteste unterstützte Version aus („Fall-Forward") — kein Fehler, nur potenziell verändertes Verhalten. Siehe §13.
+
+**Weiterhin offen:**
+
+- Welches Monitoring-System für Fehler und Performance (Datadog, Grafana, Sentry)?
 - Wer ist On-Call bei Zahlungsausfällen?
 - SLA für Verfügbarkeit (99,9 %? 99,5 %)?
+
+**Umsetzung:** Elysion-UG/elysion-marketplace-backend#152.
+
+---
+
+### 9.4 Datenbank-Backup & Wiederherstellung
+
+**Status:** ENTSCHIEDEN (2026-08-07) — **BLOCKER** vor Go-Live
+
+Ausgangslage, verifiziert am 2026-08-05 über die Neon-API: Projekt `elysion` läuft auf `free_v3` mit `history_retention_seconds = 21600` — **6 Stunden** Point-in-Time-Recovery. Ein Fehler vom Freitagabend, der Montagfrüh auffällt, ist damit nicht wiederherstellbar. Verschärfend: Die Prod-DB dieses Projekts wurde bereits einmal gelöscht (alter Render-Service), damals ohne Order-Historie.
+
+**Zwei Ebenen:**
+
+| Ebene                              | Zweck                                         | Schützt gegen                                                |
+| ---------------------------------- | --------------------------------------------- | ------------------------------------------------------------ |
+| **Neon Paid, PITR 30 Tage**        | präzise Wiederherstellung auf einen Zeitpunkt | Bedienfehler, fehlerhafte Migration, versehentliches Löschen |
+| **Periodische `pg_dump`, offsite** | unabhängige Kopie außerhalb des Anbieters     | Account-Verlust, Anbieterausfall, Sperrung                   |
+
+Ein Backup beim selben Anbieter schützt nicht gegen „Account gesperrt" — deshalb beide Ebenen. Die zweite ist bewusst schlicht gehalten und muss keine PITR-Qualität haben. Das File-Verzeichnis aus §9.1 wird im selben Paket archiviert.
+
+**Warum 30 Tage:** Maßgeblich ist nicht die Aufbewahrungspflicht, sondern _wie lange ein Fehler unentdeckt bleiben darf_. 30 Tage decken Urlaub und ruhige Phasen ab; 7 Tage wären das nackte Minimum.
+
+> **Abgrenzung:** Aufbewahrungspflicht und Backup-Retention sind nicht dasselbe. GoBD verlangt, dass Rechnungen 10 Jahre unveränderbar **verfügbar** sind — nicht, dass 10 Jahre PITR vorgehalten wird. Die Zehnjahrespflicht wird über das Rechnungsarchiv aus §8.5 erfüllt. Das entkoppelt beide Themen und hält die Backup-Kosten realistisch.
+
+**Der Restore-Drill ist der eigentliche Wert:** Ein Backup, das nie zurückgespielt wurde, ist eine Vermutung. Er muss einmal real laufen und schriftlich festhalten: Ablauf, Dauer, Prüfschritte danach (Readiness, Login, Produkt-Reads, File-Reads, Order-/Payment-Reads). Die Plan-Entscheidung allein erfüllt das Operations-Gate nicht.
+
+**Umsetzung:** Elysion-UG/elysion-marketplace-backend#192 · verwandt: #122 (Prod-Neuaufbau).
 
 ---
 
@@ -800,6 +984,25 @@ Es existiert keinerlei Rechnungs-Funktionalität — weder im Datenmodell (`Invo
 | 24  | Go-to-Market & Pilot-Erfolgskriterien (§12.1)                                              | Strategie            | Kritisch — vor Launch            |
 | 25  | Unit Economics / Seller-Marge (§12.2)                                                      | Strategie            | Hoch                             |
 
+### Entschieden am 2026-08-07
+
+Abgearbeitet aus der Liste der Issues, die auf eine Management-Entscheidung warteten. Details jeweils im genannten Paragraphen.
+
+| Thema                             | §    | Entscheidung                                                                      |
+| --------------------------------- | ---- | --------------------------------------------------------------------------------- |
+| Buyer-Rückgabe-Flow               | 1.4  | Schlanker MVP; Widerruf wird bestätigt, nicht bewertet                            |
+| Late-Success nach Order-Ablauf    | 1.6  | Erstattung bleibt; im Pilot mit Admin-Bestätigungsschritt                         |
+| Versand-SLA über Wochenenden      | 1.6  | **neu aufgenommen, offen** — 48 h rechnen in Kalenderstunden                      |
+| Einspruch gegen ein Settlement    | 1.7  | Blockiert nur die strittige Zeile; eigener Seller-Endpoint                        |
+| Kanonische Varianten-Optionswerte | 3.4  | Filterfarbe + Anzeigename; geteilte Größensysteme; Admin-Pflege; Import als DRAFT |
+| Versandkostenmodell je Brand      | 4.4  | Stufentabelle im Onboarding; Pflicht für neue Seller, 0 € für Bestand             |
+| Backup für Uploads                | 9.1  | Gemeinsames Wiederherstellungspaket mit dem DB-Dump                               |
+| Uptime-Monitoring                 | 9.3  | Betterstack Free + Mail an beide; Timeout 120 s wegen Kaltstart                   |
+| Datenbank-Backup                  | 9.4  | Neon Paid, 30 Tage PITR, zusätzlich externe Dumps; Restore-Drill verpflichtend    |
+| Externe Systemanbindungen         | 13.1 | Xentral, Tradebyte, Shopware 6, Shopify; Tradebyte zuerst                         |
+
+Ohne eigenen Paragraphen, nur in den Issues dokumentiert: Nachhaltigkeits-Score als `post-launch` eingestuft (backend#217), Refund-Audit-Trail zieht nach `finance_audit_records` (backend#220), Endpoint-Pfad `/seller/products` bleibt (backend#113, geschlossen), GitHub Team für Branch-Protection (backend#123), Design-System-Altlasten (frontend#83).
+
 ---
 
 ## XI. Bereits getroffene Architekturentscheidungen (nur mit größerem Aufwand änderbar)
@@ -846,6 +1049,51 @@ Das Fee-Modell (§1.1: 15 % Take Rate + Seller trägt Stripe-Fee + Refund-/Charg
 - Beispielrechnung: Was bleibt einem Seller bei einer typischen 60-€-Bestellung netto — und was bei einer retournierten?
 - Ab welchem Warenkorbwert ist ein Verkauf für den Seller profitabel? (Relevant für Mindestbestellwert-/Versandkosten-Politik)
 - Ist die 15 %-Take-Rate gegenüber Alternativen (eigener Shopify-Shop, Avocadostore, Etsy) konkurrenzfähig argumentierbar?
+
+---
+
+## XIII. Externe Systemanbindungen
+
+### 13.1 Anbindungswege für Brand-Systeme
+
+**Status:** ENTSCHIEDEN — Zielsysteme gesetzt (2026-08-07); Fundamentfragen offen
+
+Brands sollen ihre Produktdaten, Bestände und Bestellungen über ihr **eigenes System** austauschen können, statt CSV zu pflegen. Vier Zielsysteme sind gesetzt:
+
+| System         | Kategorie             | Rolle beim Brand                                |
+| -------------- | --------------------- | ----------------------------------------------- |
+| **Xentral**    | ERP                   | Warenwirtschaft, Bestand, Auftragsabwicklung    |
+| **Tradebyte**  | Marktplatz-Middleware | vermittelt zwischen Marken-ERP und Marktplätzen |
+| **Shopware 6** | Shop-System           | eigener Webshop der Marke                       |
+| **Shopify**    | Shop-System           | eigener Webshop der Marke                       |
+
+In der Systematik aus backend#172 ist das **Anbindungsweg 3/4** (Weg 1 = CSV/Excel, Weg 2 = Feed). Die Import-Pipeline aus Weg 1 existiert bereits und war ausdrücklich als Engine für die Connectoren angelegt — sie ruft die Command-Services in-process auf, mit derselben Validierung wie das Portal. **Die Connectoren setzen als austauschbare Quell-Adapter davor an, statt vier eigene Import-Implementierungen zu bauen.**
+
+**Tradebyte weicht strukturell ab:** Der Weg heißt dort _Custom Channels_ — Elysion wird als Kanal in TB.One verfügbar, und **Tradebyte setzt den Kanal um**, nicht wir. Ablauf: Account Manager → Kick-off (Zielsystem und Datenaustauschformate) → Aufwandsschätzung durch Tradebyte → Realisierung. Unsere Aufgabe verschiebt sich damit von „Connector implementieren" zu „Schnittstelle spezifizieren, gegen die sie entwickeln". Kosten und Dauer sind nicht öffentlich und nur im Gespräch zu klären.
+
+**Reihenfolge:** Tradebyte zuerst. Xentral bringt bereits einen eigenen Tradebyte-Connector mit — ein Brand mit beiden Systemen erreicht uns möglicherweise schon über den Tradebyte-Kanal, ohne dass wir einen Xentral-Connector bauen.
+
+**Offene Fundamentfragen (gelten systemübergreifend, vor jedem Connector zu klären):**
+
+1. **Wer führt den Bestand?** Führt ihn das Brand-System, ist unser `variant.stock` ein Cache. Overselling ist bei geteiltem Bestand zwischen zwei Syncs kein Randfall, sondern der Regelfall — besonders bei Shopware und Shopify, wo der Brand parallel im eigenen Shop verkauft. Verweis auf §3.2.
+2. **Wer führt den Preis?** Und was gilt, wenn ein Seller den Preis im Elysion-Portal ändert?
+3. **Bestellungs-Rückschub:** Der Seller versendet aus seinem System. Landet eine Bestellung dort nicht, wird nichts versendet. Push bei `PAID` oder erst nach Widerrufsfrist? Wie kommt Tracking zurück? Was passiert bei Refund/Retoure (§1.4)?
+4. **Zugangsdaten je Seller:** verschlüsselte Ablage, Rotation, Verhalten bei abgelaufenem Token.
+5. **Mapping auf das Katalogmodell:** Externe Systeme liefern Farben und Größen als Freitext. Jeder Connector braucht eine Mapping-Tabelle je Seller auf die kanonischen Werte aus §3.4; die DRAFT-Parkregel gilt unverändert.
+6. **Fehlerverhalten:** Ein Connector, der still nichts mehr synchronisiert, ist schlechter als einer, der laut scheitert. Sichtbarkeit im Sync-Protokoll und im Monitoring (§9.3).
+
+**Technische Randbedingungen je System (Stand 2026-08-07, vor Umsetzung erneut prüfen):**
+
+| System     | Auth                                    | Ereignisse                                               | Besonderheit                                                                                                       |
+| ---------- | --------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Xentral    | Personal Access Token, OAuth-Exchange   | Webhooks vorhanden                                       | Drei API-Generationen; V1 tot, **V3 aktuell, viele Endpunkte Beta**                                                |
+| Tradebyte  | —                                       | —                                                        | Tradebyte liefert an uns; Custom-Channel-Verfahren                                                                 |
+| Shopware 6 | OAuth2 Client Credentials (Integration) | **Webhooks nur im App-System**, nicht über die Admin API | Access-Token lebt **10 Minuten** → Refresh nötig                                                                   |
+| Shopify    | OAuth (Custom oder öffentliche App)     | Webhooks, verbrauchen **kein** Rate-Limit-Budget         | GraphQL gesetzt (REST seit 2024-04 Wartungsmodus); **quartalsweise Versionierung**, Fall-Forward scheitert lautlos |
+
+Bei Shopware entscheidet Fundamentfrage 1 damit direkt über den Integrationsweg: kleines Oversell-Fenster → App-System nötig; periodischer Abgleich genügt → Admin API. Das Fundament sollte generell **ereignisbasiert plus periodischer Abgleichlauf** vorsehen, nicht Polling mit Webhooks als Nachrüstung.
+
+**Umsetzung:** Elysion-UG/elysion-marketplace-backend#96 (Fundament) · #225 (Xentral) · #226 (Tradebyte) · #227 (Shopware 6) · #228 (Shopify) · #172 (Anbindungsweg 1, geschlossen).
 
 ---
 

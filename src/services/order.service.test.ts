@@ -7,23 +7,57 @@ vi.mock("@/src/lib/api-client", async (importOriginal) => {
   return { ...actual, apiRequest: vi.fn(), apiRequestRaw: vi.fn(), apiUpload: vi.fn() }
 })
 
+vi.mock("@/src/lib/error-store", () => ({ errorStore: { report: vi.fn() } }))
+
 const mockApiRequest = vi.mocked(apiRequest)
 
-const mockOrders = [
-  { id: "ord_1", status: "PENDING", total: 59.99 },
-  { id: "ord_2", status: "SHIPPED", total: 29.99 },
-]
+/**
+ * Raw shape as returned by the backend — `PagedResponse<OrderSummaryResponse>`.
+ * Das war vorher eine nackte Liste im Test und hat damit den seit der
+ * Umstellung auf `data.items` geltenden Vertrag nicht abgebildet.
+ */
+const rawOrderPage = {
+  items: [
+    {
+      id: "ord_1",
+      orderNumber: "ORD-001",
+      status: "PENDING",
+      paymentStatus: "PENDING",
+      total: 59.99,
+      currency: "EUR",
+      createdAt: "2026-01-01T10:00:00Z",
+    },
+    {
+      id: "ord_2",
+      orderNumber: "ORD-002",
+      status: "SHIPPED",
+      paymentStatus: "SUCCEEDED",
+      total: 29.99,
+      currency: "EUR",
+      createdAt: "2026-01-02T10:00:00Z",
+    },
+  ],
+  page: 0,
+  size: 20,
+  totalItems: 2,
+  totalPages: 1,
+}
 
-/** Raw shape as returned by the backend */
+/** Raw shape as returned by the backend — `OrderDetailResponse`. */
 const rawOrderDetail = {
   id: "ord_1",
   orderNumber: "ORD-001",
+  guestEmail: null,
   status: "PENDING",
-  total: 59.99,
+  paymentStatus: "PENDING",
   subtotal: 55.0,
   shipping: 4.99,
   tax: null,
+  total: 59.99,
+  currency: "EUR",
   createdAt: "2026-01-01T10:00:00Z",
+  updatedAt: "2026-01-01T10:00:00Z",
+  billingAddress: null,
   shippingAddress: {
     firstName: "Max",
     lastName: "Mustermann",
@@ -41,13 +75,17 @@ const rawOrderDetail = {
       subtotal: 55.0,
       shipping: 4.99,
       shipment: null,
+      createdAt: "2026-01-01T10:00:00Z",
+      updatedAt: "2026-01-01T10:00:00Z",
       items: [
         {
           id: "item_1",
-          variantId: "var_1",
           quantity: 2,
           unitPrice: 27.5,
           lineTotal: 55.0,
+          currency: "EUR",
+          createdAt: "2026-01-01T10:00:00Z",
+          updatedAt: "2026-01-01T10:00:00Z",
           product: {
             id: "prod-uuid",
             name: "Eco Shirt",
@@ -71,37 +109,37 @@ describe("OrderService", () => {
 
   describe("list", () => {
     it("calls /api/v1/orders with no query string when no params given", async () => {
-      mockApiRequest.mockResolvedValue(mockOrders)
+      mockApiRequest.mockResolvedValue(rawOrderPage)
       await OrderService.list()
       expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/orders")
     })
 
     it("appends page param", async () => {
-      mockApiRequest.mockResolvedValue(mockOrders)
+      mockApiRequest.mockResolvedValue(rawOrderPage)
       await OrderService.list({ page: 2 })
       expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/orders?page=2")
     })
 
     it("appends size param", async () => {
-      mockApiRequest.mockResolvedValue(mockOrders)
+      mockApiRequest.mockResolvedValue(rawOrderPage)
       await OrderService.list({ size: 5 })
       expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/orders?size=5")
     })
 
     it("appends status param", async () => {
-      mockApiRequest.mockResolvedValue(mockOrders)
+      mockApiRequest.mockResolvedValue(rawOrderPage)
       await OrderService.list({ status: "SHIPPED" })
       expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/orders?status=SHIPPED")
     })
 
     it("appends all params together", async () => {
-      mockApiRequest.mockResolvedValue(mockOrders)
+      mockApiRequest.mockResolvedValue(rawOrderPage)
       await OrderService.list({ page: 1, size: 20, status: "PENDING" })
       expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/orders?page=1&size=20&status=PENDING")
     })
 
     it("omits undefined page and size", async () => {
-      mockApiRequest.mockResolvedValue(mockOrders)
+      mockApiRequest.mockResolvedValue(rawOrderPage)
       await OrderService.list({ status: "DELIVERED" })
       const url = mockApiRequest.mock.calls[0][0] as string
       expect(url).not.toContain("page")
@@ -109,10 +147,32 @@ describe("OrderService", () => {
       expect(url).toContain("status=DELIVERED")
     })
 
-    it("returns the orders array", async () => {
-      mockApiRequest.mockResolvedValue(mockOrders)
+    it("reads the rows from data.items", async () => {
+      mockApiRequest.mockResolvedValue(rawOrderPage)
       const result = await OrderService.list()
-      expect(result).toEqual(mockOrders)
+      expect(result.map((o) => o.id)).toEqual(["ord_1", "ord_2"])
+      expect(result[0].total).toBe(59.99)
+      expect(result[0].orderNumber).toBe("ORD-001")
+    })
+
+    it("narrows an unknown order status to PENDING instead of feeding it to the label map", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...rawOrderPage,
+        items: [{ ...rawOrderPage.items[0], status: "AWAITING_ALIEN_APPROVAL" }],
+      })
+      const result = await OrderService.list()
+      expect(result[0].status).toBe("PENDING")
+    })
+
+    it("throws on a bare list — the contract paginates (data.items)", async () => {
+      mockApiRequest.mockResolvedValue(rawOrderPage.items)
+      await expect(OrderService.list()).rejects.toThrow(/Ungültige Server-Antwort/)
+    })
+
+    it("throws when a row loses its money field", async () => {
+      const { total: _total, ...withoutTotal } = rawOrderPage.items[0]
+      mockApiRequest.mockResolvedValue({ ...rawOrderPage, items: [withoutTotal] })
+      await expect(OrderService.list()).rejects.toThrow(/Ungültige Server-Antwort/)
     })
   })
 
@@ -148,6 +208,12 @@ describe("OrderService", () => {
       expect(item?.subtotal).toBe(55.0)
     })
 
+    it("takes variantId from the frozen snapshot — the line itself carries none", async () => {
+      mockApiRequest.mockResolvedValue(rawOrderDetail)
+      const result = await OrderService.getById("ord_1")
+      expect(result.groups?.[0].items[0].variantId).toBe("var_1")
+    })
+
     it("maps shipping → shippingCost on order", async () => {
       mockApiRequest.mockResolvedValue(rawOrderDetail)
       const result = await OrderService.getById("ord_1")
@@ -172,6 +238,80 @@ describe("OrderService", () => {
       expect(result.groups?.[0].items[0].productSnapshot?.options).toEqual([
         { type: "Größe", value: "L" },
       ])
+    })
+
+    it("accepts a delivered shipment without tracking data", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...rawOrderDetail,
+        groups: [
+          {
+            ...rawOrderDetail.groups[0],
+            shipment: {
+              trackingNumber: null,
+              carrier: null,
+              shippedAt: null,
+              deliveredAt: "2026-01-05T10:00:00Z",
+            },
+          },
+        ],
+      })
+      const result = await OrderService.getById("ord_1")
+      expect(result.groups?.[0].shipment).toEqual({ trackingNumber: null, carrier: undefined })
+    })
+
+    it("accepts an order snapshot whose optional fields arrive as null", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...rawOrderDetail,
+        groups: [
+          {
+            ...rawOrderDetail.groups[0],
+            items: [
+              {
+                ...rawOrderDetail.groups[0].items[0],
+                product: {
+                  id: "prod-uuid",
+                  name: "Eco Shirt",
+                  slug: "eco-shirt",
+                  seller: { id: null },
+                  variantId: null,
+                  sku: null,
+                  options: [],
+                  currency: null,
+                },
+              },
+            ],
+          },
+        ],
+      })
+      const result = await OrderService.getById("ord_1")
+      const snap = result.groups?.[0].items[0].productSnapshot
+      expect(snap?.productName).toBe("Eco Shirt")
+      expect(snap?.sku).toBeUndefined()
+      expect(snap?.sellerId).toBeUndefined()
+    })
+
+    it("narrows an unknown order-group status to PENDING", async () => {
+      mockApiRequest.mockResolvedValue({
+        ...rawOrderDetail,
+        groups: [{ ...rawOrderDetail.groups[0], status: "TELEPORTED" }],
+      })
+      const result = await OrderService.getById("ord_1")
+      expect(result.groups?.[0].status).toBe("PENDING")
+    })
+
+    it("throws when the line-total field is renamed (contract drift, #38)", async () => {
+      const { lineTotal: _lineTotal, ...drifted } = rawOrderDetail.groups[0].items[0]
+      mockApiRequest.mockResolvedValue({
+        ...rawOrderDetail,
+        groups: [{ ...rawOrderDetail.groups[0], items: [{ ...drifted, subtotal: 55.0 }] }],
+      })
+      await expect(OrderService.getById("ord_1")).rejects.toThrow(/Ungültige Server-Antwort/)
+    })
+
+    it("throws when the order loses its shipping address", async () => {
+      const { shippingAddress: _addr, ...withoutAddress } = rawOrderDetail
+      mockApiRequest.mockResolvedValue(withoutAddress)
+      await expect(OrderService.getById("ord_1")).rejects.toThrow(/Ungültige Server-Antwort/)
     })
 
     it("propagates errors from apiRequest", async () => {

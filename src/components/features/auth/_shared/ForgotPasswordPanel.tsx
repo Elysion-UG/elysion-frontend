@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react"
 import { CheckCircle2, Mail } from "lucide-react"
 import { AuthService } from "@/src/services/auth.service"
+import { Button } from "@/src/components/ui/button"
 import { EmailField } from "./EmailField"
 import { AuthSubmitButton } from "./AuthSubmitButton"
 
@@ -33,7 +34,7 @@ const styles = {
     successIconBg:
       "mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-50",
     successIcon: "h-7 w-7 text-green-500",
-    backBtn: "text-sm font-semibold text-green-600 hover:text-green-600",
+    backBtn: "text-green-600",
   },
   dark: {
     heading: "mb-1 font-heading text-lg font-bold tracking-wide text-sand-page",
@@ -42,7 +43,7 @@ const styles = {
     successIconBg:
       "mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full border border-green-600/60 bg-green-700/60",
     successIcon: "h-6 w-6 text-green-500",
-    backBtn: "text-xs font-medium text-sand-page/70 transition-colors hover:text-green-500",
+    backBtn: "text-xs text-sand-page/70 hover:text-green-500",
   },
 } satisfies Record<Variant, Record<string, string>>
 
@@ -85,7 +86,7 @@ export function ForgotPasswordPanel({
               required
               variant={variant}
             />
-            <AuthSubmitButton label={submitLabel} variant={variant} />
+            <AuthSubmitButton label={submitLabel} />
           </form>
         </>
       ) : (
@@ -102,9 +103,9 @@ export function ForgotPasswordPanel({
       )}
 
       <div className="mt-6 text-center">
-        <button onClick={onBack} className={s.backBtn}>
+        <Button variant="link" onClick={onBack} className={`h-auto p-0 ${s.backBtn}`}>
           {backLabel}
-        </button>
+        </Button>
       </div>
     </>
   )

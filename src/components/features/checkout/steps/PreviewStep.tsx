@@ -1,17 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { CreditCard, FileText, Loader2, MapPin, ShoppingBag } from "lucide-react"
+import { Button } from "@/src/components/ui/button"
 import type { CheckoutStartResponse } from "@/src/types"
 import { formatEuro } from "@/src/lib/currency"
-import {
-  getProductDisplayCache,
-  saveProductDisplay,
-  type ProductDisplayEntry,
-} from "@/src/lib/product-display-cache"
-import { ProductService } from "@/src/services/product.service"
 
 interface PreviewStepProps {
   preview: CheckoutStartResponse
@@ -20,52 +15,13 @@ interface PreviewStepProps {
   isLoading: boolean
 }
 
+// Display data comes straight from the checkout response: every line carries
+// `product.name`, `product.primaryImage` and the human-readable `variant.options`
+// (BE docs/api/checkout.md, "Variant Options Are Carried Through"). The former
+// lookup — read a localStorage cache, then fetch up to 200 products and one
+// detail request per line to recover names and images — is therefore gone (#188).
 export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewStepProps) {
   const [agbAccepted, setAgbAccepted] = useState(false)
-  const [displayMap, setDisplayMap] =
-    useState<Record<string, ProductDisplayEntry>>(getProductDisplayCache)
-
-  useEffect(() => {
-    if (!preview?.items?.length) return
-
-    const missing = (preview.items ?? [])
-      .map((i) => i.product?.id)
-      .filter((id): id is string => !!id && !displayMap[id])
-
-    if (missing.length === 0) return
-
-    ProductService.list({ size: 200 })
-      .then(async (page) => {
-        const found = page.items.filter((p) => missing.includes(p.id))
-        if (found.length === 0) return
-
-        const entries = await Promise.all(
-          found.map(async (p) => {
-            let imageUrl: string | undefined
-            if (p.slug) {
-              try {
-                const detail = await ProductService.getBySlug(p.slug)
-                imageUrl = detail.images?.[0]?.url ?? detail.imageUrls?.[0]
-              } catch {
-                // image fetch failed — show without image
-              }
-            }
-            const entry: ProductDisplayEntry = {
-              name: (p as unknown as { title?: string }).title ?? p.name ?? p.id,
-              imageUrl,
-              slug: p.slug,
-            }
-            saveProductDisplay(p.id, entry)
-            return [p.id, entry] as const
-          })
-        )
-
-        setDisplayMap((prev) => ({ ...prev, ...Object.fromEntries(entries) }))
-      })
-      .catch(() => {
-        // Silently ignore — placeholder remains
-      })
-  }, [preview, displayMap])
 
   return (
     <div className="mx-auto max-w-2xl animate-fade-up">
@@ -80,14 +36,16 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
           Deine Artikel
         </h2>
         <div className="space-y-3">
-          {(preview.items ?? []).map((item, idx) => {
-            const display = item.product?.id ? displayMap[item.product.id] : null
+          {preview.items.map((item, idx) => {
+            const name = item.product.name
+            const imageUrl = item.product.primaryImage ?? undefined
+            const options = item.variant.options
             return (
               <div key={idx} className="flex items-center gap-3 text-sm">
-                {display?.imageUrl ? (
+                {imageUrl ? (
                   <Image
-                    src={display.imageUrl}
-                    alt={display.name ?? "Produkt"}
+                    src={imageUrl}
+                    alt={name}
                     width={48}
                     height={48}
                     className="flex-shrink-0 rounded-lg object-cover"
@@ -98,7 +56,12 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
                   </div>
                 )}
                 <span className="flex-1 text-foreground">
-                  {item.quantity}× {display?.name ?? "Artikel"}
+                  {item.quantity}× {name}
+                  {options.length > 0 && (
+                    <span className="block text-xs text-muted-foreground">
+                      {options.map((o) => `${o.type}: ${o.value}`).join(", ")}
+                    </span>
+                  )}
                 </span>
                 <span className="font-medium text-foreground">{formatEuro(item.lineTotal)}</span>
               </div>
@@ -124,29 +87,26 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
       )}
 
       <div className="mb-6 rounded-xl border border-border bg-white p-6">
+        {/* Der Checkout-Vertrag liefert genau eine Geldsumme: `subtotal`, aus den
+            aktuell validierten Preisen. Eine Steuer- oder Versandkostenposition
+            gibt es nicht — die frühere Zeile „Zwischensumme (netto)" rechnete
+            `subtotal - tax` mit einem `tax`, das nie ankam, und wies damit den
+            Bruttobetrag als Nettobetrag aus. Versand ist beim Anlegen der
+            Bestellung fest 0 (BE `OrderCreationService`), deshalb bleibt die
+            Zeile — § 312j BGB verlangt die Angabe — mit „Kostenlos" stehen. */}
         <div className="space-y-2 text-sm text-foreground">
           <div className="flex justify-between">
-            <span>Zwischensumme (netto)</span>
-            <span>{formatEuro((preview.subtotal ?? 0) - (preview.tax ?? 0))}</span>
+            <span>Zwischensumme</span>
+            <span>{formatEuro(preview.subtotal)}</span>
           </div>
-          {(preview.tax ?? 0) > 0 && (
-            <div className="flex justify-between">
-              <span>Enthaltene MwSt.</span>
-              <span>{formatEuro(preview.tax ?? 0)}</span>
-            </div>
-          )}
           <div className="flex justify-between">
             <span>Versand</span>
-            <span>
-              {(preview.shippingCost ?? 0) > 0
-                ? formatEuro(preview.shippingCost ?? 0)
-                : "Kostenlos"}
-            </span>
+            <span>Kostenlos</span>
           </div>
         </div>
         <div className="mt-3 flex justify-between border-t border-border pt-3 font-bold text-foreground">
           <span>Gesamt (inkl. MwSt.)</span>
-          <span>{formatEuro(preview.subtotal ?? 0)}</span>
+          <span>{formatEuro(preview.subtotal)}</span>
         </div>
       </div>
 
@@ -183,17 +143,17 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
         </label>
       </div>
 
+      {/* Zwei lg-Buttons nebeneinander: auf schmalen Viewports muss das lange
+          Label umbrechen dürfen, sonst läuft es über (Primitive: whitespace-nowrap). */}
       <div className="flex gap-3">
-        <button
-          onClick={onBack}
-          className="flex-1 rounded-lg border border-border py-3 font-medium text-foreground transition-colors hover:bg-secondary"
-        >
+        <Button variant="outline" size="lg" onClick={onBack} className="flex-1 px-4 sm:px-8">
           Zurück
-        </button>
-        <button
+        </Button>
+        <Button
+          size="lg"
           onClick={onComplete}
           disabled={isLoading || !agbAccepted}
-          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-green-500 py-3 font-medium text-ink-900 transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="h-auto min-h-12 flex-1 whitespace-normal px-4 py-2 sm:px-8"
         >
           {isLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -203,7 +163,7 @@ export function PreviewStep({ preview, onBack, onComplete, isLoading }: PreviewS
               Zahlungspflichtig bestellen
             </>
           )}
-        </button>
+        </Button>
       </div>
     </div>
   )

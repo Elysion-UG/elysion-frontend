@@ -16,17 +16,19 @@ export type {
 } from "./user"
 
 export type {
-  CategoryStatus,
   Category,
   CategoryTreeNode,
   CategoryCreateDTO,
   CategoryUpdateDTO,
+  CategoryCommandResult,
 } from "./category"
 
 export type {
   SellerValueProfileLevel,
   SellerValueProfile,
   SellerProductListItem,
+  PublicSellerCertificate,
+  PublicSellerProfile,
   BuyerValueProfile,
   BuyerValueProfileUpsertDTO,
 } from "./seller"
@@ -59,6 +61,8 @@ export type {
   OrderItem,
   OrderGroupStatus,
   OrderGroup,
+  ShippingSlaStatus,
+  ShippingSla,
   ShippingAddress,
   OrderDetail,
   OrderGroupDetail,
@@ -89,6 +93,9 @@ export type {
   ProductInternalDetail,
   ProductListItem,
   ProductListParams,
+  ProductFacetValue,
+  ProductFacets,
+  SellerFacet,
   ProductCreateDTO,
   ProductUpdateDTO,
   ProductStatusUpdateDTO,
@@ -121,11 +128,24 @@ export type {
   PayoutDueItem,
 } from "./admin"
 
+export type {
+  OrderDuplicateFlagStatus,
+  OrderDuplicateResolution,
+  OrderDuplicateOrderRef,
+  OrderDuplicateFlag,
+  OrderDuplicateStats,
+  OrderDuplicateResolveResult,
+  OrderDuplicateResolveDTO,
+  OrderDuplicateListParams,
+} from "./order-duplicate"
+
 export type { Material } from "./material"
 
 export type { SellerPayoutAccountStatus, SellerPayoutAccount, PayoutOnboardingLink } from "./payout"
 
 export type { Recommendation } from "./recommendations"
+
+export type { RefundStatus, RefundInitiator, RefundRequestDTO, RefundResult } from "./refund"
 
 export type {
   ErrorSeverity,
