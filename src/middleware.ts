@@ -281,7 +281,13 @@ function generateNonce(): string {
 // nicht und kann „Pfad existiert" nicht prüfen. Betrifft nur eingeloggte Nutzer
 // hinter dem Portal-Prefix; der Regelfall (jeder unbekannte Pfad auf der
 // Shop-Domain) ist damit behoben.
-const NONCE_ROUTES = Array.from(
+//
+// Dass die Liste die authentifizierten Route-Gruppen wirklich vollständig
+// abbildet, prüft der Drift-Guard in middleware.test.ts (#235): eine Seite unter
+// src/app/(seller|admin|buyer|auth)/, die von keinem Eintrag gedeckt ist, fällt
+// dort auf statt still in der CSP. Deshalb exportiert — sonst importiert nichts
+// diese Konstante.
+export const NONCE_ROUTES = Array.from(
   new Set([
     ...SELLER_PROTECTED,
     ...SELLER_PUBLIC,
