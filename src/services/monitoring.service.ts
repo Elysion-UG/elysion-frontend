@@ -10,11 +10,14 @@
  * ── Groß-/Kleinschreibung, der Grund für die Mapper unten (#254) ─────────────
  * Client-Buffer und Server sprechen nicht dieselbe Schreibweise:
  *
- *   • Ausgehend (Ingestion, Query-Filter) — lowercase: `"high"`, `"api"`. Das ist
- *     die Form des In-Memory-Buffers und der dokumentierte Vertrag der
- *     Query-Parameter, und sie bleibt unangetastet.
- *   • Eingehend (diese Reads) — UPPERCASE: `"HIGH"`, `"API"`, bei den Stats sogar
- *     als Record-SCHLÜSSEL (`bySeverity: { "CRITICAL": 2, … }`).
+ *   • Client-Vokabular (In-Memory-Buffer, Typen, UI, und die Parameter dieses
+ *     Services) — lowercase: `"high"`, `"api"`.
+ *   • Server-Vokabular (Antworten dieser Reads **und** die Query-Filter) —
+ *     UPPERCASE: `"HIGH"`, `"API"`, bei den Stats sogar als Record-SCHLÜSSEL
+ *     (`bySeverity: { "CRITICAL": 2, … }`).
+ *
+ * Übersetzt wird deshalb in beide Richtungen, und die Grenze verläuft genau hier:
+ * nach außen sprechen Aufrufer ausschließlich lowercase.
  *
  * Die Typen `ErrorSeverity`/`ErrorCategory` beschreiben die lowercase-Variante.
  * Bis #254 gaben beide Methoden die Antwort ungeprüft und ungemappt durch — kein
@@ -46,10 +49,17 @@ import type {
 export interface MonitoringErrorListParams {
   page?: number
   size?: number
-  /** Serverseitiger Filter — UPPERCASE, siehe Kopfkommentar. */
-  severity?: string
-  /** Serverseitiger Filter — UPPERCASE, siehe Kopfkommentar. */
-  category?: string
+  /**
+   * Filter im **Client-Vokabular** (lowercase). Der Service übersetzt beim
+   * Absenden nach UPPERCASE — bewusst getippt statt `string`: Wer einen Wert aus
+   * einem gelesenen Event (`event.severity === "high"`) oder aus den Schlüsseln
+   * von `SEVERITY_LABELS` weiterreicht, bekäme sonst klaglos `?severity=high`,
+   * und das Backend antwortet mit 400 oder einer leeren Seite — also wieder eine
+   * still leere Tabelle.
+   */
+  severity?: ErrorSeverity
+  /** Filter im Client-Vokabular (lowercase); Übersetzung wie bei `severity`. */
+  category?: ErrorCategory
   from?: string
   to?: string
   sessionId?: string
@@ -80,6 +90,26 @@ const CATEGORY_FROM_API: Record<ApiErrorCategory, ErrorCategory> = {
   RENDER: "render",
   NETWORK: "network",
   UNKNOWN: "unknown",
+}
+
+/**
+ * Die Gegenrichtung für die Query-Filter. Der Service übersetzt in **beide**
+ * Richtungen, sonst wäre er nur halb ehrlich: Wer eine gelesene (lowercase)
+ * Severity als Filter zurückgibt, träfe sonst ins Leere.
+ */
+const SEVERITY_TO_API: Record<ErrorSeverity, ApiErrorSeverity> = {
+  critical: "CRITICAL",
+  high: "HIGH",
+  medium: "MEDIUM",
+  low: "LOW",
+}
+
+const CATEGORY_TO_API: Record<ErrorCategory, ApiErrorCategory> = {
+  api: "API",
+  auth: "AUTH",
+  render: "RENDER",
+  network: "NETWORK",
+  unknown: "UNKNOWN",
 }
 
 const apiPersistedErrorEventSchema = z.object({
@@ -174,8 +204,8 @@ export const MonitoringService = {
       `/api/v1/admin/monitoring/errors${buildQuery({
         page: params.page,
         size: params.size,
-        severity: params.severity,
-        category: params.category,
+        severity: params.severity && SEVERITY_TO_API[params.severity],
+        category: params.category && CATEGORY_TO_API[params.category],
         from: params.from,
         to: params.to,
         sessionId: params.sessionId,

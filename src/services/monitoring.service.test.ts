@@ -55,10 +55,12 @@ describe("MonitoringService", () => {
       expect(mockApiRequest).toHaveBeenCalledWith("/api/v1/admin/monitoring/errors")
     })
 
-    it("appends filter query params — Filter gehen UPPERCASE raus", async () => {
+    it("übersetzt lowercase-Filter beim Absenden nach UPPERCASE", async () => {
       mockApiRequest.mockResolvedValue(apiPage)
 
-      await MonitoringService.getErrors({ page: 1, size: 50, severity: "HIGH", category: "API" })
+      // Aufrufer sprechen ausschließlich lowercase — genau das, was getErrors()
+      // zurückgibt, lässt sich so direkt als Filter zurückreichen.
+      await MonitoringService.getErrors({ page: 1, size: 50, severity: "high", category: "api" })
 
       expect(mockApiRequest).toHaveBeenCalledWith(
         "/api/v1/admin/monitoring/errors?page=1&size=50&severity=HIGH&category=API"
@@ -115,7 +117,7 @@ describe("MonitoringService", () => {
       const { message: _m, ...withoutMessage } = apiEvent
       mockApiRequest.mockResolvedValue({ ...apiPage, items: [withoutMessage] })
 
-      await expect(MonitoringService.getErrors()).rejects.toThrow()
+      await expect(MonitoringService.getErrors()).rejects.toThrow(/monitoring\.getErrors/)
     })
   })
 

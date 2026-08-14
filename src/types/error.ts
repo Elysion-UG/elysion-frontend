@@ -51,7 +51,17 @@ export interface ErrorStoreStats {
   total: number
   bySeverity: Record<ErrorSeverity, number>
   byCategory: Record<ErrorCategory, number>
-  /** Errors per minute averaged over the last 30 minutes. */
+  /**
+   * Fehler pro Minute — **das Zeitfenster hängt an der Quelle**:
+   *   • `errorStore.getStats()` mittelt über die letzten **30 Minuten**.
+   *   • `MonitoringService.getErrorStats(hours)` liefert den Server-Mittelwert
+   *     über das angefragte Fenster (Default **24 h**).
+   *
+   * Die Schwellen in `HealthSummaryCards.tsx` (>= 5 rot, >= 1 gelb) sind auf den
+   * 30-Minuten-Wert kalibriert. Beim Umbau auf die persistierten Daten (#254)
+   * müssen sie mitgezogen werden, sonst liest sich ein Ausbruch von 300 Fehlern
+   * in einer Minute über 24 h gemittelt als 0,2/min — also grün.
+   */
   errorsPerMinute: number
 }
 
