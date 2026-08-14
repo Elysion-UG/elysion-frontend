@@ -9,6 +9,11 @@ import type { ProductImage } from "@/src/types"
 import { toast } from "sonner"
 import { Button } from "@/src/components/ui/button"
 
+interface ProductImageManagerProps {
+  productId: string
+  initialImages: ProductImage[]
+}
+
 /**
  * Bildverwaltung im Produktformular des Verkäufers.
  *
@@ -30,11 +35,6 @@ import { Button } from "@/src/components/ui/button"
  * `id`, über alle Status). Bis dahin sagt der Leerzustand das offen, statt „keine
  * Bilder vorhanden" als Tatsache über das Produkt zu behaupten.
  */
-interface ProductImageManagerProps {
-  productId: string
-  initialImages: ProductImage[]
-}
-
 export default function ProductImageManager({
   productId,
   initialImages,
