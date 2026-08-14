@@ -40,7 +40,13 @@ export interface FrontendErrorEvent {
   metadata: ErrorEventMetadata
 }
 
-/** Aggregated stats returned by the error store. */
+/**
+ * Aggregated stats returned by the error store — **und**, nach dem Mapping in
+ * `monitoring.service.ts`, vom Admin-Stats-Endpunkt. Die Schlüssel von
+ * `bySeverity`/`byCategory` sind hier ausnahmslos lowercase; der Server liefert
+ * sie UPPERCASE, die Übersetzung passiert im Service (#254). Diesen Typ also
+ * nicht als 1:1-Abbild der API lesen.
+ */
 export interface ErrorStoreStats {
   total: number
   bySeverity: Record<ErrorSeverity, number>
@@ -53,6 +59,11 @@ export interface ErrorStoreStats {
  * A frontend error event as persisted and returned by the backend
  * (`GET /api/v1/admin/monitoring/errors`). Promoted fields are flattened
  * out of the client-side `metadata` object; see `docs/monitoring-api.md`.
+ *
+ * Beschreibt den **gemappten** Zustand: `severity`/`category` stehen hier
+ * lowercase wie im Client-Buffer, der Server liefert sie UPPERCASE. Die
+ * Übersetzung liegt in `monitoring.service.ts` (#254) — dieser Typ ist also
+ * kein 1:1-Abbild der Antwort.
  */
 export interface PersistedErrorEvent {
   id: string

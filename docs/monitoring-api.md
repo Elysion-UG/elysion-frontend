@@ -21,9 +21,18 @@ hinweg in der Datenbank landen.
 >   potenziell falsch gestellt. Die 30-Tage-Retention arbeitet wie hier beschrieben weiterhin
 >   auf `client_timestamp`.
 > - `PersistedErrorEvent.severity`/`.category` liefert das Backend **uppercase**
->   (`"HIGH"`, `"API"`) — der TypeScript-Typ in `src/types/error.ts` beschreibt mit
->   `ErrorSeverity`/`ErrorCategory` die lowercase-Variante des Client-Buffers und passt
->   insoweit nicht auf die Server-Antwort.
+>   (`"HIGH"`, `"API"`) — bei den Stats sogar als Record-Schlüssel. Seit #254 übersetzt
+>   `monitoring.service.ts` das am Rand nach lowercase und validiert die Antwort über
+>   `parseApiResponse`; die Typen in `src/types/error.ts` beschreiben weiterhin den
+>   gemappten, lowercase-Zustand.
+>
+> **Noch nicht auf Staging verfügbar (Stand 2026-08-14).** Implementiert ist der Backend-Teil
+> mit BE#115, deployt ist er nicht: Backend-`dev` liegt 32 Commits vor Backend-`stage`, und die
+> OpenAPI des laufenden Stage-Deploys (`/v3/api-docs`, 90 Pfade, davon 32 unter `/admin/`) führt
+> **keinen** Monitoring-Pfad; `/api/v1/admin/monitoring/errors` antwortet mit `401` aus dem
+> pauschalen Auth-Gate. Solange das so ist, lässt sich der unten beschriebene Umbau des
+> Admin-Dashboards auf `MonitoringService` nicht verifizieren — er ist deshalb **nicht** gebaut
+> (offen in FE#254). Die Service-Schicht steht bereits.
 
 Das Frontend erfasst Fehler in einem In-Memory-Ring-Buffer und zeigt sie im
 Admin-Dashboard (`/admin/monitoring`).
