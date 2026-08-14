@@ -170,9 +170,11 @@ const apiProductInternalDetailSchema = z.object({
   currency: z.string().nullish(),
   status: z.string().nullish(),
   materials: z.array(z.object({ id: z.string(), slug: z.string(), name: z.string() })).nullish(),
-  // The route does not carry images today — the mapping is defensive so the
-  // `order` → `position` rename lives next to its sibling in getBySlug() and
-  // ProductImageManager keeps working should the DTO ever gain them.
+  // The route does not carry images today, and since #234 nothing consumes the
+  // mapped field — ProductImageManager no longer refetches, because this DTO
+  // never answered with images. Kept defensively so the `order` → `position`
+  // rename lives next to its sibling in getBySlug() and does not have to be
+  // reinvented should the route ever gain them.
   images: z
     .array(
       z.object({
