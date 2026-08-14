@@ -2,7 +2,8 @@
 
 **Erstellt:** 2026-08-05
 **Scope:** Frontend (`elysion-frontend`) + Backend (`elysion-marketplace-backend`) + Infrastruktur (Vercel / Render / Neon / Stripe)
-**Annahmen:** **voller öffentlicher Launch** (nicht Soft-Launch) · **eine Person, ~20 h/Woche**
+**Annahmen:** **voller öffentlicher Launch** (nicht Soft-Launch) · **eine Person, ~20 h/Woche** für die Umsetzung
+**Zwei Spuren:** Alle Stundenangaben sind **Entwicklungsstunden**. Recht, Steuern, Business/Strategie sowie Firmendaten und Rechtstexte werden **von anderer Stelle verantwortet** und belasten dieses Budget nicht — siehe [§7](#7-externe-spur--nicht-im-entwicklungsbudget).
 
 Verhältnis zu den bestehenden Dokumenten — dieses hier ist das **Wann**:
 
@@ -35,7 +36,8 @@ Priorisierung — jede Phase schützt ein konkretes Geschäftsgut:
 | **P5** | Datenbestand und Reputation   | Zweiter Datenverlust, diesmal mit steuerpflichtigen Finanzdaten (PM 5)                                     |
 
 Nicht-Code-Arbeiten, die denselben Kern betreffen (Zertifikats-SOP, Pilot-Kriterien,
-Unit Economics), stehen in [§7](#7-parallelspur-ohne-code).
+Unit Economics), werden extern verantwortet und stehen in
+[§7](#7-externe-spur--nicht-im-entwicklungsbudget).
 
 ---
 
@@ -76,25 +78,31 @@ graph LR
     D --> H[P1 Geldpfad]
     G --> H
     H --> I[O1/O2 Betriebsprobe]
-    J[Anwaltsprüfung KW 33] --> P[P2.1 Pflichtseiten KW 34]
+    J["Anwaltsprüfung KW 33 — extern"] --> P[P2.1 Pflichtseiten KW 34]
     J -.Vorgabe.-> K[P2 Recht + Steuern]
-    L[Steuerberater] -.Lead-Zeit.-> K
+    L["Steuerberater — extern"] -.Vorgabe.-> K
     I --> K
     K --> M[P3 Versand + Retouren]
     M --> N[P4 SEO + Qualität]
     N --> O[P5 Dry-Run + Launch]
 ```
 
-**Externe Lead-Zeiten — nicht durch Coden verkürzbar.** Alles, was hier noch offen ist,
-in **KW 32** anstoßen, sonst wird es später zum Engpass:
+**Externe Lead-Zeiten — nicht durch Coden verkürzbar.** Die Spalte **Träger** sagt, wer
+das Paket verantwortet: **Dev** kostet Entwicklungsstunden, **Extern** läuft parallel bei
+einer anderen Stelle und belastet die 20 h/Woche nicht.
 
-| Extern                                                                               | Realistische Dauer          | Muss angestoßen sein bis |
-| ------------------------------------------------------------------------------------ | --------------------------- | ------------------------ |
-| Domain-Kauf + DNS-Propagation                                                        | 1–3 Tage                    | KW 32                    |
-| Stripe-Live-Freischaltung (Firmen-/Bankprüfung, Klarna/PayPal je Methode)            | 1–10 Werktage               | KW 32                    |
-| Anwaltliche Prüfung — **Umfang bestätigt: Shop-Texte _und_ Betreiberpflichten §8.4** | **läuft — Abschluss KW 33** | erledigt                 |
-| Steuerberater (MwSt. §8.1, DAC7, GoBD-Archivierung §8.5)                             | 1–3 Wochen                  | KW 33                    |
-| SMTP-Provider + SPF/DKIM/DMARC + Warmup                                              | 2–5 Tage                    | KW 33                    |
+| Vorlauf                                                                          | Träger     | Realistische Dauer  | Status                  |
+| -------------------------------------------------------------------------------- | ---------- | ------------------- | ----------------------- |
+| Anwaltliche Prüfung — Umfang bestätigt: Shop-Texte _und_ Betreiberpflichten §8.4 | **Extern** | Abschluss **KW 33** | läuft                   |
+| Steuerberater (MwSt. §8.1, DAC7, GoBD-Archivierung §8.5)                         | **Extern** | 1–3 Wochen          | in Zuständigkeit extern |
+| Firmendaten, Rechtstexte, AV-Vertragsvorlagen, Green-Claims-Wording              | **Extern** | mit der Prüfung     | in Zuständigkeit extern |
+| Domain-Kauf + DNS-Propagation                                                    | Dev        | 1–3 Tage            | anstoßen in KW 32       |
+| Stripe-Live-Freischaltung (Firmen-/Bankprüfung, Klarna/PayPal je Methode)        | Dev        | 1–10 Werktage       | anstoßen in KW 32       |
+| SMTP-Provider + SPF/DKIM/DMARC + Warmup                                          | Dev        | 2–5 Tage            | anstoßen in KW 33       |
+
+**Für den Kalender heißt das:** Die externen Zeilen verlängern den Plan nicht — sie
+müssen nur **vor** dem jeweiligen Umsetzungsschritt vorliegen. Verzögert sich dort etwas,
+verschiebt sich P2, nicht der Gesamtaufwand.
 
 ---
 
@@ -135,13 +143,13 @@ Reihenfolge ist zwingend: Line-Items brauchen `commissionRate`, Payouts brauchen
 | P1.9  | Verbindlicher Wochenbericht als eigene Ansicht (Disclaimer steht bereits)                      | FE   | FE#58  | 6   | Verbindlich/unverbindlich klar getrennt                      |
 | P1.10 | **Betriebsprobe O1 + O2** auf Stripe-Testkonto                                                 | —    | O1, O2 | 8   | Geld landet auf Seller-Testkonto; Refund kommt beim Buyer an |
 
-### P2 — Recht, Steuern, Betreiberpflichten · 110 h · KW 39–44
+### P2 — Recht, Steuern, Betreiberpflichten · 90 h · KW 39–43
 
 > **P2.1 wird vorgezogen (Stand 2026-08-05):** Die anwaltliche Prüfung schließt in
-> **KW 33** ab, die Texte liegen damit vor Beginn von P1 vor. `FE#9` (6 h) wird deshalb
+> **KW 33** ab, die Texte liegen damit vor Beginn von P1 vor. `FE#9` (3 h) wird deshalb
 > in **KW 34** erledigt statt in KW 39 — damit fällt **Deploy-Blocker B4 im ersten Monat**
-> und Staging steht rechtlich sauber da. Die 6 h verschieben P1 um ~0,3 Wochen; das
-> deckt der Puffer. Die restlichen 104 h von P2 bleiben in KW 39–44, weil P2.8/P2.9
+> und Staging steht rechtlich sauber da. Die 3 h verschieben P1 kaum; das
+> deckt der Puffer. Die restlichen 87 h von P2 bleiben in KW 39–43, weil P2.8/P2.9
 > (MwSt., Rechnungen) auf den Settlement-Line-Items aus P1.2/P1.6 aufsetzen.
 
 Die Punkte P2.3–P2.7 sind **§8.4-Betreiberpflichten** — sie treffen Elysion als Plattform,
@@ -157,21 +165,21 @@ nicht die Seller. Sie sind seit 2026-08-05 als Issues angelegt (FE#202–FE#205,
 >
 > **Checkpoint KW 34 — vor Beginn von P1:** Prüfergebnis gegen P2.3–P2.7 spiegeln,
 > Aufwände nachziehen, die Issues aus [§6](#6-neu-angelegte-issues) mit den echten
-> Anforderungen anlegen. Die 50 h für P2.3–P2.7 sind bis dahin eine Ingenieurschätzung;
+> Anforderungen anlegen. Die 42 h für P2.3–P2.7 sind bis dahin eine Ingenieurschätzung;
 > verlangt die Prüfung mehr (zusätzliche Pflichtfelder, AV-Vertragsvorlagen,
 > Wording-Anpassungen an Produkttexten), geht das zuerst gegen den Puffer.
 
 | #     | Aufgabe                                                                                                             | Repo    | Issue  | h   | Definition of Done                                            |
 | ----- | ------------------------------------------------------------------------------------------------------------------- | ------- | ------ | --- | ------------------------------------------------------------- |
-| P2.1  | 27 Platzhalter + Firmendaten in Footer und `Contact.tsx` ersetzen                                                   | FE      | FE#9   | 6   | `grep -r PLATZHALTER src/` → 0 Treffer                        |
-| P2.2  | Versanddaten-DSGVO: Datenschutz-Abschnitte, Seller-AVV mit Checkbox + Zeitstempel                                   | FE+BE   | BE#99  | 8   | AVV-Zustimmung persistiert, Erklärung deckt Weitergabe ab     |
-| P2.3  | **VerpackG § 9:** LUCID-Nummer als Pflichtfeld im Seller-Onboarding + Admin-Prüfschritt                             | FE+BE   | FE#202 | 10  | Ohne LUCID kein aktives Listing                               |
-| P2.4  | **GPSR:** verantwortliche Person in der EU + Sicherheitsangaben je Produkt, Anzeige auf PDP                         | FE+BE   | FE#203 | 14  | Pflichtfelder im Produktformular, Anzeige auf der Detailseite |
-| P2.5  | **Textilkennzeichnungs-VO:** Faserzusammensetzung vom optionalen Filter zum Pflichtfeld                             | FE+BE   | FE#204 | 8   | Produkt ohne Faserangabe nicht aktivierbar                    |
-| P2.6  | **DAC7:** Seller-Steuerdaten erheben (Steuer-ID, Anschrift, Geburtsdatum) + Meldeexport                             | FE+BE   | BE#189 | 12  | Exportdatei mit den meldepflichtigen Feldern                  |
-| P2.7  | **Green Claims/EmpCo:** Wording-Richtlinie + Claims-Prüfung im Produkt-Freigabeprozess                              | FE+Doku | FE#205 | 6   | Richtlinie dokumentiert, Prüfschritt im Admin-Flow sichtbar   |
-| P2.8  | **MwSt. §8.1:** Steuersatz je Produkt durchziehen, USt-Ausweis auf der Provisionsabrechnung                         | FE+BE   | BE#190 | 16  | Checkout und Provisionsabrechnung weisen USt korrekt aus (O4) |
-| P2.9  | **Rechnungen §8.5:** Käufer-Rechnung, Provisionsrechnung mit USt, GoBD-Archivierung                                 | FE+BE   | BE#191 | 22  | Beide Rechnungstypen erzeugt und revisionssicher abgelegt     |
+| P2.1  | 27 Platzhalter + Firmendaten in Footer und `Contact.tsx` ersetzen                                                   | FE      | FE#9   | 3   | `grep -r PLATZHALTER src/` → 0 Treffer                        |
+| P2.2  | Versanddaten-DSGVO: Datenschutz-Abschnitte, Seller-AVV mit Checkbox + Zeitstempel                                   | FE+BE   | BE#99  | 6   | AVV-Zustimmung persistiert, Erklärung deckt Weitergabe ab     |
+| P2.3  | **VerpackG § 9:** LUCID-Nummer als Pflichtfeld im Seller-Onboarding + Admin-Prüfschritt                             | FE+BE   | FE#202 | 9   | Ohne LUCID kein aktives Listing                               |
+| P2.4  | **GPSR:** verantwortliche Person in der EU + Sicherheitsangaben je Produkt, Anzeige auf PDP                         | FE+BE   | FE#203 | 13  | Pflichtfelder im Produktformular, Anzeige auf der Detailseite |
+| P2.5  | **Textilkennzeichnungs-VO:** Faserzusammensetzung vom optionalen Filter zum Pflichtfeld                             | FE+BE   | FE#204 | 7   | Produkt ohne Faserangabe nicht aktivierbar                    |
+| P2.6  | **DAC7:** Seller-Steuerdaten erheben (Steuer-ID, Anschrift, Geburtsdatum) + Meldeexport                             | FE+BE   | BE#189 | 10  | Exportdatei mit den meldepflichtigen Feldern                  |
+| P2.7  | **Green Claims/EmpCo:** Wording-Richtlinie + Claims-Prüfung im Produkt-Freigabeprozess                              | FE+Doku | FE#205 | 3   | Richtlinie **umgesetzt** (Texte + Prüfschritt im Admin-Flow)  |
+| P2.8  | **MwSt. §8.1:** Steuersatz je Produkt durchziehen, USt-Ausweis auf der Provisionsabrechnung                         | FE+BE   | BE#190 | 13  | Checkout und Provisionsabrechnung weisen USt korrekt aus (O4) |
+| P2.9  | **Rechnungen §8.5:** Käufer-Rechnung, Provisionsrechnung mit USt, GoBD-Archivierung                                 | FE+BE   | BE#191 | 18  | Beide Rechnungstypen erzeugt und revisionssicher abgelegt     |
 | P2.10 | COMPLIANCE-Rest: M1 Datenexport, M2 Barrierefreiheitserklärung, M4 Empfehlungs-Erklärung, M6 Gewährleistungshinweis | FE+BE   | FE#206 | 8   | Vier Tabellenzeilen in `COMPLIANCE.md` auf ✅                 |
 
 ### P3 — Versand & Retouren · 98 h · KW 45–49
@@ -228,30 +236,43 @@ Basis: 20 h/Woche, Start **KW 32/2026** (ab 2026-08-03).
 | ------------- | ------- | ------ | ------------------------ | -------------------------------------------------- |
 | P0            | 38 h    | 2      | KW 32–33 (03.08.–16.08.) | **M1:** Prod-Umgebung startet und ist erreichbar   |
 | P1            | 94 h    | 5      | KW 34–38 (17.08.–20.09.) | **M2:** O1 + O2 real geprobt — Geld fließt         |
-| P2            | 110 h   | 6      | KW 39–44 (21.09.–01.11.) | **M3:** Rechtsstand launchfähig, Rechnungen laufen |
-| P3            | 98 h    | 5      | KW 45–49 (02.11.–06.12.) | **M4:** Versandpreise korrekt, Retoure bedienbar   |
-| P4            | 82 h    | 4      | KW 50–53 (07.12.–03.01.) | **M5:** Shop SEO-fähig, E2E-Suite belastbar        |
-| Puffer (15 %) | 66 h    | 3,3    | KW 1–4/2027              | Feiertage KW 52–1 sind hier eingerechnet           |
-| P5            | 20 h    | 1      | KW 4–5/2027              | **M6:** Go-Live                                    |
+| P2            | 90 h    | 5      | KW 39–43 (21.09.–25.10.) | **M3:** Rechtsstand launchfähig, Rechnungen laufen |
+| P3            | 98 h    | 5      | KW 44–48 (26.10.–29.11.) | **M4:** Versandpreise korrekt, Retoure bedienbar   |
+| P4            | 82 h    | 4      | KW 49–52 (30.11.–27.12.) | **M5:** Shop SEO-fähig, E2E-Suite belastbar        |
+| Puffer (15 %) | 63 h    | 3,2    | KW 53–2/2027             | Feiertage KW 52–1 sind hier eingerechnet           |
+| P5            | 20 h    | 1      | KW 3/2027                | **M6:** Go-Live                                    |
 
-**Summe: 442 h netto + 66 h Puffer = 508 h ≈ 25 Wochen.**
-**Go-Live-Fenster: KW 5–6/2027 (Anfang Februar 2027).**
+**Summe: 422 h Entwicklungszeit + 63 h Puffer = 485 h ≈ 24 Wochen.**
+**Go-Live-Fenster: KW 3–4/2027 (Mitte bis Ende Januar 2027).**
+
+> **Gegenüber der Erstfassung ~2 Wochen früher.** Grund ist keine schnellere Umsetzung,
+> sondern eine sauberere Zurechnung: 20 h Entscheidungs- und Textarbeit lagen im
+> Entwicklungsbudget, obwohl sie extern verantwortet werden. Der Kalender bildet jetzt
+> ab, was tatsächlich an den 20 h/Woche hängt.
 
 ### Annahmen zur Schätzung
 
-Die Stundenwerte sind **Arbeitsstunden der umsetzenden Person bei Arbeit mit Claude
+Die Stundenwerte sind **Entwicklungsstunden der umsetzenden Person bei Arbeit mit Claude
 Code** — also der Arbeitsweise, die dieses Repo ohnehin nutzt (siehe `CLAUDE.md`,
 `.github/workflows/claude.yml`). Das ist kein Bonus, der noch abgezogen werden kann; es
-ist die Grundannahme. Wichtiger als der Gesamtwert ist, **worin** er steckt:
+ist die Grundannahme.
+
+**Nicht enthalten** ist alles aus [§7](#7-externe-spur--nicht-im-entwicklungsbudget):
+Recht, Steuern, Business/Strategie sowie Firmendaten und Rechtstexte werden von anderer
+Stelle verantwortet. In der Erstfassung steckten davon ~20 h fälschlich im
+Entwicklungsbudget; sie sind herausgerechnet.
+
+Wichtiger als der Gesamtwert ist, **worin** er steckt:
 
 | Art der Arbeit                                                                                        | h    | Durch AI beschleunigbar?                       |
 | ----------------------------------------------------------------------------------------------------- | ---- | ---------------------------------------------- |
 | Code (Backend-Java, Frontend-React, Tests)                                                            | ~362 | Ja — hier wirkt die Assistenz                  |
 | Dashboard-/Infra-Arbeit (Domain, DNS, Vercel-Env, Render, Neon, Stripe-Verifizierung, Uptime-Monitor) | ~32  | Nein — Browser, eigene Zugangsdaten, teils 2FA |
-| Manuelle Proben (O1/O2, Restore-Drill, Zertifikats-SOP, Prod-Dry-Run)                                 | ~28  | Kaum — der Sinn ist, dass ein Mensch hinsieht  |
-| Inhalte und Entscheidungen von außen (Firmendaten, Anwaltsvorgaben, Steuerfragen)                     | ~20  | Nein — tippen ja, entscheiden nein             |
+| Manuelle Proben (O1/O2, Restore-Drill, Prod-Dry-Run)                                                  | ~28  | Kaum — der Sinn ist, dass ein Mensch hinsieht  |
 
-**~80 h (18 %) sind gegen jede Beschleunigung immun.**
+**~60 h (14 %) sind gegen jede Beschleunigung immun** — und sie bleiben beim Entwickler,
+weil sie technisches Verständnis voraussetzen (DNS-Records, Webhook-Endpunkte,
+Restore-Validierung).
 
 **Der Engpass beim Code-Anteil ist das Review, nicht das Schreiben.** In P1 und P2 geht es
 um Geld und Steuern: Settlement-Line-Items, Stripe-Fee-Zuordnung, Chargeback-Abzüge,
@@ -261,14 +282,14 @@ und dann ist das Vertrauen weg (PRE_MORTEM Szenario 1). Review-Zeit skaliert mit
 Aufmerksamkeit, nicht mit Durchsatz. In P4 (Filter, Hero, Design-Cleanup, E2E) ist die
 Hebelwirkung dagegen groß — dort sind 50–60 h statt 82 h realistisch.
 
-**Bandbreite statt Punktschätzung: 22–30 Wochen inkl. Puffer.** KW 5–6/2027 ist die
+**Bandbreite statt Punktschätzung: 21–29 Wochen inkl. Puffer.** KW 3–4/2027 ist die
 Mittellage, nicht der Best Case. Die Streuung kommt aus zwei Quellen: der
 **Review-Intensität in P1** (Geld- und Steuerlogik) und dem **Umfang, den die
 anwaltliche Prüfung für P2.3–P2.7 vorgibt**. Die zweite Quelle klärt sich in KW 33 —
 danach lässt sich die Bandbreite spürbar enger ziehen.
 
 **Untergrenze des Kalenders:** Selbst bei doppeltem Tempo im Code landet der Launch nicht
-vor **Ende November 2026** — die 80 h Handarbeit, die externen Lead-Zeiten aus
+vor **Mitte November 2026** — die 60 h Handarbeit, die externen Vorgaben aus
 [§3](#3-kritischer-pfad) und die technische Reihenfolge (P2.8/P2.9 setzen auf P1 auf)
 setzen den Boden. Tempo im Code kauft Risikopuffer, keine Kalenderwochen.
 
@@ -277,10 +298,10 @@ setzen den Boden. Tempo im Code kauft Risikopuffer, keine Kalenderwochen.
 Wenn früher Erlös wichtiger ist als vollständige Öffentlichkeits-Compliance, lässt sich
 dieselbe Reihenfolge kürzen — **ohne** die Reihenfolge zu ändern:
 
-- **Drin:** P0 (38 h) + P1 (94 h) + P2-Kern (P2.1, P2.2, P2.8, P2.9 = 52 h) + Versand P3.1/P3.2 (28 h) + P5 (20 h)
+- **Drin:** P0 (38 h) + P1 (94 h) + P2-Kern (P2.1, P2.2, P2.8, P2.9 = 40 h) + Versand P3.1/P3.2 (28 h) + P5 (20 h)
 - **Verschoben:** §8.4-Betreiberpflichten (P2.3–P2.7), Retouren-MVP, SEO/Filter/Hero
 - **Bedingung:** kleine, kuratierte Seller-Zahl, kein Presse-/SEO-Push, schriftliche Seller-Kommunikation zum Abrechnungsstand
-- **Aufwand:** ~232 h + Puffer ≈ 13 Wochen → **Anfang November 2026**
+- **Aufwand:** ~220 h + Puffer ≈ 13 Wochen → **Anfang November 2026**
 
 Das ist eine Option, keine Empfehlung — die Entscheidung ist eine Risikoabwägung
 (§8.4-Pflichten gelten auch im Soft-Launch, nur ist die Angriffsfläche kleiner).
@@ -290,7 +311,8 @@ Das ist eine Option, keine Empfehlung — die Entscheidung ist eine Risikoabwäg
 ## 6. Neu angelegte Issues
 
 Diese zwölf Arbeitspakete hatten bei Erstellung des Plans in **keinem** Repo ein Issue —
-zusammen ~110 h, also ein Viertel des Gesamtaufwands. Sie sind am **2026-08-05** angelegt:
+zusammen **115 h** Entwicklungszeit, also gut ein Viertel des Gesamtaufwands. Sie sind am
+**2026-08-05** angelegt:
 
 | Issue  | Phase | Thema                                                                   |
 | ------ | ----- | ----------------------------------------------------------------------- |
@@ -320,10 +342,24 @@ Prüfungstermin direkt als Fragenkatalog verwendbar.
 
 ---
 
-## 7. Parallelspur ohne Code
+## 7. Externe Spur — nicht im Entwicklungsbudget
 
-Diese Punkte kosten kaum Entwicklungszeit, gaten den Launch aber trotzdem. Sie laufen
-neben den Phasen und sind bis zum jeweils genannten Meilenstein fällig:
+Diese Pakete werden **von anderer Stelle verantwortet** und kosten keine der 20 h/Woche.
+Sie gaten den Launch trotzdem: Ohne sie fehlen Vorgaben, ohne die einzelne
+Umsetzungsschritte nicht abgeschlossen werden können. Fällig ist jedes bis zum genannten
+Meilenstein.
+
+**Ebenfalls extern, mit direktem Bezug zu den Phasen:**
+
+| Extern verantwortet                                                  | Wird gebraucht für |
+| -------------------------------------------------------------------- | ------------------ |
+| Anwaltliche Prüfung (Shop-Texte + Betreiberpflichten §8.4)           | P2.1, P2.3–P2.7    |
+| Steuerliche Vorgaben (Steuersätze, DAC7-Meldeweg, GoBD-Archivierung) | P2.6, P2.8, P2.9   |
+| Firmendaten (Impressum, Register, USt-ID, Support-Kontakt)           | P2.1               |
+| AV-Vertragsvorlage für Seller                                        | P2.2               |
+| Green-Claims-Wording-Richtlinie                                      | P2.7               |
+
+**Strategische Entscheidungen ohne Code-Bezug:**
 
 | Thema                                                                                           | Quelle                      | Fällig bis |
 | ----------------------------------------------------------------------------------------------- | --------------------------- | ---------- |
