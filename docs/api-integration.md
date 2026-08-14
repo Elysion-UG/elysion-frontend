@@ -875,8 +875,15 @@ Monitoring-Ingestion (`POST /api/v1/monitoring/errors`, public) ist seit #115 ba
 implementiert: Batch mit 1–50 Events, Antwort `202` mit `{ accepted, duplicates }`,
 10 Requests/Minute/IP. Wiederholte Batches sind unschädlich — bereits bekannte Event-IDs
 zählen als `duplicates` statt als Fehler. `severity`/`category` werden lowercase gesendet und
-kommen bei den Admin-Reads **uppercase** zurück. Verbindlicher Vertrag: Backend-Doku
-`docs/api/monitoring.md`; Hintergrund und Feld-Mapping: [`monitoring-api.md`](./monitoring-api.md).
+kommen bei den Admin-Reads **uppercase** zurück — `monitoring.service.ts` übersetzt das seit #254
+am Rand zurück und validiert die Antwort über `parseApiResponse`. Verbindlicher Vertrag:
+Backend-Doku `docs/api/monitoring.md`; Hintergrund und Feld-Mapping:
+[`monitoring-api.md`](./monitoring-api.md).
+
+> **Auf dem Stage-Backend nicht deployt (Stand 2026-08-14).** BE#115 ist umgesetzt, aber
+> Backend-`dev` liegt 32 Commits vor Backend-`stage`; die OpenAPI des laufenden Stage-Deploys
+> führt keinen Monitoring-Pfad. Das Admin-Dashboard liest deshalb weiterhin aus dem
+> clientseitigen `errorStore` — der Umbau auf die persistierten Daten ist offen (FE#254).
 
 ---
 

@@ -40,12 +40,28 @@ export interface FrontendErrorEvent {
   metadata: ErrorEventMetadata
 }
 
-/** Aggregated stats returned by the error store. */
+/**
+ * Aggregated stats returned by the error store — **und**, nach dem Mapping in
+ * `monitoring.service.ts`, vom Admin-Stats-Endpunkt. Die Schlüssel von
+ * `bySeverity`/`byCategory` sind hier ausnahmslos lowercase; der Server liefert
+ * sie UPPERCASE, die Übersetzung passiert im Service (#254). Diesen Typ also
+ * nicht als 1:1-Abbild der API lesen.
+ */
 export interface ErrorStoreStats {
   total: number
   bySeverity: Record<ErrorSeverity, number>
   byCategory: Record<ErrorCategory, number>
-  /** Errors per minute averaged over the last 30 minutes. */
+  /**
+   * Fehler pro Minute — **das Zeitfenster hängt an der Quelle**:
+   *   • `errorStore.getStats()` mittelt über die letzten **30 Minuten**.
+   *   • `MonitoringService.getErrorStats(hours)` liefert den Server-Mittelwert
+   *     über das angefragte Fenster (Default **24 h**).
+   *
+   * Die Schwellen in `HealthSummaryCards.tsx` (>= 5 rot, >= 1 gelb) sind auf den
+   * 30-Minuten-Wert kalibriert. Beim Umbau auf die persistierten Daten (#254)
+   * müssen sie mitgezogen werden, sonst liest sich ein Ausbruch von 300 Fehlern
+   * in einer Minute über 24 h gemittelt als 0,2/min — also grün.
+   */
   errorsPerMinute: number
 }
 
@@ -53,6 +69,11 @@ export interface ErrorStoreStats {
  * A frontend error event as persisted and returned by the backend
  * (`GET /api/v1/admin/monitoring/errors`). Promoted fields are flattened
  * out of the client-side `metadata` object; see `docs/monitoring-api.md`.
+ *
+ * Beschreibt den **gemappten** Zustand: `severity`/`category` stehen hier
+ * lowercase wie im Client-Buffer, der Server liefert sie UPPERCASE. Die
+ * Übersetzung liegt in `monitoring.service.ts` (#254) — dieser Typ ist also
+ * kein 1:1-Abbild der Antwort.
  */
 export interface PersistedErrorEvent {
   id: string
