@@ -3,11 +3,27 @@
 Spezifikation der **Backend-Erweiterung**, mit der Frontend-Fehler über Sessions
 hinweg in der Datenbank landen.
 
-> **Status:** Das Frontend ist fertig (Flush in `src/lib/error-store.ts`,
-> `src/services/monitoring.service.ts`), der Backend-Teil — Tabelle, Ingestion-/
-> Admin-Controller, Cleanup-Job — ist offen. Solange der Endpoint fehlt, schlägt der
-> Flush still fehl; die Live-Ansicht funktioniert weiter, persistiert wird nichts.
+> **Status:** Umgesetzt. Das Frontend war bereits fertig (Flush in `src/lib/error-store.ts`,
+> `src/services/monitoring.service.ts`); der Backend-Teil — Tabelle (Flyway `V6`),
+> Ingestion-/Admin-Controller, Cleanup-Job — ist mit #115 nachgezogen.
 > Hintergrund: [`LAUNCH_READINESS.md`](./LAUNCH_READINESS.md) §W4.
+>
+> **Verbindlicher Vertrag ist ab jetzt die Backend-Doku `docs/api/monitoring.md`** im
+> Backend-Repo. Dieses Dokument bleibt als Entwurf und Begründung der Design-Entscheidungen
+> bestehen; wo beide voneinander abweichen, gilt das Backend.
+>
+> Abweichungen der Umsetzung von diesem Entwurf:
+>
+> - Die Migration heißt `V6__frontend_error_events.sql` (nicht `V3`) — die Nummer vergibt die
+>   Migrations-Registry des Backends.
+> - `from`/`to` der Admin-Liste und das `hours`-Fenster der Stats filtern auf `created_at`
+>   (Eingang im Backend), nicht auf `client_timestamp`: die Client-Uhr ist fremd und
+>   potenziell falsch gestellt. Die 30-Tage-Retention arbeitet wie hier beschrieben weiterhin
+>   auf `client_timestamp`.
+> - `PersistedErrorEvent.severity`/`.category` liefert das Backend **uppercase**
+>   (`"HIGH"`, `"API"`) — der TypeScript-Typ in `src/types/error.ts` beschreibt mit
+>   `ErrorSeverity`/`ErrorCategory` die lowercase-Variante des Client-Buffers und passt
+>   insoweit nicht auf die Server-Antwort.
 
 Das Frontend erfasst Fehler in einem In-Memory-Ring-Buffer und zeigt sie im
 Admin-Dashboard (`/admin/monitoring`).

@@ -862,8 +862,12 @@ angezeigt werden, nicht aus dem Statuscode. Importierte Produkte bleiben in `DRA
 der Übergang nach `REVIEW` laufen weiter über das Verkäufer-Portal. Format und Regeln:
 Backend-Doku `docs/backend/product-csv-import.md`.
 
-Monitoring-Ingestion (`POST /api/v1/monitoring/errors`, public) ist backend-seitig
-offen — Spec: [`monitoring-api.md`](./monitoring-api.md).
+Monitoring-Ingestion (`POST /api/v1/monitoring/errors`, public) ist seit #115 backend-seitig
+implementiert: Batch mit 1–50 Events, Antwort `202` mit `{ accepted, duplicates }`,
+10 Requests/Minute/IP. Wiederholte Batches sind unschädlich — bereits bekannte Event-IDs
+zählen als `duplicates` statt als Fehler. `severity`/`category` werden lowercase gesendet und
+kommen bei den Admin-Reads **uppercase** zurück. Verbindlicher Vertrag: Backend-Doku
+`docs/api/monitoring.md`; Hintergrund und Feld-Mapping: [`monitoring-api.md`](./monitoring-api.md).
 
 ---
 
