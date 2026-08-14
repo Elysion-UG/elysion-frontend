@@ -345,8 +345,17 @@ Felder, die `ProductDetail` als optional kennt und die aus dieser Route deshalb 
 Seit #232 hat die Route ein eigenes Zod-Schema plus Mapper (vorher: roher, ungeprüfter Cast
 — der Rückgabetyp versprach `seller.userId`, geliefert wurde `seller.id`). Der `order` →
 `position`-Umbau der Bilder ist im Mapper vorhanden, greift aber nur, falls die Route jemals
-`images` liefert. `ProductImageManager` lädt das Produkt nach und fällt deshalb immer auf
-seine `initialImages` zurück.
+`images` liefert; aktuell konsumiert **nichts** das Feld.
+
+> **Produktbilder sind im Verkäuferportal nicht lesbar (#234).** `ProductImageManager` hat das
+> Produkt bis #234 über diese Route nachgeladen — wirkungslos, weil sie keine `images` führt
+> (und doppelt, weil `ProductForm` dasselbe Produkt für die Materialien bereits lädt). Der
+> Nachlade-Aufruf ist entfernt; die Komponente zeigt nur noch, was in der laufenden Sitzung
+> hochgeladen wurde. Auch die anderen Lesepfade helfen nicht: `GET /api/v1/seller/products`
+> liefert nur `primaryImage` als URL **ohne ID** (unbrauchbar für `DELETE …/images/{imageId}`
+> und `PATCH …/images/order`), und das öffentliche Detail ist hart auf `ACTIVE` gefiltert,
+> während ein Produkt beim Bearbeiten regelmäßig `DRAFT` ist. Es fehlt ein Seller-Lesepfad mit
+> `images[]` inkl. `id` über alle Status — Backend-Gegenstück offen.
 
 ### Kategorien
 

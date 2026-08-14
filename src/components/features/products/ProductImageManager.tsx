@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
 import Image from "next/image"
 import { Upload, X, ArrowUp, ArrowDown, Loader2, ImageIcon } from "lucide-react"
 import { ProductService } from "@/src/services/product.service"
@@ -9,6 +9,27 @@ import type { ProductImage } from "@/src/types"
 import { toast } from "sonner"
 import { Button } from "@/src/components/ui/button"
 
+/**
+ * Bildverwaltung im Produktformular des Verkäufers.
+ *
+ * Zeigt ausschließlich, was in dieser Sitzung hochgeladen wurde (plus optionale
+ * `initialImages`) — **es gibt kein Nachladen** (#234). Kein Lesepfad im
+ * Seller-Kontext liefert die Bilder eines Produkts:
+ *
+ *   • `GET /api/v1/products/by-id/{id}` (der frühere Nachlade-Aufruf hier) führt
+ *     im DTO gar kein `images` — der Request war wirkungslos, die Komponente lief
+ *     immer über den Fallback. Zusätzlich lud `ProductForm` dasselbe Produkt für
+ *     die Materialien bereits, es war also ein zweiter, identischer Request.
+ *   • `GET /api/v1/seller/products` hat nur `primaryImage` — eine URL **ohne ID**
+ *     und damit weder für `DELETE …/images/{imageId}` noch für
+ *     `PATCH …/images/order` (Body `imageIds`) brauchbar.
+ *   • Der öffentliche Detail-Read führt Bilder, ist aber hart auf `ACTIVE`
+ *     gefiltert — beim Bearbeiten ist ein Produkt regelmäßig `DRAFT`.
+ *
+ * Das Nachladen braucht ein Backend-Gegenstück (Seller-Read mit `images[]` inkl.
+ * `id`, über alle Status). Bis dahin sagt der Leerzustand das offen, statt „keine
+ * Bilder vorhanden" als Tatsache über das Produkt zu behaupten.
+ */
 interface ProductImageManagerProps {
   productId: string
   initialImages: ProductImage[]
@@ -19,30 +40,8 @@ export default function ProductImageManager({
   initialImages,
 }: ProductImageManagerProps) {
   const [images, setImages] = useState<ProductImage[]>(initialImages)
-  const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    const fetchImages = async () => {
-      setIsLoading(true)
-      try {
-        const detail = await ProductService.getById(productId)
-        if (!cancelled && detail.images) {
-          setImages(detail.images)
-        }
-      } catch {
-        // Fall back to initialImages — already set
-      } finally {
-        if (!cancelled) setIsLoading(false)
-      }
-    }
-    fetchImages()
-    return () => {
-      cancelled = true
-    }
-  }, [productId])
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -124,14 +123,15 @@ export default function ProductImageManager({
     <div className="space-y-4">
       <h4 className="text-sm font-semibold text-foreground">Produktbilder</h4>
 
-      {isLoading ? (
-        <div className="flex justify-center py-6">
-          <Loader2 className="h-5 w-5 animate-spin text-green-600" />
-        </div>
-      ) : images.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-8 text-muted-foreground">
+      {images.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border px-4 py-8 text-center text-muted-foreground">
           <ImageIcon className="mb-2 h-8 w-8" />
-          <p className="text-sm">Noch keine Bilder vorhanden.</p>
+          <p className="text-sm">Noch keine Bilder in dieser Sitzung hinzugefügt.</p>
+          <p className="mt-1 max-w-sm text-xs">
+            Bereits hochgeladene Bilder werden hier derzeit nicht angezeigt — sie lassen sich über
+            das Verkäuferportal noch nicht auslesen. Neu hochgeladene Bilder kommen zum Produkt
+            hinzu, sie ersetzen die vorhandenen nicht.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
