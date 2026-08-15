@@ -332,30 +332,35 @@ Das Backend antwortet mit `ProductDetailDto`:
 
 ```
 id, slug, name, description, shortDescription, price, currency,
-seller { id, slug, companyName }, status, materials[], createdAt, updatedAt,
+seller { id, slug, companyName }, status, materials[], images[], createdAt, updatedAt,
 matchScore, matchBreakdown
 ```
 
-Nicht enthalten sind **`title`, `category`, `taxRate`, `variants` und `images`** — alles
-Felder, die `ProductDetail` als optional kennt und die aus dieser Route deshalb dauerhaft
-`undefined` sind. `price` ist der Basispreis; `ProductService.getById()` füllt daraus
-`price` **und** `basePrice`, und leitet das vom Typ `ProductInternalDetail` geforderte
-`title` aus `name` ab.
+Nicht enthalten sind **`title`, `category`, `taxRate` und `variants`** — alles Felder, die
+`ProductDetail` als optional kennt und die aus dieser Route deshalb dauerhaft `undefined`
+sind. `price` ist der Basispreis; `ProductService.getById()` füllt daraus `price` **und**
+`basePrice`, und leitet das vom Typ `ProductInternalDetail` geforderte `title` aus `name` ab.
 
 Seit #232 hat die Route ein eigenes Zod-Schema plus Mapper (vorher: roher, ungeprüfter Cast
-— der Rückgabetyp versprach `seller.userId`, geliefert wurde `seller.id`). Der `order` →
-`position`-Umbau der Bilder ist im Mapper vorhanden, greift aber nur, falls die Route jemals
-`images` liefert; aktuell konsumiert **nichts** das Feld.
+— der Rückgabetyp versprach `seller.userId`, geliefert wurde `seller.id`).
 
-> **Produktbilder sind im Verkäuferportal nicht lesbar (#234).** `ProductImageManager` hat das
-> Produkt bis #234 über diese Route nachgeladen — wirkungslos, weil sie keine `images` führt
-> (und doppelt, weil `ProductForm` dasselbe Produkt für die Materialien bereits lädt). Der
-> Nachlade-Aufruf ist entfernt; die Komponente zeigt nur noch, was in der laufenden Sitzung
-> hochgeladen wurde. Auch die anderen Lesepfade helfen nicht: `GET /api/v1/seller/products`
+> **Produktbilder sind seit backend#241 über diese Route lesbar.** `images[]` führt je Eintrag
+> `{ id, url, altText, order }`, sortiert nach `order` aufsteigend mit `id` als Tiebreak, und
+> zwar über **alle** Produktstatus — also auch auf `DRAFT`, dem Zustand, in dem ein Produkt
+> beim Bearbeiten regelmäßig steht. Die `id` ist der entscheidende Teil: sie ist der Wert, den
+> `DELETE /api/v1/seller/products/{productId}/images/{imageId}` und der `imageIds`-Body von
+> `PATCH …/images/order` erwarten. Der `order` → `position`-Umbau im Mapper greift damit
+> tatsächlich; er lag seit #232 defensiv bereit.
+>
+> Damit ist die Lücke aus #234 geschlossen. `ProductImageManager` zeigt bis zum Nachzug
+> weiterhin nur, was in der laufenden Sitzung hochgeladen wurde — der Nachlade-Aufruf war in
+> #252 entfernt worden, weil er ins Leere lief. Er kann jetzt zurückkehren, ohne doppelt zu
+> laden: `ProductForm` holt dasselbe Produkt bereits für die Materialien, `images[]` kommt im
+> selben Response mit. Die anderen Lesepfade bleiben ungeeignet: `GET /api/v1/seller/products`
 > liefert nur `primaryImage` als URL **ohne ID** (unbrauchbar für `DELETE …/images/{imageId}`
 > und `PATCH …/images/order`), und das öffentliche Detail ist hart auf `ACTIVE` gefiltert,
-> während ein Produkt beim Bearbeiten regelmäßig `DRAFT` ist. Es fehlt ein Seller-Lesepfad mit
-> `images[]` inkl. `id` über alle Status — Backend-Gegenstück offen.
+> während ein Produkt beim Bearbeiten regelmäßig `DRAFT` ist. Es führt seit backend#241
+> ebenfalls `id`, dort aber nur als stabiler List-Key nützlich.
 
 ### Kategorien
 
