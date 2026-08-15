@@ -489,6 +489,51 @@ nach geleertem Browser-Speicher identisch (#188).
 - `PATCH` mit `quantity: 0` löscht **nicht**, sondern wird mit `400` abgelehnt; Löschen
   geht ausschließlich über `DELETE`.
 
+#### Versandkosten je Brand (backend#139)
+
+`GET /api/v1/cart` liefert die Zeilen zusätzlich **nach Verkäufer gruppiert**, weil der
+Versand an der Brand hängt und nicht am Warenkorb (`MANAGEMENT_DECISIONS.md` §4.4):
+
+```
+Cart {
+  …, subtotal, currency, items[],
+  groups: [{ sellerId, companyName|null, slug|null, subtotal, shippingCost, currency, items[] }],
+  shippingTotal,
+  total          // subtotal + shippingTotal
+}
+```
+
+`groups` ist eine **zusätzliche Sicht** auf `items`, keine zweite Wahrheit: dieselben
+Zeilenobjekte, jede Zeile in genau einer Gruppe. Die Gruppenreihenfolge folgt dem ersten
+Auftreten des Verkäufers, springt also zwischen zwei Abrufen nicht.
+
+```
+engel natur  – Merino-Body 62/68   34,90 €  + Versand 3,90 €  (kostenlos ab 70 €)
+disana       – Woll-Hose 86/92     88,50 €  + Versand 0,00 €  (Freiversand ab 60 € erreicht)
+─────────────────────────────────────────
+Warenwert 123,40 €  ·  Versand 3,90 €  ·  Gesamt 127,30 €
+```
+
+Zwei Dinge, die man nicht selbst nachrechnen sollte:
+
+- **`shippingCost` niemals im Frontend herleiten.** Stufentabelle, Freiversand-Schwelle und
+  Gewichtsbasis liegen im Backend; die Schwelle schlägt die Stufe und bemisst sich immer am
+  Bestellwert, auch bei Gewichtsstufen. Nur der gelieferte Wert ist verbindlich.
+- **`shippingCost: 0` heißt nicht „Freiversand".** Es kann auch heißen, dass der Verkäufer
+  (noch) keine Konditionen hinterlegt hat — für vor backend#139 registrierte Brands ist das
+  der dokumentierte Zustand. Ohne Zusatzinformation deshalb kein „Versandkostenfrei!"-Badge.
+
+`POST`/`PATCH` auf Cart-Zeilen liefern weiterhin nur die betroffene Zeile — nach einer
+Mengenänderung kann sich der Versand einer Gruppe ändern, also `GET /api/v1/cart` neu lesen,
+statt Summen lokal fortzuschreiben.
+
+Die Konditionen selbst hängen am Verkäuferprofil: `GET`/`PATCH /api/v1/users/me/seller-profile`
+tragen ein `shippingConfig` (`tierBasis` `ORDER_VALUE|WEIGHT`, `carrier`, `deliveryRegion`
+`DACH`, `freeShippingThreshold|null`, `currency`, `tiers[]`). `null` = keine hinterlegt. Beim
+Schreiben wird die Tabelle immer **als Ganzes** ersetzt; die letzte Stufe muss offen sein
+(`upTo: null`) und die Grenzen müssen streng steigen, sonst `400`. Vollständig in BE
+`docs/api/shipping.md`.
+
 **Gast-Cart-Merge beim Login:** Der Merge läuft im Login-Request und meldet nichts
 zurück — keine Cart-Id, kein Zähler, und stillschweigend verworfene Gast-Zeilen
 (Preis- oder Bestandsänderung, gelöschte Variante) erzeugen kein Signal. Nach
@@ -768,6 +813,8 @@ POST   /api/v1/admin/products/{id}/deactivate        → { id, status }
 GET    /api/v1/admin/payments                        → PagedResponse<AdminPaymentItem>
 GET    /api/v1/admin/refunds                         → PagedResponse<AdminRefundItem>
 POST   /api/v1/admin/refunds                         → RefundResult          # Eskalation, siehe unten
+POST   /api/v1/admin/refunds/order/{orderId}         → OrderWideRefundResult # order-weit, voller Restbetrag
+GET    /api/v1/admin/disputes                        → PagedResponse<AdminDisputeSummary>  # offene Chargebacks
 GET    /api/v1/admin/settlements                     → PagedResponse<Settlement>   # Vertrag: siehe Abrechnungszeile
 GET    /api/v1/admin/payouts                         → PagedResponse<AdminPayoutItem>
 
@@ -1120,12 +1167,71 @@ eine zweite Vollerstattung findet nichts Offenes mehr (`409`), ein zu hoher Teil
 mit `400` abgewiesen. Die Meldungen mappt `refundErrorMessage()` in `src/lib/refund.ts` nach
 §1.9 (Instanz + Konsequenz) — ausgewertet wird der Statuscode, nie der Message-String.
 
+### Order-weite Erstattung (backend#220)
+
+```
+POST /api/v1/admin/refunds/order/{orderId}   → OrderWideRefundResult   (nur ADMIN)
+```
+
+Erstattet den **gesamten Restbetrag** aller OrderGroups einer Bestellung in einem Aufruf.
+Body optional, nur `{ reason }` — **kein `amount`**. Eine teilweise order-weite Erstattung
+bleibt abgelehnt, weil sie sich keiner einzelnen Abrechnungszeile zuordnen ließe
+(`MANAGEMENT_DECISIONS.md` §4.3). Für einen Teilbetrag weiterhin
+`POST /api/v1/admin/refunds` auf der betroffenen OrderGroup.
+
+Kein Seller-Gegenstück: eine Bestellung spannt mehrere Verkäufer, das ist ausschließlich der
+Eskalationspfad.
+
+```
+OrderWideRefundResult {
+  refundId, paymentId, orderId,          // kein orderGroupId
+  amount, currency, status, providerRefundId,
+  initiatedBy: "ADMIN", reason|null,
+  allocations: [{ orderGroupId, settlementId, sellerId, amount,
+                  settlementRefundedAmount, settlementRemainingRefundableAmount,
+                  settlementPlatformFeeAmount, settlementRefundFeeAmount,
+                  settlementNetAmount, settlementAdjustmentRequired }]
+}
+```
+
+`allocations[]` ist die Aufteilung je Verkäufer — genau das, was eine Support-Oberfläche
+anzeigen muss, damit nachvollziehbar bleibt, wer mit welchem Betrag belastet wurde. Die
+Summe der `amount`-Werte ist exakt der erstattete Betrag; es gibt keinen Rundungsrest.
+
+Fehler: `404` (keine Abrechnungszeile zur Bestellung), `409` (bereits vollständig erstattet
+oder Zahlung nicht erstattbar), `502`/`503` (PSP).
+
+### Chargebacks: Admin-Read offener Disputes (backend#219)
+
+```
+GET /api/v1/admin/disputes    → PagedResponse<AdminDisputeSummary>   (nur ADMIN)
+```
+
+Chargebacks werden seit backend#219 automatisch aus dem Stripe-Webhook gebucht; dieser Read
+existiert vor allem wegen **einer** Spalte:
+
+```
+AdminDisputeSummary {
+  disputeId, provider, providerDisputeId, paymentId, orderId,
+  disputedAmount, feeAmount, bookedAmount, currency,
+  status, reason, outcome|null,
+  evidenceDueAt|null, openedAt, closedAt|null
+}
+```
+
+`evidenceDueAt` ist die Frist, bis zu der Stripe eine Anfechtung annimmt. Verstreicht sie
+unbemerkt, ist der Streitbetrag verloren, ohne dass jemand widersprochen hat — eine
+Admin-Oberfläche sollte ablaufende Fristen deshalb hervorheben. **Anfechten lässt sich ein
+Dispute weiterhin nur im Stripe-Dashboard**; es gibt keinen Beweisführungs-Endpoint.
+
 ### Was der Vertrag **nicht** hergibt
 
 - **Positionsweise Erstattung.** Der Endpoint kennt nur einen Betrag auf der OrderGroup,
   keine `orderItemId`. Eine Auswahl einzelner Positionen wäre reine Frontend-Fiktion.
 - **Grund und Auslöser in der Leseliste.** `GET /api/v1/admin/refunds` liefert weder `reason`
-  noch `initiatedBy` — beides steht nur in der Antwort auf die Auslösung und im
-  Prüfprotokoll (`admin_audit_log`).
+  noch `initiatedBy` — beides steht nur in der Antwort auf die Auslösung und im Prüfprotokoll.
+  Seit backend#220 liegt der Refund-Trail in `finance_audit_records`; in `admin_audit_log`
+  steht nur noch, was ein Admin ausgelöst hat.
+- **Teilweise order-weite Erstattung.** Dauerhaft abgelehnt, siehe oben.
 - **Durchsetzung des 14-Tage-Widerrufsfensters.** Organisatorisch geregelt, im Code nicht
   erzwungen — kein Frontend-Gate.
